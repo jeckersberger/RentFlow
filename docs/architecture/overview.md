@@ -1,16 +1,16 @@
-# Architektur-Übersicht — Microservice + Event-Driven Architecture
+# Architektur-Übersicht — Microservice + Event Sourcing + CQRS
 
 **Stand:** 20. März 2026
 
 ## Architektur-Prinzipien
 
 1. **Microservice Architecture (MSA)**: Jeder Bounded Context ist ein eigenständiger Go-Service
-2. **Event-Driven Architecture (EDA)**: Services kommunizieren primär über Domain Events (NATS JetStream)
-3. **Database-per-Service**: Jeder Service besitzt sein eigenes PostgreSQL-Schema
-4. **API Gateway Pattern**: Traefik routet alle Client-Requests zum richtigen Service
-5. **CQRS**: Reporting-Service baut Materialized Views aus dem Event-Stream (Read-Optimiert)
-6. **Saga Pattern**: Verteilte Transaktionen über Event-Choreografie
-7. **Event Sourcing**: NATS JetStream als Event Store für Replay und Audit
+2. **Event Sourcing**: KurrentDB (ehemals EventStoreDB) als Source of Truth — alle Zustandsänderungen als immutable Events
+3. **CQRS**: Write-Side = Events in KurrentDB, Read-Side = Projections in PostgreSQL
+4. **Database-per-Service**: Jeder Service besitzt sein eigenes PostgreSQL-Schema für Read-Projections
+5. **API Gateway Pattern**: Traefik routet alle Client-Requests zum richtigen Service
+6. **Saga Pattern**: Verteilte Transaktionen über Event-Choreografie (KurrentDB Subscriptions)
+7. **Relational Sink**: KurrentDB v26 projiziert Events automatisch nach PostgreSQL
 
 ## Tech-Stack
 
@@ -18,9 +18,9 @@
 |-----------|-------------|------------|
 | Backend | Go 1.22+ (pro Service) | Performance, Single-Binary, Concurrency |
 | API Gateway | Traefik v3 | Docker-native, automatisches Service-Discovery |
-| Message Broker | NATS JetStream | Leichtgewichtig, Go-nativ, persistent, Consumer Groups |
+| Event Store | KurrentDB (ehemals EventStoreDB) | Event-native DB, Subscriptions, Relational Sink, Go-Client |
 | Frontend | TypeScript + React 18 + Sass/SCSS | PWA-fähig, großes Ökosystem |
-| Datenbank | PostgreSQL 16 | Schema-per-Service, JSONB, Row-Level Security |
+| Read-DB | PostgreSQL 16 | Schema-per-Service Projections, JSONB, Row-Level Security |
 | Cache | Redis 7 | Sessions, API-Cache, Rate Limiting |
 | Deployment | Docker Compose | Self-Hosting, ein Befehl startet alles |
 | Scanner | USB-Barcode, Zebra TC21, Handy-Kamera, RFID | Alle VT-Szenarien |
@@ -48,13 +48,14 @@
    └────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴───┘
                               │
               ┌───────────────▼───────────────┐
-              │   NATS JetStream (Event Bus)   │
-              │   Persistent │ Consumer Groups  │
-              │   At-Least-Once │ Replay        │
+              │   KurrentDB (Event Store)      │
+              │   Source of Truth │ Immutable   │
+              │   Subscriptions │ Replay        │
+              │   Relational Sink → PostgreSQL  │
               └───────────────┬───────────────┘
-                              │
+                              │ Projections
               ┌───────────────▼───────────────┐
-              │   PostgreSQL 16                │
+              │   PostgreSQL 16 (Read-Models)  │
               │   Schema-per-Service           │
               │   (eine Instanz, N Schemas)    │
               └───────────────────────────────┘
@@ -82,35 +83,67 @@
 | 16 | reporting-service | :8016 | CQRS Read-Side, KPIs, Dashboards |
 | 17 | audit-service | :8017 | GoBD Audit-Trail, immutables Log |
 
-## Event-Driven Communication
+## Event Sourcing mit KurrentDB
 
-### NATS JetStream Streams
+### Stream-Konventionen
 
-Jeder Bounded Context hat seinen eigenen Stream:
+KurrentDB organisiert Events in Streams. Wir nutzen zwei Arten:
 
-| Stream | Subjects | Producer |
-|--------|----------|----------|
-| EQUIPMENT | equipment.created, .updated, .checked_out, .checked_in, .reserved, .released | inventory-service |
-| PROJECTS | project.created, .updated, .status_changed, .completed | project-service |
-| SCANS | scan.completed, checkin.completed, checkout.completed | scanner-service |
-| WAREHOUSE | stock.updated, .below_minimum, .movement_recorded, reorder.* | warehouse-service |
-| INVOICES | invoice.created, .sent, .paid, .overdue, payment.received, dunning.sent | invoice-service |
-| DOCUMENTS | document.generated, .uploaded, .extracted | document-service |
-| CREW | crew.assigned, .availability_changed, .time_recorded | crew-service |
-| FEDERATION | federation.partner_connected, .equipment_shared, .rental_requested | federation-service |
-| MAINTENANCE | maintenance.scheduled, .completed, .overdue, echeck.* | maintenance-service |
-| TRANSPORT | tour.created, .optimized, .completed, vehicle.assigned | transport-service |
-| INSURANCE | policy.*, claim.*, damage.reported, risk_score.updated | insurance-service |
-| WORKFLOWS | workflow.executed, .failed | workflow-service |
-| AI | ai.analysis_completed, ai.prediction_generated | ai-service |
-| NOTIFICATIONS | notification.sent, .read | notification-service |
+**Aggregate-Streams** (pro Entität): `equipment-{uuid}`, `project-{uuid}`, `invoice-{uuid}`
+- Enthalten alle Events einer einzelnen Entität
+- Für optimistic concurrency (expected version)
 
-### Spezielle Consumer-Patterns
+**Kategorie-Streams** (automatisch): `$ce-equipment`, `$ce-project`, `$ce-invoice`
+- KurrentDB gruppiert automatisch alle Streams einer Kategorie
+- Services subscriben auf Kategorie-Streams
 
-- **audit-service**: Subscribt auf ALLE Streams → immutable logging
-- **reporting-service**: Subscribt auf ALLE Streams → baut Materialized Views
-- **notification-service**: Subscribt auf relevante Events → transformiert zu User-Notifications
-- **workflow-service**: Subscribt auf ALLE Events → evaluiert Trigger-Bedingungen
+### Event-Typen pro Domain
+
+| Kategorie | Event-Typen | Producer |
+|-----------|-------------|----------|
+| equipment | EquipmentCreated, EquipmentUpdated, EquipmentCheckedOut, EquipmentCheckedIn, EquipmentReserved, EquipmentReleased | inventory-service |
+| project | ProjectCreated, ProjectUpdated, ProjectStatusChanged, ProjectCompleted | project-service |
+| scan | ScanCompleted, CheckinCompleted, CheckoutCompleted | scanner-service |
+| warehouse | StockUpdated, StockBelowMinimum, MovementRecorded, ReorderSuggested | warehouse-service |
+| invoice | InvoiceCreated, InvoiceSent, InvoicePaid, InvoiceOverdue, PaymentReceived, DunningSent | invoice-service |
+| document | DocumentGenerated, DocumentUploaded, DocumentExtracted | document-service |
+| crew | CrewAssigned, AvailabilityChanged, TimeRecorded | crew-service |
+| federation | PartnerConnected, EquipmentShared, RentalRequested | federation-service |
+| maintenance | MaintenanceScheduled, MaintenanceCompleted, MaintenanceOverdue, EcheckCompleted | maintenance-service |
+| transport | TourCreated, TourOptimized, TourCompleted, VehicleAssigned | transport-service |
+| insurance | PolicyCreated, ClaimFiled, DamageReported, RiskScoreUpdated | insurance-service |
+| workflow | WorkflowExecuted, WorkflowFailed | workflow-service |
+| ai | AnalysisCompleted, PredictionGenerated | ai-service |
+
+### Subscription-Patterns
+
+**Catch-up Subscriptions** (persistent, at-least-once):
+- **audit-service**: Subscribt auf `$all` → immutable logging (GoBD)
+- **reporting-service**: Subscribt auf `$all` → baut Materialized Views in PostgreSQL
+- **notification-service**: Subscribt auf relevante Kategorien → transformiert zu User-Notifications
+- **workflow-service**: Subscribt auf `$all` → evaluiert Trigger-Bedingungen
+
+**Relational Sink** (KurrentDB v26):
+- Automatische Projektion von Events nach PostgreSQL-Tabellen
+- Konfigurierbar pro Service: welche Events → welche Tabellen
+- Reduziert Boilerplate-Code für Read-Model-Updates
+
+### Write-Side vs. Read-Side (CQRS)
+
+```
+WRITE (Command):                    READ (Query):
+  Client → API Gateway               Client → API Gateway
+    → Service                           → Service
+      → Validate                          → PostgreSQL (Read-Model)
+      → Append Event → KurrentDB          → Return Data
+      → Return ACK
+                    ↓
+          KurrentDB Subscription
+                    ↓
+          Service projiziert Event
+                    ↓
+          PostgreSQL (Read-Model updated)
+```
 
 ## Database-per-Service (Schema Isolation)
 
@@ -133,7 +166,7 @@ CREATE SCHEMA ai_schema;
 CREATE SCHEMA notification_schema;
 CREATE SCHEMA reporting_schema;
 CREATE SCHEMA audit_schema;
-CREATE SCHEMA event_store_schema;
+-- Kein event_store_schema nötig — Events leben in KurrentDB
 ```
 
 **Regeln:**
@@ -146,7 +179,7 @@ CREATE SCHEMA event_store_schema;
 ```
 pkg/common/
 ├── auth/          # JWT-Validation Middleware, RBAC Helpers
-├── events/        # NATS Client Wrapper, Event-Schemas (Go Structs)
+├── events/        # KurrentDB Client Wrapper, Event-Schemas (Go Structs)
 ├── errors/        # Standard Error Types, HTTP Error Responses
 ├── logging/       # Structured Logging (zerolog)
 ├── middleware/     # Tenant Extraction, Request-ID, Correlation-ID
@@ -174,7 +207,7 @@ Firma A (MyRMS-Instanz)          Firma B (MyRMS-Instanz)
 | Entscheidung | Begründung |
 |-------------|-----------|
 | Go pro Service | Performance, Single-Binary pro Service, einfaches Docker-Image |
-| NATS statt Kafka/RabbitMQ | Leichtgewichtig (50MB RAM), Go-nativ, JetStream = persistent + replay |
+| KurrentDB statt Kafka/NATS | Event-native DB (nicht nachgerüstet), Event Sourcing built-in, Relational Sink nach PostgreSQL, Go-Client, Admin-UI |
 | Traefik statt Kong/Nginx | Docker-native Service-Discovery, Labels statt Config-Files |
 | Schema-per-Service statt DB-per-Service | Pragmatisch für Self-Hosting (eine DB-Instanz reicht), logisch trotzdem isoliert |
 | Redis für Cache/Sessions | Einfach, schnell, weit verbreitet, minimaler Overhead |

@@ -33,15 +33,17 @@ MyRMS (My Rental Management System) ist eine selbst-gehostete, Open-Source-Lösu
 
 ## 2. Architektur-Prinzipien
 
-**Microservice Architecture (MSA) + Event-Driven Architecture (EDA)**
+**Microservice Architecture (MSA) + Event Sourcing + CQRS**
 
 - Jeder Bounded Context ist ein eigenständiger Go-Microservice
-- Services kommunizieren asynchron über NATS JetStream (Event Bus)
+- **KurrentDB** (ehemals EventStoreDB) als Event Store — Source of Truth für alle Domain Events
+- Services subscriben auf KurrentDB-Streams und projizieren Events in ihre **PostgreSQL-Schemas** (Read-Models)
 - Synchrone Kommunikation nur wo nötig (API Gateway → Service)
-- Database-per-Service: jeder Service besitzt sein eigenes PostgreSQL-Schema
-- Saga Pattern für verteilte Transaktionen
-- CQRS für Reporting (Materialized Views aus Event-Stream)
-- Event Store in NATS JetStream für Replay/Audit
+- Database-per-Service: jeder Service besitzt sein eigenes PostgreSQL-Schema für Read-Projections
+- Saga Pattern über Event-Choreografie (KurrentDB Subscriptions)
+- CQRS: Write-Side = Events in KurrentDB, Read-Side = Projections in PostgreSQL
+- KurrentDB Relational Sink für automatische Projektion nach PostgreSQL
+- Kein separater Message Broker nötig — KurrentDB übernimmt Event-Bus + Persistenz
 
 ## 3. Tech-Stack
 
@@ -49,9 +51,9 @@ MyRMS (My Rental Management System) ist eine selbst-gehostete, Open-Source-Lösu
 |---------|-------------|------------|
 | **Backend** | Go 1.22+ (pro Microservice) | Performance, Single-Binary, starke Concurrency |
 | **API Gateway** | Traefik v3 | Service-Routing, Load Balancing, Rate Limiting, Docker-native |
-| **Message Broker** | NATS JetStream | Leichtgewichtig, Go-nativ, persistent, Event Store, Consumer Groups |
+| **Event Store** | KurrentDB (ehemals EventStoreDB) | Event-native DB, Event Sourcing, Subscriptions, Relational Sink, Go-Client |
 | **Frontend** | TypeScript + React 18 + Sass/SCSS | Großes Ökosystem, TypeScript-First, PWA-fähig |
-| **Datenbank** | PostgreSQL 16 (Schema-per-Service) | JSON-Support, Row-Level Security, eine Instanz für Self-Hosting |
+| **Datenbank** | PostgreSQL 16 (Schema-per-Service) | Read-Projections, JSON-Support, Row-Level Security |
 | **Cache** | Redis 7 | Session Store, API-Caching, Rate Limiting |
 | **Deployment** | Docker / Docker Compose | Ein `docker compose up` startet alles |
 | **Service Discovery** | Docker DNS + Traefik Labels | Kein Consul nötig für Self-Hosting |
@@ -90,13 +92,16 @@ MyRMS (My Rental Management System) ist eine selbst-gehostete, Open-Source-Lösu
    │      │      │      │      │      │      │      │      │
    ▼      ▼      ▼      ▼      ▼      ▼      ▼      ▼      ▼
 ┌────────────────────────────────────────────────────────────────┐
-│              NATS JetStream (Event Bus + Event Store)           │
+│          KurrentDB (Event Store — Source of Truth)              │
 │                                                                 │
-│  Streams: EQUIPMENT, PROJECTS, INVOICES, WAREHOUSE, SCANS,     │
-│           MAINTENANCE, TRANSPORT, INSURANCE, CREW, WORKFLOWS,   │
-│           DOCUMENTS, AI, NOTIFICATIONS, AUDIT                   │
+│  Streams: equipment-, project-, invoice-, warehouse-, scan-,    │
+│           maintenance-, transport-, insurance-, crew-, workflow-,│
+│           document-, ai-, notification-                          │
+│                                                                 │
+│  Subscriptions → Services projizieren in PostgreSQL             │
+│  Relational Sink → automatische Projektion nach PostgreSQL      │
 └──┬──────────────────────────────────────────────────────────┬──┘
-   │                                                          │
+   │  Catch-up Subscriptions                                  │
    ▼                                                          ▼
 ┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌────────────┐
 │Maint││Trans││Insur││Work ││AI   ││Notif││Repor││Audit Svc   │
@@ -107,13 +112,13 @@ MyRMS (My Rental Management System) ist eine selbst-gehostete, Open-Source-Lösu
    │      │      │      │      │      │      │   └────────────┘
    ▼      ▼      ▼      ▼      ▼      ▼      ▼
 ┌────────────────────────────────────────────────────────────────┐
-│              PostgreSQL 16 (Schema-per-Service)                 │
+│         PostgreSQL 16 (Read-Projections, Schema-per-Service)    │
 │                                                                 │
 │  auth_schema │ inventory_schema │ project_schema │ scanner_     │
 │  warehouse_  │ invoice_schema   │ document_      │ crew_schema  │
 │  federation_ │ maintenance_     │ transport_     │ insurance_   │
 │  workflow_   │ ai_schema        │ notification_  │ reporting_   │
-│  audit_schema│ event_store_schema                               │
+│  audit_schema                                                   │
 └────────────────────────────────────────────────────────────────┘
 
             ┌──────────────────────────────────┐
@@ -150,9 +155,9 @@ Firma A ◄──── Federation API (mTLS REST) ────► Firma B
 
 ```
 1. Lisa scannt QR-Code → scanner-service
-2. scanner-service publiziert: "scan.completed" (NATS)
+2. scanner-service appended Event "scan.completed" → KurrentDB Stream "scan-events"
 3. scanner-service ruft inventory-service API auf: POST /equipment/{id}/check-out
-4. inventory-service ändert Status → publiziert: "equipment.checked_out"
+4. inventory-service ändert Status → appended Event "equipment.checked_out" → KurrentDB Stream "equipment-{id}"
 5. Parallel reagieren:
    ├─ project-service:     aktualisiert Packlisten-Status
    ├─ warehouse-service:   bucht Warenbewegung (Auslagerung)
@@ -228,16 +233,21 @@ services:
       retries: 5
     restart: unless-stopped
 
-  nats:
-    image: nats:2.10-alpine
-    command: ["--jetstream", "--store_dir=/data", "-m", "8222"]
+  kurrentdb:
+    image: ghcr.io/kurrent-io/kurrentdb:latest
+    environment:
+      KURRENTDB_INSECURE: "true"  # Für Dev; in Prod: TLS-Zertifikate
+      KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP: "true"
+      KURRENTDB_MEM_DB: "false"
+    ports:
+      - "2113:2113"   # HTTP API + Admin UI
     volumes:
-      - natsdata:/data
+      - kurrentdata:/var/lib/kurrentdb
     healthcheck:
-      test: ["CMD", "nats-server", "--signal", "ldm"]
+      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
     restart: unless-stopped
 
   redis:
@@ -266,10 +276,10 @@ services:
     image: myrms/auth-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=auth_schema
-      NATS_URL: nats://nats:4222
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${SECRET_KEY}
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy }, redis: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy }, redis: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/auth`, `/api/users`, `/api/roles`)"
@@ -279,10 +289,10 @@ services:
     image: myrms/inventory-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=inventory_schema
-      NATS_URL: nats://nats:4222
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
       REDIS_URL: redis://redis:6379
       AUTH_SERVICE_URL: http://auth-service:8001
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.inventory.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/equipment`, `/api/categories`, `/api/labels`, `/api/price-rules`, `/api/bundles`)"
@@ -292,9 +302,9 @@ services:
     image: myrms/project-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=project_schema
-      NATS_URL: nats://nats:4222
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
       REDIS_URL: redis://redis:6379
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.project.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/projects`)"
@@ -304,8 +314,8 @@ services:
     image: myrms/scanner-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=scanner_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.scanner.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/scan`, `/api/check-in`, `/api/check-out`)"
@@ -315,8 +325,8 @@ services:
     image: myrms/warehouse-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=warehouse_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.warehouse.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/warehouse`, `/api/inventory/optimization`)"
@@ -326,12 +336,12 @@ services:
     image: myrms/invoice-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=invoice_schema
-      NATS_URL: nats://nats:4222
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.invoice.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/invoices`, `/api/credit-notes`, `/api/dunning`, `/api/datev`, `/api/bank`)"
@@ -341,8 +351,8 @@ services:
     image: myrms/document-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=document_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     volumes:
       - uploads:/app/uploads
     labels:
@@ -354,8 +364,8 @@ services:
     image: myrms/crew-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=crew_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crew.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/crew`)"
@@ -365,8 +375,8 @@ services:
     image: myrms/federation-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=federation_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     volumes:
       - federation_certs:/app/certs
     labels:
@@ -378,8 +388,8 @@ services:
     image: myrms/maintenance-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=maintenance_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.maintenance.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/maintenance`, `/api/echeck`)"
@@ -389,8 +399,8 @@ services:
     image: myrms/transport-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=transport_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.transport.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/vehicles`, `/api/tours`, `/api/ai/routes`, `/api/ai/transport`)"
@@ -400,8 +410,8 @@ services:
     image: myrms/insurance-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=insurance_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.insurance.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/insurance`, `/api/damage-reports`, `/api/ai/insurance`, `/api/ai/damage`)"
@@ -411,8 +421,8 @@ services:
     image: myrms/workflow-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=workflow_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.workflow.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/workflows`)"
@@ -422,9 +432,9 @@ services:
     image: myrms/ai-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=ai_schema
-      NATS_URL: nats://nats:4222
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
       REDIS_URL: redis://redis:6379
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ai.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/ai`)"
@@ -434,12 +444,12 @@ services:
     image: myrms/notification-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=notification_schema
-      NATS_URL: nats://nats:4222
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.notification.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/notifications`)"
@@ -449,9 +459,9 @@ services:
     image: myrms/reporting-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=reporting_schema
-      NATS_URL: nats://nats:4222
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
       REDIS_URL: redis://redis:6379
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.reporting.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/reports`, `/api/dashboard`, `/api/kpis`)"
@@ -461,8 +471,8 @@ services:
     image: myrms/audit-service:latest
     environment:
       DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=audit_schema
-      NATS_URL: nats://nats:4222
-    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+      KURRENTDB_URL: esdb://kurrentdb:2113?tls=false
+    depends_on: { db: { condition: service_healthy }, kurrentdb: { condition: service_healthy } }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.audit.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/audit`)"
@@ -470,7 +480,7 @@ services:
 
 volumes:
   pgdata:
-  natsdata:
+  kurrentdata:
   redisdata:
   uploads:
   backups:
