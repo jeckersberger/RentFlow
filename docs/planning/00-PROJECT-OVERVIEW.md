@@ -11,7 +11,7 @@
 MyRMS (My Rental Management System) ist eine selbst-gehostete, Open-Source-Lösung für Verleihunternehmen in der Veranstaltungstechnik. Sie ersetzt Excel, Word und WhatsApp durch ein integriertes System für Lagerverwaltung, Projektplanung, Rechnungsstellung und Partner-Zusammenarbeit.
 
 ### Zielgruppe
-- Veranstaltungstechnik-Firmen mit 1-30 Mitarbeitern im DACH-Raum
+- Veranstaltungstechnik-Firmen mit 1-100 Mitarbeitern im DACH-Raum
 - Unternehmen die Self-Hosting bevorzugen (eigene Daten, keine SaaS-Abhängigkeit)
 - Firmen die regelmäßig Equipment untereinander verleihen (Federation)
 
@@ -31,15 +31,30 @@ MyRMS (My Rental Management System) ist eine selbst-gehostete, Open-Source-Lösu
 
 ---
 
-## 2. Tech-Stack
+## 2. Architektur-Prinzipien
+
+**Microservice Architecture (MSA) + Event-Driven Architecture (EDA)**
+
+- Jeder Bounded Context ist ein eigenständiger Go-Microservice
+- Services kommunizieren asynchron über NATS JetStream (Event Bus)
+- Synchrone Kommunikation nur wo nötig (API Gateway → Service)
+- Database-per-Service: jeder Service besitzt sein eigenes PostgreSQL-Schema
+- Saga Pattern für verteilte Transaktionen
+- CQRS für Reporting (Materialized Views aus Event-Stream)
+- Event Store in NATS JetStream für Replay/Audit
+
+## 3. Tech-Stack
 
 | Schicht | Technologie | Begründung |
 |---------|-------------|------------|
-| **Backend** | Go 1.22+ | Performance, Single-Binary, starke Concurrency, einfaches Deployment |
+| **Backend** | Go 1.22+ (pro Microservice) | Performance, Single-Binary, starke Concurrency |
+| **API Gateway** | Traefik v3 | Service-Routing, Load Balancing, Rate Limiting, Docker-native |
+| **Message Broker** | NATS JetStream | Leichtgewichtig, Go-nativ, persistent, Event Store, Consumer Groups |
 | **Frontend** | TypeScript + React 18 + Sass/SCSS | Großes Ökosystem, TypeScript-First, PWA-fähig |
-| **Datenbank** | PostgreSQL 16 | JSON-Support, Row-Level Security, robuste Erweiterbarkeit |
-| **Deployment** | Docker / Docker Compose | Reproduzierbar, Self-Hosting, einfache Updates |
-| **Reverse Proxy** | Caddy (im Docker-Stack) | Automatisches HTTPS (Let's Encrypt), Zero-Config |
+| **Datenbank** | PostgreSQL 16 (Schema-per-Service) | JSON-Support, Row-Level Security, eine Instanz für Self-Hosting |
+| **Cache** | Redis 7 | Session Store, API-Caching, Rate Limiting |
+| **Deployment** | Docker / Docker Compose | Ein `docker compose up` startet alles |
+| **Service Discovery** | Docker DNS + Traefik Labels | Kein Consul nötig für Self-Hosting |
 | **i18n** | DE/EN von Beginn an | react-i18next (Frontend), Go embed (Backend) |
 | **Scanner** | USB-Barcode, Zebra Android-Handheld, Handy-Kamera, RFID | Alle gängigen Szenarien abgedeckt |
 | **PDF-Erzeugung** | Go: go-pdf / chromedp | Rechnungen, Verträge, Prüfprotokolle, Labels |
@@ -48,91 +63,164 @@ MyRMS (My Rental Management System) ist eine selbst-gehostete, Open-Source-Lösu
 | **Echtzeit** | WebSocket (gorilla/websocket) | Live-Updates Dashboard, Scanner-Feedback, Notifications |
 | **Kalender-Sync** | CalDAV / ICS-Export | Crew-Kalender kompatibel mit iPhone, Android, Outlook |
 | **Backup** | pg_dump + AES-256 Verschlüsselung | Automatisch, Multi-Destination |
+| **Observability** | Prometheus + Grafana + zerolog | Metriken, Dashboards, strukturiertes Logging |
+| **Tracing** | Correlation-ID (alle Services) | Verteiltes Request-Tracing über Service-Grenzen |
 
 ---
 
-## 3. System-Architektur
+## 4. System-Architektur (MSA + EDA)
 
 ```
-┌───────────────────────────────────────────────────────────┐
-│                        Clients                             │
-│  Desktop-Browser │ Tablet │ Handy (PWA) │ Zebra TC21       │
-│  Kunden-Portal   │ Freelancer-App                          │
-└──────────────────────────┬────────────────────────────────┘
-                           │ HTTPS (Caddy → Let's Encrypt)
-┌──────────────────────────▼────────────────────────────────┐
-│                    Go Backend (API)                         │
-│                                                            │
-│  ┌─────────────┐ ┌─────────────┐ ┌──────────────────────┐ │
-│  │ Auth/Rollen  │ │ Inventar &  │ │ Projekte &           │ │
-│  │ (JWT+RBAC)   │ │ Lagerorte   │ │ Packlisten           │ │
-│  └─────────────┘ └─────────────┘ └──────────────────────┘ │
-│  ┌─────────────┐ ┌─────────────┐ ┌──────────────────────┐ │
-│  │ Rechnungen & │ │ Scanner &   │ │ Federation-API       │ │
-│  │ Buchhaltung  │ │ RFID        │ │ (mTLS P2P)           │ │
-│  └─────────────┘ └─────────────┘ └──────────────────────┘ │
-│  ┌─────────────┐ ┌─────────────┐ ┌──────────────────────┐ │
-│  │ Wartung &    │ │ Transport & │ │ Verträge &           │ │
-│  │ E-Check      │ │ Logistik    │ │ Versicherung         │ │
-│  └─────────────┘ └─────────────┘ └──────────────────────┘ │
-│  ┌─────────────┐ ┌─────────────┐ ┌──────────────────────┐ │
-│  │ Crew &       │ │ Workflow-   │ │ AI-Services          │ │
-│  │ Personal     │ │ Engine      │ │ (Multi-Provider)     │ │
-│  └─────────────┘ └─────────────┘ └──────────────────────┘ │
-│  ┌─────────────┐ ┌─────────────┐ ┌──────────────────────┐ │
-│  │ Flightcase   │ │ Notification│ │ Audit-Trail          │ │
-│  │ Management   │ │ Center      │ │ (GoBD)               │ │
-│  └─────────────┘ └─────────────┘ └──────────────────────┘ │
-│  ┌─────────────┐ ┌─────────────┐ ┌──────────────────────┐ │
-│  │ Dokument-    │ │ E-Mail      │ │ Backup &             │ │
-│  │ Engine       │ │ System      │ │ Recovery             │ │
-│  └─────────────┘ └─────────────┘ └──────────────────────┘ │
-└──────────────────────────┬────────────────────────────────┘
-                           │
-          ┌────────────────▼────────────────┐
-          │        PostgreSQL 16 DB         │
-          │  (Row-Level Security pro Firma) │
-          └─────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                          Clients                                │
+│  Desktop-Browser │ Tablet │ Handy (PWA) │ Zebra TC21 │ Portal   │
+└──────────────────────────┬─────────────────────────────────────┘
+                           │ HTTPS
+┌──────────────────────────▼─────────────────────────────────────┐
+│                   Traefik v3 (API Gateway)                      │
+│          Routing │ Load Balancing │ Rate Limiting │ TLS          │
+└──┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬──┘
+   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │
+   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼
+┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐
+│Auth ││Inven││Proj ││Scan ││Ware ││Invoic││Doc  ││Crew ││Feder│
+│Svc  ││tory ││ect  ││ner  ││house││e Svc ││Svc  ││Svc  ││ation│
+│:8001││:8002││:8003││:8004││:8005││:8006 ││:8007││:8008││:8009│
+└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘
+   │      │      │      │      │      │      │      │      │
+   ▼      ▼      ▼      ▼      ▼      ▼      ▼      ▼      ▼
+┌────────────────────────────────────────────────────────────────┐
+│              NATS JetStream (Event Bus + Event Store)           │
+│                                                                 │
+│  Streams: EQUIPMENT, PROJECTS, INVOICES, WAREHOUSE, SCANS,     │
+│           MAINTENANCE, TRANSPORT, INSURANCE, CREW, WORKFLOWS,   │
+│           DOCUMENTS, AI, NOTIFICATIONS, AUDIT                   │
+└──┬──────────────────────────────────────────────────────────┬──┘
+   │                                                          │
+   ▼                                                          ▼
+┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌────────────┐
+│Maint││Trans││Insur││Work ││AI   ││Notif││Repor││Audit Svc   │
+│enanc││port ││ance ││flow ││Svc  ││icat.││ting ││(GoBD)      │
+│e Svc││Svc  ││Svc  ││Svc  ││:8014││Svc  ││Svc  ││:8017       │
+│:8010││:8011││:8012││:8013││     ││:8015││:8016││(konsumiert  │
+└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘│ALLE Events)│
+   │      │      │      │      │      │      │   └────────────┘
+   ▼      ▼      ▼      ▼      ▼      ▼      ▼
+┌────────────────────────────────────────────────────────────────┐
+│              PostgreSQL 16 (Schema-per-Service)                 │
+│                                                                 │
+│  auth_schema │ inventory_schema │ project_schema │ scanner_     │
+│  warehouse_  │ invoice_schema   │ document_      │ crew_schema  │
+│  federation_ │ maintenance_     │ transport_     │ insurance_   │
+│  workflow_   │ ai_schema        │ notification_  │ reporting_   │
+│  audit_schema│ event_store_schema                               │
+└────────────────────────────────────────────────────────────────┘
+
+            ┌──────────────────────────────────┐
+            │           Redis 7                 │
+            │  Sessions │ Cache │ Rate Limits   │
+            └──────────────────────────────────┘
 
 Firma A ◄──── Federation API (mTLS REST) ────► Firma B
 ```
 
+### Microservice-Übersicht
+
+| Service | Port | Module | Verantwortung |
+|---------|------|--------|---------------|
+| auth-service | :8001 | AUTH | JWT, RBAC, User, Tenants |
+| inventory-service | :8002 | INV, A1, L1, L2, N5, N3 | Equipment, Kategorien, Preise, Labels, Flightcases |
+| project-service | :8003 | PROJ, N6 | Projekte, Packlisten, Reservierungen, Timeline |
+| scanner-service | :8004 | SCAN | QR/Barcode/RFID, Check-In/Out, Offline-Sync |
+| warehouse-service | :8005 | L3, L4, L5 | Lagerplätze, Warenbewegung, Inventur, Optimierung, Reporting |
+| invoice-service | :8006 | INV-FIN, BANK | Rechnungen, Mahnwesen, DATEV, Bank-Import |
+| document-service | :8007 | DOC, J1, D2 | PDF, Templates, Verträge, Labels, I17-OCR |
+| crew-service | :8008 | N1, I14 | Crew, Freelancer, Zeiterfassung, CalDAV |
+| federation-service | :8009 | FED | mTLS P2P, Equipment-Sharing, Sub-Rental |
+| maintenance-service | :8010 | J2, N2 | Wartung, E-Check/DGUV V3, Checklisten |
+| transport-service | :8011 | J3, I11, I16 | Fahrzeuge, Touren, Routen, Transportkosten |
+| insurance-service | :8012 | K2, K3, I12, I13 | Policen, Schäden, Risiko-Analyse |
+| workflow-service | :8013 | K1 | No-Code Workflows, Event-Trigger |
+| ai-service | :8014 | I1-I3, I6, I9, I10, I15 | Multi-Provider AI, Anonymisierung, Prognosen |
+| notification-service | :8015 | N7, EMAIL | In-App, Push, E-Mail, Preferences |
+| reporting-service | :8016 | DASH, L5-Nachh | CQRS Read-Side, KPIs, Dashboards, ESG |
+| audit-service | :8017 | N8 | GoBD Audit-Trail, Checksummen |
+
+### Event-Flow Beispiel: Equipment Check-Out
+
+```
+1. Lisa scannt QR-Code → scanner-service
+2. scanner-service publiziert: "scan.completed" (NATS)
+3. scanner-service ruft inventory-service API auf: POST /equipment/{id}/check-out
+4. inventory-service ändert Status → publiziert: "equipment.checked_out"
+5. Parallel reagieren:
+   ├─ project-service:     aktualisiert Packlisten-Status
+   ├─ warehouse-service:   bucht Warenbewegung (Auslagerung)
+   ├─ notification-service: benachrichtigt Projektleiter
+   ├─ reporting-service:   aktualisiert Auslastungs-KPI
+   └─ audit-service:       loggt unveränderlich (GoBD)
+```
+
+### Event-Schema (Standard für alle Services)
+
+```json
+{
+  "event_id": "550e8400-e29b-41d4-a716-446655440000",
+  "event_type": "equipment.checked_out",
+  "aggregate_type": "equipment",
+  "aggregate_id": "uuid-des-equipments",
+  "tenant_id": "uuid-der-firma",
+  "correlation_id": "uuid-für-request-tracing",
+  "timestamp": "2026-03-20T10:30:00Z",
+  "version": 1,
+  "data": {
+    "equipment_id": "...",
+    "project_id": "...",
+    "checked_out_by": "user-uuid",
+    "condition": "ok"
+  },
+  "metadata": {
+    "user_id": "uuid",
+    "source_service": "inventory-service"
+  }
+}
+```
+
 ---
 
-## 4. Docker Compose Stack
+## 5. Docker Compose Stack (Produktion)
 
 ```yaml
 services:
-  app:
-    # Go Backend + eingebettetes React-Frontend (Single Binary)
-    image: myrms/myrms:latest
+  # ─── Infrastruktur ───────────────────────────────────────
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ADMIN_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
     ports:
-      - "8080:8080"
-    environment:
-      - DATABASE_URL=postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable
-      - DOMAIN=${DOMAIN}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - SECRET_KEY=${SECRET_KEY}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+      - "80:80"
+      - "443:443"
     volumes:
-      - uploads:/app/uploads
-      - backups:/app/backups
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_DB=myrms
-      - POSTGRES_USER=myrms
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      POSTGRES_DB: myrms
+      POSTGRES_USER: myrms
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-schemas.sql:/docker-entrypoint-initdb.d/01-schemas.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U myrms"]
       interval: 5s
@@ -140,21 +228,254 @@ services:
       retries: 5
     restart: unless-stopped
 
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
+  nats:
+    image: nats:2.10-alpine
+    command: ["--jetstream", "--store_dir=/data", "-m", "8222"]
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
+      - natsdata:/data
+    healthcheck:
+      test: ["CMD", "nats-server", "--signal", "ldm"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  # ─── Frontend ────────────────────────────────────────────
+  frontend:
+    image: myrms/frontend:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+    restart: unless-stopped
+
+  # ─── Microservices ───────────────────────────────────────
+  auth-service:
+    image: myrms/auth-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=auth_schema
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${SECRET_KEY}
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy }, redis: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/auth`, `/api/users`, `/api/roles`)"
+    restart: unless-stopped
+
+  inventory-service:
+    image: myrms/inventory-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=inventory_schema
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+      AUTH_SERVICE_URL: http://auth-service:8001
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inventory.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/equipment`, `/api/categories`, `/api/labels`, `/api/price-rules`, `/api/bundles`)"
+    restart: unless-stopped
+
+  project-service:
+    image: myrms/project-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=project_schema
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.project.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/projects`)"
+    restart: unless-stopped
+
+  scanner-service:
+    image: myrms/scanner-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=scanner_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.scanner.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/scan`, `/api/check-in`, `/api/check-out`)"
+    restart: unless-stopped
+
+  warehouse-service:
+    image: myrms/warehouse-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=warehouse_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.warehouse.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/warehouse`, `/api/inventory/optimization`)"
+    restart: unless-stopped
+
+  invoice-service:
+    image: myrms/invoice-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=invoice_schema
+      NATS_URL: nats://nats:4222
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.invoice.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/invoices`, `/api/credit-notes`, `/api/dunning`, `/api/datev`, `/api/bank`)"
+    restart: unless-stopped
+
+  document-service:
+    image: myrms/document-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=document_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    volumes:
+      - uploads:/app/uploads
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.document.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/documents`, `/api/templates`, `/api/contracts`)"
+    restart: unless-stopped
+
+  crew-service:
+    image: myrms/crew-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=crew_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crew.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/crew`)"
+    restart: unless-stopped
+
+  federation-service:
+    image: myrms/federation-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=federation_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    volumes:
+      - federation_certs:/app/certs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.federation.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/federation`)"
+    restart: unless-stopped
+
+  maintenance-service:
+    image: myrms/maintenance-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=maintenance_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.maintenance.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/maintenance`, `/api/echeck`)"
+    restart: unless-stopped
+
+  transport-service:
+    image: myrms/transport-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=transport_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.transport.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/vehicles`, `/api/tours`, `/api/ai/routes`, `/api/ai/transport`)"
+    restart: unless-stopped
+
+  insurance-service:
+    image: myrms/insurance-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=insurance_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.insurance.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/insurance`, `/api/damage-reports`, `/api/ai/insurance`, `/api/ai/damage`)"
+    restart: unless-stopped
+
+  workflow-service:
+    image: myrms/workflow-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=workflow_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.workflow.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/workflows`)"
+    restart: unless-stopped
+
+  ai-service:
+    image: myrms/ai-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=ai_schema
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/ai`)"
+    restart: unless-stopped
+
+  notification-service:
+    image: myrms/notification-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=notification_schema
+      NATS_URL: nats://nats:4222
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notification.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/notifications`)"
+    restart: unless-stopped
+
+  reporting-service:
+    image: myrms/reporting-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=reporting_schema
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.reporting.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/reports`, `/api/dashboard`, `/api/kpis`)"
+    restart: unless-stopped
+
+  audit-service:
+    image: myrms/audit-service:latest
+    environment:
+      DATABASE_URL: postgres://myrms:${DB_PASSWORD}@db:5432/myrms?sslmode=disable&search_path=audit_schema
+      NATS_URL: nats://nats:4222
+    depends_on: { db: { condition: service_healthy }, nats: { condition: service_healthy } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.audit.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/audit`)"
     restart: unless-stopped
 
 volumes:
   pgdata:
+  natsdata:
+  redisdata:
   uploads:
   backups:
-  caddy_data:
+  letsencrypt:
+  federation_certs:
 ```
 
 **Minimal `.env`:**
@@ -162,7 +483,27 @@ volumes:
 DOMAIN=myrms.example.com
 DB_PASSWORD=sicheres-passwort-hier
 ADMIN_EMAIL=marco@example.com
-SECRET_KEY=generierter-key
+SECRET_KEY=generierter-jwt-secret
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=noreply@example.com
+SMTP_PASSWORD=smtp-passwort
+```
+
+### Skalierung (bei Bedarf)
+
+```yaml
+# Einzelne Services horizontal skalieren:
+services:
+  scanner-service:
+    deploy:
+      replicas: 3  # Festival-Saison: viele parallele Scans
+  ai-service:
+    deploy:
+      replicas: 2  # KI-Anfragen parallelisieren
+      resources:
+        limits:
+          memory: 2G
 ```
 
 ---

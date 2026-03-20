@@ -1,94 +1,184 @@
-# Architektur-Übersicht
+# Architektur-Übersicht — Microservice + Event-Driven Architecture
+
+**Stand:** 20. März 2026
+
+## Architektur-Prinzipien
+
+1. **Microservice Architecture (MSA)**: Jeder Bounded Context ist ein eigenständiger Go-Service
+2. **Event-Driven Architecture (EDA)**: Services kommunizieren primär über Domain Events (NATS JetStream)
+3. **Database-per-Service**: Jeder Service besitzt sein eigenes PostgreSQL-Schema
+4. **API Gateway Pattern**: Traefik routet alle Client-Requests zum richtigen Service
+5. **CQRS**: Reporting-Service baut Materialized Views aus dem Event-Stream (Read-Optimiert)
+6. **Saga Pattern**: Verteilte Transaktionen über Event-Choreografie
+7. **Event Sourcing**: NATS JetStream als Event Store für Replay und Audit
 
 ## Tech-Stack
 
-| Komponente | Technologie |
-|-----------|-------------|
-| Frontend | TypeScript + React + Sass/SCSS |
-| Backend | Go (REST API) |
-| Datenbank | PostgreSQL |
-| Deployment | Docker / Docker Compose |
-| i18n | Mehrsprachig (DE/EN) von Beginn an |
-| Scanner | USB-Barcode, Android-Handheld, Handy-Kamera |
+| Komponente | Technologie | Begründung |
+|-----------|-------------|------------|
+| Backend | Go 1.22+ (pro Service) | Performance, Single-Binary, Concurrency |
+| API Gateway | Traefik v3 | Docker-native, automatisches Service-Discovery |
+| Message Broker | NATS JetStream | Leichtgewichtig, Go-nativ, persistent, Consumer Groups |
+| Frontend | TypeScript + React 18 + Sass/SCSS | PWA-fähig, großes Ökosystem |
+| Datenbank | PostgreSQL 16 | Schema-per-Service, JSONB, Row-Level Security |
+| Cache | Redis 7 | Sessions, API-Cache, Rate Limiting |
+| Deployment | Docker Compose | Self-Hosting, ein Befehl startet alles |
+| Scanner | USB-Barcode, Zebra TC21, Handy-Kamera, RFID | Alle VT-Szenarien |
+| Observability | Prometheus + Grafana + zerolog | Metriken, Dashboards, Logging |
 
 ## System-Architektur
 
 ```
-┌─────────────────────────────────────────────────┐
-│                    Clients                       │
-│  Browser (PC/Laptop) │ Tablet │ Handy │ Scanner  │
-└──────────────────────┬──────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│                        Clients                              │
+│  Browser (Desktop/Tablet/Handy) │ PWA │ Scanner │ Portal    │
+└──────────────────────┬─────────────────────────────────────┘
                        │ HTTPS
-┌──────────────────────▼──────────────────────────┐
-│              Go Backend (API)                    │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│  │ Lager    │ │Rechnungen│ │ Federation-API   │ │
-│  │ Modul    │ │ Modul    │ │ (Firma↔Firma)    │ │
-│  └──────────┘ └──────────┘ └──────────────────┘ │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│  │ Auth/    │ │ Scanner  │ │ PDF/Export       │ │
-│  │ Rollen   │ │ Service  │ │ Service          │ │
-│  └──────────┘ └──────────┘ └──────────────────┘ │
-└──────────────────────┬──────────────────────────┘
-                       │
-         ┌─────────────▼─────────────┐
-         │      PostgreSQL DB        │
-         └───────────────────────────┘
-
-Firma A ◄──── Federation API (mTLS) ────► Firma B
+┌──────────────────────▼─────────────────────────────────────┐
+│               Traefik v3 (API Gateway)                      │
+│       TLS Termination │ Routing │ Load Balancing             │
+│       Rate Limiting │ Circuit Breaker │ Health Checks        │
+└──┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬──┘
+   │   │   │   │   │   │   │   │   │   │   │   │   │   │
+   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼
+ ┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐
+ │AUT││INV││PRJ││SCN││WHS││INV││DOC││CRW││FED││MNT││...│
+ │H  ││ENT││ECT││NER││E  ││OIC││   ││   ││   ││   ││   │
+ └─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘
+   └────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴───┘
+                              │
+              ┌───────────────▼───────────────┐
+              │   NATS JetStream (Event Bus)   │
+              │   Persistent │ Consumer Groups  │
+              │   At-Least-Once │ Replay        │
+              └───────────────┬───────────────┘
+                              │
+              ┌───────────────▼───────────────┐
+              │   PostgreSQL 16                │
+              │   Schema-per-Service           │
+              │   (eine Instanz, N Schemas)    │
+              └───────────────────────────────┘
 ```
 
-## Multi-Firma Federation
+## Microservices (17 Services)
 
-- Jede Firma hostet eigene Instanz (eigener Server, eigene DB)
-- Peer-to-Peer Verbindung über sichere REST-API mit mTLS (mutual TLS)
-- Firmen können sich gegenseitig "verknüpfen" (Einladung/Bestätigung)
-- Mögliche Interaktionen: Equipment-Verfügbarkeit abfragen, Ausleihen, Sub-Rental
-- Jede Firma kontrolliert selbst welche Daten geteilt werden
+| # | Service | Port | Verantwortung |
+|---|---------|------|---------------|
+| 1 | auth-service | :8001 | JWT, RBAC, Users, Tenants, Sessions |
+| 2 | inventory-service | :8002 | Equipment, Kategorien, Preise, Labels, Flightcases |
+| 3 | project-service | :8003 | Projekte, Packlisten, Reservierungen |
+| 4 | scanner-service | :8004 | QR/Barcode/RFID, Check-In/Out, Offline-Sync |
+| 5 | warehouse-service | :8005 | Lagerplätze, Warenbewegung, Inventur, Optimierung |
+| 6 | invoice-service | :8006 | Rechnungen, Mahnwesen, DATEV, Bank-Integration |
+| 7 | document-service | :8007 | PDF, Templates, Verträge, OCR |
+| 8 | crew-service | :8008 | Personal, Freelancer, Zeiterfassung, CalDAV |
+| 9 | federation-service | :8009 | mTLS P2P, Equipment-Sharing, Sub-Rental |
+| 10 | maintenance-service | :8010 | Wartung, E-Check/DGUV V3 |
+| 11 | transport-service | :8011 | Fahrzeuge, Touren, Routen, Transportkosten |
+| 12 | insurance-service | :8012 | Policen, Schäden, Risiko-Analyse |
+| 13 | workflow-service | :8013 | No-Code Workflows, Event-Trigger |
+| 14 | ai-service | :8014 | Multi-Provider AI, Anonymisierung, Prognosen |
+| 15 | notification-service | :8015 | In-App, Push, E-Mail |
+| 16 | reporting-service | :8016 | CQRS Read-Side, KPIs, Dashboards |
+| 17 | audit-service | :8017 | GoBD Audit-Trail, immutables Log |
 
-## Versionierung & Update-System
+## Event-Driven Communication
 
-### Semantic Versioning (SemVer)
-- Format: `MAJOR.MINOR.PATCH` (z.B. `1.2.3`)
-- MAJOR = Breaking Changes / große neue Features
-- MINOR = Neue Features, abwärtskompatibel
-- PATCH = Bugfixes, kleine Verbesserungen
+### NATS JetStream Streams
 
-### Git-Workflow
+Jeder Bounded Context hat seinen eigenen Stream:
+
+| Stream | Subjects | Producer |
+|--------|----------|----------|
+| EQUIPMENT | equipment.created, .updated, .checked_out, .checked_in, .reserved, .released | inventory-service |
+| PROJECTS | project.created, .updated, .status_changed, .completed | project-service |
+| SCANS | scan.completed, checkin.completed, checkout.completed | scanner-service |
+| WAREHOUSE | stock.updated, .below_minimum, .movement_recorded, reorder.* | warehouse-service |
+| INVOICES | invoice.created, .sent, .paid, .overdue, payment.received, dunning.sent | invoice-service |
+| DOCUMENTS | document.generated, .uploaded, .extracted | document-service |
+| CREW | crew.assigned, .availability_changed, .time_recorded | crew-service |
+| FEDERATION | federation.partner_connected, .equipment_shared, .rental_requested | federation-service |
+| MAINTENANCE | maintenance.scheduled, .completed, .overdue, echeck.* | maintenance-service |
+| TRANSPORT | tour.created, .optimized, .completed, vehicle.assigned | transport-service |
+| INSURANCE | policy.*, claim.*, damage.reported, risk_score.updated | insurance-service |
+| WORKFLOWS | workflow.executed, .failed | workflow-service |
+| AI | ai.analysis_completed, ai.prediction_generated | ai-service |
+| NOTIFICATIONS | notification.sent, .read | notification-service |
+
+### Spezielle Consumer-Patterns
+
+- **audit-service**: Subscribt auf ALLE Streams → immutable logging
+- **reporting-service**: Subscribt auf ALLE Streams → baut Materialized Views
+- **notification-service**: Subscribt auf relevante Events → transformiert zu User-Notifications
+- **workflow-service**: Subscribt auf ALLE Events → evaluiert Trigger-Bedingungen
+
+## Database-per-Service (Schema Isolation)
+
+```sql
+-- Eine PostgreSQL-Instanz, ein Schema pro Service
+CREATE SCHEMA auth_schema;
+CREATE SCHEMA inventory_schema;
+CREATE SCHEMA project_schema;
+CREATE SCHEMA scanner_schema;
+CREATE SCHEMA warehouse_schema;
+CREATE SCHEMA invoice_schema;
+CREATE SCHEMA document_schema;
+CREATE SCHEMA crew_schema;
+CREATE SCHEMA federation_schema;
+CREATE SCHEMA maintenance_schema;
+CREATE SCHEMA transport_schema;
+CREATE SCHEMA insurance_schema;
+CREATE SCHEMA workflow_schema;
+CREATE SCHEMA ai_schema;
+CREATE SCHEMA notification_schema;
+CREATE SCHEMA reporting_schema;
+CREATE SCHEMA audit_schema;
+CREATE SCHEMA event_store_schema;
 ```
-main (stable releases)
- ├── develop (aktive Entwicklung)
- │    ├── feature/*
- │    └── fix/*
- └── release/vX.Y.Z (Release-Vorbereitung)
+
+**Regeln:**
+- Kein Cross-Schema-Join erlaubt
+- Daten anderer Services nur über Events oder synchrone API-Calls
+- Jeder Service verwaltet seine eigenen Migrationen
+
+## Shared Go Library (pkg/common)
+
+```
+pkg/common/
+├── auth/          # JWT-Validation Middleware, RBAC Helpers
+├── events/        # NATS Client Wrapper, Event-Schemas (Go Structs)
+├── errors/        # Standard Error Types, HTTP Error Responses
+├── logging/       # Structured Logging (zerolog)
+├── middleware/     # Tenant Extraction, Request-ID, Correlation-ID
+├── health/        # Health Check + Readiness Endpoints
+├── config/        # Environment-basierte Konfiguration
+└── database/      # PostgreSQL Connection Helper, Migration Runner
 ```
 
-### Commit-Konventionen (Conventional Commits)
-```
-<type>(<scope>): <kurze Beschreibung>
-```
-Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
+## Multi-Firma Federation (P2P)
 
-### Auto-Update via UI
-1. Backend prüft GitHub auf neue Releases
-2. Admin sieht Update-Banner mit Changelog
-3. Klick auf "Jetzt updaten"
-4. Automatisch: Docker-Image pull → DB-Backup → Migration → Health-Check
-5. Bei Fehler: automatischer Rollback
+```
+Firma A (MyRMS-Instanz)          Firma B (MyRMS-Instanz)
+┌──────────────────────┐         ┌──────────────────────┐
+│  federation-service  │◄─mTLS──►│  federation-service  │
+│  (eigene DB, Events) │  REST   │  (eigene DB, Events) │
+└──────────────────────┘         └──────────────────────┘
+```
 
-### DB-Migrationen
-- Automatisch beim App-Start
-- Versionierte Migrations-Dateien im Repo
-- Rollback-Skripte für jede Migration
-- Automatisches Backup vor jeder Migration
+- Peer-to-Peer über mTLS (gegenseitige Zertifikat-Authentifizierung)
+- Jede Firma kontrolliert welche Daten geteilt werden
+- Equipment-Verfügbarkeit, Sub-Rental, Partner-Preise
 
 ## Entscheidungen
 
 | Entscheidung | Begründung |
 |-------------|-----------|
-| Go statt Node.js | Performance, einfaches Deployment (single binary), starke Concurrency |
-| PostgreSQL statt MySQL | Bessere JSON-Unterstützung, bessere Erweiterbarkeit, robuster |
-| React statt Vue | Größeres Ökosystem, mehr Libraries, TypeScript-First |
-| Docker | Einfaches Self-Hosting, reproduzierbare Umgebung, einfache Updates |
-| mTLS für Federation | Gegenseitige Authentifizierung, keine zentrale Authority nötig |
-| REST statt gRPC (Federation) | Einfacher zu debuggen, Firewall-freundlicher, breiter unterstützt |
+| Go pro Service | Performance, Single-Binary pro Service, einfaches Docker-Image |
+| NATS statt Kafka/RabbitMQ | Leichtgewichtig (50MB RAM), Go-nativ, JetStream = persistent + replay |
+| Traefik statt Kong/Nginx | Docker-native Service-Discovery, Labels statt Config-Files |
+| Schema-per-Service statt DB-per-Service | Pragmatisch für Self-Hosting (eine DB-Instanz reicht), logisch trotzdem isoliert |
+| Redis für Cache/Sessions | Einfach, schnell, weit verbreitet, minimaler Overhead |
+| PostgreSQL statt MySQL | JSONB, Row-Level Security, Schema-Support, bessere Erweiterbarkeit |
+| React statt Vue | Größeres Ökosystem, TypeScript-First, PWA-Libraries |
+| REST statt gRPC (extern) | Einfacher zu debuggen, Firewall-freundlicher |
+| mTLS für Federation | Keine zentrale Authority nötig, P2P-kompatibel |
