@@ -73,10 +73,12 @@ Statt teure Cloud-Lösungen mit Lizenzgebühren und Vendor Lock-in nutzen VT-Pro
 ## 🚀 Quick-Start
 
 ### Voraussetzungen
-- Docker & Docker Compose
-- Mindestens 2 GB RAM und 10 GB Speicher
+- Linux-Server (Ubuntu 22.04+ / Debian 12+)
+- Docker & Docker Compose v2
+- Mindestens 4 GB RAM, 20 GB Speicher
+- Eine Domain (für automatisches SSL via Let's Encrypt)
 
-### Installation in 5 Schritten
+### Installation in 4 Schritten
 
 #### 1. Repository klonen
 ```bash
@@ -88,81 +90,130 @@ cd rentflow
 ```bash
 cp .env.example .env
 # Passe folgende Werte in .env an:
-# - DATABASE_PASSWORD (sichere Passphrase)
-# - APP_URL (deine Domain oder IP)
+# - DOMAIN (deine Domain, z.B. rentflow.meinefirma.de)
+# - DB_PASSWORD (sichere Passphrase)
+# - ADMIN_EMAIL (deine E-Mail)
+# - JWT_SECRET (wird automatisch generiert wenn leer)
 ```
 
 #### 3. Docker Compose starten
 ```bash
 docker compose up -d
+# Startet: Traefik, KurrentDB, PostgreSQL, Redis, alle Services, Frontend
 ```
 
-#### 4. Datenbank initialisieren
-```bash
-docker compose exec api go run cmd/migrate/main.go
-```
+#### 4. Setup-Wizard im Browser
+Navigiere zu `https://deine-domain.de` — der Setup-Wizard führt dich durch:
+1. Firma anlegen (Name, Adresse, Logo)
+2. Admin-Account erstellen
+3. Erste Benutzer & Rollen
+4. Lager-Struktur definieren
+5. Grundeinstellungen (Sprache, Währung, MwSt)
 
-#### 5. Im Browser öffnen
-Navigiere zu `https://localhost` (oder deine konfigurierte Domain).
-
-**Standardanmeldedaten:**
-- Benutzername: `admin@rentflow.local`
-- Passwort: `[wird beim Setup gesetzt]`
-
-> ⚠️ Ändere das Admin-Passwort nach der ersten Anmeldung!
+> Empfohlener Server: Hetzner CX21 (4GB RAM, 40GB SSD) ab 5€/Monat
 
 ---
 
 ## 🏗️ Tech-Stack
 
-| Komponente | Technologie | Hinweis |
-|-----------|-----------|--------|
-| **Backend** | Go (REST API) | Modular, fast, gering RAM-Verbrauch |
-| **Frontend** | React + TypeScript | Modern, responsive, offline-ready |
-| **Datenbank** | PostgreSQL 14+ | ACID-Compliance, JSON-Support |
-| **Deployment** | Docker Compose | Single-File-Setup, Versionskontrolle |
-| **Reverse Proxy** | Caddy | Auto-HTTPS, Zero-Config |
-| **Scanner** | Barcode/QR (USB/Mobile) | Open-Source Decoder |
+| Komponente | Technologie | Begründung |
+|-----------|-------------|------------|
+| **Backend** | Go 1.22+ (17 Microservices) | Performance, Single-Binary, Concurrency |
+| **API Gateway** | Traefik v3 | Docker-native, automatisches Service-Discovery |
+| **Event Store** | KurrentDB (ehem. EventStoreDB) | Event Sourcing, Subscriptions, Relational Sink |
+| **Frontend** | React 18 + TypeScript + Sass | PWA-fähig, Offline-Support, großes Ökosystem |
+| **Read-DB** | PostgreSQL 16 | Schema-per-Service Projections, JSONB, RLS |
+| **Cache** | Redis 7 | Sessions, API-Cache, Rate Limiting |
+| **Deployment** | Docker Compose | Self-Hosting, ein Befehl startet alles |
+| **Scanner** | USB-Barcode, Zebra TC21, Handy-Kamera, RFID | Alle VT-Szenarien abgedeckt |
+| **Monitoring** | Prometheus + Grafana + zerolog | Metriken, Dashboards, strukturiertes Logging |
 
 ---
 
 ## 📐 Systemarchitektur
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Client Layer                          │
-│  ┌──────────────────┐  ┌──────────────────┐             │
-│  │ Web UI (React)   │  │ Mobile Scanner   │             │
-│  │ (localhost:3000) │  │ (Offline-Mode)   │             │
-│  └────────┬─────────┘  └─────────┬────────┘             │
-└───────────┼──────────────────────┼──────────────────────┘
-            │                      │
-     ┌──────┴──────────────────────┴──────┐
-     │  Caddy Reverse Proxy (Port 443)    │
-     │  - HTTPS Termination               │
-     │  - Auto-Renewal (Let's Encrypt)    │
-     └──────────────┬─────────────────────┘
-                    │
-        ┌───────────┴──────────┐
-        │  REST API (Go)       │
-        │  - /api/v1/...       │
-        │  - WebSocket (WS)    │
-        │  (localhost:8080)    │
-        └───────────┬──────────┘
-                    │
-        ┌───────────┴──────────┐
-        │   PostgreSQL 14+     │
-        │   - equipment        │
-        │   - projects         │
-        │   - invoices         │
-        │   (localhost:5432)   │
-        └──────────────────────┘
+**Microservice Architecture + Event Sourcing + CQRS**
 
-Federation API
-┌──────────────────────────────────┐
-│ P2P Equipment-Sharing Protocol    │
-│ (optional, externe Firmen)       │
-└──────────────────────────────────┘
+```
+┌────────────────────────────────────────────────────────────┐
+│                        Clients                              │
+│  Browser (Desktop/Tablet/Handy) │ PWA │ Scanner │ Portal    │
+└──────────────────────┬─────────────────────────────────────┘
+                       │ HTTPS
+┌──────────────────────▼─────────────────────────────────────┐
+│               Traefik v3 (API Gateway)                      │
+│       TLS Termination │ Routing │ Load Balancing             │
+│       Rate Limiting │ Circuit Breaker │ Health Checks        │
+└──┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬────┘
+   │   │   │   │   │   │   │   │   │   │   │   │   │   │
+   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼
+ ┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐┌───┐
+ │AUT││INV││PRJ││SCN││WHS││INV││DOC││CRW││FED││MNT││...│
+ │H  ││ENT││ECT││NER││E  ││OIC││   ││   ││   ││   ││   │
+ └─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘└─┬─┘
+   └────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴───┘
+                              │
+              ┌───────────────▼───────────────┐
+              │   KurrentDB (Event Store)      │
+              │   Source of Truth │ Immutable   │
+              │   Subscriptions │ Replay        │
+              │   Relational Sink → PostgreSQL  │
+              └───────────────┬───────────────┘
+                              │ Projections
+              ┌───────────────▼───────────────┐
+              │   PostgreSQL 16 (Read-Models)  │
+              │   Schema-per-Service           │
+              │   (eine Instanz, N Schemas)    │
+              └───────────────────────────────┘
+```
+
+### 17 Microservices
+
+| # | Service | Verantwortung |
+|---|---------|---------------|
+| 1 | auth-service | JWT, RBAC, Users, Tenants, Sessions |
+| 2 | inventory-service | Equipment, Kategorien, Preise, Labels, Flightcases |
+| 3 | project-service | Projekte, Packlisten, Reservierungen |
+| 4 | scanner-service | QR/Barcode/RFID, Check-In/Out, Offline-Sync |
+| 5 | warehouse-service | Lagerplätze, Warenbewegung, Inventur |
+| 6 | invoice-service | Rechnungen, Mahnwesen, DATEV, Bank-Integration |
+| 7 | document-service | PDF, Templates, Verträge, OCR |
+| 8 | crew-service | Personal, Freelancer, Zeiterfassung, CalDAV |
+| 9 | federation-service | mTLS P2P, Equipment-Sharing, Sub-Rental |
+| 10 | maintenance-service | Wartung, E-Check/DGUV V3 |
+| 11 | transport-service | Fahrzeuge, Touren, Routen |
+| 12 | insurance-service | Policen, Schäden, Risiko-Analyse |
+| 13 | workflow-service | No-Code Workflows, Event-Trigger |
+| 14 | ai-service | Multi-Provider AI, Anonymisierung, Prognosen |
+| 15 | notification-service | In-App, Push, E-Mail |
+| 16 | reporting-service | CQRS Read-Side, KPIs, Dashboards |
+| 17 | audit-service | GoBD Audit-Trail, immutables Log |
+
+### CQRS Write/Read Flow
+
+```
+WRITE (Command):                    READ (Query):
+  Client → Traefik                    Client → Traefik
+    → Service                           → Service
+      → Validate                          → PostgreSQL (Read-Model)
+      → Append Event → KurrentDB          → Return Data
+      → Return ACK
+                    ↓
+          KurrentDB Subscription
+                    ↓
+          Service projiziert Event
+                    ↓
+          PostgreSQL (Read-Model updated)
+```
+
+### Federation (Peer-to-Peer)
+
+```
+Firma A (RentFlow-Instanz)          Firma B (RentFlow-Instanz)
+┌──────────────────────┐            ┌──────────────────────┐
+│  federation-service  │◄──mTLS───►│  federation-service  │
+│  (eigene DB, Events) │   REST    │  (eigene DB, Events) │
+└──────────────────────┘            └──────────────────────┘
 ```
 
 ---
@@ -186,94 +237,95 @@ Detaillierte Anleitungen findest du in der `/docs` Struktur:
 ## 🛠️ Development Setup
 
 ### Voraussetzungen
-- Go 1.21+
-- Node.js 18+
-- PostgreSQL 14+
-- Docker & Docker Compose (optional)
+- Go 1.22+
+- Node.js 20+
+- Docker & Docker Compose v2
+- KurrentDB (lokal via Docker)
+- PostgreSQL 16+
 
 ### Lokale Entwicklung starten
 
-#### 1. Dependencies installieren
+#### 1. Infrastruktur starten (KurrentDB, PostgreSQL, Redis)
 ```bash
-# Backend
-cd backend
-go mod download
-
-# Frontend
-cd ../frontend
-npm install
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-#### 2. PostgreSQL lokal starten
+#### 2. Backend-Services starten
 ```bash
-docker run -d \
-  --name rentflow-db \
-  -e POSTGRES_PASSWORD=dev \
-  -e POSTGRES_DB=rentflow \
-  -p 5432:5432 \
-  postgres:14
+# Alle Services gleichzeitig (Development-Modus)
+make dev
+
+# Oder einzeln:
+cd services/auth-service && go run cmd/main.go
+cd services/inventory-service && go run cmd/main.go
+# ... weitere Services nach Bedarf
 ```
 
-#### 3. Migrations durchführen
-```bash
-cd backend
-go run cmd/migrate/main.go
-```
-
-#### 4. Backend starten
-```bash
-cd backend
-go run cmd/api/main.go
-# Läuft auf http://localhost:8080
-```
-
-#### 5. Frontend starten (in neuem Terminal)
+#### 3. Frontend starten
 ```bash
 cd frontend
-npm start
-# Läuft auf http://localhost:3000
+npm install
+npm run dev
+# Läuft auf http://localhost:5173 (Vite)
 ```
 
 ### Testing
 ```bash
-# Backend Tests
-cd backend
-go test ./...
+# Alle Backend-Tests
+make test
+
+# Einzelnen Service testen
+cd services/inventory-service && go test ./...
 
 # Frontend Tests
-cd frontend
-npm test
+cd frontend && npm test
+
+# Integration Tests (benötigt laufende Infrastruktur)
+make test-integration
+
+# E2E Tests
+make test-e2e
 ```
 
 ---
 
 ## 🗺️ Roadmap
 
-### Phase 1 – Grundlagen (Q2 2024) ✅
-- [x] Equipment-Verwaltung
-- [x] QR-Scanner (USB)
-- [x] Einfache Rechnungserstellung
-- [x] PostgreSQL Integration
+### Phase 0 – Foundation (Q2 2026) 🔄
+- [ ] Projekt-Setup: Monorepo, Docker Compose, CI/CD
+- [ ] KurrentDB + PostgreSQL Infrastruktur
+- [ ] Shared Go Library (pkg/common)
+- [ ] 17 Service-Skeletons mit Health-Checks
+- [ ] Traefik API Gateway Konfiguration
+- [ ] Frontend-Grundgerüst (React 18, Design System)
 
-### Phase 2 – Professionalisierung (Q3 2024) 🔄
-- [ ] DATEV-Export
-- [ ] Rollen & Berechtigungen
-- [ ] Mobile Scanner-App
-- [ ] Teilrechnungen & Gutschriften
-- [ ] Offline-Modus
+### Phase 1 – MVP Core (Q3 2026)
+- [ ] Auth-Service (JWT, RBAC, Multi-Tenancy)
+- [ ] Inventory-Service (Equipment CRUD, Labels)
+- [ ] Scanner-Service (QR/Barcode, Offline-Sync)
+- [ ] Warehouse-Service (Lagerplätze, Check-In/Out)
+- [ ] Basis-Frontend (Dashboard, Equipment, Scanner)
 
-### Phase 3 – Federation (Q4 2024)
-- [ ] Federation API (Peer-to-Peer)
-- [ ] Equipment-Sharing zwischen Firmen
-- [ ] Automatische Synchronisation
-- [ ] Vertragsmanagement
+### Phase 2 – Business Logic (Q4 2026)
+- [ ] Project-Service (Projekte, Packlisten, Reservierungen)
+- [ ] Invoice-Service (Rechnungen, DATEV, Mahnwesen)
+- [ ] Document-Service (PDF, Templates, OCR)
+- [ ] Crew-Service (Personal, Zeiterfassung)
+- [ ] Expense-Service (Ausgaben, Kassenbon-OCR, Steuerexport)
 
-### Phase 4 – Enterprise (2025+)
-- [ ] Multi-Tenant Option (optional)
-- [ ] Advanced Reporting & Analytics
-- [ ] Mobile App (iOS/Android)
-- [ ] Integrationen (Shopify, Eventbrite, etc.)
-- [ ] Automatisiertes Mahnwesen
+### Phase 3 – Advanced Features (Q1 2027)
+- [ ] Federation-Service (mTLS P2P, Equipment-Sharing)
+- [ ] Maintenance-Service (DGUV V3, E-Check)
+- [ ] Transport-Service (Fahrzeuge, Touren)
+- [ ] NAS-Storage Integration (lokale Dateiablage)
+- [ ] Notification-Service (Push, E-Mail, In-App)
+
+### Phase 4 – Intelligence & Scale (Q2 2027+)
+- [ ] AI-Service (Multi-Provider, Prognosen, Anonymisierung)
+- [ ] Workflow-Service (No-Code Automations)
+- [ ] Reporting-Service (KPIs, Dashboards)
+- [ ] Insurance-Service (Policen, Schäden)
+- [ ] Advanced Analytics & Performance-Optimierung
 
 ---
 
@@ -340,8 +392,9 @@ RentFlow wurde mit ❤️ von und für Veranstaltungstechnik-Profis entwickelt.
 
 Spezielle Dankbarkeit gegenüber:
 - Der Go & React Community
+- KurrentDB (ehem. EventStoreDB) Team
 - PostgreSQL Team
-- Open-Source Projekten (Caddy, Docker, etc.)
+- Open-Source Projekten (Traefik, Docker, etc.)
 - Unseren Early-Adoptern und Testern
 
 ---
