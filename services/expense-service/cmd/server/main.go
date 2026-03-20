@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	serviceName = "auth-service"
-	servicePort = 8001
+	serviceName = "expense-service"
+	servicePort = 8018
 )
 
 func main() {
@@ -34,9 +34,10 @@ func main() {
 	router.HandleFunc("GET /ready", readyHandler)
 
 	// API routes (v1)
-	router.HandleFunc("POST /api/v1/auth/login", loginHandler)
-	router.HandleFunc("POST /api/v1/auth/logout", logoutHandler)
-	router.HandleFunc("POST /api/v1/auth/refresh", refreshHandler)
+	router.HandleFunc("GET /api/v1/expenses", listExpensesHandler)
+	router.HandleFunc("POST /api/v1/expenses", createExpenseHandler)
+	router.HandleFunc("POST /api/v1/expenses/receipt-scan", scanReceiptHandler)
+	router.HandleFunc("GET /api/v1/expenses/export", exportExpensesHandler)
 
 	// Graceful shutdown
 	srv := &http.Server{
@@ -72,26 +73,32 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, Redis connections
+	// TODO: check DB, KurrentDB, Redis connections
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func listExpensesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"expense-service"}`))
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
+func createExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"expense-service"}`))
 }
 
-func refreshHandler(w http.ResponseWriter, r *http.Request) {
+func scanReceiptHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"expense-service"}`))
+}
+
+func exportExpensesHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"expense-service"}`))
 }

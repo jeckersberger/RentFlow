@@ -1,0 +1,29 @@
+@import '../../styles/variables.scss';
+
+.main-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+
+  &__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  &__main {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-6);
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+
+    &__main {
+      padding: var(--spacing-4);
+    }
+  }
+}

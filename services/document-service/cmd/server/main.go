@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	serviceName = "auth-service"
-	servicePort = 8001
+	serviceName = "document-service"
+	servicePort = 8007
 )
 
 func main() {
@@ -34,9 +34,9 @@ func main() {
 	router.HandleFunc("GET /ready", readyHandler)
 
 	// API routes (v1)
-	router.HandleFunc("POST /api/v1/auth/login", loginHandler)
-	router.HandleFunc("POST /api/v1/auth/logout", logoutHandler)
-	router.HandleFunc("POST /api/v1/auth/refresh", refreshHandler)
+	router.HandleFunc("POST /api/v1/documents/generate", generateDocumentHandler)
+	router.HandleFunc("GET /api/v1/templates", listTemplatesHandler)
+	router.HandleFunc("POST /api/v1/ocr", ocrHandler)
 
 	// Graceful shutdown
 	srv := &http.Server{
@@ -72,26 +72,26 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, Redis connections
+	// TODO: check DB, KurrentDB, Redis connections
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func generateDocumentHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"document-service"}`))
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
+func listTemplatesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"document-service"}`))
 }
 
-func refreshHandler(w http.ResponseWriter, r *http.Request) {
+func ocrHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"document-service"}`))
 }

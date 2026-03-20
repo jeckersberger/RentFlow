@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	serviceName = "auth-service"
-	servicePort = 8001
+	serviceName = "maintenance-service"
+	servicePort = 8010
 )
 
 func main() {
@@ -34,9 +34,10 @@ func main() {
 	router.HandleFunc("GET /ready", readyHandler)
 
 	// API routes (v1)
-	router.HandleFunc("POST /api/v1/auth/login", loginHandler)
-	router.HandleFunc("POST /api/v1/auth/logout", logoutHandler)
-	router.HandleFunc("POST /api/v1/auth/refresh", refreshHandler)
+	router.HandleFunc("GET /api/v1/maintenance", listMaintenanceHandler)
+	router.HandleFunc("POST /api/v1/maintenance", createMaintenanceHandler)
+	router.HandleFunc("GET /api/v1/maintenance/schedule", getScheduleHandler)
+	router.HandleFunc("POST /api/v1/dguv-import", importDGUVHandler)
 
 	// Graceful shutdown
 	srv := &http.Server{
@@ -72,26 +73,32 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, Redis connections
+	// TODO: check DB, KurrentDB, Redis connections
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func listMaintenanceHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"maintenance-service"}`))
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
+func createMaintenanceHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"maintenance-service"}`))
 }
 
-func refreshHandler(w http.ResponseWriter, r *http.Request) {
+func getScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"maintenance-service"}`))
+}
+
+func importDGUVHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"maintenance-service"}`))
 }

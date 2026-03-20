@@ -15,112 +15,112 @@ rule_files:
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ['prometheus:9090']
 
   # Auth Service
   - job_name: 'auth-service'
     static_configs:
-      - targets: ['localhost:8001']
+      - targets: ['auth-service:8001']
     metrics_path: '/metrics'
 
   # Inventory Service
   - job_name: 'inventory-service'
     static_configs:
-      - targets: ['localhost:8002']
+      - targets: ['inventory-service:8002']
     metrics_path: '/metrics'
 
   # Project Service
   - job_name: 'project-service'
     static_configs:
-      - targets: ['localhost:8003']
+      - targets: ['project-service:8003']
     metrics_path: '/metrics'
 
   # Scanner Service
   - job_name: 'scanner-service'
     static_configs:
-      - targets: ['localhost:8004']
+      - targets: ['scanner-service:8004']
     metrics_path: '/metrics'
 
   # Warehouse Service
   - job_name: 'warehouse-service'
     static_configs:
-      - targets: ['localhost:8005']
+      - targets: ['warehouse-service:8005']
     metrics_path: '/metrics'
 
   # Invoice Service
   - job_name: 'invoice-service'
     static_configs:
-      - targets: ['localhost:8006']
+      - targets: ['invoice-service:8006']
     metrics_path: '/metrics'
 
   # Document Service
   - job_name: 'document-service'
     static_configs:
-      - targets: ['localhost:8007']
+      - targets: ['document-service:8007']
     metrics_path: '/metrics'
 
   # Crew Service
   - job_name: 'crew-service'
     static_configs:
-      - targets: ['localhost:8008']
+      - targets: ['crew-service:8008']
     metrics_path: '/metrics'
 
   # Federation Service
   - job_name: 'federation-service'
     static_configs:
-      - targets: ['localhost:8009']
+      - targets: ['federation-service:8009']
     metrics_path: '/metrics'
 
   # Maintenance Service
   - job_name: 'maintenance-service'
     static_configs:
-      - targets: ['localhost:8010']
+      - targets: ['maintenance-service:8010']
     metrics_path: '/metrics'
 
   # Transport Service
   - job_name: 'transport-service'
     static_configs:
-      - targets: ['localhost:8011']
+      - targets: ['transport-service:8011']
     metrics_path: '/metrics'
 
   # Insurance Service
   - job_name: 'insurance-service'
     static_configs:
-      - targets: ['localhost:8012']
+      - targets: ['insurance-service:8012']
     metrics_path: '/metrics'
 
   # Workflow Service
   - job_name: 'workflow-service'
     static_configs:
-      - targets: ['localhost:8013']
+      - targets: ['workflow-service:8013']
     metrics_path: '/metrics'
 
   # AI Service
   - job_name: 'ai-service'
     static_configs:
-      - targets: ['localhost:8014']
+      - targets: ['ai-service:8014']
     metrics_path: '/metrics'
 
   # Notification Service
   - job_name: 'notification-service'
     static_configs:
-      - targets: ['localhost:8015']
+      - targets: ['notification-service:8015']
     metrics_path: '/metrics'
 
   # Reporting Service
   - job_name: 'reporting-service'
     static_configs:
-      - targets: ['localhost:8016']
+      - targets: ['reporting-service:8016']
     metrics_path: '/metrics'
 
   # Audit Service
   - job_name: 'audit-service'
     static_configs:
-      - targets: ['localhost:8017']
+      - targets: ['audit-service:8017']
     metrics_path: '/metrics'
 
   # Expense Service
   - job_name: 'expense-service'
     static_configs:
-      - targets: ['localhost:8018']
+      - targets: ['expense-service:8018']
     metrics_path: '/metrics'

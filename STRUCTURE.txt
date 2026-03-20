@@ -1,0 +1,216 @@
+RentFlow Monorepo Structure - Phase 0 Foundation
+================================================
+
+rentflow/
+├── services/                           [18 Microservices]
+│   ├── auth-service/ (Port 8001)
+│   ├── inventory-service/ (Port 8002)
+│   ├── project-service/ (Port 8003)
+│   ├── scanner-service/ (Port 8004)
+│   ├── warehouse-service/ (Port 8005)
+│   ├── invoice-service/ (Port 8006)
+│   ├── document-service/ (Port 8007)
+│   ├── crew-service/ (Port 8008)
+│   ├── federation-service/ (Port 8009)
+│   ├── maintenance-service/ (Port 8010)
+│   ├── transport-service/ (Port 8011)
+│   ├── insurance-service/ (Port 8012)
+│   ├── workflow-service/ (Port 8013)
+│   ├── ai-service/ (Port 8014)
+│   ├── notification-service/ (Port 8015)
+│   ├── reporting-service/ (Port 8016)
+│   ├── audit-service/ (Port 8017)
+│   └── expense-service/ (Port 8018)
+│       ├── cmd/server/main.go
+│       ├── internal/
+│       │   ├── domain/
+│       │   ├── application/
+│       │   ├── infrastructure/
+│       │   ├── ports/
+│       │   └── adapters/http/
+│       ├── config/.env.example
+│       ├── migrations/
+│       └── go.mod
+│
+├── pkg/common/                         [Shared Library]
+│   ├── config/
+│   ├── errors/
+│   ├── events/
+│   ├── health/
+│   ├── logger/
+│   ├── middleware/
+│   ├── storage/
+│   ├── testing/
+│   └── go.mod
+│
+├── infra/                              [Infrastructure & DevOps]
+│   ├── docker/
+│   │   └── docker-compose.yml          PostgreSQL, KurrentDB, Traefik, Prometheus
+│   ├── traefik/dynamic/
+│   │   └── routers.yml                 API Gateway routing (18 services)
+│   ├── postgres/
+│   │   └── init.sql                    Database initialization (18 DBs)
+│   ├── kurrentdb/                      Event sourcing (placeholder)
+│   └── prometheus/
+│       └── prometheus.yml              Metrics scraping (18 services)
+│
+├── frontend/                           [React/Vue Application - Existing]
+├── docs/                               [Documentation - Existing]
+├── config/                             [Global Configuration - Existing]
+│
+├── .github/workflows/                  [CI/CD Pipelines - Placeholder]
+│
+├── go.work                             [Go Workspace - All Modules]
+├── Makefile                            [Build & Development Commands]
+├── .gitignore                          [Updated - Go workspace, binaries, etc.]
+└── MONOREPO_STRUCTURE.md               [Detailed Documentation]
+
+
+Hexagonal Architecture (Per Service)
+====================================
+
+{service}/
+├── cmd/server/main.go                  Entry point
+│
+├── internal/                           Internal packages (not exported)
+│   ├── domain/                         Business logic
+│   │   └── {entity}.go                 Domain models
+│   │
+│   ├── application/                    Use cases & orchestration
+│   │   └── {use_case}.go               Business operations
+│   │
+│   ├── infrastructure/                 External adapters
+│   │   ├── events/                     Event store integration
+│   │   └── repositories/               Data persistence
+│   │
+│   ├── ports/                          Interface definitions
+│   │   └── {interface}.go              Contracts
+│   │
+│   └── adapters/http/                  HTTP implementation
+│       └── handlers.go                 HTTP request handlers
+│
+├── config/
+│   └── .env.example                    Configuration template
+│
+├── migrations/                         Database schema
+│   └── V001__init_schema.sql
+│
+└── go.mod                              Service dependencies
+
+
+Go Modules & Workspace
+======================
+
+go.work                                 Root workspace (1.22)
+├── ./pkg/common                        Common package module
+└── ./services/{18 services}            Service modules
+
+
+Common Package Dependencies
+==========================
+
+pkg/common/
+├── config.go        → Environment-based configuration
+├── errors.go        → Structured error handling
+├── logger.go        → Logging abstraction
+├── health.go        → Health check patterns
+├── events.go        → Event definitions & interfaces
+├── middleware.go    → HTTP middleware utilities
+├── storage.go       → Storage abstractions (future)
+└── testing.go       → Testing utilities (future)
+
+
+Docker Compose Services
+=======================
+
+postgres:5432           PostgreSQL (18 service databases)
+kurrentdb:2113          Event Store (Event Sourcing)
+traefik:80,443,8080     API Gateway (Router + Dashboard)
+prometheus:9090         Metrics Collection (Scrapes all services)
+
+
+Port Mappings
+=============
+
+Services:           8001-8018       Each service on unique port
+Traefik:           80, 443, 8080   API Gateway & Dashboard
+PostgreSQL:        5432            Database
+KurrentDB:         1113, 2113      Event Store (TCP & HTTP)
+Prometheus:        9090            Metrics Dashboard
+
+
+Makefile Targets
+================
+
+Development:
+  make dev              Start all services locally
+  make build            Build all 18 services
+  make clean            Remove build artifacts
+
+Testing:
+  make test             Run unit tests
+  make test-integration Integration tests
+  make test-e2e         End-to-end tests
+
+Quality:
+  make lint             Run golangci-lint
+
+Docker:
+  make docker-build     Build Docker images
+  make docker-up        Start containers
+  make docker-down      Stop containers
+
+Database:
+  make migrate-up       Run migrations
+  make migrate-down     Rollback
+
+Other:
+  make proto            Protobuf generation (placeholder)
+  make help             Show all targets
+  make workspace-sync   Sync Go workspace
+
+
+Quick Start
+===========
+
+1. Verify workspace:
+   $ go work sync
+
+2. Build all services:
+   $ make build
+
+3. Start locally:
+   $ make dev
+
+4. Or use Docker:
+   $ make docker-up
+
+5. Test:
+   $ make test
+
+6. View help:
+   $ make help
+
+
+Key Files
+=========
+
+Go Workspace:           /sessions/beautiful-adoring-keller/repo/go.work
+Root Makefile:         /sessions/beautiful-adoring-keller/repo/Makefile
+Documentation:         /sessions/beautiful-adoring-keller/repo/MONOREPO_STRUCTURE.md
+Common Library:         /sessions/beautiful-adoring-keller/repo/pkg/common/
+Services:              /sessions/beautiful-adoring-keller/repo/services/
+Infrastructure:        /sessions/beautiful-adoring-keller/repo/infra/
+
+
+Status
+======
+
+✓ All 18 services created with hexagonal architecture
+✓ Common library with 6 core modules implemented
+✓ Go workspace configured and synced
+✓ Docker Compose setup (PostgreSQL, KurrentDB, Traefik, Prometheus)
+✓ Comprehensive Makefile with all development targets
+✓ Auth service example with full implementation
+✓ .gitignore updated for Go workspace
+✓ Ready for feature development
