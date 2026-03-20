@@ -10,6 +10,9 @@
 - [2026-03-20] Regel: Wenn eine bestehende Planung eine Microservice-Architektur mit Event Sourcing vorsieht, diese NICHT eigenmächtig zu einem Monolithen vereinfachen. Die Architektur-Entscheidungen wurden bewusst getroffen.
   - Grund: Ich hatte eigenständig eine einfachere Monolith-Architektur geplant, obwohl die bestehende Planung bewusst MSA + CQRS + KurrentDB gewählt hatte.
 
+- [2026-03-20] Regel: Zielgruppen-Angaben des Nutzers immer sofort in ALLE relevanten Dokumente übernehmen (README, Planung, Architektur). Nicht nur intern merken.
+  - Grund: Nutzer hat klargestellt dass die Software für VT-Firmen bis 100 Mitarbeiter sein soll, nicht nur 3-30. Das hat Auswirkungen auf Multi-Tenancy, Performance-Anforderungen und Rollenhierarchien.
+
 ## Session-Log
 ### 2026-03-20 - Architekturplanung Lagerverwaltung & Rechnungssoftware
 - Aufgaben: Detaillierte Architektur erstellen (DB-Schema, API-Design, Frontend-Architektur, Docker-Setup, Federation-Protokoll, MVP-Phasenplan)

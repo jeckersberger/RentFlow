@@ -21,7 +21,7 @@
 
 ## 🎯 Was ist RentFlow?
 
-RentFlow ist eine **moderne, selbst gehostete Lagerverwaltungs- und Rechnungssoftware** speziell für kleine bis mittlere Veranstaltungstechnik-Firmen (3–30 Mitarbeiter) in der DACH-Region.
+RentFlow ist eine **moderne, selbst gehostete Lagerverwaltungs- und Rechnungssoftware** speziell für Veranstaltungstechnik-Firmen (1–100 Mitarbeiter) in der DACH-Region.
 
 Statt teure Cloud-Lösungen mit Lizenzgebühren und Vendor Lock-in nutzen VT-Profis RentFlow auf ihrem eigenen Server – mit voller Kontrolle über ihre Daten, DATEV-Integration und einem innovativen **Federation-API für unternehmensübergreifendes Equipment-Sharing** (Peer-to-Peer, keine zentrale Instanz).
 
