@@ -1,0 +1,23 @@
+go 1.22
+
+use (
+	./pkg/common
+	./services/ai-service
+	./services/audit-service
+	./services/auth-service
+	./services/crew-service
+	./services/document-service
+	./services/expense-service
+	./services/federation-service
+	./services/insurance-service
+	./services/inventory-service
+	./services/invoice-service
+	./services/maintenance-service
+	./services/notification-service
+	./services/project-service
+	./services/reporting-service
+	./services/scanner-service
+	./services/transport-service
+	./services/warehouse-service
+	./services/workflow-service
+)

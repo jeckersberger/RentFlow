@@ -33,6 +33,17 @@ Thumbs.db
 *.test
 __debug_bin*
 coverage.out
+go.work.sum
+
+# Wire generated
+**/wire_gen.go
+
+# Service binaries
+services/*/bin/
+
+# Coverage
+coverage/
+*.coverprofile
 
 # Logs
 *.log
