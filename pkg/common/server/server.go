@@ -203,7 +203,7 @@ func (s *Server) StartWithContext(ctx context.Context) <-chan error {
 	// Monitor context for cancellation
 	go func() {
 		<-ctx.Done()
-		_ = s.Shutdown()
+		_ = s.Shutdown() //nolint:contextcheck // intentional: Shutdown creates its own timeout context
 		errChan <- ctx.Err()
 	}()
 
