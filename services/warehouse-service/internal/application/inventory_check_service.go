@@ -12,12 +12,12 @@ import (
 
 type InventoryCheckService struct {
 	checkRepo ports.InventoryCheckRepository
-	logger    *logger.Logger
+	logger    logger.Logger
 }
 
 func NewInventoryCheckService(
 	checkRepo ports.InventoryCheckRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *InventoryCheckService {
 	return &InventoryCheckService{
 		checkRepo: checkRepo,
@@ -33,7 +33,7 @@ func (s *InventoryCheckService) StartCheck(ctx context.Context, cmd StartInvento
 		return nil, domain.NewDomainError("NAME_REQUIRED", "name is required", nil)
 	}
 
-	checkID := fmt.Sprintf("inv_%d", hashString(cmd.TenantID+cmd.Name+time.Now().String()))
+	checkID := fmt.Sprintf("inv_%d", hashCheckString(cmd.TenantID+cmd.Name+time.Now().String()))
 	check := domain.NewInventoryCheck(checkID, cmd.TenantID, cmd.Name)
 	check.LocationID = cmd.LocationID
 
@@ -183,7 +183,7 @@ func (s *InventoryCheckService) GetDiscrepancies(ctx context.Context, tenantID, 
 	}, nil
 }
 
-func hashString(s string) int64 {
+func hashCheckString(s string) int64 {
 	h := int64(5381)
 	for _, c := range s {
 		h = ((h << 5) + h) + int64(c)

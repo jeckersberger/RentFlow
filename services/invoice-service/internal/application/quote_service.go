@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jeckersberger/rentflow/pkg/common/events"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/invoice-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/invoice-service/internal/ports"
@@ -14,14 +15,14 @@ type QuoteService struct {
 	quoteRepo   ports.QuoteRepository
 	invoiceRepo ports.InvoiceRepository
 	seqRepo     ports.NumberSequenceRepository
-	logger      *logger.Logger
+	logger      logger.Logger
 }
 
 func NewQuoteService(
 	quoteRepo ports.QuoteRepository,
 	invoiceRepo ports.InvoiceRepository,
 	seqRepo ports.NumberSequenceRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *QuoteService {
 	return &QuoteService{
 		quoteRepo:   quoteRepo,
@@ -276,7 +277,7 @@ func (s *QuoteService) ConvertQuoteToInvoice(ctx context.Context, cmd ConvertQuo
 	invoice.InternalNotes = cmd.InternalNotes
 
 	// Set tax rate
-	if err := invoice.SetTaxRate(quote.TaxRate); err != nil {
+	if err := invoice.SetTaxRate(float64(quote.TaxRate)); err != nil {
 		return nil, domain.NewDomainError("INVALID_TAX_RATE", err.Error(), err)
 	}
 
@@ -313,13 +314,14 @@ func (s *QuoteService) ConvertQuoteToInvoice(ctx context.Context, cmd ConvertQuo
 	}
 
 	// Record conversion event on quote
-	event := domain.QuoteConvertedToInvoiceEvent{
+	convEvent := domain.QuoteConvertedToInvoiceEvent{
 		TenantID:      quote.TenantID,
 		QuoteNumber:   quote.QuoteNumber,
 		InvoiceNumber: invoiceNumber,
 		ConvertedAt:   now,
 	}
-	quote.Apply(event)
+	eventData, _ := events.NewEventData("QuoteConvertedToInvoice", convEvent, nil)
+	quote.Apply(*eventData)
 	quote.UpdatedAt = now
 
 	if err := s.quoteRepo.Update(ctx, quote); err != nil {

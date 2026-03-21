@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/rentflow/pkg/common/logger"
+	"github.com/jeckersberger/rentflow/pkg/common/logger"
 )
 
 // ResponseWriter wraps http.ResponseWriter to capture status code and written bytes
@@ -131,29 +132,17 @@ func RequestBodyLogging(log logger.Logger) func(http.Handler) http.Handler {
 
 // ResponseBodyLogging creates a middleware that logs response bodies (for debugging)
 // WARNING: This should only be used in development, not production
-// It can expose sensitive information
 func ResponseBodyLogging(log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Create a response writer wrapper that captures body
 			buf := &bytes.Buffer{}
-			wrapped := &responseWriter{
+			wrapped := &bodyCapturingWriter{
 				ResponseWriter: w,
-				statusCode:     http.StatusOK,
+				body:           buf,
 			}
-
-			// Create a multi-writer to write to both the response and buffer
-			mw := io.MultiWriter(w, buf)
-
-			// Replace the response writer temporarily
-			originalResponseWriter := wrapped.ResponseWriter
-			wrapped.ResponseWriter = writerFunc(func(p []byte) (int, error) {
-				return mw.Write(p)
-			})
 
 			next.ServeHTTP(wrapped, r)
 
-			// Log body (truncate if too large)
 			bodyStr := buf.String()
 			if len(bodyStr) > 1000 {
 				bodyStr = bodyStr[:1000] + "..."
@@ -163,11 +152,15 @@ func ResponseBodyLogging(log logger.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-// writerFunc adapts a function to the http.ResponseWriter interface
-type writerFunc func([]byte) (int, error)
+// bodyCapturingWriter wraps ResponseWriter and captures the response body
+type bodyCapturingWriter struct {
+	http.ResponseWriter
+	body *bytes.Buffer
+}
 
-func (f writerFunc) Write(p []byte) (int, error) {
-	return f(p)
+func (w *bodyCapturingWriter) Write(p []byte) (int, error) {
+	w.body.Write(p)
+	return w.ResponseWriter.Write(p)
 }
 
 // generateRequestID generates a unique request ID
@@ -176,5 +169,3 @@ func generateRequestID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
-// Add missing import
-import "context"

@@ -2,15 +2,15 @@ package repositories
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
 )
 
 type EquipmentSharePostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewEquipmentSharePostgres(db *pgxpool.Pool) *EquipmentSharePostgres {
+func NewEquipmentSharePostgres(db *database.PostgresPool) *EquipmentSharePostgres {
 	return &EquipmentSharePostgres{db: db}
 }
 

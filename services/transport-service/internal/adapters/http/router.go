@@ -7,7 +7,7 @@ import (
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/application"
 )
 
-func NewRouter(vehicleSvc *application.VehicleService, tourSvc *application.TourService, log *logger.Logger) *http.ServeMux {
+func NewRouter(vehicleSvc *application.VehicleService, tourSvc *application.TourService, log logger.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(vehicleSvc, tourSvc, log)
 

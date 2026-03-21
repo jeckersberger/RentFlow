@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/config"
 )
 
 // CORSMiddleware creates a middleware that handles CORS headers

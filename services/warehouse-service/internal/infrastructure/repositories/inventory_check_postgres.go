@@ -6,15 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/warehouse-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/warehouse-service/internal/ports"
 )
 
 type InventoryCheckPostgres struct {
-	db *sql.DB
+	db *database.PostgresPool
 }
 
-func NewInventoryCheckPostgres(db *sql.DB) ports.InventoryCheckRepository {
+func NewInventoryCheckPostgres(db *database.PostgresPool) ports.InventoryCheckRepository {
 	return &InventoryCheckPostgres{db: db}
 }
 
@@ -30,7 +31,7 @@ func (r *InventoryCheckPostgres) Create(ctx context.Context, check *domain.Inven
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
-	_, err = r.db.ExecContext(ctx, query,
+	_, err = r.db.Exec(ctx, query,
 		check.ID,
 		check.TenantID,
 		check.Name,
@@ -53,7 +54,7 @@ func (r *InventoryCheckPostgres) GetByID(ctx context.Context, tenantID, id strin
 		WHERE tenant_id = $1 AND id = $2
 	`
 
-	row := r.db.QueryRowContext(ctx, query, tenantID, id)
+	row := r.db.QueryRow(ctx, query, tenantID, id)
 	return inventoryCheckRowToCheck(row)
 }
 
@@ -66,7 +67,7 @@ func (r *InventoryCheckPostgres) List(ctx context.Context, tenantID string, limi
 		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, tenantID, limit, offset)
+	rows, err := r.db.Query(ctx, query, tenantID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -84,7 +85,7 @@ func (r *InventoryCheckPostgres) List(ctx context.Context, tenantID string, limi
 	// Get total count
 	countQuery := "SELECT COUNT(*) FROM inventory_checks WHERE tenant_id = $1"
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, tenantID).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQuery, tenantID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
@@ -103,7 +104,7 @@ func (r *InventoryCheckPostgres) Update(ctx context.Context, check *domain.Inven
 		WHERE id = $6 AND tenant_id = $7
 	`
 
-	_, err = r.db.ExecContext(ctx, query,
+	_, err = r.db.Exec(ctx, query,
 		string(check.Status),
 		itemsJSON,
 		check.StartedAt,

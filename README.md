@@ -291,41 +291,45 @@ make test-e2e
 
 ## 🗺️ Roadmap
 
-### Phase 0 – Foundation (Q2 2026) 🔄
-- [ ] Projekt-Setup: Monorepo, Docker Compose, CI/CD
-- [ ] KurrentDB + PostgreSQL Infrastruktur
-- [ ] Shared Go Library (pkg/common)
-- [ ] 17 Service-Skeletons mit Health-Checks
-- [ ] Traefik API Gateway Konfiguration
-- [ ] Frontend-Grundgerüst (React 18, Design System)
+### Phase 0 – Foundation (Q2 2026) ✅
+- [x] Projekt-Setup: Monorepo, Docker Compose, CI/CD
+- [x] KurrentDB + PostgreSQL Infrastruktur
+- [x] Shared Go Library (pkg/common)
+- [x] 17 Service-Skeletons mit Health-Checks
+- [x] Traefik API Gateway Konfiguration
+- [x] Frontend-Grundgerüst (React 18, Design System)
 
-### Phase 1 – MVP Core (Q3 2026)
-- [ ] Auth-Service (JWT, RBAC, Multi-Tenancy)
-- [ ] Inventory-Service (Equipment CRUD, Labels)
-- [ ] Scanner-Service (QR/Barcode, Offline-Sync)
-- [ ] Warehouse-Service (Lagerplätze, Check-In/Out)
-- [ ] Basis-Frontend (Dashboard, Equipment, Scanner)
+### Phase 1 – MVP Core (Q3 2026) 🔄
+- [x] Auth-Service (JWT, RBAC, Multi-Tenancy)
+- [x] Inventory-Service (Equipment CRUD, Labels)
+- [x] Scanner-Service (QR/Barcode, Offline-Sync)
+- [x] Warehouse-Service (Lagerplätze, Check-In/Out)
+- [x] Basis-Frontend (Dashboard, Equipment, Scanner)
+> ⚠️ Code geschrieben, Kompilierung & Tests ausstehend
 
-### Phase 2 – Business Logic (Q4 2026)
-- [ ] Project-Service (Projekte, Packlisten, Reservierungen)
-- [ ] Invoice-Service (Rechnungen, DATEV, Mahnwesen)
-- [ ] Document-Service (PDF, Templates, OCR)
-- [ ] Crew-Service (Personal, Zeiterfassung)
-- [ ] Expense-Service (Ausgaben, Kassenbon-OCR, Steuerexport)
+### Phase 2 – Business Logic (Q4 2026) 🔄
+- [x] Project-Service (Projekte, Packlisten, Reservierungen)
+- [x] Invoice-Service (Rechnungen, DATEV, Mahnwesen)
+- [x] Document-Service (PDF, Templates, OCR)
+- [x] Crew-Service (Personal, Zeiterfassung)
+- [x] Expense-Service (Ausgaben, Kassenbon-OCR, Steuerexport)
+> ⚠️ Code geschrieben, Kompilierung & Tests ausstehend
 
-### Phase 3 – Advanced Features (Q1 2027)
-- [ ] Federation-Service (mTLS P2P, Equipment-Sharing)
-- [ ] Maintenance-Service (DGUV V3, E-Check)
-- [ ] Transport-Service (Fahrzeuge, Touren)
+### Phase 3 – Advanced Features (Q1 2027) 🔄
+- [x] Federation-Service (mTLS P2P, Equipment-Sharing)
+- [x] Maintenance-Service (DGUV V3, E-Check)
+- [x] Transport-Service (Fahrzeuge, Touren)
 - [ ] NAS-Storage Integration (lokale Dateiablage)
-- [ ] Notification-Service (Push, E-Mail, In-App)
+- [x] Notification-Service (Push, E-Mail, In-App)
+> ⚠️ Code geschrieben, Kompilierung & Tests ausstehend. NAS-Integration nur als Adapter-Interface.
 
-### Phase 4 – Intelligence & Scale (Q2 2027+)
-- [ ] AI-Service (Multi-Provider, Prognosen, Anonymisierung)
-- [ ] Workflow-Service (No-Code Automations)
-- [ ] Reporting-Service (KPIs, Dashboards)
-- [ ] Insurance-Service (Policen, Schäden)
+### Phase 4 – Intelligence & Scale (Q2 2027+) 🔄
+- [x] AI-Service (Multi-Provider, Prognosen, Anonymisierung)
+- [x] Workflow-Service (No-Code Automations)
+- [x] Reporting-Service (KPIs, Dashboards)
+- [x] Insurance-Service (Policen, Schäden)
 - [ ] Advanced Analytics & Performance-Optimierung
+> ⚠️ Code geschrieben, Kompilierung & Tests ausstehend
 
 ---
 

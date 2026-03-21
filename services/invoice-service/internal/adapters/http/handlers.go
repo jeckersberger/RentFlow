@@ -17,7 +17,7 @@ type Handler struct {
 	quoteSvc   *application.QuoteService
 	duningSvc  *application.DunningService
 	exportSvc  *application.ExportService
-	logger     *logger.Logger
+	logger     logger.Logger
 }
 
 func NewHandler(
@@ -25,7 +25,7 @@ func NewHandler(
 	quoteSvc *application.QuoteService,
 	duningSvc *application.DunningService,
 	exportSvc *application.ExportService,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *Handler {
 	return &Handler{
 		invoiceSvc: invoiceSvc,

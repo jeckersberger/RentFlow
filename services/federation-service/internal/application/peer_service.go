@@ -12,10 +12,10 @@ import (
 
 type PeerService struct {
 	repo   ports.PeerRepository
-	logger *logger.Logger
+	logger logger.Logger
 }
 
-func NewPeerService(repo ports.PeerRepository, log *logger.Logger) *PeerService {
+func NewPeerService(repo ports.PeerRepository, log logger.Logger) *PeerService {
 	return &PeerService{
 		repo:   repo,
 		logger: log,

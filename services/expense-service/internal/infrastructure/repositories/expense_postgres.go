@@ -65,7 +65,11 @@ func (r *ExpensePostgres) UpdateExpense(ctx context.Context, exp *domain.Expense
 		return fmt.Errorf("failed to update expense: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("expense not found")
 	}
 
@@ -160,7 +164,11 @@ func (r *ExpensePostgres) DeleteExpense(ctx context.Context, tenantID, expenseID
 		return fmt.Errorf("failed to delete expense: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("expense not found")
 	}
 

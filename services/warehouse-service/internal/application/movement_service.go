@@ -13,13 +13,13 @@ import (
 type MovementService struct {
 	movementRepo ports.MovementRepository
 	locationRepo ports.LocationRepository
-	logger       *logger.Logger
+	logger       logger.Logger
 }
 
 func NewMovementService(
 	movementRepo ports.MovementRepository,
 	locationRepo ports.LocationRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *MovementService {
 	return &MovementService{
 		movementRepo: movementRepo,
@@ -166,4 +166,12 @@ func (s *MovementService) GetEquipmentHistory(ctx context.Context, tenantID, equ
 		Limit:  limit,
 		Offset: offset,
 	}, nil
+}
+
+func hashString(s string) int64 {
+	h := int64(5381)
+	for _, c := range s {
+		h = ((h << 5) + h) + int64(c)
+	}
+	return h & 0x7FFFFFFFFFFFFFFF
 }

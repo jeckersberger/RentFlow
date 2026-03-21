@@ -15,14 +15,14 @@ type EquipmentService struct {
 	equipRepo ports.EquipmentRepository
 	catRepo   ports.CategoryRepository
 	storage   storage.StorageAdapter
-	logger    *logger.Logger
+	logger    logger.Logger
 }
 
 func NewEquipmentService(
 	equipRepo ports.EquipmentRepository,
 	catRepo ports.CategoryRepository,
 	storageAdapter storage.StorageAdapter,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *EquipmentService {
 	return &EquipmentService{
 		equipRepo: equipRepo,
@@ -272,7 +272,13 @@ func (s *EquipmentService) AddImage(ctx context.Context, tenantID, equipmentID s
 	// Store image (if storage adapter available)
 	var imageRef string
 	if s.storage != nil {
-		ref, err := s.storage.Upload(ctx, file, filename)
+		meta := storage.FileMetadata{
+			TenantID:   tenantID,
+			EntityType: "equipment",
+			EntityID:   equipmentID,
+			Filename:   filename,
+		}
+		ref, err := s.storage.Store(ctx, file, meta)
 		if err != nil {
 			return nil, domain.NewDomainError("STORAGE_ERROR", "failed to upload image", err)
 		}

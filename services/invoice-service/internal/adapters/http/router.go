@@ -12,7 +12,7 @@ func NewRouter(
 	quoteSvc *application.QuoteService,
 	duningSvc *application.DunningService,
 	exportSvc *application.ExportService,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(invoiceSvc, quoteSvc, duningSvc, exportSvc, logger)

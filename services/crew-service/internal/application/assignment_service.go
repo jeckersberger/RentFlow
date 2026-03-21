@@ -11,10 +11,10 @@ import (
 
 type AssignmentService struct {
 	assignRepo ports.AssignmentRepository
-	logger     *logger.Logger
+	logger     logger.Logger
 }
 
-func NewAssignmentService(assignRepo ports.AssignmentRepository, logger *logger.Logger) *AssignmentService {
+func NewAssignmentService(assignRepo ports.AssignmentRepository, logger logger.Logger) *AssignmentService {
 	return &AssignmentService{
 		assignRepo: assignRepo,
 		logger:     logger,

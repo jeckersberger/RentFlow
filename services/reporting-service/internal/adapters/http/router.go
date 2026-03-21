@@ -9,7 +9,7 @@ import (
 	"github.com/jeckersberger/rentflow/services/reporting-service/internal/domain"
 )
 
-func NewRouter(svc *application.ReportService, log *logger.Logger) *http.ServeMux {
+func NewRouter(svc *application.ReportService, log logger.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 	h := &Handler{svc: svc, logger: log}
 
@@ -29,7 +29,7 @@ func NewRouter(svc *application.ReportService, log *logger.Logger) *http.ServeMu
 
 type Handler struct {
 	svc    *application.ReportService
-	logger *logger.Logger
+	logger logger.Logger
 }
 
 func (h *Handler) GetKPI(w http.ResponseWriter, r *http.Request) {

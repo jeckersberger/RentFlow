@@ -14,14 +14,14 @@ type ScanService struct {
 	scanRepo       ports.ScanEventRepository
 	deviceRepo     ports.DeviceRepository
 	inventorySvc   ports.InventoryServiceClient
-	logger         *logger.Logger
+	logger         logger.Logger
 }
 
 func NewScanService(
 	scanRepo ports.ScanEventRepository,
 	deviceRepo ports.DeviceRepository,
 	inventorySvc ports.InventoryServiceClient,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *ScanService {
 	return &ScanService{
 		scanRepo:      scanRepo,

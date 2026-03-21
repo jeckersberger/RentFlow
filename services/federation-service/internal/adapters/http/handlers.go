@@ -12,13 +12,13 @@ import (
 type Handler struct {
 	peerSvc   *application.PeerService
 	sharingSvc *application.SharingService
-	logger     *logger.Logger
+	logger     logger.Logger
 }
 
 func NewHandler(
 	peerSvc *application.PeerService,
 	sharingSvc *application.SharingService,
-	log *logger.Logger,
+	log logger.Logger,
 ) *Handler {
 	return &Handler{
 		peerSvc:    peerSvc,

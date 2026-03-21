@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 
-	"github.com/rentflow/pkg/common/logger"
+	"github.com/jeckersberger/rentflow/pkg/common/logger"
 )
 
 // PanicRecovery creates a middleware that recovers from panics
@@ -118,5 +119,3 @@ func RecoveryWithDetails(log logger.Logger, includeStackTrace bool) func(http.Ha
 	}
 }
 
-// Add missing import
-import "time"

@@ -14,14 +14,14 @@ type Handler struct {
 	policySvc *application.PolicyService
 	claimSvc  *application.ClaimService
 	riskSvc   *application.RiskService
-	logger    *logger.Logger
+	logger    logger.Logger
 }
 
 func NewHandler(
 	policySvc *application.PolicyService,
 	claimSvc *application.ClaimService,
 	riskSvc *application.RiskService,
-	log *logger.Logger,
+	log logger.Logger,
 ) *Handler {
 	return &Handler{
 		policySvc: policySvc,

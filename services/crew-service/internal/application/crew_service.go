@@ -11,10 +11,10 @@ import (
 
 type CrewService struct {
 	crewRepo ports.CrewRepository
-	logger   *logger.Logger
+	logger   logger.Logger
 }
 
-func NewCrewService(crewRepo ports.CrewRepository, logger *logger.Logger) *CrewService {
+func NewCrewService(crewRepo ports.CrewRepository, logger logger.Logger) *CrewService {
 	return &CrewService{
 		crewRepo: crewRepo,
 		logger:   logger,

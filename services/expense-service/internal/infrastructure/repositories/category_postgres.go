@@ -53,7 +53,11 @@ func (r *CategoryPostgres) UpdateCategory(ctx context.Context, cat *domain.Expen
 		return fmt.Errorf("failed to update category: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("category not found")
 	}
 
@@ -135,7 +139,11 @@ func (r *CategoryPostgres) DeleteCategory(ctx context.Context, tenantID, categor
 		return fmt.Errorf("failed to delete category: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("category not found")
 	}
 

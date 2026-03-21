@@ -13,13 +13,13 @@ import (
 type DunningService struct {
 	dunningRepo ports.DunningRepository
 	invoiceRepo ports.InvoiceRepository
-	logger      *logger.Logger
+	logger      logger.Logger
 }
 
 func NewDunningService(
 	dunningRepo ports.DunningRepository,
 	invoiceRepo ports.InvoiceRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *DunningService {
 	return &DunningService{
 		dunningRepo: dunningRepo,

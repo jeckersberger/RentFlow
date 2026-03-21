@@ -14,14 +14,14 @@ type Handler struct {
 	expSvc       *application.ExpenseService
 	categorySvc  *application.CategoryService
 	budgetSvc    *application.BudgetService
-	logger       *logger.Logger
+	logger       logger.Logger
 }
 
 func NewHandler(
 	expSvc *application.ExpenseService,
 	categorySvc *application.CategoryService,
 	budgetSvc *application.BudgetService,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *Handler {
 	return &Handler{
 		expSvc:      expSvc,

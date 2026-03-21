@@ -10,7 +10,7 @@ import (
 func NewRouter(
 	docSvc *application.DocumentService,
 	tplSvc *application.TemplateService,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(docSvc, tplSvc, logger)

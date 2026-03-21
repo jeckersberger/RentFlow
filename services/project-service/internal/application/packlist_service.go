@@ -11,10 +11,10 @@ import (
 
 type PacklistService struct {
 	repo   ports.PacklistRepository
-	logger *logger.Logger
+	logger logger.Logger
 }
 
-func NewPacklistService(repo ports.PacklistRepository, logger *logger.Logger) *PacklistService {
+func NewPacklistService(repo ports.PacklistRepository, logger logger.Logger) *PacklistService {
 	return &PacklistService{
 		repo:   repo,
 		logger: logger,

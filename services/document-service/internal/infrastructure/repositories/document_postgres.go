@@ -155,7 +155,11 @@ func (r *DocumentPostgres) Delete(ctx context.Context, tenantID, documentID stri
 		return fmt.Errorf("failed to delete document: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("document not found")
 	}
 

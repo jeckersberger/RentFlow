@@ -11,10 +11,10 @@ import (
 
 type BudgetService struct {
 	budgetRepo ports.BudgetRepository
-	logger     *logger.Logger
+	logger     logger.Logger
 }
 
-func NewBudgetService(budgetRepo ports.BudgetRepository, logger *logger.Logger) *BudgetService {
+func NewBudgetService(budgetRepo ports.BudgetRepository, logger logger.Logger) *BudgetService {
 	return &BudgetService{
 		budgetRepo: budgetRepo,
 		logger:     logger,

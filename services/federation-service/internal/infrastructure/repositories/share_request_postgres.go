@@ -2,15 +2,15 @@ package repositories
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
 )
 
 type ShareRequestPostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewShareRequestPostgres(db *pgxpool.Pool) *ShareRequestPostgres {
+func NewShareRequestPostgres(db *database.PostgresPool) *ShareRequestPostgres {
 	return &ShareRequestPostgres{db: db}
 }
 

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/config"
 )
 
 // FileMetadata contains metadata about a stored file

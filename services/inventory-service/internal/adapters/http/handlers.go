@@ -2,10 +2,8 @@ package http
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/inventory-service/internal/application"
@@ -16,14 +14,14 @@ type Handler struct {
 	equipmentSvc   *application.EquipmentService
 	categorySvc    *application.CategoryService
 	flightcaseSvc  *application.FlightcaseService
-	logger         *logger.Logger
+	logger         logger.Logger
 }
 
 func NewHandler(
 	equipmentSvc *application.EquipmentService,
 	categorySvc *application.CategoryService,
 	flightcaseSvc *application.FlightcaseService,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *Handler {
 	return &Handler{
 		equipmentSvc:  equipmentSvc,

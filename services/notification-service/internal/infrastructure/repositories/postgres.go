@@ -2,15 +2,15 @@ package repositories
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/notification-service/internal/domain"
 )
 
 type NotificationPostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewNotificationPostgres(db *pgxpool.Pool) *NotificationPostgres {
+func NewNotificationPostgres(db *database.PostgresPool) *NotificationPostgres {
 	return &NotificationPostgres{db: db}
 }
 
@@ -88,10 +88,10 @@ func (r *NotificationPostgres) Delete(ctx context.Context, tenantID, id string) 
 }
 
 type PreferencePostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewPreferencePostgres(db *pgxpool.Pool) *PreferencePostgres {
+func NewPreferencePostgres(db *database.PostgresPool) *PreferencePostgres {
 	return &PreferencePostgres{db: db}
 }
 

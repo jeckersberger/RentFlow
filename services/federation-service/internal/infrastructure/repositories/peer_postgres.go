@@ -2,15 +2,15 @@ package repositories
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
 )
 
 type PeerPostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewPeerPostgres(db *pgxpool.Pool) *PeerPostgres {
+func NewPeerPostgres(db *database.PostgresPool) *PeerPostgres {
 	return &PeerPostgres{db: db}
 }
 

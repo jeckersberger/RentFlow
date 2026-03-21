@@ -13,10 +13,10 @@ import (
 type Handler struct {
 	vehicleSvc *application.VehicleService
 	tourSvc    *application.TourService
-	logger     *logger.Logger
+	logger     logger.Logger
 }
 
-func NewHandler(vehicleSvc *application.VehicleService, tourSvc *application.TourService, log *logger.Logger) *Handler {
+func NewHandler(vehicleSvc *application.VehicleService, tourSvc *application.TourService, log logger.Logger) *Handler {
 	return &Handler{vehicleSvc: vehicleSvc, tourSvc: tourSvc, logger: log}
 }
 

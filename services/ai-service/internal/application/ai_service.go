@@ -16,14 +16,14 @@ type AIService struct {
 	aiRepo   ports.AIRequestRepository
 	ruleRepo ports.AnonymizationRuleRepository
 	mapRepo  ports.AnonymizationMappingRepository
-	logger   *logger.Logger
+	logger   logger.Logger
 }
 
 func NewAIService(
 	aiRepo ports.AIRequestRepository,
 	ruleRepo ports.AnonymizationRuleRepository,
 	mapRepo ports.AnonymizationMappingRepository,
-	log *logger.Logger,
+	log logger.Logger,
 ) *AIService {
 	return &AIService{
 		aiRepo:   aiRepo,
@@ -52,14 +52,13 @@ func (s *AIService) Predict(ctx context.Context, tenantID string, req PredictReq
 
 	// Anonymize prompt before sending
 	anonPrompt := req.Prompt
-	mappingID := ""
 	rules, err := s.ruleRepo.ListByTenant(ctx, tenantID)
 	if err != nil {
 		s.logger.Error("Failed to fetch anonymization rules", err)
 	}
 
 	if len(rules) > 0 {
-		anonPrompt, mappingID, _ = s.anonymizeText(ctx, tenantID, req.Prompt, rules)
+		anonPrompt, _, _ = s.anonymizeText(ctx, tenantID, req.Prompt, rules)
 	}
 
 	// Simulate AI response (in production, call actual AI provider)

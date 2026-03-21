@@ -7,7 +7,7 @@ import (
 	"github.com/jeckersberger/rentflow/services/ai-service/internal/application"
 )
 
-func NewRouter(aiSvc *application.AIService, log *logger.Logger) *http.ServeMux {
+func NewRouter(aiSvc *application.AIService, log logger.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(aiSvc, log)
 

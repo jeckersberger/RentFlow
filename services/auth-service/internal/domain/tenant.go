@@ -6,14 +6,6 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/events"
 )
 
-// AggregateRoot is the base for event sourcing
-type AggregateRoot struct {
-	ID      string
-	Type    string
-	Version int64
-	Changes []interface{}
-}
-
 // TenantStatus represents the status of a tenant
 type TenantStatus string
 

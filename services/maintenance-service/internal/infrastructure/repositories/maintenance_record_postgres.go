@@ -3,15 +3,15 @@ package repositories
 import (
 	"context"
 	"time"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/maintenance-service/internal/domain"
 )
 
 type MaintenanceRecordPostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewMaintenanceRecordPostgres(db *pgxpool.Pool) *MaintenanceRecordPostgres {
+func NewMaintenanceRecordPostgres(db *database.PostgresPool) *MaintenanceRecordPostgres {
 	return &MaintenanceRecordPostgres{db: db}
 }
 

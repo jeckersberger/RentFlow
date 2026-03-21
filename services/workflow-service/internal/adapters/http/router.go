@@ -7,7 +7,7 @@ import (
 	"github.com/jeckersberger/rentflow/services/workflow-service/internal/application"
 )
 
-func NewRouter(workflowSvc *application.WorkflowService, log *logger.Logger) *http.ServeMux {
+func NewRouter(workflowSvc *application.WorkflowService, log logger.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(workflowSvc, log)
 

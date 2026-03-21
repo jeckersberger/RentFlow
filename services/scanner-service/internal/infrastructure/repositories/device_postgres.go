@@ -5,15 +5,16 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/ports"
 )
 
 type DevicePostgres struct {
-	db *sql.DB
+	db *database.PostgresPool
 }
 
-func NewDevicePostgres(db *sql.DB) ports.DeviceRepository {
+func NewDevicePostgres(db *database.PostgresPool) ports.DeviceRepository {
 	return &DevicePostgres{db: db}
 }
 
@@ -24,7 +25,7 @@ func (r *DevicePostgres) Create(ctx context.Context, device *domain.Device) erro
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.Exec(ctx, query,
 		device.ID,
 		device.TenantID,
 		device.Name,
@@ -46,7 +47,7 @@ func (r *DevicePostgres) GetByID(ctx context.Context, tenantID, id string) (*dom
 		WHERE tenant_id = $1 AND id = $2
 	`
 
-	row := r.db.QueryRowContext(ctx, query, tenantID, id)
+	row := r.db.QueryRow(ctx, query, tenantID, id)
 	return deviceRowToDevice(row)
 }
 
@@ -57,7 +58,7 @@ func (r *DevicePostgres) GetBySerial(ctx context.Context, tenantID, serial strin
 		WHERE tenant_id = $1 AND serial = $2
 	`
 
-	row := r.db.QueryRowContext(ctx, query, tenantID, serial)
+	row := r.db.QueryRow(ctx, query, tenantID, serial)
 	return deviceRowToDevice(row)
 }
 
@@ -70,7 +71,7 @@ func (r *DevicePostgres) List(ctx context.Context, tenantID string, limit, offse
 		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, tenantID, limit, offset)
+	rows, err := r.db.Query(ctx, query, tenantID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -88,7 +89,7 @@ func (r *DevicePostgres) List(ctx context.Context, tenantID string, limit, offse
 	// Get total count
 	countQuery := "SELECT COUNT(*) FROM devices WHERE tenant_id = $1"
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, tenantID).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQuery, tenantID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
@@ -102,7 +103,7 @@ func (r *DevicePostgres) Update(ctx context.Context, device *domain.Device) erro
 		WHERE id = $5 AND tenant_id = $6
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.Exec(ctx, query,
 		device.Name,
 		device.Active,
 		device.Location,
@@ -116,7 +117,7 @@ func (r *DevicePostgres) Update(ctx context.Context, device *domain.Device) erro
 
 func (r *DevicePostgres) Delete(ctx context.Context, tenantID, id string) error {
 	query := `DELETE FROM devices WHERE tenant_id = $1 AND id = $2`
-	_, err := r.db.ExecContext(ctx, query, tenantID, id)
+	_, err := r.db.Exec(ctx, query, tenantID, id)
 	return err
 }
 

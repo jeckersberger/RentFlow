@@ -13,13 +13,13 @@ import (
 type Handler struct {
 	recordSvc   *application.MaintenanceRecordService
 	scheduleSvc *application.MaintenanceScheduleService
-	logger      *logger.Logger
+	logger      logger.Logger
 }
 
 func NewHandler(
 	recordSvc *application.MaintenanceRecordService,
 	scheduleSvc *application.MaintenanceScheduleService,
-	log *logger.Logger,
+	log logger.Logger,
 ) *Handler {
 	return &Handler{
 		recordSvc:   recordSvc,

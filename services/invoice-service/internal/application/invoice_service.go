@@ -13,13 +13,13 @@ import (
 type InvoiceService struct {
 	invoiceRepo ports.InvoiceRepository
 	seqRepo     ports.NumberSequenceRepository
-	logger      *logger.Logger
+	logger      logger.Logger
 }
 
 func NewInvoiceService(
 	invoiceRepo ports.InvoiceRepository,
 	seqRepo ports.NumberSequenceRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *InvoiceService {
 	return &InvoiceService{
 		invoiceRepo: invoiceRepo,

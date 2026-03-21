@@ -11,7 +11,7 @@ func NewRouter(
 	expSvc *application.ExpenseService,
 	categorySvc *application.CategoryService,
 	budgetSvc *application.BudgetService,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(expSvc, categorySvc, budgetSvc, logger)

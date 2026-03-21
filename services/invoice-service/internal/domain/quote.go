@@ -39,7 +39,7 @@ type Quote struct {
 	ClientAddress Address
 	Items       []InvoiceItem // reuse same item structure
 	SubTotal    float64
-	TaxRate     float64
+	TaxRate     TaxRate
 	TaxAmount   float64
 	Total       float64
 	Currency    string
@@ -101,14 +101,13 @@ func (q *Quote) RemoveItem(itemID string) error {
 
 // SetTaxRate sets the VAT rate
 func (q *Quote) SetTaxRate(rate float64) error {
-	switch rate {
-	case 0, 7, 19:
-		q.TaxRate = rate
-		q.UpdatedAt = time.Now()
-		return nil
-	default:
+	taxRate := TaxRate(rate)
+	if !taxRate.IsValidTaxRate() {
 		return ErrInvalidTaxRate
 	}
+	q.TaxRate = taxRate
+	q.UpdatedAt = time.Now()
+	return nil
 }
 
 // CalculateTotals recalculates SubTotal, TaxAmount, and Total
@@ -122,7 +121,7 @@ func (q *Quote) CalculateTotals() error {
 		q.SubTotal += item.TotalPrice
 	}
 
-	q.TaxAmount = q.SubTotal * (q.TaxRate / 100)
+	q.TaxAmount = q.SubTotal * (float64(q.TaxRate) / 100)
 	q.Total = q.SubTotal + q.TaxAmount
 
 	if q.Total <= 0 {
@@ -173,7 +172,11 @@ func (q *Quote) Send(email string) error {
 		SentAt:      q.UpdatedAt,
 		SentTo:      email,
 	}
-	q.Apply(event)
+	eventData, err := events.NewEventData("QuoteSent", event, nil)
+	if err != nil {
+		return err
+	}
+	q.Apply(*eventData)
 	return nil
 }
 
@@ -194,7 +197,11 @@ func (q *Quote) Accept() error {
 		QuoteNumber: q.QuoteNumber,
 		AcceptedAt:  q.UpdatedAt,
 	}
-	q.Apply(event)
+	eventData, err := events.NewEventData("QuoteAccepted", event, nil)
+	if err != nil {
+		return err
+	}
+	q.Apply(*eventData)
 	return nil
 }
 
@@ -213,7 +220,11 @@ func (q *Quote) Reject(reason string) error {
 		RejectedAt:  q.UpdatedAt,
 		Reason:      reason,
 	}
-	q.Apply(event)
+	eventData, err := events.NewEventData("QuoteRejected", event, nil)
+	if err != nil {
+		return err
+	}
+	q.Apply(*eventData)
 	return nil
 }
 

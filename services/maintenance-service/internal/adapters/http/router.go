@@ -10,7 +10,7 @@ import (
 func NewRouter(
 	recordSvc *application.MaintenanceRecordService,
 	scheduleSvc *application.MaintenanceScheduleService,
-	log *logger.Logger,
+	log logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(recordSvc, scheduleSvc, log)

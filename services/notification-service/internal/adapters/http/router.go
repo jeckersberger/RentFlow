@@ -9,7 +9,7 @@ import (
 	"github.com/jeckersberger/rentflow/services/notification-service/internal/domain"
 )
 
-func NewRouter(svc *application.NotificationService, log *logger.Logger) *http.ServeMux {
+func NewRouter(svc *application.NotificationService, log logger.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 	h := &Handler{svc: svc, logger: log}
 
@@ -29,7 +29,7 @@ func NewRouter(svc *application.NotificationService, log *logger.Logger) *http.S
 
 type Handler struct {
 	svc    *application.NotificationService
-	logger *logger.Logger
+	logger logger.Logger
 }
 
 func (h *Handler) ListNotifications(w http.ResponseWriter, r *http.Request) {

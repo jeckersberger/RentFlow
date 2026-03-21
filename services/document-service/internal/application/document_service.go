@@ -11,12 +11,12 @@ import (
 
 type DocumentService struct {
 	docRepo ports.DocumentRepository
-	logger  *logger.Logger
+	logger  logger.Logger
 }
 
 func NewDocumentService(
 	docRepo ports.DocumentRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *DocumentService {
 	return &DocumentService{
 		docRepo: docRepo,

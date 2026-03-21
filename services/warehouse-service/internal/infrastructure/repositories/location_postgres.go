@@ -5,15 +5,16 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/warehouse-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/warehouse-service/internal/ports"
 )
 
 type LocationPostgres struct {
-	db *sql.DB
+	db *database.PostgresPool
 }
 
-func NewLocationPostgres(db *sql.DB) ports.LocationRepository {
+func NewLocationPostgres(db *database.PostgresPool) ports.LocationRepository {
 	return &LocationPostgres{db: db}
 }
 
@@ -24,7 +25,7 @@ func (r *LocationPostgres) Create(ctx context.Context, location *domain.Location
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.Exec(ctx, query,
 		location.ID,
 		location.TenantID,
 		location.Name,
@@ -49,7 +50,7 @@ func (r *LocationPostgres) GetByID(ctx context.Context, tenantID, id string) (*d
 		WHERE tenant_id = $1 AND id = $2
 	`
 
-	row := r.db.QueryRowContext(ctx, query, tenantID, id)
+	row := r.db.QueryRow(ctx, query, tenantID, id)
 	return locationRowToLocation(row)
 }
 
@@ -62,7 +63,7 @@ func (r *LocationPostgres) List(ctx context.Context, tenantID string, limit, off
 		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, tenantID, limit, offset)
+	rows, err := r.db.Query(ctx, query, tenantID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -80,7 +81,7 @@ func (r *LocationPostgres) List(ctx context.Context, tenantID string, limit, off
 	// Get total count
 	countQuery := "SELECT COUNT(*) FROM locations WHERE tenant_id = $1"
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, tenantID).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQuery, tenantID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
@@ -109,7 +110,7 @@ func (r *LocationPostgres) ListByParent(ctx context.Context, tenantID string, pa
 		args = []interface{}{tenantID, *parentID}
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (r *LocationPostgres) Update(ctx context.Context, location *domain.Location
 		WHERE id = $7 AND tenant_id = $8
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.Exec(ctx, query,
 		location.Name,
 		location.Capacity,
 		location.CurrentCount,
@@ -150,7 +151,7 @@ func (r *LocationPostgres) Update(ctx context.Context, location *domain.Location
 
 func (r *LocationPostgres) Delete(ctx context.Context, tenantID, id string) error {
 	query := `DELETE FROM locations WHERE tenant_id = $1 AND id = $2`
-	_, err := r.db.ExecContext(ctx, query, tenantID, id)
+	_, err := r.db.Exec(ctx, query, tenantID, id)
 	return err
 }
 

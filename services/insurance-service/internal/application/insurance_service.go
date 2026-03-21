@@ -13,10 +13,10 @@ import (
 
 type PolicyService struct {
 	policyRepo ports.PolicyRepository
-	logger     *logger.Logger
+	logger     logger.Logger
 }
 
-func NewPolicyService(policyRepo ports.PolicyRepository, log *logger.Logger) *PolicyService {
+func NewPolicyService(policyRepo ports.PolicyRepository, log logger.Logger) *PolicyService {
 	return &PolicyService{
 		policyRepo: policyRepo,
 		logger:     log,
@@ -171,10 +171,10 @@ func (s *PolicyService) DeletePolicy(ctx context.Context, tenantID, id string) e
 type ClaimService struct {
 	claimRepo  ports.ClaimRepository
 	policyRepo ports.PolicyRepository
-	logger     *logger.Logger
+	logger     logger.Logger
 }
 
-func NewClaimService(claimRepo ports.ClaimRepository, policyRepo ports.PolicyRepository, log *logger.Logger) *ClaimService {
+func NewClaimService(claimRepo ports.ClaimRepository, policyRepo ports.PolicyRepository, log logger.Logger) *ClaimService {
 	return &ClaimService{
 		claimRepo:  claimRepo,
 		policyRepo: policyRepo,
@@ -363,10 +363,10 @@ func (s *ClaimService) RejectClaim(ctx context.Context, tenantID, id, reason str
 
 type RiskService struct {
 	riskRepo ports.RiskAssessmentRepository
-	logger   *logger.Logger
+	logger   logger.Logger
 }
 
-func NewRiskService(riskRepo ports.RiskAssessmentRepository, log *logger.Logger) *RiskService {
+func NewRiskService(riskRepo ports.RiskAssessmentRepository, log logger.Logger) *RiskService {
 	return &RiskService{
 		riskRepo: riskRepo,
 		logger:   log,

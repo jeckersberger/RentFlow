@@ -146,7 +146,11 @@ func (r *BudgetPostgres) DeleteBudget(ctx context.Context, tenantID, budgetID st
 		return fmt.Errorf("failed to delete budget: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("budget not found")
 	}
 

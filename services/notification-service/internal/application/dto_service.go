@@ -44,13 +44,13 @@ type SendNotificationCommand struct {
 type NotificationService struct {
 	notifRepo ports.NotificationRepository
 	prefRepo  ports.PreferenceRepository
-	logger    *logger.Logger
+	logger    logger.Logger
 }
 
 func NewNotificationService(
 	notifRepo ports.NotificationRepository,
 	prefRepo ports.PreferenceRepository,
-	log *logger.Logger,
+	log logger.Logger,
 ) *NotificationService {
 	return &NotificationService{
 		notifRepo: notifRepo,

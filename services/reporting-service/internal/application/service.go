@@ -29,10 +29,10 @@ type GenerateReportCommand struct {
 
 type ReportService struct {
 	repo   ports.ReportRepository
-	logger *logger.Logger
+	logger logger.Logger
 }
 
-func NewReportService(repo ports.ReportRepository, log *logger.Logger) *ReportService {
+func NewReportService(repo ports.ReportRepository, log logger.Logger) *ReportService {
 	return &ReportService{repo: repo, logger: log}
 }
 

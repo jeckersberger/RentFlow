@@ -11,7 +11,7 @@ func NewRouter(
 	projectSvc *application.ProjectService,
 	packlistSvc *application.PacklistService,
 	reservationSvc *application.ReservationService,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(projectSvc, packlistSvc, reservationSvc, logger)

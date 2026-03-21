@@ -11,7 +11,7 @@ func NewRouter(
 	policySvc *application.PolicyService,
 	claimSvc *application.ClaimService,
 	riskSvc *application.RiskService,
-	log *logger.Logger,
+	log logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(policySvc, claimSvc, riskSvc, log)

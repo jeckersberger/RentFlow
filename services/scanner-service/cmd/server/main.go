@@ -32,7 +32,7 @@ func main() {
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
 	// Initialize database
-	dbPool, err := database.NewPostgresPool(cfg.DatabaseURL)
+	dbPool, err := database.NewPostgresPool(cfg.ConnectionString())
 	if err != nil {
 		log.Fatal("Failed to connect to database", err)
 	}

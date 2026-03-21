@@ -12,13 +12,13 @@ import (
 type FlightcaseService struct {
 	fcRepo    ports.FlightcaseRepository
 	equipRepo ports.EquipmentRepository
-	logger    *logger.Logger
+	logger    logger.Logger
 }
 
 func NewFlightcaseService(
 	fcRepo ports.FlightcaseRepository,
 	equipRepo ports.EquipmentRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *FlightcaseService {
 	return &FlightcaseService{
 		fcRepo:    fcRepo,

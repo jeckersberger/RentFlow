@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"time"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/domain"
 )
 
 type VehiclePostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewVehiclePostgres(db *pgxpool.Pool) *VehiclePostgres {
+func NewVehiclePostgres(db *database.PostgresPool) *VehiclePostgres {
 	return &VehiclePostgres{db: db}
 }
 
@@ -68,10 +68,10 @@ func (r *VehiclePostgres) Delete(ctx context.Context, tenantID, id string) error
 }
 
 type TourPostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewTourPostgres(db *pgxpool.Pool) *TourPostgres {
+func NewTourPostgres(db *database.PostgresPool) *TourPostgres {
 	return &TourPostgres{db: db}
 }
 
@@ -141,7 +141,6 @@ func (r *TourPostgres) ListByDate(ctx context.Context, tenantID string, date tim
 }
 
 func (r *TourPostgres) Update(ctx context.Context, tour *domain.Tour) error {
-	stopsJSON, _ := json.Marshal(tour.Stops)
 	query := `UPDATE tours SET status = $1, updated_at = $2 WHERE id = $3 AND tenant_id = $4`
 	_, err := r.db.Exec(ctx, query, tour.Status, tour.UpdatedAt, tour.ID, tour.TenantID)
 	return err

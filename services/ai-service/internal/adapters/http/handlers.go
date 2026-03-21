@@ -11,10 +11,10 @@ import (
 
 type Handler struct {
 	aiSvc  *application.AIService
-	logger *logger.Logger
+	logger logger.Logger
 }
 
-func NewHandler(aiSvc *application.AIService, log *logger.Logger) *Handler {
+func NewHandler(aiSvc *application.AIService, log logger.Logger) *Handler {
 	return &Handler{
 		aiSvc:  aiSvc,
 		logger: log,

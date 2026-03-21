@@ -3,15 +3,15 @@ package repositories
 import (
 	"context"
 	"encoding/json"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/reporting-service/internal/domain"
 )
 
 type ReportPostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewReportPostgres(db *pgxpool.Pool) *ReportPostgres {
+func NewReportPostgres(db *database.PostgresPool) *ReportPostgres {
 	return &ReportPostgres{db: db}
 }
 
@@ -59,7 +59,6 @@ func (r *ReportPostgres) ListByTenant(ctx context.Context, tenantID string) ([]*
 }
 
 func (r *ReportPostgres) Update(ctx context.Context, report *domain.Report) error {
-	paramsJSON, _ := json.Marshal(report.Parameters)
 	query := `UPDATE reports SET status = $1, generated_at = $2, file_ref = $3, updated_at = $4 WHERE id = $5 AND tenant_id = $6`
 	_, err := r.db.Exec(ctx, query, report.Status, report.GeneratedAt, report.FileRef, report.UpdatedAt, report.ID, report.TenantID)
 	return err

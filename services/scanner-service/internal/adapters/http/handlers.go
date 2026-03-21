@@ -12,10 +12,10 @@ import (
 
 type Handler struct {
 	scanSvc *application.ScanService
-	logger  *logger.Logger
+	logger  logger.Logger
 }
 
-func NewHandler(scanSvc *application.ScanService, logger *logger.Logger) *Handler {
+func NewHandler(scanSvc *application.ScanService, logger logger.Logger) *Handler {
 	return &Handler{
 		scanSvc: scanSvc,
 		logger:  logger,

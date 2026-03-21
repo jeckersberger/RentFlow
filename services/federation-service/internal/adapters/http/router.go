@@ -10,7 +10,7 @@ import (
 func NewRouter(
 	peerSvc *application.PeerService,
 	sharingSvc *application.SharingService,
-	log *logger.Logger,
+	log logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(peerSvc, sharingSvc, log)

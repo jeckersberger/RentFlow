@@ -90,7 +90,11 @@ func (d *DunningEntry) Send(email string) error {
 		SentTo:        email,
 		Level:         d.Level,
 	}
-	d.Apply(event)
+	eventData, err := events.NewEventData("DunningSent", event, nil)
+	if err != nil {
+		return err
+	}
+	d.Apply(*eventData)
 	return nil
 }
 

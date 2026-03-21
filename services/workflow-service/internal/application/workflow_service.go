@@ -14,13 +14,13 @@ import (
 type WorkflowService struct {
 	workflowRepo ports.WorkflowRepository
 	runRepo      ports.WorkflowRunRepository
-	logger       *logger.Logger
+	logger       logger.Logger
 }
 
 func NewWorkflowService(
 	workflowRepo ports.WorkflowRepository,
 	runRepo ports.WorkflowRunRepository,
-	log *logger.Logger,
+	log logger.Logger,
 ) *WorkflowService {
 	return &WorkflowService{
 		workflowRepo: workflowRepo,
@@ -281,13 +281,13 @@ func (s *WorkflowService) CancelWorkflowRun(ctx context.Context, runID, reason s
 type WorkflowEngine struct {
 	workflowRepo ports.WorkflowRepository
 	runRepo      ports.WorkflowRunRepository
-	logger       *logger.Logger
+	logger       logger.Logger
 }
 
 func NewWorkflowEngine(
 	workflowRepo ports.WorkflowRepository,
 	runRepo ports.WorkflowRunRepository,
-	log *logger.Logger,
+	log logger.Logger,
 ) *WorkflowEngine {
 	return &WorkflowEngine{
 		workflowRepo: workflowRepo,

@@ -11,10 +11,10 @@ import (
 
 type ProjectService struct {
 	repo   ports.ProjectRepository
-	logger *logger.Logger
+	logger logger.Logger
 }
 
-func NewProjectService(repo ports.ProjectRepository, logger *logger.Logger) *ProjectService {
+func NewProjectService(repo ports.ProjectRepository, logger logger.Logger) *ProjectService {
 	return &ProjectService{
 		repo:   repo,
 		logger: logger,

@@ -13,13 +13,13 @@ import (
 type Handler struct {
 	docSvc *application.DocumentService
 	tplSvc *application.TemplateService
-	logger *logger.Logger
+	logger logger.Logger
 }
 
 func NewHandler(
 	docSvc *application.DocumentService,
 	tplSvc *application.TemplateService,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *Handler {
 	return &Handler{
 		docSvc: docSvc,

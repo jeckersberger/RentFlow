@@ -5,15 +5,16 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/ports"
 )
 
 type ScanEventPostgres struct {
-	db *sql.DB
+	db *database.PostgresPool
 }
 
-func NewScanEventPostgres(db *sql.DB) *ScanEventPostgres {
+func NewScanEventPostgres(db *database.PostgresPool) *ScanEventPostgres {
 	return &ScanEventPostgres{db: db}
 }
 
@@ -25,7 +26,7 @@ func (r *ScanEventPostgres) Create(ctx context.Context, event *domain.ScanEvent)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.Exec(ctx, query,
 		event.ID,
 		event.TenantID,
 		event.Barcode,
@@ -55,7 +56,7 @@ func (r *ScanEventPostgres) GetByID(ctx context.Context, tenantID, id string) (*
 		WHERE tenant_id = $1 AND id = $2
 	`
 
-	row := r.db.QueryRowContext(ctx, query, tenantID, id)
+	row := r.db.QueryRow(ctx, query, tenantID, id)
 	return scanRowToEvent(row)
 }
 
@@ -69,7 +70,7 @@ func (r *ScanEventPostgres) GetByBarcode(ctx context.Context, tenantID, barcode 
 		LIMIT 1
 	`
 
-	row := r.db.QueryRowContext(ctx, query, tenantID, barcode)
+	row := r.db.QueryRow(ctx, query, tenantID, barcode)
 	return scanRowToEvent(row)
 }
 
@@ -107,7 +108,7 @@ func (r *ScanEventPostgres) List(ctx context.Context, tenantID string, query *po
 	// Count query
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM scan_events %s", where)
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, err
 	}
 
@@ -123,7 +124,7 @@ func (r *ScanEventPostgres) List(ctx context.Context, tenantID string, query *po
 
 	args = append(args, query.Limit, query.Offset)
 
-	rows, err := r.db.QueryContext(ctx, listQuery, args...)
+	rows, err := r.db.Query(ctx, listQuery, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +155,7 @@ func (r *ScanEventPostgres) Update(ctx context.Context, event *domain.ScanEvent)
 		WHERE id = $6 AND tenant_id = $7
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.Exec(ctx, query,
 		event.EquipmentID,
 		event.ProjectID,
 		event.LocationID,

@@ -11,10 +11,10 @@ import (
 
 type Handler struct {
 	workflowSvc *application.WorkflowService
-	logger      *logger.Logger
+	logger      logger.Logger
 }
 
-func NewHandler(workflowSvc *application.WorkflowService, log *logger.Logger) *Handler {
+func NewHandler(workflowSvc *application.WorkflowService, log logger.Logger) *Handler {
 	return &Handler{
 		workflowSvc: workflowSvc,
 		logger:      log,

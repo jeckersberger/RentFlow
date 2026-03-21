@@ -12,10 +12,10 @@ import (
 
 type TimeEntryService struct {
 	timeRepo ports.TimeEntryRepository
-	logger   *logger.Logger
+	logger   logger.Logger
 }
 
-func NewTimeEntryService(timeRepo ports.TimeEntryRepository, logger *logger.Logger) *TimeEntryService {
+func NewTimeEntryService(timeRepo ports.TimeEntryRepository, logger logger.Logger) *TimeEntryService {
 	return &TimeEntryService{
 		timeRepo: timeRepo,
 		logger:   logger,

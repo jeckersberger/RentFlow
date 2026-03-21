@@ -64,7 +64,11 @@ func (r *CrewPostgres) UpdateCrewMember(ctx context.Context, cm *domain.CrewMemb
 		return fmt.Errorf("failed to update crew member: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("crew member not found")
 	}
 
@@ -155,7 +159,11 @@ func (r *CrewPostgres) DeleteCrewMember(ctx context.Context, tenantID, crewMembe
 		return fmt.Errorf("failed to delete crew member: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("crew member not found")
 	}
 

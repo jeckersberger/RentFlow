@@ -39,13 +39,13 @@ type LogAuditCommand struct {
 type AuditService struct {
 	auditRepo     ports.AuditEntryRepository
 	integrityRepo ports.IntegrityCheckRepository
-	logger        *logger.Logger
+	logger        logger.Logger
 }
 
 func NewAuditService(
 	auditRepo ports.AuditEntryRepository,
 	integrityRepo ports.IntegrityCheckRepository,
-	log *logger.Logger,
+	log logger.Logger,
 ) *AuditService {
 	return &AuditService{
 		auditRepo:     auditRepo,

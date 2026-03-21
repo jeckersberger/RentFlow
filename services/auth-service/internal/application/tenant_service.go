@@ -2,9 +2,6 @@ package application
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"

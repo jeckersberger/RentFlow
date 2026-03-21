@@ -127,7 +127,7 @@ func InvoiceToDTO(inv *domain.Invoice) *InvoiceDTO {
 			Unit:        item.Unit,
 			UnitPrice:   item.UnitPrice,
 			TotalPrice:  item.TotalPrice,
-			TaxRate:     item.TaxRate,
+			TaxRate:     float64(item.TaxRate),
 			EquipmentID: item.EquipmentID,
 		}
 	}
@@ -148,7 +148,7 @@ func InvoiceToDTO(inv *domain.Invoice) *InvoiceDTO {
 		ClientTaxID:   inv.ClientTaxID,
 		Items:         items,
 		SubTotal:      inv.SubTotal,
-		TaxRate:       inv.TaxRate,
+		TaxRate:       float64(inv.TaxRate),
 		TaxAmount:     inv.TaxAmount,
 		Total:         inv.Total,
 		Currency:      inv.Currency,
@@ -178,7 +178,7 @@ func QuoteToDTO(quote *domain.Quote) *QuoteDTO {
 			Unit:        item.Unit,
 			UnitPrice:   item.UnitPrice,
 			TotalPrice:  item.TotalPrice,
-			TaxRate:     item.TaxRate,
+			TaxRate:     float64(item.TaxRate),
 			EquipmentID: item.EquipmentID,
 		}
 	}
@@ -198,7 +198,7 @@ func QuoteToDTO(quote *domain.Quote) *QuoteDTO {
 		ClientEmail: quote.ClientEmail,
 		Items:       items,
 		SubTotal:    quote.SubTotal,
-		TaxRate:     quote.TaxRate,
+		TaxRate:     float64(quote.TaxRate),
 		TaxAmount:   quote.TaxAmount,
 		Total:       quote.Total,
 		Currency:    quote.Currency,

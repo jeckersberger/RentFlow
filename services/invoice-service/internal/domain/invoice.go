@@ -8,6 +8,19 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/events"
 )
 
+// TaxRate represents a tax rate as a percentage
+type TaxRate float64
+
+// IsValidTaxRate checks if the tax rate is valid (0, 7, or 19%)
+func (t TaxRate) IsValidTaxRate() bool {
+	switch t {
+	case 0, 7, 19:
+		return true
+	default:
+		return false
+	}
+}
+
 // InvoiceStatus represents the state of an invoice
 type InvoiceStatus string
 
@@ -42,7 +55,7 @@ type Invoice struct {
 	ClientTaxID   string // USt-IdNr
 	Items         []InvoiceItem
 	SubTotal      float64
-	TaxRate       float64 // 0, 7, or 19%
+	TaxRate       TaxRate // 0, 7, or 19%
 	TaxAmount     float64
 	Total         float64
 	Currency      string
@@ -68,7 +81,7 @@ type InvoiceItem struct {
 	Unit        string    // "Stück", "Tag", "Pauschal", etc.
 	UnitPrice   float64
 	TotalPrice  float64
-	TaxRate     float64
+	TaxRate     TaxRate
 	EquipmentID *string // optional link to equipment
 }
 
@@ -131,14 +144,13 @@ func (i *Invoice) RemoveItem(itemID string) error {
 
 // SetTaxRate sets the VAT rate (0, 7, or 19%)
 func (i *Invoice) SetTaxRate(rate float64) error {
-	switch rate {
-	case 0, 7, 19:
-		i.TaxRate = rate
-		i.UpdatedAt = time.Now()
-		return nil
-	default:
+	taxRate := TaxRate(rate)
+	if !taxRate.IsValidTaxRate() {
 		return ErrInvalidTaxRate
 	}
+	i.TaxRate = taxRate
+	i.UpdatedAt = time.Now()
+	return nil
 }
 
 // CalculateTotals recalculates SubTotal, TaxAmount, and Total
@@ -154,7 +166,7 @@ func (i *Invoice) CalculateTotals() error {
 	}
 
 	// Calculate tax: tax = subtotal * (rate / 100)
-	i.TaxAmount = i.SubTotal * (i.TaxRate / 100)
+	i.TaxAmount = i.SubTotal * (float64(i.TaxRate) / 100)
 	i.Total = i.SubTotal + i.TaxAmount
 
 	if i.Total <= 0 {
@@ -206,7 +218,11 @@ func (i *Invoice) Send(email string) error {
 		SentAt:        i.UpdatedAt,
 		SentTo:        email,
 	}
-	i.Apply(event)
+	eventData, err := events.NewEventData("InvoiceSent", event, nil)
+	if err != nil {
+		return err
+	}
+	i.Apply(*eventData)
 	return nil
 }
 
@@ -230,7 +246,11 @@ func (i *Invoice) MarkPaid(paymentMethod, paymentRef string) error {
 		PaymentMethod: paymentMethod,
 		PaymentRef:    paymentRef,
 	}
-	i.Apply(event)
+	eventData, err := events.NewEventData("InvoicePaid", event, nil)
+	if err != nil {
+		return err
+	}
+	i.Apply(*eventData)
 	return nil
 }
 
@@ -250,7 +270,11 @@ func (i *Invoice) Cancel(reason string) error {
 		CancelledAt:   i.UpdatedAt,
 		Reason:        reason,
 	}
-	i.Apply(event)
+	eventData, err := events.NewEventData("InvoiceCancelled", event, nil)
+	if err != nil {
+		return err
+	}
+	i.Apply(*eventData)
 	return nil
 }
 
@@ -269,7 +293,11 @@ func (i *Invoice) Credit(creditID string) error {
 		CreditedAt:    i.UpdatedAt,
 		CreditNoteID:  creditID,
 	}
-	i.Apply(event)
+	eventData, err := events.NewEventData("InvoiceCredited", event, nil)
+	if err != nil {
+		return err
+	}
+	i.Apply(*eventData)
 	return nil
 }
 
@@ -300,12 +328,3 @@ func (i *Invoice) IsFinalized() bool {
 	return i.Status != InvoiceDraft
 }
 
-// Helper function to validate tax rate
-func (f float64) IsValidTaxRate() bool {
-	switch f {
-	case 0, 7, 19:
-		return true
-	default:
-		return false
-	}
-}

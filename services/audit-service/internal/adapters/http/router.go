@@ -10,7 +10,7 @@ import (
 	"github.com/jeckersberger/rentflow/services/audit-service/internal/domain"
 )
 
-func NewRouter(svc *application.AuditService, log *logger.Logger) *http.ServeMux {
+func NewRouter(svc *application.AuditService, log logger.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 	h := &Handler{svc: svc, logger: log}
 
@@ -30,7 +30,7 @@ func NewRouter(svc *application.AuditService, log *logger.Logger) *http.ServeMux
 
 type Handler struct {
 	svc    *application.AuditService
-	logger *logger.Logger
+	logger logger.Logger
 }
 
 func (h *Handler) LogAudit(w http.ResponseWriter, r *http.Request) {

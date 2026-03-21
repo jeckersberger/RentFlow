@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	nethttp "net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,7 +15,7 @@ import (
 
 	"github.com/jeckersberger/rentflow/pkg/common/config"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
-	"github.com/jeckersberger/rentflow/services/auth-service/internal/adapters/http"
+	authhttp "github.com/jeckersberger/rentflow/services/auth-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/application"
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/infrastructure/repositories"
 )
@@ -36,7 +36,7 @@ func main() {
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
 	// Connect to PostgreSQL
-	db, err := connectPostgres(cfg.DatabaseURL, log)
+	db, err := connectPostgres(cfg.ConnectionString(), log)
 	if err != nil {
 		log.Fatal("Failed to connect to database", err)
 	}
@@ -53,17 +53,17 @@ func main() {
 	tenantService := application.NewTenantService(tenantRepo, log)
 
 	// Setup router
-	router := http.NewServeMux()
+	router := nethttp.NewServeMux()
 
 	// Health & readiness
 	router.HandleFunc("GET /health", healthHandler(serviceName))
 	router.HandleFunc("GET /ready", readyHandler(serviceName, db, log))
 
 	// Setup API routes
-	http.SetupRoutes(router, userService, tenantService, cfg.JWTSecret, log)
+	authhttp.SetupRoutes(router, userService, tenantService, cfg.JWTSecret, log)
 
 	// Create HTTP server
-	srv := &http.Server{
+	srv := &nethttp.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
 		ReadTimeout:  15 * time.Second,
@@ -74,7 +74,7 @@ func main() {
 	// Start server in a goroutine
 	go func() {
 		log.Info("Listening", "addr", srv.Addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && err != nethttp.ErrServerClosed {
 			log.Fatal("Server error", err)
 		}
 	}()
@@ -91,10 +91,10 @@ func main() {
 	log.Info("Server stopped")
 }
 
-func healthHandler(serviceName string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func healthHandler(serviceName string) nethttp.HandlerFunc {
+	return func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(nethttp.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status":    "healthy",
 			"service":   serviceName,
@@ -103,8 +103,8 @@ func healthHandler(serviceName string) http.HandlerFunc {
 	}
 }
 
-func readyHandler(serviceName string, db *sql.DB, log logger.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func readyHandler(serviceName string, db *sql.DB, log logger.Logger) nethttp.HandlerFunc {
+	return func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		// Check database connection
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -112,7 +112,7 @@ func readyHandler(serviceName string, db *sql.DB, log logger.Logger) http.Handle
 		if err := db.PingContext(ctx); err != nil {
 			log.Error("Database not ready", err)
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
+			w.WriteHeader(nethttp.StatusServiceUnavailable)
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"status":  "not ready",
 				"service": serviceName,
@@ -122,7 +122,7 @@ func readyHandler(serviceName string, db *sql.DB, log logger.Logger) http.Handle
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(nethttp.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status":  "ready",
 			"service": serviceName,

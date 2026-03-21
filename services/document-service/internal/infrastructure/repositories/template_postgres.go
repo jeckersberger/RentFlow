@@ -58,7 +58,11 @@ func (r *TemplatePostgres) Update(ctx context.Context, tpl *domain.Template) err
 		return fmt.Errorf("failed to update template: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("template not found")
 	}
 
@@ -145,7 +149,11 @@ func (r *TemplatePostgres) Delete(ctx context.Context, tenantID, templateID stri
 		return fmt.Errorf("failed to delete template: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("template not found")
 	}
 

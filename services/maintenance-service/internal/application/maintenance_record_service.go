@@ -12,10 +12,10 @@ import (
 
 type MaintenanceRecordService struct {
 	repo   ports.MaintenanceRecordRepository
-	logger *logger.Logger
+	logger logger.Logger
 }
 
-func NewMaintenanceRecordService(repo ports.MaintenanceRecordRepository, log *logger.Logger) *MaintenanceRecordService {
+func NewMaintenanceRecordService(repo ports.MaintenanceRecordRepository, log logger.Logger) *MaintenanceRecordService {
 	return &MaintenanceRecordService{
 		repo:   repo,
 		logger: log,

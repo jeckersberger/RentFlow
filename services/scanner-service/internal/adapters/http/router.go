@@ -7,7 +7,7 @@ import (
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/application"
 )
 
-func NewRouter(scanSvc *application.ScanService, logger *logger.Logger) *http.ServeMux {
+func NewRouter(scanSvc *application.ScanService, logger logger.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(scanSvc, logger)
 

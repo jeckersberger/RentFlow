@@ -14,14 +14,14 @@ type SharingService struct {
 	equipmentShareRepo ports.EquipmentShareRepository
 	shareRequestRepo   ports.ShareRequestRepository
 	peerRepo           ports.PeerRepository
-	logger             *logger.Logger
+	logger             logger.Logger
 }
 
 func NewSharingService(
 	eqRepo ports.EquipmentShareRepository,
 	reqRepo ports.ShareRequestRepository,
 	peerRepo ports.PeerRepository,
-	log *logger.Logger,
+	log logger.Logger,
 ) *SharingService {
 	return &SharingService{
 		equipmentShareRepo: eqRepo,

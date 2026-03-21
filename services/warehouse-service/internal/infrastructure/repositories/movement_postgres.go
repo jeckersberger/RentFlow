@@ -5,15 +5,16 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/warehouse-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/warehouse-service/internal/ports"
 )
 
 type MovementPostgres struct {
-	db *sql.DB
+	db *database.PostgresPool
 }
 
-func NewMovementPostgres(db *sql.DB) ports.MovementRepository {
+func NewMovementPostgres(db *database.PostgresPool) ports.MovementRepository {
 	return &MovementPostgres{db: db}
 }
 
@@ -24,7 +25,7 @@ func (r *MovementPostgres) Create(ctx context.Context, movement *domain.Movement
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.Exec(ctx, query,
 		movement.ID,
 		movement.TenantID,
 		movement.EquipmentID,
@@ -49,7 +50,7 @@ func (r *MovementPostgres) GetByID(ctx context.Context, tenantID, id string) (*d
 		WHERE tenant_id = $1 AND id = $2
 	`
 
-	row := r.db.QueryRowContext(ctx, query, tenantID, id)
+	row := r.db.QueryRow(ctx, query, tenantID, id)
 	return movementRowToMovement(row)
 }
 
@@ -82,7 +83,7 @@ func (r *MovementPostgres) List(ctx context.Context, tenantID string, query *por
 	// Count query
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM movements %s", where)
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
@@ -97,7 +98,7 @@ func (r *MovementPostgres) List(ctx context.Context, tenantID string, query *por
 
 	args = append(args, query.Limit, query.Offset)
 
-	rows, err := r.db.QueryContext(ctx, listQuery, args...)
+	rows, err := r.db.Query(ctx, listQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -124,7 +125,7 @@ func (r *MovementPostgres) GetByEquipmentID(ctx context.Context, tenantID, equip
 		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, tenantID, equipmentID, limit, offset)
+	rows, err := r.db.Query(ctx, query, tenantID, equipmentID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -142,7 +143,7 @@ func (r *MovementPostgres) GetByEquipmentID(ctx context.Context, tenantID, equip
 	// Get total count
 	countQuery := "SELECT COUNT(*) FROM movements WHERE tenant_id = $1 AND equipment_id = $2"
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, tenantID, equipmentID).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQuery, tenantID, equipmentID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 

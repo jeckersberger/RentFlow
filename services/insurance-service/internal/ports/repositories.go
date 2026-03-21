@@ -2,7 +2,6 @@ package ports
 
 import (
 	"context"
-	"time"
 
 	"github.com/jeckersberger/rentflow/services/insurance-service/internal/domain"
 )

@@ -301,3 +301,23 @@ func (r *QuotePostgres) getQuoteItems(ctx context.Context, quoteID string) ([]do
 
 	return items, nil
 }
+
+// GetNextSequenceNumber returns the next sequential quote number for a tenant
+func (r *QuotePostgres) GetNextSequenceNumber(ctx context.Context, tenantID string) (int, error) {
+	var nextNum int
+
+	query := `
+		INSERT INTO invoice.number_sequences (tenant_id, sequence_type, next_value, created_at)
+		VALUES ($1, 'quote', 2, NOW())
+		ON CONFLICT (tenant_id, sequence_type)
+		DO UPDATE SET next_value = invoice.number_sequences.next_value + 1, updated_at = NOW()
+		RETURNING next_value - 1
+	`
+
+	err := r.db.QueryRow(ctx, query, tenantID).Scan(&nextNum)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get next quote sequence number: %w", err)
+	}
+
+	return nextNum, nil
+}

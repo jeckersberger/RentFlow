@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/document-service/internal/domain"
@@ -11,12 +12,12 @@ import (
 
 type TemplateService struct {
 	tplRepo ports.TemplateRepository
-	logger  *logger.Logger
+	logger  logger.Logger
 }
 
 func NewTemplateService(
 	tplRepo ports.TemplateRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *TemplateService {
 	return &TemplateService{
 		tplRepo: tplRepo,
@@ -143,7 +144,7 @@ func (s *TemplateService) GetPreview(ctx context.Context, tenantID, templateID s
 	for key, value := range variables {
 		// Replace {{key}} with value
 		placeholder := fmt.Sprintf("{{%s}}", key)
-		preview = fmt.Sprintf(preview, value) // simplified - would use proper replacement
+		preview = strings.ReplaceAll(preview, placeholder, value)
 	}
 
 	return preview, nil

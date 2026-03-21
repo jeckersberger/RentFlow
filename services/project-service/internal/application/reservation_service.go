@@ -12,10 +12,10 @@ import (
 
 type ReservationService struct {
 	repo   ports.ReservationRepository
-	logger *logger.Logger
+	logger logger.Logger
 }
 
-func NewReservationService(repo ports.ReservationRepository, logger *logger.Logger) *ReservationService {
+func NewReservationService(repo ports.ReservationRepository, logger logger.Logger) *ReservationService {
 	return &ReservationService{
 		repo:   repo,
 		logger: logger,

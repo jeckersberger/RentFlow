@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"time"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/audit-service/internal/domain"
 )
 
 type AuditEntryPostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewAuditEntryPostgres(db *pgxpool.Pool) *AuditEntryPostgres {
+func NewAuditEntryPostgres(db *database.PostgresPool) *AuditEntryPostgres {
 	return &AuditEntryPostgres{db: db}
 }
 
@@ -140,10 +140,10 @@ func (r *AuditEntryPostgres) GetLastEntry(ctx context.Context, tenantID string) 
 }
 
 type IntegrityCheckPostgres struct {
-	db *pgxpool.Pool
+	db *database.PostgresPool
 }
 
-func NewIntegrityCheckPostgres(db *pgxpool.Pool) *IntegrityCheckPostgres {
+func NewIntegrityCheckPostgres(db *database.PostgresPool) *IntegrityCheckPostgres {
 	return &IntegrityCheckPostgres{db: db}
 }
 

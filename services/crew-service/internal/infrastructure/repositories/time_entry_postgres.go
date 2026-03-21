@@ -56,7 +56,11 @@ func (r *TimeEntryPostgres) UpdateTimeEntry(ctx context.Context, te *domain.Time
 		return fmt.Errorf("failed to update time entry: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("time entry not found")
 	}
 

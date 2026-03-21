@@ -11,10 +11,10 @@ import (
 
 type CategoryService struct {
 	catRepo ports.CategoryRepository
-	logger  *logger.Logger
+	logger  logger.Logger
 }
 
-func NewCategoryService(catRepo ports.CategoryRepository, logger *logger.Logger) *CategoryService {
+func NewCategoryService(catRepo ports.CategoryRepository, logger logger.Logger) *CategoryService {
 	return &CategoryService{
 		catRepo: catRepo,
 		logger:  logger,

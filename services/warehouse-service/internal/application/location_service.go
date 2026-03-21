@@ -12,12 +12,12 @@ import (
 
 type LocationService struct {
 	locationRepo ports.LocationRepository
-	logger       *logger.Logger
+	logger       logger.Logger
 }
 
 func NewLocationService(
 	locationRepo ports.LocationRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *LocationService {
 	return &LocationService{
 		locationRepo: locationRepo,
@@ -33,7 +33,7 @@ func (s *LocationService) CreateLocation(ctx context.Context, cmd CreateLocation
 		return nil, domain.NewDomainError("NAME_REQUIRED", "name is required", nil)
 	}
 
-	locationID := fmt.Sprintf("loc_%d", hashString(cmd.TenantID+cmd.Name+time.Now().String()))
+	locationID := fmt.Sprintf("loc_%d", hashLocationString(cmd.TenantID+cmd.Name+time.Now().String()))
 	location := domain.NewLocation(locationID, cmd.TenantID, cmd.Name, cmd.Type)
 	location.ParentID = cmd.ParentID
 	location.Capacity = cmd.Capacity
@@ -208,7 +208,7 @@ func (s *LocationService) GetLocationOccupancy(ctx context.Context, tenantID, lo
 	return occupancy, nil
 }
 
-func hashString(s string) int64 {
+func hashLocationString(s string) int64 {
 	h := int64(5381)
 	for _, c := range s {
 		h = ((h << 5) + h) + int64(c)

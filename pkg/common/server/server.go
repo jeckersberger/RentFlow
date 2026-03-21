@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rentflow/pkg/common/config"
-	"github.com/rentflow/pkg/common/health"
-	"github.com/rentflow/pkg/common/logger"
-	"github.com/rentflow/pkg/common/middleware"
+	"github.com/jeckersberger/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/health"
+	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	"github.com/jeckersberger/rentflow/pkg/common/middleware"
 )
 
 // Server represents an HTTP server with common functionality

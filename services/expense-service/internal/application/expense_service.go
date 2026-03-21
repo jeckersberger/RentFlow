@@ -11,10 +11,10 @@ import (
 
 type ExpenseService struct {
 	expRepo ports.ExpenseRepository
-	logger  *logger.Logger
+	logger  logger.Logger
 }
 
-func NewExpenseService(expRepo ports.ExpenseRepository, logger *logger.Logger) *ExpenseService {
+func NewExpenseService(expRepo ports.ExpenseRepository, logger logger.Logger) *ExpenseService {
 	return &ExpenseService{
 		expRepo: expRepo,
 		logger:  logger,

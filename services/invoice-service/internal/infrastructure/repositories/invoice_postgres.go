@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lib/pq"
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/invoice-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/invoice-service/internal/ports"
@@ -389,4 +388,24 @@ func (r *InvoicePostgres) getInvoiceItems(ctx context.Context, invoiceID string)
 	}
 
 	return items, nil
+}
+
+// GetNextSequenceNumber returns the next sequential invoice number for a tenant
+func (r *InvoicePostgres) GetNextSequenceNumber(ctx context.Context, tenantID string) (int, error) {
+	var nextNum int
+
+	query := `
+		INSERT INTO invoice.number_sequences (tenant_id, sequence_type, next_value, created_at)
+		VALUES ($1, 'invoice', 2, NOW())
+		ON CONFLICT (tenant_id, sequence_type)
+		DO UPDATE SET next_value = invoice.number_sequences.next_value + 1, updated_at = NOW()
+		RETURNING next_value - 1
+	`
+
+	err := r.db.QueryRow(ctx, query, tenantID).Scan(&nextNum)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get next invoice sequence number: %w", err)
+	}
+
+	return nextNum, nil
 }

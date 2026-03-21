@@ -13,12 +13,12 @@ import (
 
 type ExportService struct {
 	invoiceRepo ports.InvoiceRepository
-	logger      *logger.Logger
+	logger      logger.Logger
 }
 
 func NewExportService(
 	invoiceRepo ports.InvoiceRepository,
-	logger *logger.Logger,
+	logger logger.Logger,
 ) *ExportService {
 	return &ExportService{
 		invoiceRepo: invoiceRepo,
@@ -63,7 +63,7 @@ func (s *ExportService) ExportDATEV(ctx context.Context, query ExportDATEVQuery)
 		}
 
 		// Determine GL account based on tax rate
-		glAccount := s.getGLAccountForTaxRate(invoice.TaxRate)
+		glAccount := s.getGLAccountForTaxRate(float64(invoice.TaxRate))
 
 		// Revenue entry
 		row := &DATEVExportRow{
@@ -93,7 +93,7 @@ func (s *ExportService) ExportDATEV(ctx context.Context, query ExportDATEVQuery)
 
 		// VAT liability entry if tax > 0
 		if invoice.TaxAmount > 0 {
-			vatAccount := s.getVATAccountForRate(invoice.TaxRate)
+			vatAccount := s.getVATAccountForRate(float64(invoice.TaxRate))
 			vatRow := &DATEVExportRow{
 				Umsatz:       invoice.TaxAmount,
 				SollHaben:    "H", // Haben (credit) for VAT liability
@@ -180,7 +180,7 @@ func (s *ExportService) ExportWISO(ctx context.Context, tenantID, fromDate, toDa
 	sb.WriteString("Belegnummer\tDatum\tKunde\tBetrag\tUSt.-Satz\tUSt.\tKonto\tGegenkonto\n")
 
 	for _, invoice := range result.Items {
-		glAccount := s.getGLAccountForTaxRate(invoice.TaxRate)
+		glAccount := s.getGLAccountForTaxRate(float64(invoice.TaxRate))
 		sb.WriteString(fmt.Sprintf(
 			"%s\t%s\t%s\t%.2f\t%d%%\t%.2f\t%s\t1200\n",
 			invoice.InvoiceNumber,

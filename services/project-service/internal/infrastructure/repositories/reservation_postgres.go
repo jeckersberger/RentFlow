@@ -7,7 +7,6 @@ import (
 
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/project-service/internal/domain"
-	"github.com/jeckersberger/rentflow/services/project-service/internal/ports"
 )
 
 type ReservationPostgres struct {

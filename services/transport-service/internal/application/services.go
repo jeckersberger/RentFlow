@@ -12,10 +12,10 @@ import (
 
 type VehicleService struct {
 	repo   ports.VehicleRepository
-	logger *logger.Logger
+	logger logger.Logger
 }
 
-func NewVehicleService(repo ports.VehicleRepository, log *logger.Logger) *VehicleService {
+func NewVehicleService(repo ports.VehicleRepository, log logger.Logger) *VehicleService {
 	return &VehicleService{repo: repo, logger: log}
 }
 
@@ -90,10 +90,10 @@ func (s *VehicleService) UpdateVehicle(ctx context.Context, cmd UpdateVehicleCom
 type TourService struct {
 	tourRepo    ports.TourRepository
 	vehicleRepo ports.VehicleRepository
-	logger      *logger.Logger
+	logger      logger.Logger
 }
 
-func NewTourService(tourRepo ports.TourRepository, vehicleRepo ports.VehicleRepository, log *logger.Logger) *TourService {
+func NewTourService(tourRepo ports.TourRepository, vehicleRepo ports.VehicleRepository, log logger.Logger) *TourService {
 	return &TourService{tourRepo: tourRepo, vehicleRepo: vehicleRepo, logger: log}
 }
 

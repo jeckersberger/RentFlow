@@ -149,7 +149,11 @@ func (r *AssignmentPostgres) DeleteAssignment(ctx context.Context, tenantID, ass
 		return fmt.Errorf("failed to delete assignment: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
 		return fmt.Errorf("assignment not found")
 	}
 

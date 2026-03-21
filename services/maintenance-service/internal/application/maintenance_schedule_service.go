@@ -13,13 +13,13 @@ import (
 type MaintenanceScheduleService struct {
 	scheduleRepo ports.MaintenanceScheduleRepository
 	recordRepo   ports.MaintenanceRecordRepository
-	logger       *logger.Logger
+	logger       logger.Logger
 }
 
 func NewMaintenanceScheduleService(
 	scheduleRepo ports.MaintenanceScheduleRepository,
 	recordRepo ports.MaintenanceRecordRepository,
-	log *logger.Logger,
+	log logger.Logger,
 ) *MaintenanceScheduleService {
 	return &MaintenanceScheduleService{
 		scheduleRepo: scheduleRepo,
