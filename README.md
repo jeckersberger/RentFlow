@@ -387,76 +387,76 @@ make test-e2e
 ### Phase 1 – Core MVP (10–14 Wochen)
 
 #### M1.1: Auth-Service
-- [ ] PostgreSQL-Schema: `users`, `sessions`, `refresh_tokens`
-- [ ] Argon2id-Passwort-Hashing
-- [ ] JWT-Ausstellung (RS256, 1h Lebensdauer)
-- [ ] Refresh-Token in Redis (7 Tage)
-- [ ] RBAC-Rollen: `superadmin`, `admin`, `manager`, `warehouse`, `driver`, `crew`, `freelancer`, `readonly`
-- [ ] Permissions-Matrix implementieren
-- [ ] Brute-Force-Schutz (5 Fehlversuche → 15 Min Sperre, Redis)
-- [ ] Rate-Limiting: 10 Anfragen/Minute pro IP
-- [ ] Initialer Superadmin-Nutzer per Umgebungsvariable
+- [x] PostgreSQL-Schema: `users`, `sessions`, `refresh_tokens`
+- [x] Argon2id-Passwort-Hashing
+- [x] JWT-Ausstellung (RS256, 1h Lebensdauer)
+- [x] Refresh-Token in Redis (7 Tage)
+- [x] RBAC-Rollen: `superadmin`, `admin`, `manager`, `warehouse`, `driver`, `crew`, `freelancer`, `readonly`
+- [x] Permissions-Matrix implementieren
+- [x] Brute-Force-Schutz (5 Fehlversuche → 15 Min Sperre, Redis)
+- [x] Rate-Limiting: 10 Anfragen/Minute pro IP
+- [x] Initialer Superadmin-Nutzer per Umgebungsvariable
 
 #### M1.2: Inventory-Service
-- [ ] PostgreSQL-Migration: `equipment`, `equipment_stock`, `categories`, `equipment_images`
-- [ ] KurrentDB-Aggregate `EquipmentAggregate`
-- [ ] Volltext-Suche mit `pg_trgm`
-- [ ] Batch-Verfügbarkeitscheck (bis 500 Items gleichzeitig)
-- [ ] Preiskalkulations-Engine mit Staffelrabatten
-- [ ] ZPL-Label-Generierung für Zebra-Drucker
-- [ ] MinIO/S3-Integration für Equipment-Bilder
-- [ ] QR-Code-Generierung (`skip2/go-qrcode`)
-- [ ] Flightcase-Logik: Child-Equipment-Zuordnung
-- [ ] CSV-Import aus Bestandsdaten alter Systeme
+- [x] PostgreSQL-Migration: `equipment`, `equipment_stock`, `categories`, `equipment_images`
+- [x] KurrentDB-Aggregate `EquipmentAggregate`
+- [x] Volltext-Suche mit `pg_trgm`
+- [x] Batch-Verfügbarkeitscheck (bis 500 Items gleichzeitig)
+- [x] Preiskalkulations-Engine mit Staffelrabatten
+- [x] ZPL-Label-Generierung für Zebra-Drucker
+- [x] MinIO/S3-Integration für Equipment-Bilder
+- [x] QR-Code-Generierung (`skip2/go-qrcode`)
+- [x] Flightcase-Logik: Child-Equipment-Zuordnung
+- [x] CSV-Import aus Bestandsdaten alter Systeme
 
 #### M1.3: Project-Service
-- [ ] PostgreSQL-Migration: `projects`, `project_equipment`, `customers`
-- [ ] Status-Zustandsmaschine (anfrage → archiviert)
-- [ ] Doppelbuchungs-Erkennung über alle Projekte
-- [ ] Packlisten-Generierung sortiert nach Lagerort
-- [ ] Kalenderansicht für Projektzeitraum-Übersicht
-- [ ] E-Mail-Benachrichtigung bei Status-Änderung
-- [ ] Kunden-Verwaltung (DSGVO-konforme Pflichtfelder)
-- [ ] Projekt-Kopieren-Funktion
+- [x] PostgreSQL-Migration: `projects`, `project_equipment`, `customers`
+- [x] Status-Zustandsmaschine (anfrage → archiviert)
+- [x] Doppelbuchungs-Erkennung über alle Projekte
+- [x] Packlisten-Generierung sortiert nach Lagerort
+- [x] Kalenderansicht für Projektzeitraum-Übersicht
+- [x] E-Mail-Benachrichtigung bei Status-Änderung
+- [x] Kunden-Verwaltung (DSGVO-konforme Pflichtfelder)
+- [x] Projekt-Kopieren-Funktion
 
 #### M1.4: Invoice-Service
-- [ ] Fortlaufende GoBD-konforme Rechnungsnummern (pro Mandant)
-- [ ] PDF-Generierung mit `chromedp` (HTML-Template → PDF)
-- [ ] Angebot → Auftragsbestätigung → Rechnung Konvertierung
-- [ ] Mahnwesen (3-stufig: Zahlungserinnerung / Mahnung 1 / Mahnung 2)
-- [ ] DATEV-Export SKR03 (CSV-Format)
-- [ ] Teilrechnung mit Restbetrag-Tracking
-- [ ] Stornierung nach GoBD (keine Löschung, nur Gegenbuchung)
-- [ ] Gutschriften mit Pflicht-Verweis auf Originalrechnung
-- [ ] E-Mail-Versand der Rechnung als PDF-Anhang
+- [x] Fortlaufende GoBD-konforme Rechnungsnummern (pro Mandant)
+- [x] PDF-Generierung mit `go-pdf/fpdf` (A4-Layout mit Header, Positionen, Summen)
+- [x] Angebot → Auftragsbestätigung → Rechnung Konvertierung
+- [x] Mahnwesen (3-stufig: Zahlungserinnerung / Mahnung 1 / Mahnung 2)
+- [x] DATEV-Export SKR03 (CSV-Format)
+- [x] Teilrechnung mit Restbetrag-Tracking
+- [x] Stornierung nach GoBD (keine Löschung, nur Gegenbuchung)
+- [x] Gutschriften mit Pflicht-Verweis auf Originalrechnung
+- [x] E-Mail-Versand der Rechnung als PDF-Anhang
 
 #### M1.5: Frontend Core-Pages
-- [ ] TanStack Router Route-Tree aufbauen
-- [ ] Login-Page, Dashboard, Equipment-Liste, Equipment-Detail
-- [ ] Projekte-Liste, Projekt-Detail, Rechnungen-Liste, Rechnung-Detail
-- [ ] TanStack Query für alle API-Calls
-- [ ] Optimistic Updates für häufige Operationen
-- [ ] Fehlerbehandlung + Toast-Benachrichtigungen
-- [ ] Responsive Design (Desktop + Tablet Prio)
-- [ ] Dark-Mode-Toggle
-- [ ] Command Palette (⌘K) für Navigation
+- [x] React Router DOM v6 Route-Tree aufbauen
+- [x] Login-Page, Dashboard, Equipment-Liste, Equipment-Detail
+- [x] Projekte-Liste, Projekt-Detail, Rechnungen-Liste, Rechnung-Detail
+- [x] TanStack Query für alle API-Calls
+- [x] Optimistic Updates für häufige Operationen
+- [x] Fehlerbehandlung + Toast-Benachrichtigungen
+- [x] Responsive Design (Desktop + Tablet Prio)
+- [x] Dark-Mode-Toggle (Dashboard-Pro Dark Theme als Default)
+- [x] Command Palette (⌘K) für Navigation
 
 #### M1.6: Scanner-Integration
-- [ ] `ScannerPage` (`/scan`) mit Kamera-QR-Scan
-- [ ] Equipment-Lookup nach QR-Code-UUID
-- [ ] Check-Out: Equipment einem Projekt zuweisen
-- [ ] Check-In: Equipment vom Projekt zurückgeben
-- [ ] Scan-Feedback (visuell + vibration)
-- [ ] Offline-Unterstützung für Service-Worker
+- [x] `ScannerPage` (`/scan`) mit Kamera-QR-Scan
+- [x] Equipment-Lookup nach QR-Code-UUID
+- [x] Check-Out: Equipment einem Projekt zuweisen
+- [x] Check-In: Equipment vom Projekt zurückgeben
+- [x] Scan-Feedback (visuell + vibration)
+- [x] Offline-Unterstützung für Service-Worker
 
 #### Phase-1-Abnahmekriterien
-- [ ] Marco kann ein neues Projekt anlegen und Equipment zuweisen
-- [ ] Lisa kann Equipment per Smartphone-Kamera scannen und check-out durchführen
-- [ ] Thomas kann eine Rechnung erstellen, als PDF herunterladen und per E-Mail senden
-- [ ] Thomas kann DATEV-Export für einen Monat herunterladen
-- [ ] Alle CRUD-Operationen für Equipment, Projekte, Rechnungen funktionieren
-- [ ] JWT-Auth schützt alle Endpunkte
-- [ ] Keine SQL-Injections, XSS, CSRF
+- [x] Marco kann ein neues Projekt anlegen und Equipment zuweisen
+- [x] Lisa kann Equipment per Smartphone-Kamera scannen und check-out durchführen
+- [x] Thomas kann eine Rechnung erstellen, als PDF herunterladen und per E-Mail senden
+- [x] Thomas kann DATEV-Export für einen Monat herunterladen
+- [x] Alle CRUD-Operationen für Equipment, Projekte, Rechnungen funktionieren
+- [x] JWT-Auth schützt alle Endpunkte
+- [x] Keine SQL-Injections, XSS, CSRF
 
 ---
 
