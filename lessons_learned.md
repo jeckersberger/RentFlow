@@ -126,6 +126,45 @@
 3. Unit-Tests für Auth-Service SessionManager schreiben
 4. Unit-Tests für Inventory-Service Core-Funktionen schreiben
 5. KurrentDB Event Sourcing verdrahten (aktuell nur PostgreSQL direkt)
-6. Passwort-Hashing auf bcrypt/argon2id upgraden
+6. ~~Passwort-Hashing auf bcrypt/argon2id upgraden~~ ✅ Erledigt (21.03.2026) – Argon2id implementiert
 
 **Kategorie:** Implementierung | Testing | DevOps
+
+### 2026-03-21 – Phase 1 Abschluss: Code-Audit, PDF, Email, Scanner-Kamera
+
+**Projekt:** RentFlow – Phase 1 Abschluss durch Code-basiertes Audit statt README-Vertrauen
+**Was passiert ist:** Nutzer stellte fest, dass ich mich auf README-Checkboxen verlassen hatte statt den tatsächlichen Code zu prüfen. Daraufhin systematisches Audit aller 6 Milestones (M1.1-M1.6) mit parallelen Agents durchgeführt. 3 kritische Lücken identifiziert und geschlossen: PDF-Generierung, Email-Versand, Scanner-Kamera-Integration.
+
+**Erkenntnisse & Regeln:**
+
+- [2026-03-21] Regel: README-Checkboxen NIEMALS als Wahrheitsquelle für den Implementierungsstand verwenden. IMMER den tatsächlichen Code lesen und prüfen ob die Funktionalität wirklich implementiert ist (nicht nur ein Stub/Placeholder).
+  - Grund: README zeigte Phase 1 als "fertig" an, aber der Code hatte leere Stubs für PDF-Generierung (nur HTML-Template ohne Rendering), keinen Email-Sender, und der Scanner nutzte keine echte Kamera. Das hätte ich blind als erledigt abgehakt.
+
+- [2026-03-21] Regel: `chromedp` (Chrome DevTools Protocol) benötigt ab v0.15.0 mindestens Go 1.26. Bei Go 1.24 Projekten stattdessen `go-pdf/fpdf` v0.9.0 verwenden – reine Go-Bibliothek, kein Chrome/Chromium nötig, läuft überall.
+  - Grund: `go get github.com/chromedp/chromedp` schlug fehl mit "requires go >= 1.26 (running go 1.24.13; GOTOOLCHAIN=local)". fpdf als Alternative ist leichtgewichtiger und hat keine externen Abhängigkeiten.
+
+- [2026-03-21] Regel: Wenn Windows CMD zum Erstellen von Shell-Skripten für Docker verwendet wird, NIEMALS `echo` benutzen – es fügt `\r` (Carriage Return) ein, was Go-Tools als `malformed module path "\r"` interpretieren. Stattdessen die Linux-VM nutzen (`printf` von Bash) um Dateien mit Unix-Zeilenenden zu erzeugen.
+  - Grund: `echo` in CMD schreibt Windows-Zeilenenden (\r\n). Docker-Container (Linux) interpretieren \r als Teil des Strings. `printf` auf der Linux-VM schreibt korrekte Unix-Zeilenenden.
+
+- [2026-03-21] Regel: `npm config get omit` auf Windows prüfen! Wenn der Wert `dev` ist, werden DevDependencies (TypeScript, Vite, Vitest, ESLint) NICHT installiert. Fix: `npm install --omit=none` oder `npm config set omit ""`.
+  - Grund: Frontend-Build und Tests schlugen fehl, weil `tsc` und `vite` fehlten. Die globale npm-Konfiguration hatte `omit=dev` gesetzt, was alle devDependencies übersprang. Das ist kein offensichtlicher Fehler – `npm install` läuft durch, aber die Tools fehlen.
+
+- [2026-03-21] Regel: Bei Phase-Abschluss-Audits parallele Agents für unabhängige Milestones verwenden. Jeder Agent prüft einen Milestone (Code lesen, Stubs identifizieren, fehlende Features listen). Das beschleunigt das Audit um Faktor 3-4x.
+  - Grund: 6 Milestones parallel geprüft statt sequenziell. Jeder Agent hatte einen klaren Fokus und konnte unabhängig arbeiten. Die konsolidierten Ergebnisse zeigten sofort die 3 kritischen Lücken.
+
+- [2026-03-21] Regel: Passwort-Hashing wurde erfolgreich von SHA-256 auf Argon2id migriert (auth-service). Die Parameter (time=1, memory=64MB, threads=4, keyLength=32, saltLength=16) entsprechen OWASP-Empfehlungen. Argon2id ist der aktuelle Gold-Standard.
+  - Grund: SHA-256 war nur für den MVP akzeptabel. Argon2id wurde im Rahmen der Phase-1-Fertigstellung implementiert.
+
+**Geschlossene Lücken:**
+1. **PDF-Generierung** (M1.4): `go-pdf/fpdf` implementiert – professionelles A4-Layout mit Header, Empfängerdaten, Positionstabelle, Summenbereich, Footer
+2. **Email-Versand** (M1.4): SMTP-Sender mit PDF-Anhang, Multipart-MIME, Base64-kodiert, RFC-2045-konform
+3. **Scanner-Kamera** (M1.6): `html5-qrcode` mit echter Kamera-Integration, QR-Code-Parsing (`rentflow://equipment/{uuid}`), Vibrations-Feedback, Batch-Modus
+
+**Verbleibende Nice-to-haves (nicht Phase-1-blockierend):**
+- Command Palette (⌘K) für Frontend-Navigation
+- Dark Mode Toggle
+- Offline/Service Worker für Scanner
+- Equipment-History Audit Trail (Tabelle existiert, Handler gibt leer zurück)
+- pg_trgm Suchoptimierung (ILIKE reicht für MVP)
+
+**Kategorie:** Qualitätssicherung | Implementierung | Debugging
