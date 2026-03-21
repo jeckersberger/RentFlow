@@ -33,8 +33,8 @@ function InvoiceDetailPage() {
     return ''
   }
 
-  const { mutate: performAction, isPending } = useMutation({
-    mutationFn: async (action: string) => {
+  const { mutate: performAction, isPending } = useMutation<unknown, unknown, string, { previous: unknown }>({
+    mutationFn: async (action) => {
       let newStatus: InvoiceStatus = invoice!.status
       if (action === 'send') newStatus = 'sent'
       if (action === 'mark-paid') newStatus = 'paid'
@@ -42,7 +42,7 @@ function InvoiceDetailPage() {
 
       return invoiceApi.update(id!, { status: newStatus })
     },
-    onMutate: async (action: string) => {
+    onMutate: async (action) => {
       await queryClient.cancelQueries({ queryKey: ['invoice', id] })
       const previous = queryClient.getQueryData(['invoice', id])
 
@@ -51,10 +51,10 @@ function InvoiceDetailPage() {
       if (action === 'mark-paid') newStatus = 'paid'
       if (action === 'cancel') newStatus = 'cancelled'
 
-      queryClient.setQueryData(['invoice', id], (old: any) => ({
-        ...old,
+      queryClient.setQueryData(['invoice', id], (old: Record<string, unknown>) => ({
+        ...(old || {}),
         status: newStatus,
-        paid_date: newStatus === 'paid' ? new Date().toISOString() : old.paid_date,
+        paid_date: newStatus === 'paid' ? new Date().toISOString() : (old as Record<string, unknown>)?.paid_date,
       }))
       return { previous }
     },
@@ -66,8 +66,8 @@ function InvoiceDetailPage() {
         duration: 3000,
       })
     },
-    onError: (_err: any, _vars, context: any) => {
-      queryClient.setQueryData(['invoice', id], context.previous)
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['invoice', id], context.previous)
       addNotification(
         'Fehler beim Aktualisieren der Rechnung. Bitte versuchen Sie es später erneut.',
         'error',

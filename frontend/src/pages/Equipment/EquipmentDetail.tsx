@@ -39,15 +39,16 @@ function EquipmentDetailPage() {
     enabled: !!id,
   })
 
-  const { mutate: changeStatus, isPending } = useMutation({
-    mutationFn: async (status: string) => {
+  const { mutate: changeStatus, isPending } = useMutation<unknown, unknown, string, { previous: unknown }>({
+    mutationFn: async (status) => {
       return equipmentApi.update(id!, { status: status as EquipmentStatus })
     },
-    onMutate: async (status: string) => {
+    onMutate: async (status) => {
       await queryClient.cancelQueries({ queryKey: ['equipment', id] })
       const previous = queryClient.getQueryData(['equipment', id])
-      queryClient.setQueryData(['equipment', id], (old: any) => ({
-        ...old,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      queryClient.setQueryData(['equipment', id], (old: Record<string, unknown>) => ({
+        ...(old || {}),
         status: status as EquipmentStatus,
       }))
       return { previous }
@@ -59,8 +60,8 @@ function EquipmentDetailPage() {
         duration: 3000,
       })
     },
-    onError: (_err: any, _vars, context: any) => {
-      queryClient.setQueryData(['equipment', id], context.previous)
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['equipment', id], context.previous)
       addNotification(
         'Fehler beim Ändern des Status. Bitte versuchen Sie es später erneut.',
         'error',
