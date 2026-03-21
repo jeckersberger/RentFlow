@@ -161,10 +161,33 @@
 3. **Scanner-Kamera** (M1.6): `html5-qrcode` mit echter Kamera-Integration, QR-Code-Parsing (`rentflow://equipment/{uuid}`), Vibrations-Feedback, Batch-Modus
 
 **Verbleibende Nice-to-haves (nicht Phase-1-blockierend):**
-- Command Palette (⌘K) für Frontend-Navigation
-- Dark Mode Toggle
-- Offline/Service Worker für Scanner
+- ~~Command Palette (⌘K) für Frontend-Navigation~~ ✅ Implementiert
+- ~~Dark Mode Toggle~~ ✅ Bereits vorhanden (themeStore + CSS Variables)
+- Offline/Service Worker für Scanner (vite-plugin-pwa bereits konfiguriert)
 - Equipment-History Audit Trail (Tabelle existiert, Handler gibt leer zurück)
 - pg_trgm Suchoptimierung (ILIKE reicht für MVP)
 
 **Kategorie:** Qualitätssicherung | Implementierung | Debugging
+
+---
+
+### 2026-03-21 – Session 3: Phase 1 Final – Frontend-Tests, Credit Notes, Optimistic Updates
+
+**Projekt:** RentFlow Phase 1 Fertigstellung
+**Was passiert ist:** Frontend-Tests brachen nach Hinzufügen von CommandPalette und ToastContainer, weil App.test.tsx die react-router-dom Mock nicht vollständig hatte (fehlte useNavigate, useLocation). Zusätzlich mussten Toast und CommandPalette als ganze Komponenten gemockt werden.
+
+**Erkenntnisse:**
+
+- [2026-03-21] Regel: Wenn neue Komponenten zu App.tsx hinzugefügt werden die eigene Hooks nutzen (useNavigate, useNotificationStore etc.), IMMER sofort die Mocks in App.test.tsx aktualisieren. Am sichersten: Komplexe Komponenten komplett mocken (`vi.mock('../components/Toast/Toast', () => ({ ToastContainer: () => null }))`).
+  - Grund: CommandPalette nutzt useNavigate, ToastContainer nutzt useNotificationStore – beides nicht im bestehenden Mock. Statt einzelne Hooks zu mocken, ist es robuster die Komponenten selbst zu mocken.
+
+- [2026-03-21] Regel: Bei Windows-Git-Repos die per Mount in Linux-VM bearbeitet werden: `git commit` IMMER auf dem Windows-Host ausführen (via Desktop Commander), nicht in der Linux-VM. Die VM hat keine Git-Identity konfiguriert und temp-Dateien verursachen "Operation not permitted"-Fehler.
+  - Grund: Linux-VM kennt keine Git-Identity, und .git/objects temp-files haben Cross-Filesystem-Permissions-Probleme.
+
+- [2026-03-21] Regel: CMD.exe auf Windows unterstützt KEINE `-m "text"` Git-Commits mit Leerzeichen/Sonderzeichen zuverlässig. Stattdessen commit message in Datei schreiben und `git commit -F commitmsg.txt` verwenden.
+  - Grund: PowerShell kennt kein `&&`, CMD zerlegt `-m` Strings an Leerzeichen trotz Anführungszeichen.
+
+- [2026-03-21] Regel: `@rollup/rollup-linux-x64-gnu` wird nur in der Linux-VM benötigt, NICHT in package.json committen. Es ist ein plattformspezifisches optionales Binary.
+  - Grund: node_modules wurden auf Windows installiert (x64-msvc), Linux braucht x64-gnu. Nach Installation sofort aus package.json entfernen.
+
+**Kategorie:** Testing | DevOps | Debugging
