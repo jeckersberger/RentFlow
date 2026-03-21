@@ -97,3 +97,35 @@
 4. TypeScript strict-mode Fehler fixen (unused imports in einigen Pages)
 
 **Kategorie:** Qualitätssicherung | Bugfix
+
+### 2026-03-21 – Phase 1 Implementierung & Verifikation
+
+**Projekt:** RentFlow – Phase 1: Auth-Service Security, Inventory-Service Prüfung, Frontend Verifikation
+**Was passiert ist:** Auth-Service um Redis-basiertes Session-Management, Rate-Limiting und Brute-Force-Schutz erweitert. Inventory-Service als bereits vollständig für Phase 1 identifiziert (35+ Endpoints, ILIKE-Suche, Price Engine, QR-Codes, CSV-Import). Frontend war ebenfalls bereits komplett implementiert (Login, Dashboard, Equipment CRUD, Projects, Invoices, Scanner, Warehouse, Settings).
+
+**Erkenntnisse & Regeln:**
+
+- [2026-03-21] Regel: Bei Vitest auf Windows mit React IMMER `define: { 'process.env.NODE_ENV': '"test"' }` in vitest.config.ts setzen. Ohne diese Definition wird React im Production-Build geladen und `act(...)` schlägt fehl mit "act(...) is not supported in production builds of React."
+  - Grund: Windows setzt NODE_ENV nicht automatisch auf "test" bei Vitest-Runs. React's Production-Build hat act() deaktiviert.
+
+- [2026-03-21] Regel: Vor dem Implementieren neuer Features IMMER den bestehenden Code vollständig lesen. Oft ist mehr implementiert als erwartet – besonders wenn vorherige Sessions parallel mit Sub-Agents gearbeitet haben.
+  - Grund: Frontend war bereits mit 48+ Dateien vollständig implementiert (Login, Dashboard, Equipment CRUD, Projects, Invoices, Scanner, etc.). Hätte ich blind angefangen "Frontend Core Pages" zu implementieren, wäre alles doppelt gebaut worden.
+
+- [2026-03-21] Regel: Cache-Interface in Go IMMER respektieren. Wenn das Interface nur Get/Set/Delete/Exists hat, KEINE Methoden verwenden die nur auf dem konkreten Struct existieren (z.B. IncrementInt, AppendToList). Stattdessen Get→Deserialize→Modify→Serialize→Set Pattern verwenden.
+  - Grund: SessionManager musste Brute-Force-Counter und User-Session-Listen über das Cache-Interface implementieren, obwohl RedisCache zusätzliche Methoden hat. Das Interface könnte durch eine andere Implementierung ersetzt werden.
+
+- [2026-03-21] Regel: GitHub Actions Runner-Zuweisung kann wiederholt fehlschlagen (runner_id=0, steps=[]). Das ist ein GitHub-Infrastruktur-Problem, kein Code-Problem. Bei wiederholtem Auftreten: Code lokal verifizieren (go build, npm test, tsc) und Runner-Problem dokumentieren. Nicht stundenlang auf grüne CI warten.
+  - Grund: Alle 4 Workflows scheiterten zweimal hintereinander an Runner-Zuweisung, obwohl der Code lokal fehlerfrei kompiliert und alle Tests besteht.
+
+- [2026-03-21] Regel: Windows CMD und PowerShell haben massive Quoting-Probleme bei Shell-Skript-Strings. Für komplexe Shell-Befehle (for-Schleifen, etc.) entweder einzelne Befehle pro Service ausführen oder Skript-Dateien mit PowerShell's Set-Content schreiben – nicht mit CMD echo.
+  - Grund: Docker-basierte Build-Loops scheiterten wiederholt an Windows CMD Quoting (Unterminated quoted string). Einzelne docker run-Aufrufe pro Service funktionierten sofort.
+
+**Offene Punkte für nächste Session:**
+1. GitHub Actions Runner-Problem beobachten – wenn es persistiert, alternative CI (z.B. Self-Hosted Runner auf NAS) evaluieren
+2. customer-service ist noch ein leeres Verzeichnis – implementieren wenn benötigt
+3. Unit-Tests für Auth-Service SessionManager schreiben
+4. Unit-Tests für Inventory-Service Core-Funktionen schreiben
+5. KurrentDB Event Sourcing verdrahten (aktuell nur PostgreSQL direkt)
+6. Passwort-Hashing auf bcrypt/argon2id upgraden
+
+**Kategorie:** Implementierung | Testing | DevOps
