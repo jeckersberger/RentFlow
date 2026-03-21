@@ -31,7 +31,7 @@ interface NotificationStore {
 
 const generateId = () => `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-export const useNotificationStore = create<NotificationStore>((set, get) => ({
+export const useNotificationStore = create<NotificationStore>((set) => ({
   notifications: [],
 
   addNotification: (message: string, type: NotificationType, options = {}) => {
