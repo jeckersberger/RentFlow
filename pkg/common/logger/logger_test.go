@@ -180,9 +180,8 @@ func TestSimpleLogger_WithPrefix(t *testing.T) {
 	}
 
 	// Original logger should be unchanged
-	originalSimple := originalLogger.(*SimpleLogger)
-	if originalSimple.prefix != "Original" {
-		t.Errorf("expected original prefix 'Original' to be unchanged, got '%s'", originalSimple.prefix)
+	if originalLogger.prefix != "Original" {
+		t.Errorf("expected original prefix 'Original' to be unchanged, got '%s'", originalLogger.prefix)
 	}
 }
 

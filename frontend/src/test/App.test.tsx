@@ -20,24 +20,26 @@ vi.mock('../stores/themeStore', () => ({
   initializeTheme: vi.fn(),
 }))
 
+const mockedUseAuthStore = vi.mocked(useAuthStore)
+
 describe('App Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('renders without crashing', () => {
-    ;(useAuthStore as any).mockReturnValue({
+    mockedUseAuthStore.mockReturnValue({
       isAuthenticated: false,
-    })
+    } as ReturnType<typeof useAuthStore>)
 
     render(<App />)
     expect(screen.getByRole('main', { hidden: true }) || document.body).toBeTruthy()
   })
 
   it('redirects to login when not authenticated', () => {
-    ;(useAuthStore as any).mockReturnValue({
+    mockedUseAuthStore.mockReturnValue({
       isAuthenticated: false,
-    })
+    } as ReturnType<typeof useAuthStore>)
 
     const { container } = render(<App />)
     expect(container).toBeTruthy()

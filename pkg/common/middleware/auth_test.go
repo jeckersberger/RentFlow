@@ -182,7 +182,7 @@ func TestVerifyToken_ExpiredToken(t *testing.T) {
 
 	// We need to manually create a token with past expiration
 	// Use a different approach: create token and manually modify expiration
-	token, _ := jwt.CreateToken(claims)
+	_, _ = jwt.CreateToken(claims)
 
 	// Since we set expiration in CreateToken, we need to use a custom approach
 	// For now, we'll test the expiration logic separately

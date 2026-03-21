@@ -77,8 +77,8 @@ function LoginPage() {
         errorMessage = 'Zu viele Anmeldeversuche. Bitte warten Sie ein paar Minuten.'
       } else if (errorResponse?.data?.message) {
         errorMessage = errorResponse.data.message
-      } else if ((err as any)?.message) {
-        errorMessage = (err as any).message
+      } else if ((err as Error)?.message) {
+        errorMessage = (err as Error).message
       }
 
       setError(errorMessage)
