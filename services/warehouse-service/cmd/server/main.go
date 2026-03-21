@@ -10,7 +10,11 @@ import (
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	httpAdapter "github.com/jeckersberger/rentflow/services/warehouse-service/internal/adapters/http"
+	"github.com/jeckersberger/rentflow/services/warehouse-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/warehouse-service/internal/infrastructure/repositories"
 )
 
 const (
@@ -27,18 +31,33 @@ func main() {
 
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
-	router := http.NewServeMux()
+	// Initialize database
+	dbPool, err := database.NewPostgresPool(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+	defer dbPool.Close()
 
-	// Health & readiness
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	log.Info("Connected to database")
 
-	// API routes (v1)
-	router.HandleFunc("GET /api/v1/locations", listLocationsHandler)
-	router.HandleFunc("POST /api/v1/movements", createMovementHandler)
-	router.HandleFunc("GET /api/v1/inventory", getInventoryHandler)
+	// Initialize repositories
+	locationRepo := repositories.NewLocationPostgres(dbPool)
+	movementRepo := repositories.NewMovementPostgres(dbPool)
+	inventoryCheckRepo := repositories.NewInventoryCheckPostgres(dbPool)
 
-	// Graceful shutdown
+	log.Info("Repositories initialized")
+
+	// Initialize services
+	locationSvc := application.NewLocationService(locationRepo, log)
+	movementSvc := application.NewMovementService(movementRepo, locationRepo, log)
+	inventoryCheckSvc := application.NewInventoryCheckService(inventoryCheckRepo, log)
+
+	log.Info("Services initialized")
+
+	// Setup router
+	router := httpAdapter.NewRouter(locationSvc, movementSvc, inventoryCheckSvc, log)
+
+	// Create HTTP server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
@@ -47,6 +66,7 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	// Start server in goroutine
 	go func() {
 		log.Info("Listening", "addr", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -54,6 +74,7 @@ func main() {
 		}
 	}()
 
+	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -61,37 +82,10 @@ func main() {
 	log.Info("Shutting down gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	srv.Shutdown(ctx)
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("Server shutdown error", err)
+	}
+
 	log.Info("Server stopped")
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"%s","timestamp":"%s"}`, serviceName, time.Now().UTC().Format(time.RFC3339))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, KurrentDB, Redis connections
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
-}
-
-func listLocationsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"warehouse-service"}`))
-}
-
-func createMovementHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"warehouse-service"}`))
-}
-
-func getInventoryHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"warehouse-service"}`))
 }
