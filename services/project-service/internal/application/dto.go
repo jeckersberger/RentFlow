@@ -166,35 +166,35 @@ func ReservationToDTO(r *domain.Reservation) *ReservationDTO {
 }
 
 type CustomerDTO struct {
-	ID          string    `json:"id"`
-	TenantID    string    `json:"tenant_id"`
-	Name        string    `json:"name"`
-	Email       string    `json:"email"`
-	Phone       string    `json:"phone"`
-	AddressStreet string  `json:"address_street"`
-	AddressCity string    `json:"address_city"`
-	AddressPostcode string `json:"address_postcode"`
-	AddressCountry string  `json:"address_country"`
-	TaxID       string    `json:"tax_id"`
-	Notes       string    `json:"notes"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID              string    `json:"id"`
+	TenantID        string    `json:"tenant_id"`
+	Name            string    `json:"name"`
+	Email           string    `json:"email"`
+	Phone           string    `json:"phone"`
+	AddressStreet   string    `json:"address_street"`
+	AddressCity     string    `json:"address_city"`
+	AddressPostcode string    `json:"address_postcode"`
+	AddressCountry  string    `json:"address_country"`
+	TaxID           string    `json:"tax_id"`
+	Notes           string    `json:"notes"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 func CustomerToDTO(c *domain.Customer) *CustomerDTO {
 	return &CustomerDTO{
-		ID:          c.ID,
-		TenantID:    c.TenantID,
-		Name:        c.Name,
-		Email:       c.Email,
-		Phone:       c.Phone,
-		AddressStreet: c.AddressStreet,
-		AddressCity: c.AddressCity,
+		ID:              c.ID,
+		TenantID:        c.TenantID,
+		Name:            c.Name,
+		Email:           c.Email,
+		Phone:           c.Phone,
+		AddressStreet:   c.AddressStreet,
+		AddressCity:     c.AddressCity,
 		AddressPostcode: c.AddressPostcode,
-		AddressCountry: c.AddressCountry,
-		TaxID:       c.TaxID,
-		Notes:       c.Notes,
-		CreatedAt:   c.CreatedAt,
-		UpdatedAt:   c.UpdatedAt,
+		AddressCountry:  c.AddressCountry,
+		TaxID:           c.TaxID,
+		Notes:           c.Notes,
+		CreatedAt:       c.CreatedAt,
+		UpdatedAt:       c.UpdatedAt,
 	}
 }

@@ -10,14 +10,14 @@ import (
 )
 
 type AvailabilityResult struct {
-	EquipmentID string  `json:"equipment_id"`
-	Name        string  `json:"name"`
-	TotalQty    int     `json:"total_qty"`
-	Available   int     `json:"available"`
-	Reserved    int     `json:"reserved"`
-	Requested   int     `json:"requested"`
-	Feasible    bool    `json:"feasible"`
-	Message     string  `json:"message,omitempty"`
+	EquipmentID string `json:"equipment_id"`
+	Name        string `json:"name"`
+	TotalQty    int    `json:"total_qty"`
+	Available   int    `json:"available"`
+	Reserved    int    `json:"reserved"`
+	Requested   int    `json:"requested"`
+	Feasible    bool   `json:"feasible"`
+	Message     string `json:"message,omitempty"`
 }
 
 type AvailabilityService struct {
@@ -103,8 +103,8 @@ type BatchAvailabilityRequest struct {
 }
 
 type BatchAvailabilityResult struct {
-	Items      []*AvailabilityResult `json:"items"`
-	AllFeasible bool                 `json:"all_feasible"`
+	Items       []*AvailabilityResult `json:"items"`
+	AllFeasible bool                  `json:"all_feasible"`
 }
 
 func (s *AvailabilityService) CheckBatchAvailability(

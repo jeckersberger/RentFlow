@@ -16,11 +16,11 @@ import (
 type PasswordManager struct {
 	minLength int
 	// Argon2id parameters
-	argon2Time      uint32
-	argon2Memory    uint32
-	argon2Threads   uint8
-	argon2KeyLen    uint32
-	argon2SaltLen   uint32
+	argon2Time    uint32
+	argon2Memory  uint32
+	argon2Threads uint8
+	argon2KeyLen  uint32
+	argon2SaltLen uint32
 }
 
 // NewPasswordManager creates a new password manager
@@ -163,4 +163,3 @@ func (pm *PasswordManager) ValidatePassword(password string) error {
 
 	return nil
 }
-

@@ -340,10 +340,10 @@ func TestIsOriginAllowed_EmptyOrigin(t *testing.T) {
 
 func TestIsOriginAllowed_MultipleOrigins(t *testing.T) {
 	tests := []struct {
-		name      string
-		origin    string
-		allowed   []string
-		expected  bool
+		name     string
+		origin   string
+		allowed  []string
+		expected bool
 	}{
 		{"First match", "https://first.com", []string{"https://first.com", "https://second.com"}, true},
 		{"Second match", "https://second.com", []string{"https://first.com", "https://second.com"}, true},

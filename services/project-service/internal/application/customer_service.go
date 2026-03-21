@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/project-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/project-service/internal/ports"
-	"github.com/jeckersberger/rentflow/pkg/common/logger"
 )
 
 type CustomerService struct {

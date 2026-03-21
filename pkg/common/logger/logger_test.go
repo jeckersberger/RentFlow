@@ -166,7 +166,7 @@ func TestSimpleLogger_Fatal(t *testing.T) {
 }
 
 func TestSimpleLogger_WithPrefix(t *testing.T) {
-	originalLogger := New("info", "Original")
+	originalLogger := New("info", "Original").(*SimpleLogger)
 	newLogger := originalLogger.WithPrefix("NewPrefix")
 
 	simpleLogger := newLogger.(*SimpleLogger)
@@ -187,7 +187,7 @@ func TestSimpleLogger_WithPrefix(t *testing.T) {
 }
 
 func TestSimpleLogger_WithPrefix_PreservesLevel(t *testing.T) {
-	originalLogger := New("debug", "Service1")
+	originalLogger := New("debug", "Service1").(*SimpleLogger)
 	newLogger := originalLogger.WithPrefix("Service2")
 
 	newSimple := newLogger.(*SimpleLogger)

@@ -160,12 +160,12 @@ func TestLoadCORSConfiguration(t *testing.T) {
 
 func TestConnectionString(t *testing.T) {
 	cfg := &Config{
-		DBUser:    "testuser",
+		DBUser:     "testuser",
 		DBPassword: "testpass",
-		DBHost:    "localhost",
-		DBPort:    5432,
-		DBName:    "testdb",
-		DBSSLMode: "disable",
+		DBHost:     "localhost",
+		DBPort:     5432,
+		DBName:     "testdb",
+		DBSSLMode:  "disable",
 	}
 
 	expected := "postgresql://testuser:testpass@localhost:5432/testdb?sslmode=disable"
@@ -178,12 +178,12 @@ func TestConnectionString(t *testing.T) {
 
 func TestConnectionStringWithSSL(t *testing.T) {
 	cfg := &Config{
-		DBUser:    "produser",
+		DBUser:     "produser",
 		DBPassword: "prodpass",
-		DBHost:    "db.prod.example.com",
-		DBPort:    5432,
-		DBName:    "rentflow_prod",
-		DBSSLMode: "require",
+		DBHost:     "db.prod.example.com",
+		DBPort:     5432,
+		DBName:     "rentflow_prod",
+		DBSSLMode:  "require",
 	}
 
 	expected := "postgresql://produser:prodpass@db.prod.example.com:5432/rentflow_prod?sslmode=require"

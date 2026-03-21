@@ -158,10 +158,10 @@ func TestPaginated_Response(t *testing.T) {
 
 func TestPaginated_CalculatesTotalPages(t *testing.T) {
 	tests := []struct {
-		name       string
-		total      int
-		perPage    int
-		expected   int
+		name     string
+		total    int
+		perPage  int
+		expected int
 	}{
 		{"Exact division", 20, 10, 2},
 		{"With remainder", 25, 10, 3},

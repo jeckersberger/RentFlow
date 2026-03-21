@@ -14,9 +14,9 @@ type EquipmentHistory struct {
 }
 
 const (
-	ActionCreated    = "created"
-	ActionUpdated    = "updated"
+	ActionCreated       = "created"
+	ActionUpdated       = "updated"
 	ActionStatusChanged = "status_changed"
-	ActionDeleted    = "deleted"
-	ActionImageAdded = "image_added"
+	ActionDeleted       = "deleted"
+	ActionImageAdded    = "image_added"
 )

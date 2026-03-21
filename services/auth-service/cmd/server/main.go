@@ -177,7 +177,6 @@ func connectPostgres(connectionString string, log logger.Logger) (*sql.DB, error
 	return db, nil
 }
 
-
 func jwksHandler(tokenMgr *application.TokenManager, log logger.Logger) nethttp.HandlerFunc {
 	return func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		w.Header().Set("Content-Type", "application/json")

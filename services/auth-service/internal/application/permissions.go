@@ -6,39 +6,39 @@ type Permission string
 // Permission constants
 const (
 	// User management
-	PermUsersCreate   Permission = "users:create"
-	PermUsersRead     Permission = "users:read"
-	PermUsersUpdate   Permission = "users:update"
-	PermUsersDelete   Permission = "users:delete"
+	PermUsersCreate      Permission = "users:create"
+	PermUsersRead        Permission = "users:read"
+	PermUsersUpdate      Permission = "users:update"
+	PermUsersDelete      Permission = "users:delete"
 	PermUsersAssignRoles Permission = "users:assign_roles"
 
 	// Equipment management
-	PermEquipmentCreate  Permission = "equipment:create"
-	PermEquipmentRead    Permission = "equipment:read"
-	PermEquipmentUpdate  Permission = "equipment:update"
-	PermEquipmentDelete  Permission = "equipment:delete"
+	PermEquipmentCreate Permission = "equipment:create"
+	PermEquipmentRead   Permission = "equipment:read"
+	PermEquipmentUpdate Permission = "equipment:update"
+	PermEquipmentDelete Permission = "equipment:delete"
 
 	// Projects management
-	PermProjectsCreate   Permission = "projects:create"
-	PermProjectsRead     Permission = "projects:read"
-	PermProjectsUpdate   Permission = "projects:update"
-	PermProjectsDelete   Permission = "projects:delete"
+	PermProjectsCreate Permission = "projects:create"
+	PermProjectsRead   Permission = "projects:read"
+	PermProjectsUpdate Permission = "projects:update"
+	PermProjectsDelete Permission = "projects:delete"
 
 	// Invoices management
-	PermInvoicesCreate   Permission = "invoices:create"
-	PermInvoicesRead     Permission = "invoices:read"
-	PermInvoicesUpdate   Permission = "invoices:update"
-	PermInvoicesDelete   Permission = "invoices:delete"
+	PermInvoicesCreate Permission = "invoices:create"
+	PermInvoicesRead   Permission = "invoices:read"
+	PermInvoicesUpdate Permission = "invoices:update"
+	PermInvoicesDelete Permission = "invoices:delete"
 
 	// Reports
-	PermReportsCreate    Permission = "reports:create"
-	PermReportsRead      Permission = "reports:read"
-	PermReportsUpdate    Permission = "reports:update"
-	PermReportsDelete    Permission = "reports:delete"
+	PermReportsCreate Permission = "reports:create"
+	PermReportsRead   Permission = "reports:read"
+	PermReportsUpdate Permission = "reports:update"
+	PermReportsDelete Permission = "reports:delete"
 
 	// Settings
-	PermSettingsRead     Permission = "settings:read"
-	PermSettingsUpdate   Permission = "settings:update"
+	PermSettingsRead   Permission = "settings:read"
+	PermSettingsUpdate Permission = "settings:update"
 
 	// Admin-only
 	PermAdminAccess      Permission = "admin:access"

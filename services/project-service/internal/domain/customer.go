@@ -6,19 +6,19 @@ import (
 )
 
 type Customer struct {
-	ID          string
-	TenantID    string
-	Name        string
-	Email       string
-	Phone       string
-	AddressStreet string
-	AddressCity string
+	ID              string
+	TenantID        string
+	Name            string
+	Email           string
+	Phone           string
+	AddressStreet   string
+	AddressCity     string
 	AddressPostcode string
-	AddressCountry string
-	TaxID       string
-	Notes       string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	AddressCountry  string
+	TaxID           string
+	Notes           string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 func NewCustomer(id, tenantID, name string) *Customer {

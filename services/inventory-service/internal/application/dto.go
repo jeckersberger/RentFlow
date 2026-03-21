@@ -149,8 +149,8 @@ func FlightcaseToDTO(fc *domain.Flightcase) *FlightcaseDTO {
 // Price and Availability DTOs
 
 type PriceQueryDTO struct {
-	Days            int     `json:"days"`
-	CustomDiscount  float64 `json:"custom_discount"`
+	Days           int     `json:"days"`
+	CustomDiscount float64 `json:"custom_discount"`
 }
 
 type AvailabilityCheckRequest struct {
@@ -182,12 +182,12 @@ type ImportErrorItem struct {
 }
 
 type EquipmentHistoryDTO struct {
-	ID         string            `json:"id"`
-	TenantID   string            `json:"tenant_id"`
-	EquipmentID string           `json:"equipment_id"`
-	Action     string            `json:"action"`
-	ChangedBy  string            `json:"changed_by,omitempty"`
-	OldValue   map[string]interface{} `json:"old_value,omitempty"`
-	NewValue   map[string]interface{} `json:"new_value,omitempty"`
-	CreatedAt  string            `json:"created_at"`
+	ID          string                 `json:"id"`
+	TenantID    string                 `json:"tenant_id"`
+	EquipmentID string                 `json:"equipment_id"`
+	Action      string                 `json:"action"`
+	ChangedBy   string                 `json:"changed_by,omitempty"`
+	OldValue    map[string]interface{} `json:"old_value,omitempty"`
+	NewValue    map[string]interface{} `json:"new_value,omitempty"`
+	CreatedAt   string                 `json:"created_at"`
 }

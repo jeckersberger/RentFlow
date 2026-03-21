@@ -150,30 +150,30 @@ type DeleteReservationCommand struct {
 // Customer Commands
 
 type CreateCustomerCommand struct {
-	TenantID       string
-	Name           string
-	Email          string
-	Phone          string
-	AddressStreet  string
-	AddressCity    string
+	TenantID        string
+	Name            string
+	Email           string
+	Phone           string
+	AddressStreet   string
+	AddressCity     string
 	AddressPostcode string
-	AddressCountry string
-	TaxID          string
-	Notes          string
+	AddressCountry  string
+	TaxID           string
+	Notes           string
 }
 
 type UpdateCustomerCommand struct {
-	ID             string
-	TenantID       string
-	Name           string
-	Email          string
-	Phone          string
-	AddressStreet  string
-	AddressCity    string
+	ID              string
+	TenantID        string
+	Name            string
+	Email           string
+	Phone           string
+	AddressStreet   string
+	AddressCity     string
 	AddressPostcode string
-	AddressCountry string
-	TaxID          string
-	Notes          string
+	AddressCountry  string
+	TaxID           string
+	Notes           string
 }
 
 type DeleteCustomerCommand struct {
