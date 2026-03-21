@@ -35,6 +35,7 @@ type PacklistItem struct {
 	QuantityPacked   int
 	QuantityReturned int
 	Notes            string
+	StorageLocation  string
 	Status           PacklistItemStatus
 	CreatedAt        time.Time
 	UpdatedAt        time.Time

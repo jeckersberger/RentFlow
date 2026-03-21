@@ -29,6 +29,14 @@ type QuoteRepository interface {
 	GetNextSequenceNumber(ctx context.Context, tenantID string) (int, error)
 }
 
+// CreditNoteRepository interface for credit note persistence
+type CreditNoteRepository interface {
+	Create(ctx context.Context, creditNote *domain.CreditNote) error
+	GetByID(ctx context.Context, tenantID, creditNoteID string) (*domain.CreditNote, error)
+	Update(ctx context.Context, creditNote *domain.CreditNote) error
+	Delete(ctx context.Context, tenantID, creditNoteID string) error
+}
+
 // DunningRepository interface for dunning persistence
 type DunningRepository interface {
 	Create(ctx context.Context, dunning *domain.DunningEntry) error

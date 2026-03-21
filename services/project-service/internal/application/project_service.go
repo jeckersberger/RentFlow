@@ -1,8 +1,11 @@
 package application
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
@@ -11,8 +14,10 @@ import (
 )
 
 type ProjectService struct {
-	repo   ports.ProjectRepository
-	logger logger.Logger
+	repo                   ports.ProjectRepository
+	packlistRepo           ports.PacklistRepository
+	logger                 logger.Logger
+	notificationServiceURL string
 }
 
 func NewProjectService(repo ports.ProjectRepository, logger logger.Logger) *ProjectService {
@@ -20,6 +25,14 @@ func NewProjectService(repo ports.ProjectRepository, logger logger.Logger) *Proj
 		repo:   repo,
 		logger: logger,
 	}
+}
+
+func (s *ProjectService) SetPacklistRepository(repo ports.PacklistRepository) {
+	s.packlistRepo = repo
+}
+
+func (s *ProjectService) SetNotificationServiceURL(url string) {
+	s.notificationServiceURL = url
 }
 
 func (s *ProjectService) CreateProject(ctx context.Context, cmd CreateProjectCommand) (*ProjectDTO, error) {
@@ -193,6 +206,7 @@ func (s *ProjectService) ChangeStatus(ctx context.Context, cmd ChangeProjectStat
 		return domain.NewDomainError("NOT_FOUND", "project not found", err)
 	}
 
+	oldStatus := string(project.Status)
 	if err := project.ChangeStatus(cmd.Status); err != nil {
 		return domain.NewDomainError("INVALID_STATUS", err.Error(), nil)
 	}
@@ -202,6 +216,12 @@ func (s *ProjectService) ChangeStatus(ctx context.Context, cmd ChangeProjectStat
 	}
 
 	s.logger.Info("Project status changed", "id", cmd.ID, "status", cmd.Status)
+
+	// Send notification in background (non-blocking)
+	if s.notificationServiceURL != "" {
+		go s.sendStatusChangeNotification(project, oldStatus)
+	}
+
 	return nil
 }
 
@@ -324,8 +344,75 @@ func (s *ProjectService) GeneratePackingListHTML(ctx context.Context, tenantID, 
 		return "", domain.NewDomainError("NOT_FOUND", "project not found", err)
 	}
 
-	html := buildPackingListHTML(project)
+	var packlists []*domain.Packlist
+	if s.packlistRepo != nil {
+		result, err := s.packlistRepo.ListByProjectID(ctx, tenantID, projectID, 1000, 0)
+		if err != nil {
+			s.logger.Warn("Failed to fetch packlists for HTML generation", "error", err)
+		} else {
+			packlists = result.Items
+		}
+	}
+
+	html := buildPackingListHTML(project, packlists)
 	return html, nil
+}
+
+func (s *ProjectService) sendStatusChangeNotification(project *domain.Project, oldStatus string) {
+	notificationPayload := map[string]interface{}{
+		"tenant_id": project.TenantID,
+		"type":      "project_status_changed",
+		"subject":   fmt.Sprintf("Projekt-Status geändert: %s", project.Name),
+		"body": fmt.Sprintf("Das Projekt '%s' hat den Status von '%s' auf '%s' geändert.",
+			project.Name, oldStatus, string(project.Status)),
+		"recipients": []string{},
+	}
+
+	payload, err := json.Marshal(notificationPayload)
+	if err != nil {
+		s.logger.Error("Failed to marshal notification payload", err)
+		return
+	}
+
+	req, err := http.NewRequest("POST",
+		fmt.Sprintf("%s/api/v1/notifications", s.notificationServiceURL),
+		bytes.NewBuffer(payload))
+	if err != nil {
+		s.logger.Error("Failed to create notification request", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		s.logger.Error("Failed to send status change notification", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		s.logger.Warn("Notification service returned error", "status", resp.StatusCode)
+	}
+}
+
+func getStatusColor(status string) string {
+	switch status {
+	case "pending":
+		return "#ffc107"
+	case "packed":
+		return "#28a745"
+	case "loaded":
+		return "#17a2b8"
+	case "returned":
+		return "#6c757d"
+	case "missing":
+		return "#dc3545"
+	case "damaged":
+		return "#e83e8c"
+	default:
+		return "#cccccc"
+	}
 }
 
 func getColorByStatus(status domain.ProjectStatus) string {
@@ -363,7 +450,30 @@ func parseDate(dateStr string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
 }
 
-func buildPackingListHTML(project *domain.Project) string {
+func buildPackingListHTML(project *domain.Project, packlists []*domain.Packlist) string {
+	// Build table rows for all packlist items
+	tableRows := ""
+	if len(packlists) == 0 {
+		tableRows = `            <tr>
+                <td colspan="6" style="text-align: center; background: #f0f0f0;">No equipment data available</td>
+            </tr>`
+	} else {
+		for _, packlist := range packlists {
+			for _, item := range packlist.Items {
+				statusColor := getStatusColor(string(item.Status))
+				tableRows += fmt.Sprintf(`            <tr>
+                <td>%s</td>
+                <td>%s</td>
+                <td>%d</td>
+                <td>%d / %d</td>
+                <td>%s</td>
+                <td><span style="background-color: %s; padding: 4px 8px; border-radius: 3px; color: white; font-size: 0.85em;">%s</span></td>
+            </tr>
+`, packlist.Name, item.EquipmentName, item.Quantity, item.QuantityPacked, item.Quantity, item.StorageLocation, statusColor, item.Status)
+			}
+		}
+	}
+
 	html := `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -378,7 +488,7 @@ func buildPackingListHTML(project *domain.Project) string {
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #4CAF50; color: white; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        .checkbox { width: 20px; height: 20px; }
+        .status-badge { padding: 4px 8px; border-radius: 3px; color: white; font-size: 0.85em; }
         @media print { body { margin: 0; } }
     </style>
 </head>
@@ -395,17 +505,16 @@ func buildPackingListHTML(project *domain.Project) string {
     <table>
         <thead>
             <tr>
-                <th>Category</th>
+                <th>Packlist</th>
                 <th>Equipment</th>
                 <th>Quantity</th>
-                <th>Unit</th>
                 <th>Packed</th>
+                <th>Storage Location</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td colspan="5" style="text-align: center; background: #f0f0f0;">No equipment data available</td>
-            </tr>
+` + tableRows + `
         </tbody>
     </table>
 </body>

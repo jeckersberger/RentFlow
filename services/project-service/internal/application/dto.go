@@ -59,6 +59,7 @@ type PacklistItemDTO struct {
 	QuantityPacked   int    `json:"quantity_packed"`
 	QuantityReturned int    `json:"quantity_returned"`
 	Notes            string `json:"notes"`
+	StorageLocation  string `json:"storage_location"`
 	Status           string `json:"status"`
 }
 
@@ -135,6 +136,7 @@ func PacklistToDTO(p *domain.Packlist) *PacklistDTO {
 			QuantityPacked:   item.QuantityPacked,
 			QuantityReturned: item.QuantityReturned,
 			Notes:            item.Notes,
+			StorageLocation:  item.StorageLocation,
 			Status:           string(item.Status),
 		}
 	}

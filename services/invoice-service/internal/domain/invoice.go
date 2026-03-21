@@ -25,18 +25,19 @@ func (t TaxRate) IsValidTaxRate() bool {
 type InvoiceStatus string
 
 const (
-	InvoiceDraft     InvoiceStatus = "draft"
-	InvoiceSent      InvoiceStatus = "sent"
-	InvoiceOverdue   InvoiceStatus = "overdue"
-	InvoicePaid      InvoiceStatus = "paid"
-	InvoiceCancelled InvoiceStatus = "cancelled"
-	InvoiceCredited  InvoiceStatus = "credited"
+	InvoiceDraft        InvoiceStatus = "draft"
+	InvoiceSent         InvoiceStatus = "sent"
+	InvoiceOverdue      InvoiceStatus = "overdue"
+	InvoicePaid         InvoiceStatus = "paid"
+	InvoicePartiallyPaid InvoiceStatus = "partially_paid"
+	InvoiceCancelled    InvoiceStatus = "cancelled"
+	InvoiceCredited     InvoiceStatus = "credited"
 )
 
 // IsValidStatus checks if status is valid
 func (s InvoiceStatus) IsValidStatus() bool {
 	switch s {
-	case InvoiceDraft, InvoiceSent, InvoiceOverdue, InvoicePaid, InvoiceCancelled, InvoiceCredited:
+	case InvoiceDraft, InvoiceSent, InvoiceOverdue, InvoicePaid, InvoicePartiallyPaid, InvoiceCancelled, InvoiceCredited:
 		return true
 	default:
 		return false
@@ -46,31 +47,33 @@ func (s InvoiceStatus) IsValidStatus() bool {
 // Invoice represents a GoBD-compliant invoice aggregate
 type Invoice struct {
 	events.AggregateRoot
-	TenantID      string
-	InvoiceNumber string
-	ProjectID     *string
-	ClientName    string
-	ClientAddress Address
-	ClientEmail   string
-	ClientTaxID   string // USt-IdNr
-	Items         []InvoiceItem
-	SubTotal      float64
-	TaxRate       TaxRate // 0, 7, or 19%
-	TaxAmount     float64
-	Total         float64
-	Currency      string
-	Status        InvoiceStatus
-	IssueDate     time.Time
-	DueDate       time.Time
-	PaidDate      *time.Time
-	PaymentMethod string
-	PaymentRef    string // Bank reference
-	Notes         string
-	InternalNotes string
-	PDFRef        string // file reference to generated PDF
-	Hash          string // SHA-256 for GoBD immutability
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	TenantID        string
+	InvoiceNumber   string
+	ProjectID       *string
+	ClientName      string
+	ClientAddress   Address
+	ClientEmail     string
+	ClientTaxID     string // USt-IdNr
+	Items           []InvoiceItem
+	SubTotal        float64
+	TaxRate         TaxRate // 0, 7, or 19%
+	TaxAmount       float64
+	Total           float64
+	Currency        string
+	Status          InvoiceStatus
+	IssueDate       time.Time
+	DueDate         time.Time
+	PaidDate        *time.Time
+	PaymentMethod   string
+	PaymentRef      string // Bank reference
+	PaidAmount      float64
+	RemainingAmount float64
+	Notes           string
+	InternalNotes   string
+	PDFRef          string // file reference to generated PDF
+	Hash            string // SHA-256 for GoBD immutability
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // InvoiceItem represents a single line item on an invoice
@@ -200,6 +203,10 @@ func (i *Invoice) Validate() error {
 	if !i.Status.IsValidStatus() {
 		return ErrInvalidStatus
 	}
+	// Initialize RemainingAmount if not yet set
+	if i.RemainingAmount == 0 && i.Status != InvoicePaid && i.Status != InvoiceCredited && i.Status != InvoiceCancelled {
+		i.RemainingAmount = i.Total
+	}
 	return nil
 }
 
@@ -236,6 +243,8 @@ func (i *Invoice) MarkPaid(paymentMethod, paymentRef string) error {
 	i.PaidDate = &now
 	i.PaymentMethod = paymentMethod
 	i.PaymentRef = paymentRef
+	i.PaidAmount = i.Total
+	i.RemainingAmount = 0
 	i.UpdatedAt = now
 
 	// Record event
@@ -247,6 +256,52 @@ func (i *Invoice) MarkPaid(paymentMethod, paymentRef string) error {
 		PaymentRef:    paymentRef,
 	}
 	eventData, err := events.NewEventData("InvoicePaid", event, nil)
+	if err != nil {
+		return err
+	}
+	i.Apply(*eventData)
+	return nil
+}
+
+// RecordPayment records a partial payment on the invoice
+func (i *Invoice) RecordPayment(amount float64) error {
+	if amount <= 0 {
+		return ErrInvalidInput
+	}
+	if i.Status == InvoiceCancelled || i.Status == InvoiceCredited {
+		return ErrInvalidTransition
+	}
+	if i.Status == InvoicePaid {
+		return ErrInvalidTransition
+	}
+	if amount > i.RemainingAmount {
+		return ErrInvalidInput
+	}
+
+	i.PaidAmount += amount
+	i.RemainingAmount = i.Total - i.PaidAmount
+
+	// Update status based on remaining amount
+	if i.RemainingAmount <= 0 {
+		i.Status = InvoicePaid
+		now := time.Now()
+		i.PaidDate = &now
+	} else {
+		i.Status = InvoicePartiallyPaid
+	}
+
+	i.UpdatedAt = time.Now()
+
+	// Record event
+	event := InvoicePartialPaymentEvent{
+		TenantID:      i.TenantID,
+		InvoiceNumber: i.InvoiceNumber,
+		PaidAt:        i.UpdatedAt,
+		PaidAmount:    amount,
+		TotalPaidAmount: i.PaidAmount,
+		RemainingAmount: i.RemainingAmount,
+	}
+	eventData, err := events.NewEventData("InvoicePartialPayment", event, nil)
 	if err != nil {
 		return err
 	}

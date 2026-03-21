@@ -30,6 +30,8 @@ func NewRouter(
 	router.HandleFunc("PATCH /api/v1/equipment/{id}/status", handler.ChangeEquipmentStatus)
 	router.HandleFunc("PATCH /api/v1/equipment/{id}/condition", handler.UpdateEquipmentCondition)
 	router.HandleFunc("POST /api/v1/equipment/{id}/images", handler.AddEquipmentImage)
+	router.HandleFunc("POST /api/v1/equipment/{id}/check-out", handler.CheckOutEquipment)
+	router.HandleFunc("POST /api/v1/equipment/{id}/check-in", handler.CheckInEquipment)
 	router.HandleFunc("DELETE /api/v1/equipment/{id}", handler.DeleteEquipment)
 
 	// Phase 1 upgrade endpoints

@@ -39,14 +39,14 @@ func (r *PacklistPostgres) Create(ctx context.Context, p *domain.Packlist) error
 			itemQuery := `
 				INSERT INTO projects.packlist_items (
 					id, packlist_id, equipment_id, equipment_name, quantity,
-					quantity_packed, quantity_returned, notes, status,
+					quantity_packed, quantity_returned, notes, storage_location, status,
 					created_at, updated_at
-				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 			`
 			_, err = tx.ExecContext(ctx, itemQuery,
 				item.ID, item.PacklistID, item.EquipmentID, item.EquipmentName,
 				item.Quantity, item.QuantityPacked, item.QuantityReturned,
-				item.Notes, string(item.Status), item.CreatedAt, item.UpdatedAt,
+				item.Notes, item.StorageLocation, string(item.Status), item.CreatedAt, item.UpdatedAt,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to insert packlist item: %w", err)
@@ -93,14 +93,14 @@ func (r *PacklistPostgres) Update(ctx context.Context, p *domain.Packlist) error
 			itemQuery := `
 				INSERT INTO projects.packlist_items (
 					id, packlist_id, equipment_id, equipment_name, quantity,
-					quantity_packed, quantity_returned, notes, status,
+					quantity_packed, quantity_returned, notes, storage_location, status,
 					created_at, updated_at
-				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 			`
 			_, err = tx.ExecContext(ctx, itemQuery,
 				item.ID, item.PacklistID, item.EquipmentID, item.EquipmentName,
 				item.Quantity, item.QuantityPacked, item.QuantityReturned,
-				item.Notes, string(item.Status), item.CreatedAt, item.UpdatedAt,
+				item.Notes, item.StorageLocation, string(item.Status), item.CreatedAt, item.UpdatedAt,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to insert packlist item: %w", err)
@@ -133,11 +133,11 @@ func (r *PacklistPostgres) GetByID(ctx context.Context, tenantID, packlistID str
 	// Get items
 	itemQuery := `
 		SELECT id, packlist_id, equipment_id, equipment_name, quantity,
-			   quantity_packed, quantity_returned, notes, status,
+			   quantity_packed, quantity_returned, notes, storage_location, status,
 			   created_at, updated_at
 		FROM projects.packlist_items
 		WHERE packlist_id = $1
-		ORDER BY created_at ASC
+		ORDER BY storage_location ASC, created_at ASC
 	`
 
 	rows, err := r.db.Query(ctx, itemQuery, packlistID)
@@ -152,7 +152,7 @@ func (r *PacklistPostgres) GetByID(ctx context.Context, tenantID, packlistID str
 		err := rows.Scan(
 			&item.ID, &item.PacklistID, &item.EquipmentID, &item.EquipmentName,
 			&item.Quantity, &item.QuantityPacked, &item.QuantityReturned,
-			&item.Notes, &item.Status, &item.CreatedAt, &item.UpdatedAt,
+			&item.Notes, &item.StorageLocation, &item.Status, &item.CreatedAt, &item.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
@@ -203,11 +203,11 @@ func (r *PacklistPostgres) ListByProjectID(ctx context.Context, tenantID, projec
 		// Get items for this packlist
 		itemQuery := `
 			SELECT id, packlist_id, equipment_id, equipment_name, quantity,
-				   quantity_packed, quantity_returned, notes, status,
+				   quantity_packed, quantity_returned, notes, storage_location, status,
 				   created_at, updated_at
 			FROM projects.packlist_items
 			WHERE packlist_id = $1
-			ORDER BY created_at ASC
+			ORDER BY storage_location ASC, created_at ASC
 		`
 
 		itemRows, err := r.db.Query(ctx, itemQuery, p.ID)
@@ -222,7 +222,7 @@ func (r *PacklistPostgres) ListByProjectID(ctx context.Context, tenantID, projec
 			err := itemRows.Scan(
 				&item.ID, &item.PacklistID, &item.EquipmentID, &item.EquipmentName,
 				&item.Quantity, &item.QuantityPacked, &item.QuantityReturned,
-				&item.Notes, &item.Status, &item.CreatedAt, &item.UpdatedAt,
+				&item.Notes, &item.StorageLocation, &item.Status, &item.CreatedAt, &item.UpdatedAt,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to scan item: %w", err)

@@ -729,6 +729,11 @@ func (h *Handler) BatchCheckAvailability(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if len(requests) > 500 {
+		h.respondError(w, http.StatusBadRequest, "maximum 500 items per batch request")
+		return
+	}
+
 	availSvc := application.NewAvailabilityService(h.equipmentSvc.GetEquipmentRepo(), h.logger)
 	result, err := availSvc.CheckBatchAvailability(r.Context(), tenantID, requests)
 	if err != nil {
@@ -839,6 +844,81 @@ func (h *Handler) ImportEquipmentFromCSV(w http.ResponseWriter, r *http.Request)
 
 	h.logger.Info("CSV import completed", "filename", handler.Filename, "created", result.Created, "skipped", result.Skipped)
 	h.respondJSON(w, http.StatusOK, result)
+}
+
+// Check-Out and Check-In Handlers
+
+func (h *Handler) CheckOutEquipment(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		h.respondError(w, http.StatusBadRequest, "user ID required")
+		return
+	}
+
+	var payload struct {
+		ProjectID string `json:"project_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.ProjectID == "" {
+		h.respondError(w, http.StatusBadRequest, "project_id is required")
+		return
+	}
+
+	cmd := application.CheckOutCommand{
+		ID:        id,
+		TenantID:  tenantID,
+		ProjectID: payload.ProjectID,
+		UserID:    userID,
+	}
+
+	dto, err := h.equipmentSvc.CheckOut(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) CheckInEquipment(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		h.respondError(w, http.StatusBadRequest, "user ID required")
+		return
+	}
+
+	cmd := application.CheckInCommand{
+		ID:       id,
+		TenantID: tenantID,
+		UserID:   userID,
+	}
+
+	dto, err := h.equipmentSvc.CheckIn(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
 }
 
 // Equipment History Handler

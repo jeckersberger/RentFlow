@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { equipmentApi } from '../../services/api'
+import { useNotificationStore } from '../../stores/notificationStore'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
 import { Select } from '../../components/Form/Select'
@@ -20,6 +21,8 @@ const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
 function EquipmentDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const queryClient = useQueryClient()
+  const { addNotification } = useNotificationStore()
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [newStatus, setNewStatus] = useState<EquipmentStatus | ''>('')
   const [priceCalcDays, setPriceCalcDays] = useState('1')
@@ -30,7 +33,6 @@ function EquipmentDetailPage() {
     data: equipment,
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey: ['equipment', id],
     queryFn: () => equipmentApi.getById(id!),
@@ -41,9 +43,35 @@ function EquipmentDetailPage() {
     mutationFn: async (status: string) => {
       return equipmentApi.update(id!, { status: status as EquipmentStatus })
     },
+    onMutate: async (status: string) => {
+      await queryClient.cancelQueries({ queryKey: ['equipment', id] })
+      const previous = queryClient.getQueryData(['equipment', id])
+      queryClient.setQueryData(['equipment', id], (old: any) => ({
+        ...old,
+        status: status as EquipmentStatus,
+      }))
+      return { previous }
+    },
     onSuccess: () => {
       setShowStatusModal(false)
-      refetch()
+      addNotification('Status erfolgreich geändert', 'success', {
+        title: 'Erfolg',
+        duration: 3000,
+      })
+    },
+    onError: (_err: any, _vars, context: any) => {
+      queryClient.setQueryData(['equipment', id], context.previous)
+      addNotification(
+        'Fehler beim Ändern des Status. Bitte versuchen Sie es später erneut.',
+        'error',
+        {
+          title: 'Fehler',
+          duration: 5000,
+        }
+      )
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment', id] })
     },
   })
 

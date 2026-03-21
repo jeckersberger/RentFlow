@@ -334,6 +334,54 @@ func (s *EquipmentService) DeleteEquipment(ctx context.Context, tenantID, equipm
 	return nil
 }
 
+func (s *EquipmentService) CheckOut(ctx context.Context, cmd CheckOutCommand) (*EquipmentDTO, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	eq, err := s.equipRepo.GetByID(ctx, cmd.TenantID, cmd.ID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "equipment not found", err)
+	}
+
+	if err := eq.ChangeStatus(domain.StatusCheckedOut); err != nil {
+		return nil, domain.NewDomainError("INVALID_STATUS", err.Error(), nil)
+	}
+
+	eq.LocationID = cmd.ProjectID
+
+	if err := s.equipRepo.Update(ctx, eq); err != nil {
+		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to check out equipment", err)
+	}
+
+	s.logger.Info("Equipment checked out", "id", cmd.ID, "tenant_id", cmd.TenantID, "project_id", cmd.ProjectID, "user_id", cmd.UserID)
+	return EquipmentToDTO(eq), nil
+}
+
+func (s *EquipmentService) CheckIn(ctx context.Context, cmd CheckInCommand) (*EquipmentDTO, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	eq, err := s.equipRepo.GetByID(ctx, cmd.TenantID, cmd.ID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "equipment not found", err)
+	}
+
+	if err := eq.ChangeStatus(domain.StatusAvailable); err != nil {
+		return nil, domain.NewDomainError("INVALID_STATUS", err.Error(), nil)
+	}
+
+	eq.LocationID = ""
+
+	if err := s.equipRepo.Update(ctx, eq); err != nil {
+		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to check in equipment", err)
+	}
+
+	s.logger.Info("Equipment checked in", "id", cmd.ID, "tenant_id", cmd.TenantID, "user_id", cmd.UserID)
+	return EquipmentToDTO(eq), nil
+}
+
 // Helper function for generating IDs
 func hashString(s string) int64 {
 	h := int64(5381)

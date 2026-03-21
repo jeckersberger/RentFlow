@@ -10,12 +10,13 @@ import (
 func NewRouter(
 	invoiceSvc *application.InvoiceService,
 	quoteSvc *application.QuoteService,
+	creditNoteSvc *application.CreditNoteService,
 	duningSvc *application.DunningService,
 	exportSvc *application.ExportService,
 	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
-	handler := NewHandler(invoiceSvc, quoteSvc, duningSvc, exportSvc, logger)
+	handler := NewHandler(invoiceSvc, quoteSvc, creditNoteSvc, duningSvc, exportSvc, logger)
 
 	// Health & readiness
 	router.HandleFunc("GET /health", healthHandler)
@@ -29,9 +30,15 @@ func NewRouter(
 	router.HandleFunc("GET /api/v1/invoices/{id}/pdf", handler.GetInvoicePDF)
 	router.HandleFunc("POST /api/v1/invoices/{id}/send", handler.SendInvoice)
 	router.HandleFunc("POST /api/v1/invoices/{id}/mark-paid", handler.MarkInvoicePaid)
+	router.HandleFunc("POST /api/v1/invoices/{id}/record-payment", handler.RecordPayment)
 	router.HandleFunc("POST /api/v1/invoices/{id}/cancel", handler.CancelInvoice)
 	router.HandleFunc("POST /api/v1/invoices/{id}/credit", handler.CreditInvoice)
 	router.HandleFunc("POST /api/v1/invoices/from-project/{projectId}", handler.CreateInvoiceFromProject)
+
+	// Credit Note routes
+	router.HandleFunc("POST /api/v1/invoices/{id}/credit-note", handler.CreateCreditNote)
+	router.HandleFunc("GET /api/v1/credit-notes/{id}", handler.GetCreditNote)
+	router.HandleFunc("POST /api/v1/credit-notes/{id}/issue", handler.IssueCreditNote)
 
 	// Quote routes
 	router.HandleFunc("POST /api/v1/quotes", handler.CreateQuote)
@@ -40,6 +47,7 @@ func NewRouter(
 	router.HandleFunc("GET /api/v1/quotes/{id}/pdf", handler.GetQuotePDF)
 	router.HandleFunc("POST /api/v1/quotes/{id}/send", handler.SendQuote)
 	router.HandleFunc("POST /api/v1/quotes/{id}/accept", handler.AcceptQuote)
+	router.HandleFunc("POST /api/v1/quotes/{id}/confirm", handler.ConfirmQuote)
 	router.HandleFunc("POST /api/v1/quotes/{id}/reject", handler.RejectQuote)
 	router.HandleFunc("POST /api/v1/quotes/{id}/convert-to-invoice", handler.ConvertQuoteToInvoice)
 

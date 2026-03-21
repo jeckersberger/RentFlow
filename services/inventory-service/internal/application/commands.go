@@ -74,6 +74,19 @@ type DeleteEquipmentCommand struct {
 	TenantID string
 }
 
+type CheckOutCommand struct {
+	ID        string
+	TenantID  string
+	ProjectID string
+	UserID    string
+}
+
+type CheckInCommand struct {
+	ID       string
+	TenantID string
+	UserID   string
+}
+
 // Category Commands
 
 type CreateCategoryCommand struct {

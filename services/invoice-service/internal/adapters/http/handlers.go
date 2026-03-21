@@ -13,26 +13,29 @@ import (
 )
 
 type Handler struct {
-	invoiceSvc *application.InvoiceService
-	quoteSvc   *application.QuoteService
-	duningSvc  *application.DunningService
-	exportSvc  *application.ExportService
-	logger     logger.Logger
+	invoiceSvc    *application.InvoiceService
+	quoteSvc      *application.QuoteService
+	creditNoteSvc *application.CreditNoteService
+	duningSvc     *application.DunningService
+	exportSvc     *application.ExportService
+	logger        logger.Logger
 }
 
 func NewHandler(
 	invoiceSvc *application.InvoiceService,
 	quoteSvc *application.QuoteService,
+	creditNoteSvc *application.CreditNoteService,
 	duningSvc *application.DunningService,
 	exportSvc *application.ExportService,
 	logger logger.Logger,
 ) *Handler {
 	return &Handler{
-		invoiceSvc: invoiceSvc,
-		quoteSvc:   quoteSvc,
-		duningSvc:  duningSvc,
-		exportSvc:  exportSvc,
-		logger:     logger,
+		invoiceSvc:    invoiceSvc,
+		quoteSvc:      quoteSvc,
+		creditNoteSvc: creditNoteSvc,
+		duningSvc:     duningSvc,
+		exportSvc:     exportSvc,
+		logger:        logger,
 	}
 }
 
@@ -245,6 +248,37 @@ func (h *Handler) CreditInvoice(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto)
 }
 
+func (h *Handler) RecordPayment(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		Amount float64 `json:"amount"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	cmd := application.RecordPaymentCommand{
+		ID:       id,
+		TenantID: tenantID,
+		Amount:   payload.Amount,
+	}
+
+	dto, err := h.invoiceSvc.RecordPayment(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
 // Quote Handlers
 
 func (h *Handler) CreateQuote(w http.ResponseWriter, r *http.Request) {
@@ -380,6 +414,28 @@ func (h *Handler) AcceptQuote(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto)
 }
 
+func (h *Handler) ConfirmQuote(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	cmd := application.ConfirmQuoteCommand{
+		ID:       id,
+		TenantID: tenantID,
+	}
+
+	dto, err := h.quoteSvc.ConfirmQuote(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
 func (h *Handler) RejectQuote(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	tenantID := r.Header.Get("X-Tenant-ID")
@@ -448,6 +504,94 @@ func (h *Handler) ConvertQuoteToInvoice(w http.ResponseWriter, r *http.Request) 
 	}
 
 	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+// Credit Note Handlers
+
+func (h *Handler) CreateCreditNote(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		Reason   string `json:"reason"`
+		Items    []struct {
+			Description string  `json:"description"`
+			Quantity    float64 `json:"quantity"`
+			Unit        string  `json:"unit"`
+			UnitPrice   float64 `json:"unit_price"`
+		} `json:"items"`
+		TaxRate  float64 `json:"tax_rate"`
+		Currency string  `json:"currency"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	items := make([]application.CreateCreditNoteItemCommand, len(payload.Items))
+	for i, item := range payload.Items {
+		items[i] = application.CreateCreditNoteItemCommand{
+			Description: item.Description,
+			Quantity:    item.Quantity,
+			Unit:        item.Unit,
+			UnitPrice:   item.UnitPrice,
+		}
+	}
+
+	cmd := application.CreateCreditNoteCommand{
+		InvoiceID: id,
+		TenantID:  tenantID,
+		Reason:    payload.Reason,
+		Items:     items,
+		TaxRate:   payload.TaxRate,
+		Currency:  payload.Currency,
+	}
+
+	dto, err := h.creditNoteSvc.CreateCreditNote(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) GetCreditNote(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dto, err := h.creditNoteSvc.GetCreditNote(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) IssueCreditNote(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dto, err := h.creditNoteSvc.IssueCreditNote(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
 }
 
 // Dunning Handlers

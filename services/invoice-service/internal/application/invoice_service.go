@@ -294,6 +294,34 @@ func (s *InvoiceService) CreditInvoice(ctx context.Context, cmd CreditInvoiceCom
 	return InvoiceToDTO(invoice), nil
 }
 
+// RecordPayment records a partial payment on an invoice
+func (s *InvoiceService) RecordPayment(ctx context.Context, cmd RecordPaymentCommand) (*InvoiceDTO, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	invoice, err := s.invoiceRepo.GetByID(ctx, cmd.TenantID, cmd.ID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "invoice not found", err)
+	}
+
+	// Verify hash for finalized invoices
+	if invoice.IsFinalized() && !invoice.VerifyHash() {
+		return nil, domain.NewDomainError("INTEGRITY_CHECK", "invoice hash mismatch", nil)
+	}
+
+	if err := invoice.RecordPayment(cmd.Amount); err != nil {
+		return nil, domain.NewDomainError("INVALID_PAYMENT", err.Error(), err)
+	}
+
+	if err := s.invoiceRepo.Update(ctx, invoice); err != nil {
+		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to record payment", err)
+	}
+
+	s.logger.Info("Payment recorded", "id", cmd.ID, "number", invoice.InvoiceNumber, "amount", cmd.Amount, "remaining", invoice.RemainingAmount)
+	return InvoiceToDTO(invoice), nil
+}
+
 // AddItem adds a line item to an invoice
 func (s *InvoiceService) AddItem(ctx context.Context, cmd AddInvoiceItemCommand) (*InvoiceDTO, error) {
 	if cmd.TenantID == "" {

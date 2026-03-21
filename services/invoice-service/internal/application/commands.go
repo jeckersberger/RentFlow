@@ -72,6 +72,12 @@ type CreditInvoiceCommand struct {
 	CreditID string
 }
 
+type RecordPaymentCommand struct {
+	ID       string
+	TenantID string
+	Amount   float64
+}
+
 type AddInvoiceItemCommand struct {
 	InvoiceID   string
 	TenantID    string
@@ -91,6 +97,24 @@ type RemoveInvoiceItemCommand struct {
 type GenerateInvoicePDFCommand struct {
 	ID       string
 	TenantID string
+}
+
+// Credit Note Commands
+
+type CreateCreditNoteCommand struct {
+	InvoiceID   string
+	TenantID    string
+	Reason      string
+	Items       []CreateCreditNoteItemCommand
+	TaxRate     float64
+	Currency    string
+}
+
+type CreateCreditNoteItemCommand struct {
+	Description string
+	Quantity    float64
+	Unit        string
+	UnitPrice   float64
 }
 
 // Quote Commands
@@ -127,6 +151,11 @@ type SendQuoteCommand struct {
 }
 
 type AcceptQuoteCommand struct {
+	ID       string
+	TenantID string
+}
+
+type ConfirmQuoteCommand struct {
 	ID       string
 	TenantID string
 }

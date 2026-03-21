@@ -9,6 +9,8 @@ vi.mock('react-router-dom', () => ({
   Routes: ({ children }: { children: React.ReactNode }) => children,
   Route: () => null,
   Navigate: () => null,
+  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/' }),
 }))
 
 // Mock child components and stores
@@ -18,6 +20,23 @@ vi.mock('../stores/authStore', () => ({
 
 vi.mock('../stores/themeStore', () => ({
   initializeTheme: vi.fn(),
+}))
+
+vi.mock('../stores/notificationStore', () => ({
+  useNotificationStore: () => ({
+    notifications: [],
+    addNotification: vi.fn(),
+    removeNotification: vi.fn(),
+  }),
+}))
+
+// Mock complex components that have their own dependencies
+vi.mock('../components/Toast/Toast', () => ({
+  ToastContainer: () => null,
+}))
+
+vi.mock('../components/CommandPalette/CommandPalette', () => ({
+  CommandPalette: () => null,
 }))
 
 const mockedUseAuthStore = vi.mocked(useAuthStore)

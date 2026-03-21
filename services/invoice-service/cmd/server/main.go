@@ -48,12 +48,14 @@ func main() {
 	quoteRepo := repositories.NewQuotePostgres(dbPool)
 	dunningRepo := repositories.NewDunningPostgres(dbPool)
 	seqRepo := repositories.NewNumberSequencePostgres(dbPool)
+	creditNoteRepo := repositories.NewCreditNotePostgres(dbPool)
 
 	log.Info("Repositories initialized")
 
 	// Initialize services
 	invoiceSvc := application.NewInvoiceService(invoiceRepo, seqRepo, log)
 	quoteSvc := application.NewQuoteService(quoteRepo, invoiceRepo, seqRepo, log)
+	creditNoteSvc := application.NewCreditNoteService(creditNoteRepo, invoiceRepo, seqRepo, log)
 	duningSvc := application.NewDunningService(dunningRepo, invoiceRepo, log)
 	exportSvc := application.NewExportService(invoiceRepo, log)
 
@@ -87,7 +89,7 @@ func main() {
 	log.Info("Services initialized")
 
 	// Setup router
-	router := httpAdapter.NewRouter(invoiceSvc, quoteSvc, duningSvc, exportSvc, log)
+	router := httpAdapter.NewRouter(invoiceSvc, quoteSvc, creditNoteSvc, duningSvc, exportSvc, log)
 
 	// Create HTTP server
 	srv := &http.Server{

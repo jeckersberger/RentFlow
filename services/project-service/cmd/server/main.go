@@ -18,6 +18,10 @@ import (
 )
 
 const (
+	notificationServiceURLEnv = "NOTIFICATION_SERVICE_URL"
+)
+
+const (
 	serviceName = "project-service"
 	servicePort = 8003
 )
@@ -50,9 +54,17 @@ func main() {
 
 	// Initialize services
 	projectSvc := application.NewProjectService(projectRepo, log)
+	projectSvc.SetPacklistRepository(packlistRepo)
 	packlistSvc := application.NewPacklistService(packlistRepo, log)
 	reservationSvc := application.NewReservationService(reservationRepo, log)
 	customerSvc := application.NewCustomerService(customerRepo, log)
+
+	// Configure notification service URL if available
+	notificationURL := os.Getenv(notificationServiceURLEnv)
+	if notificationURL != "" {
+		projectSvc.SetNotificationServiceURL(notificationURL)
+		log.Info("Notification service configured", "url", notificationURL)
+	}
 
 	log.Info("Services initialized")
 

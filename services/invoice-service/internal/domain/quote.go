@@ -14,6 +14,7 @@ const (
 	QuoteDraft    QuoteStatus = "draft"
 	QuoteSent     QuoteStatus = "sent"
 	QuoteAccepted QuoteStatus = "accepted"
+	QuoteConfirmed QuoteStatus = "confirmed"
 	QuoteRejected QuoteStatus = "rejected"
 	QuoteExpired  QuoteStatus = "expired"
 )
@@ -21,7 +22,7 @@ const (
 // IsValidStatus checks if status is valid
 func (s QuoteStatus) IsValidStatus() bool {
 	switch s {
-	case QuoteDraft, QuoteSent, QuoteAccepted, QuoteRejected, QuoteExpired:
+	case QuoteDraft, QuoteSent, QuoteAccepted, QuoteConfirmed, QuoteRejected, QuoteExpired:
 		return true
 	default:
 		return false
@@ -198,6 +199,27 @@ func (q *Quote) Accept() error {
 		AcceptedAt:  q.UpdatedAt,
 	}
 	eventData, err := events.NewEventData("QuoteAccepted", event, nil)
+	if err != nil {
+		return err
+	}
+	q.Apply(*eventData)
+	return nil
+}
+
+// Confirm transitions quote from Accepted to Confirmed (Auftragsbestätigung)
+func (q *Quote) Confirm() error {
+	if q.Status != QuoteAccepted {
+		return ErrInvalidTransition
+	}
+	q.Status = QuoteConfirmed
+	q.UpdatedAt = time.Now()
+
+	event := QuoteConfirmedEvent{
+		TenantID:    q.TenantID,
+		QuoteNumber: q.QuoteNumber,
+		ConfirmedAt: q.UpdatedAt,
+	}
+	eventData, err := events.NewEventData("QuoteConfirmed", event, nil)
 	if err != nil {
 		return err
 	}

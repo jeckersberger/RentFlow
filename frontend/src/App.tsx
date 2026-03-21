@@ -6,6 +6,8 @@ import '@radix-ui/themes/styles.css'
 import { useAuthStore } from './stores/authStore'
 import { initializeTheme } from './stores/themeStore'
 import MainLayout from './components/Layout/MainLayout'
+import { ToastContainer } from './components/Toast/Toast'
+import { CommandPalette } from './components/CommandPalette/CommandPalette'
 import LoginPage from './pages/Login'
 import DashboardPage from './pages/Dashboard'
 
@@ -102,6 +104,8 @@ function App() {
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
+        <ToastContainer />
+        <CommandPalette />
       </BrowserRouter>
       </Theme>
     </QueryClientProvider>

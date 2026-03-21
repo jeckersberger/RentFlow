@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { invoiceApi } from '../../services/api'
+import { useNotificationStore } from '../../stores/notificationStore'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
 import { Select } from '../../components/Form/Select'
@@ -10,6 +11,8 @@ import '../Equipment/Equipment.module.scss'
 
 function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const queryClient = useQueryClient()
+  const { addNotification } = useNotificationStore()
   const [showActionModal, setShowActionModal] = useState(false)
   const [selectedAction, setSelectedAction] = useState<string>('')
 
@@ -17,12 +20,18 @@ function InvoiceDetailPage() {
     data: invoice,
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey: ['invoice', id],
     queryFn: () => invoiceApi.getById(id!),
     enabled: !!id,
   })
+
+  const getActionLabel = (action: string): string => {
+    if (action === 'send') return 'Versendet'
+    if (action === 'mark-paid') return 'Bezahlt'
+    if (action === 'cancel') return 'Storniert'
+    return ''
+  }
 
   const { mutate: performAction, isPending } = useMutation({
     mutationFn: async (action: string) => {
@@ -33,9 +42,43 @@ function InvoiceDetailPage() {
 
       return invoiceApi.update(id!, { status: newStatus })
     },
-    onSuccess: () => {
+    onMutate: async (action: string) => {
+      await queryClient.cancelQueries({ queryKey: ['invoice', id] })
+      const previous = queryClient.getQueryData(['invoice', id])
+
+      let newStatus: InvoiceStatus = invoice!.status
+      if (action === 'send') newStatus = 'sent'
+      if (action === 'mark-paid') newStatus = 'paid'
+      if (action === 'cancel') newStatus = 'cancelled'
+
+      queryClient.setQueryData(['invoice', id], (old: any) => ({
+        ...old,
+        status: newStatus,
+        paid_date: newStatus === 'paid' ? new Date().toISOString() : old.paid_date,
+      }))
+      return { previous }
+    },
+    onSuccess: (_, action) => {
       setShowActionModal(false)
-      refetch()
+      const actionLabel = getActionLabel(action)
+      addNotification(`Rechnung erfolgreich ${actionLabel.toLowerCase()}`, 'success', {
+        title: 'Erfolg',
+        duration: 3000,
+      })
+    },
+    onError: (_err: any, _vars, context: any) => {
+      queryClient.setQueryData(['invoice', id], context.previous)
+      addNotification(
+        'Fehler beim Aktualisieren der Rechnung. Bitte versuchen Sie es später erneut.',
+        'error',
+        {
+          title: 'Fehler',
+          duration: 5000,
+        }
+      )
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoice', id] })
     },
   })
 

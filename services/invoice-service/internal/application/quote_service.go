@@ -224,6 +224,29 @@ func (s *QuoteService) AcceptQuote(ctx context.Context, cmd AcceptQuoteCommand) 
 	return QuoteToDTO(quote), nil
 }
 
+// ConfirmQuote confirms a quote (Auftragsbestätigung)
+func (s *QuoteService) ConfirmQuote(ctx context.Context, cmd ConfirmQuoteCommand) (*QuoteDTO, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	quote, err := s.quoteRepo.GetByID(ctx, cmd.TenantID, cmd.ID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "quote not found", err)
+	}
+
+	if err := quote.Confirm(); err != nil {
+		return nil, domain.NewDomainError("INVALID_TRANSITION", err.Error(), err)
+	}
+
+	if err := s.quoteRepo.Update(ctx, quote); err != nil {
+		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to confirm quote", err)
+	}
+
+	s.logger.Info("Quote confirmed", "id", cmd.ID, "number", quote.QuoteNumber)
+	return QuoteToDTO(quote), nil
+}
+
 // RejectQuote rejects a quote
 func (s *QuoteService) RejectQuote(ctx context.Context, cmd RejectQuoteCommand) (*QuoteDTO, error) {
 	if cmd.TenantID == "" {
@@ -247,7 +270,7 @@ func (s *QuoteService) RejectQuote(ctx context.Context, cmd RejectQuoteCommand) 
 	return QuoteToDTO(quote), nil
 }
 
-// ConvertQuoteToInvoice converts an accepted quote to an invoice
+// ConvertQuoteToInvoice converts an accepted or confirmed quote to an invoice
 func (s *QuoteService) ConvertQuoteToInvoice(ctx context.Context, cmd ConvertQuoteToInvoiceCommand) (*InvoiceDTO, error) {
 	if cmd.TenantID == "" {
 		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
@@ -258,8 +281,8 @@ func (s *QuoteService) ConvertQuoteToInvoice(ctx context.Context, cmd ConvertQuo
 		return nil, domain.NewDomainError("NOT_FOUND", "quote not found", err)
 	}
 
-	if quote.Status != domain.QuoteAccepted {
-		return nil, domain.NewDomainError("INVALID_STATUS", "only accepted quotes can be converted to invoices", nil)
+	if quote.Status != domain.QuoteAccepted && quote.Status != domain.QuoteConfirmed {
+		return nil, domain.NewDomainError("INVALID_STATUS", "only accepted or confirmed quotes can be converted to invoices", nil)
 	}
 
 	// Get next invoice number

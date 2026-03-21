@@ -6,6 +6,7 @@ import "fmt"
 var (
 	ErrInvoiceNotFound       = fmt.Errorf("invoice not found")
 	ErrQuoteNotFound         = fmt.Errorf("quote not found")
+	ErrCreditNoteNotFound    = fmt.Errorf("credit note not found")
 	ErrDunningNotFound       = fmt.Errorf("dunning entry not found")
 	ErrTenantIDRequired      = fmt.Errorf("tenant ID is required")
 	ErrInvalidInput          = fmt.Errorf("invalid input")

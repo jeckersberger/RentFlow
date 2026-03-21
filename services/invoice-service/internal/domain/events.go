@@ -43,6 +43,25 @@ type InvoiceCreditedEvent struct {
 	CreditNoteID  string
 }
 
+type InvoicePartialPaymentEvent struct {
+	TenantID        string
+	InvoiceNumber   string
+	PaidAt          time.Time
+	PaidAmount      float64
+	TotalPaidAmount float64
+	RemainingAmount float64
+}
+
+// Credit Note Events
+
+type CreditNoteIssuedEvent struct {
+	TenantID              string
+	CreditNoteNumber      string
+	OriginalInvoiceNumber string
+	IssuedAt              time.Time
+	Total                 float64
+}
+
 // Quote Events
 
 type QuoteCreatedEvent struct {
@@ -65,6 +84,12 @@ type QuoteAcceptedEvent struct {
 	TenantID    string
 	QuoteNumber string
 	AcceptedAt  time.Time
+}
+
+type QuoteConfirmedEvent struct {
+	TenantID    string
+	QuoteNumber string
+	ConfirmedAt time.Time
 }
 
 type QuoteRejectedEvent struct {
