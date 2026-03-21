@@ -80,3 +80,16 @@ type QuoteListResult struct {
 	Limit  int
 	Offset int
 }
+
+// PDFGenerator generiert PDFs aus HTML-Vorlagen.
+// Abstrahiert die konkrete Implementierung (chromedp, wkhtmltopdf, etc.)
+type PDFGenerator interface {
+	GeneratePDF(ctx context.Context, html string) ([]byte, error)
+}
+
+// EmailSender versendet E-Mails mit optionalem Anhang.
+// Abstrahiert den konkreten Transportweg (SMTP, SES, etc.)
+type EmailSender interface {
+	Send(to, subject, bodyHTML string) error
+	SendWithAttachment(to, subject, bodyHTML string, attachment []byte, attachmentName string) error
+}

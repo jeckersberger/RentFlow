@@ -2,7 +2,10 @@ module github.com/jeckersberger/rentflow/services/invoice-service
 
 go 1.22
 
-require github.com/jeckersberger/rentflow/pkg/common v0.0.0
+require (
+	github.com/go-pdf/fpdf v0.9.0
+	github.com/jeckersberger/rentflow/pkg/common v0.0.0
+)
 
 require (
 	github.com/lib/pq v1.12.0 // indirect

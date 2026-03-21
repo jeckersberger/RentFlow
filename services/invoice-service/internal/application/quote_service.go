@@ -12,10 +12,16 @@ import (
 )
 
 type QuoteService struct {
-	quoteRepo   ports.QuoteRepository
-	invoiceRepo ports.InvoiceRepository
-	seqRepo     ports.NumberSequenceRepository
-	logger      logger.Logger
+	quoteRepo    ports.QuoteRepository
+	invoiceRepo  ports.InvoiceRepository
+	seqRepo      ports.NumberSequenceRepository
+	pdfGenerator ports.PDFGenerator
+	logger       logger.Logger
+}
+
+// SetPDFGenerator setzt den PDF-Generator für Angebots-PDFs
+func (s *QuoteService) SetPDFGenerator(gen ports.PDFGenerator) {
+	s.pdfGenerator = gen
 }
 
 func NewQuoteService(
@@ -406,8 +412,8 @@ func (s *QuoteService) RemoveItem(ctx context.Context, cmd RemoveQuoteItemComman
 	return QuoteToDTO(quote), nil
 }
 
-// GenerateQuotePDF generates printable quote HTML
-func (s *QuoteService) GenerateQuotePDF(ctx context.Context, tenantID, quoteID string) (string, error) {
+// GenerateQuoteHTML generiert druckbares Angebots-HTML
+func (s *QuoteService) GenerateQuoteHTML(ctx context.Context, tenantID, quoteID string) (string, error) {
 	quote, err := s.quoteRepo.GetByID(ctx, tenantID, quoteID)
 	if err != nil {
 		return "", domain.NewDomainError("NOT_FOUND", "quote not found", err)
@@ -415,4 +421,25 @@ func (s *QuoteService) GenerateQuotePDF(ctx context.Context, tenantID, quoteID s
 
 	html := buildQuoteHTML(quote)
 	return html, nil
+}
+
+// GenerateQuotePDF generiert ein PDF-Byte-Array des Angebots mittels chromedp
+func (s *QuoteService) GenerateQuotePDF(ctx context.Context, tenantID, quoteID string) ([]byte, error) {
+	quote, err := s.quoteRepo.GetByID(ctx, tenantID, quoteID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "quote not found", err)
+	}
+
+	html := buildQuoteHTML(quote)
+
+	if s.pdfGenerator != nil {
+		pdfBytes, err := s.pdfGenerator.GeneratePDF(ctx, html)
+		if err != nil {
+			s.logger.Error("Quote PDF generation failed, falling back to HTML", err)
+			return []byte(html), nil
+		}
+		return pdfBytes, nil
+	}
+
+	return []byte(html), nil
 }

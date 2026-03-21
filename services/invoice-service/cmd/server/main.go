@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	httpAdapter "github.com/jeckersberger/rentflow/services/invoice-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/invoice-service/internal/application"
+	emailInfra "github.com/jeckersberger/rentflow/services/invoice-service/internal/infrastructure/email"
+	pdfInfra "github.com/jeckersberger/rentflow/services/invoice-service/internal/infrastructure/pdf"
 	"github.com/jeckersberger/rentflow/services/invoice-service/internal/infrastructure/repositories"
 )
 
@@ -54,6 +57,33 @@ func main() {
 	duningSvc := application.NewDunningService(dunningRepo, invoiceRepo, log)
 	exportSvc := application.NewExportService(invoiceRepo, log)
 
+	// PDF-Generator initialisieren (go-pdf/fpdf – reine Go-Bibliothek, kein Chrome nötig)
+	pdfGen := pdfInfra.NewFPDFGenerator()
+	invoiceSvc.SetPDFGenerator(pdfGen)
+	quoteSvc.SetPDFGenerator(pdfGen)
+	log.Info("PDF generator initialized (fpdf)")
+
+	// Email-Sender initialisieren (nur wenn SMTP konfiguriert ist)
+	smtpHost := os.Getenv("SMTP_HOST")
+	if smtpHost != "" {
+		smtpPort, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
+		if smtpPort == 0 {
+			smtpPort = 587
+		}
+		emailSender := emailInfra.NewSMTPSender(emailInfra.SMTPConfig{
+			Host:     smtpHost,
+			Port:     smtpPort,
+			Username: os.Getenv("SMTP_USERNAME"),
+			Password: os.Getenv("SMTP_PASSWORD"),
+			FromName: getEnvOrDefault("SMTP_FROM_NAME", "RentFlow"),
+			FromAddr: os.Getenv("SMTP_FROM_ADDRESS"),
+		})
+		invoiceSvc.SetEmailSender(emailSender)
+		log.Info("Email sender initialized", "host", smtpHost, "port", smtpPort)
+	} else {
+		log.Warn("SMTP not configured - email sending disabled. Set SMTP_HOST to enable.")
+	}
+
 	log.Info("Services initialized")
 
 	// Setup router
@@ -90,4 +120,11 @@ func main() {
 	}
 
 	log.Info("Server stopped")
+}
+
+func getEnvOrDefault(key, defaultValue string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return defaultValue
 }

@@ -89,6 +89,22 @@ export const equipmentApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(res => res.data)
   },
+
+  // Equipment per Barcode suchen (für Scanner)
+  getByBarcode: (barcode: string) =>
+    api.get(`/api/v1/equipment/barcode/${barcode}`).then(res => res.data),
+
+  // Equipment per Suchbegriff finden
+  search: (query: string, limit = 20) =>
+    api.get('/api/v1/equipment/search', { params: { q: query, limit } }).then(res => res.data),
+
+  // Equipment einem Projekt zuweisen (Check-Out)
+  checkOut: (equipmentId: string, projectId: string) =>
+    api.post(`/api/v1/equipment/${equipmentId}/check-out`, { project_id: projectId }).then(res => res.data),
+
+  // Equipment vom Projekt zurückgeben (Check-In)
+  checkIn: (equipmentId: string) =>
+    api.post(`/api/v1/equipment/${equipmentId}/check-in`, {}).then(res => res.data),
 }
 
 // Project API endpoints

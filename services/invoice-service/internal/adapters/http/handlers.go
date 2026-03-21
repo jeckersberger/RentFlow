@@ -140,7 +140,8 @@ func (h *Handler) SendInvoice(w http.ResponseWriter, r *http.Request) {
 		Email:    payload.Email,
 	}
 
-	dto, err := h.invoiceSvc.SendInvoice(r.Context(), cmd)
+	// SendInvoiceWithPDF generiert PDF, sendet E-Mail und ändert den Status
+	dto, err := h.invoiceSvc.SendInvoiceWithPDF(r.Context(), cmd)
 	if err != nil {
 		h.handleError(w, err)
 		return
@@ -692,15 +693,31 @@ func (h *Handler) GetInvoicePDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	html, err := h.invoiceSvc.GenerateInvoicePDF(r.Context(), tenantID, id)
+	// Prüfen ob HTML-Format explizit angefragt wird (Fallback für Browser-Vorschau)
+	if r.URL.Query().Get("format") == "html" {
+		html, err := h.invoiceSvc.GenerateInvoiceHTML(r.Context(), tenantID, id)
+		if err != nil {
+			h.handleError(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(html))
+		return
+	}
+
+	// Standard: PDF generieren
+	pdfBytes, err := h.invoiceSvc.GenerateInvoicePDF(r.Context(), tenantID, id)
 	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="invoice_%s.pdf"`, id))
+	w.Header().Set("Content-Length", strconv.Itoa(len(pdfBytes)))
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	w.Write(pdfBytes)
 }
 
 func (h *Handler) GetQuotePDF(w http.ResponseWriter, r *http.Request) {
@@ -711,15 +728,31 @@ func (h *Handler) GetQuotePDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	html, err := h.quoteSvc.GenerateQuotePDF(r.Context(), tenantID, id)
+	// Prüfen ob HTML-Format explizit angefragt wird
+	if r.URL.Query().Get("format") == "html" {
+		html, err := h.quoteSvc.GenerateQuoteHTML(r.Context(), tenantID, id)
+		if err != nil {
+			h.handleError(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(html))
+		return
+	}
+
+	// Standard: PDF generieren
+	pdfBytes, err := h.quoteSvc.GenerateQuotePDF(r.Context(), tenantID, id)
 	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="quote_%s.pdf"`, id))
+	w.Header().Set("Content-Length", strconv.Itoa(len(pdfBytes)))
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	w.Write(pdfBytes)
 }
 
 func (h *Handler) CreateInvoiceFromProject(w http.ResponseWriter, r *http.Request) {

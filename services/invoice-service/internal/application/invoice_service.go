@@ -11,9 +11,11 @@ import (
 )
 
 type InvoiceService struct {
-	invoiceRepo ports.InvoiceRepository
-	seqRepo     ports.NumberSequenceRepository
-	logger      logger.Logger
+	invoiceRepo  ports.InvoiceRepository
+	seqRepo      ports.NumberSequenceRepository
+	pdfGenerator ports.PDFGenerator
+	emailSender  ports.EmailSender
+	logger       logger.Logger
 }
 
 func NewInvoiceService(
@@ -26,6 +28,16 @@ func NewInvoiceService(
 		seqRepo:     seqRepo,
 		logger:      logger,
 	}
+}
+
+// SetPDFGenerator setzt den PDF-Generator (optional, für chromedp-basierte PDF-Erzeugung)
+func (s *InvoiceService) SetPDFGenerator(gen ports.PDFGenerator) {
+	s.pdfGenerator = gen
+}
+
+// SetEmailSender setzt den Email-Sender (optional, für SMTP-basierten E-Mail-Versand)
+func (s *InvoiceService) SetEmailSender(sender ports.EmailSender) {
+	s.emailSender = sender
 }
 
 // CreateInvoice creates a new invoice
@@ -410,8 +422,8 @@ func (s *InvoiceService) GetOpenInvoices(ctx context.Context, tenantID string) (
 	}, nil
 }
 
-// GenerateInvoicePDF generates printable invoice HTML
-func (s *InvoiceService) GenerateInvoicePDF(ctx context.Context, tenantID, invoiceID string) (string, error) {
+// GenerateInvoiceHTML generiert druckbares Rechnungs-HTML
+func (s *InvoiceService) GenerateInvoiceHTML(ctx context.Context, tenantID, invoiceID string) (string, error) {
 	invoice, err := s.invoiceRepo.GetByID(ctx, tenantID, invoiceID)
 	if err != nil {
 		return "", domain.NewDomainError("NOT_FOUND", "invoice not found", err)
@@ -421,12 +433,91 @@ func (s *InvoiceService) GenerateInvoicePDF(ctx context.Context, tenantID, invoi
 	return html, nil
 }
 
-// GenerateQuotePDF generates printable quote HTML
-func (s *InvoiceService) GenerateQuotePDF(ctx context.Context, tenantID, quoteID string) (string, error) {
-	// Placeholder for quote service call
-	quote := &domain.Quote{}
-	html := buildQuoteHTML(quote)
-	return html, nil
+// GenerateInvoicePDF generiert ein professionelles PDF der Rechnung.
+// Nutzt go-pdf/fpdf für reine Go-basierte PDF-Erzeugung (kein Chrome nötig).
+func (s *InvoiceService) GenerateInvoicePDF(ctx context.Context, tenantID, invoiceID string) ([]byte, error) {
+	invoice, err := s.invoiceRepo.GetByID(ctx, tenantID, invoiceID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "invoice not found", err)
+	}
+
+	// Wenn ein PDF-Generator verfügbar ist, strukturiertes PDF erzeugen
+	if s.pdfGenerator != nil {
+		pdfBytes, err := s.pdfGenerator.GeneratePDF(ctx, buildInvoiceHTML(invoice))
+		if err != nil {
+			s.logger.Error("PDF generation failed, falling back to HTML", err)
+			return []byte(buildInvoiceHTML(invoice)), nil
+		}
+		return pdfBytes, nil
+	}
+
+	// Fallback: HTML als Byte-Array
+	s.logger.Warn("No PDF generator configured, returning HTML")
+	return []byte(buildInvoiceHTML(invoice)), nil
+}
+
+// SendInvoiceWithPDF versendet eine Rechnung per E-Mail mit PDF-Anhang.
+// Generiert das PDF, ändert den Status auf "sent" und verschickt die E-Mail.
+func (s *InvoiceService) SendInvoiceWithPDF(ctx context.Context, cmd SendInvoiceCommand) (*InvoiceDTO, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	invoice, err := s.invoiceRepo.GetByID(ctx, cmd.TenantID, cmd.ID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "invoice not found", err)
+	}
+
+	// GoBD-Integritätsprüfung
+	if invoice.IsFinalized() && !invoice.VerifyHash() {
+		return nil, domain.NewDomainError("INTEGRITY_CHECK", "invoice hash mismatch - possible tampering detected", nil)
+	}
+
+	// PDF generieren
+	pdfBytes, err := s.GenerateInvoicePDF(ctx, cmd.TenantID, cmd.ID)
+	if err != nil {
+		return nil, domain.NewDomainError("PDF_ERROR", "failed to generate invoice PDF", err)
+	}
+
+	// Status auf "sent" setzen
+	if err := invoice.Send(cmd.Email); err != nil {
+		return nil, domain.NewDomainError("INVALID_TRANSITION", err.Error(), err)
+	}
+
+	if err := s.invoiceRepo.Update(ctx, invoice); err != nil {
+		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to update invoice status", err)
+	}
+
+	// E-Mail mit PDF-Anhang versenden (wenn Email-Sender konfiguriert)
+	if s.emailSender != nil {
+		subject := fmt.Sprintf("Rechnung %s", invoice.InvoiceNumber)
+		body := fmt.Sprintf(`<html><body>
+			<p>Sehr geehrte/r %s,</p>
+			<p>anbei erhalten Sie die Rechnung <strong>%s</strong> über <strong>%s %.2f</strong>.</p>
+			<p>Zahlbar bis: <strong>%s</strong></p>
+			<p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
+			<p>Mit freundlichen Grüßen<br>Ihr RentFlow-Team</p>
+		</body></html>`,
+			invoice.ClientName,
+			invoice.InvoiceNumber,
+			invoice.Currency, invoice.Total,
+			invoice.DueDate.Format("02.01.2006"),
+		)
+		attachmentName := fmt.Sprintf("Rechnung_%s.pdf", invoice.InvoiceNumber)
+
+		if err := s.emailSender.SendWithAttachment(cmd.Email, subject, body, pdfBytes, attachmentName); err != nil {
+			s.logger.Error("Email sending failed", err, "invoice_id", cmd.ID, "email", cmd.Email)
+			// Fehler loggen, aber Status bleibt auf "sent" (Rechnung wurde korrekt finalisiert)
+			// Der Nutzer kann die E-Mail manuell erneut versenden
+		} else {
+			s.logger.Info("Invoice email sent", "id", cmd.ID, "number", invoice.InvoiceNumber, "email", cmd.Email)
+		}
+	} else {
+		s.logger.Warn("No email sender configured, invoice marked as sent without email delivery")
+	}
+
+	s.logger.Info("Invoice sent", "id", cmd.ID, "number", invoice.InvoiceNumber, "email", cmd.Email)
+	return InvoiceToDTO(invoice), nil
 }
 
 // CreateInvoiceFromProject creates invoice from project reference
