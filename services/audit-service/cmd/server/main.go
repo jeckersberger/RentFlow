@@ -10,7 +10,11 @@ import (
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	httpAdapter "github.com/jeckersberger/rentflow/services/audit-service/internal/adapters/http"
+	"github.com/jeckersberger/rentflow/services/audit-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/audit-service/internal/infrastructure/repositories"
 )
 
 const (
@@ -27,18 +31,19 @@ func main() {
 
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
-	router := http.NewServeMux()
+	dbPool, err := database.NewPostgresPool(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+	defer dbPool.Close()
 
-	// Health & readiness
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	auditRepo := repositories.NewAuditEntryPostgres(dbPool)
+	integrityRepo := repositories.NewIntegrityCheckPostgres(dbPool)
 
-	// API routes (v1)
-	router.HandleFunc("GET /api/v1/audit/logs", listLogsHandler)
-	router.HandleFunc("GET /api/v1/audit/entity/{type}/{id}", getEntityAuditHandler)
-	router.HandleFunc("POST /api/v1/audit/verify", verifyHandler)
+	auditSvc := application.NewAuditService(auditRepo, integrityRepo, log)
 
-	// Graceful shutdown
+	router := httpAdapter.NewRouter(auditSvc, log)
+
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
@@ -63,35 +68,4 @@ func main() {
 	defer cancel()
 	srv.Shutdown(ctx)
 	log.Info("Server stopped")
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"%s","timestamp":"%s"}`, serviceName, time.Now().UTC().Format(time.RFC3339))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, KurrentDB, Redis connections
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
-}
-
-func listLogsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"audit-service"}`))
-}
-
-func getEntityAuditHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"audit-service"}`))
-}
-
-func verifyHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"audit-service"}`))
 }

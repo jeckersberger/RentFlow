@@ -10,7 +10,11 @@ import (
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	httpAdapter "github.com/jeckersberger/rentflow/services/transport-service/internal/adapters/http"
+	"github.com/jeckersberger/rentflow/services/transport-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/transport-service/internal/infrastructure/repositories"
 )
 
 const (
@@ -27,19 +31,20 @@ func main() {
 
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
-	router := http.NewServeMux()
+	dbPool, err := database.NewPostgresPool(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+	defer dbPool.Close()
 
-	// Health & readiness
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	vehicleRepo := repositories.NewVehiclePostgres(dbPool)
+	tourRepo := repositories.NewTourPostgres(dbPool)
 
-	// API routes (v1)
-	router.HandleFunc("GET /api/v1/vehicles", listVehiclesHandler)
-	router.HandleFunc("POST /api/v1/vehicles", createVehicleHandler)
-	router.HandleFunc("POST /api/v1/tours", createTourHandler)
-	router.HandleFunc("GET /api/v1/tours/{id}", getTourHandler)
+	vehicleSvc := application.NewVehicleService(vehicleRepo, log)
+	tourSvc := application.NewTourService(tourRepo, vehicleRepo, log)
 
-	// Graceful shutdown
+	router := httpAdapter.NewRouter(vehicleSvc, tourSvc, log)
+
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
@@ -64,41 +69,4 @@ func main() {
 	defer cancel()
 	srv.Shutdown(ctx)
 	log.Info("Server stopped")
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"%s","timestamp":"%s"}`, serviceName, time.Now().UTC().Format(time.RFC3339))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, KurrentDB, Redis connections
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
-}
-
-func listVehiclesHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"transport-service"}`))
-}
-
-func createVehicleHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"transport-service"}`))
-}
-
-func createTourHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"transport-service"}`))
-}
-
-func getTourHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"transport-service"}`))
 }

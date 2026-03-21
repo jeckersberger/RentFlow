@@ -10,7 +10,11 @@ import (
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	httpAdapter "github.com/jeckersberger/rentflow/services/crew-service/internal/adapters/http"
+	"github.com/jeckersberger/rentflow/services/crew-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/crew-service/internal/infrastructure/repositories"
 )
 
 const (
@@ -27,19 +31,33 @@ func main() {
 
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
-	router := http.NewServeMux()
+	// Initialize database
+	dbPool, err := database.NewPostgresPool(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+	defer dbPool.Close()
 
-	// Health & readiness
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	log.Info("Connected to database")
 
-	// API routes (v1)
-	router.HandleFunc("GET /api/v1/crew", listCrewHandler)
-	router.HandleFunc("POST /api/v1/crew", createCrewHandler)
-	router.HandleFunc("GET /api/v1/crew/{id}/schedule", getScheduleHandler)
-	router.HandleFunc("POST /api/v1/time-entries", createTimeEntryHandler)
+	// Initialize repositories
+	crewRepo := repositories.NewCrewPostgres(dbPool)
+	timeRepo := repositories.NewTimeEntryPostgres(dbPool)
+	assignRepo := repositories.NewAssignmentPostgres(dbPool)
 
-	// Graceful shutdown
+	log.Info("Repositories initialized")
+
+	// Initialize services
+	crewSvc := application.NewCrewService(crewRepo, log)
+	timeSvc := application.NewTimeEntryService(timeRepo, log)
+	assignSvc := application.NewAssignmentService(assignRepo, log)
+
+	log.Info("Services initialized")
+
+	// Setup router
+	router := httpAdapter.NewRouter(crewSvc, timeSvc, assignSvc, log)
+
+	// Create HTTP server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
@@ -48,6 +66,7 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	// Start server in goroutine
 	go func() {
 		log.Info("Listening", "addr", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -55,6 +74,7 @@ func main() {
 		}
 	}()
 
+	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -62,43 +82,10 @@ func main() {
 	log.Info("Shutting down gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	srv.Shutdown(ctx)
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("Server shutdown error", err)
+	}
+
 	log.Info("Server stopped")
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"%s","timestamp":"%s"}`, serviceName, time.Now().UTC().Format(time.RFC3339))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, KurrentDB, Redis connections
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
-}
-
-func listCrewHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"crew-service"}`))
-}
-
-func createCrewHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"crew-service"}`))
-}
-
-func getScheduleHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"crew-service"}`))
-}
-
-func createTimeEntryHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"crew-service"}`))
 }
