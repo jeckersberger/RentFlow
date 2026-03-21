@@ -18,9 +18,12 @@ vi.mock('../stores/authStore', () => ({
   useAuthStore: vi.fn(),
 }))
 
-vi.mock('../stores/themeStore', () => ({
-  initializeTheme: vi.fn(),
-}))
+vi.mock('../stores/themeStore', () => {
+  const state = { isDarkMode: true, toggleDarkMode: vi.fn(), setDarkMode: vi.fn() }
+  const useThemeStore = (selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state
+  return { useThemeStore, initializeTheme: vi.fn() }
+})
 
 vi.mock('../stores/notificationStore', () => ({
   useNotificationStore: () => ({

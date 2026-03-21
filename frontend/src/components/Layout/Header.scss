@@ -4,10 +4,10 @@
   height: var(--header-height);
   background-color: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
+  backdrop-filter: blur(12px);
 }
 
 .header__content {
@@ -24,15 +24,16 @@
 
 .header__title {
   margin: 0;
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--letter-spacing-tight);
 }
 
 .header__right {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
 }
 
 .header__user {
@@ -40,18 +41,23 @@
   align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-2) var(--spacing-3);
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-md);
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+  }
 }
 
 .header__user-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .header__user-info {
   display: flex;
   flex-direction: column;
-  gap: 0;
   min-width: 0;
 }
 
@@ -68,30 +74,30 @@
 .header__user-email {
   margin: 0;
   font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .header__logout-btn {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: var(--spacing-1);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: none;
+  border: 1px solid transparent;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
 
   &:hover {
-    background-color: var(--color-danger);
-  }
-
-  &:active {
-    opacity: 0.8;
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: var(--color-danger);
   }
 }
 
@@ -101,7 +107,7 @@
   }
 
   .header__title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
   }
 
   .header__user-info {

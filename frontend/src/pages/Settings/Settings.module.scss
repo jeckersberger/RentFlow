@@ -18,6 +18,12 @@
   padding: var(--padding-md);
   height: fit-content;
   box-shadow: var(--shadow-card);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
 
   &__item {
     display: flex;
@@ -39,7 +45,7 @@
     }
 
     &--active {
-      background-color: var(--color-primary);
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       color: white;
     }
   }
@@ -59,6 +65,12 @@
   border-radius: var(--radius-card);
   padding: var(--padding-lg);
   box-shadow: var(--shadow-card);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
 }
 
 .settings-content {
@@ -131,22 +143,22 @@
   font-weight: var(--font-weight-medium);
 
   &--primary {
-    background-color: var(--color-primary);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
     color: white;
   }
 
   &--secondary {
     background-color: var(--color-bg-tertiary);
-    color: var(--color-text-primary);
+    color: var(--color-text-secondary);
   }
 
   &--success {
-    background-color: rgba(16, 185, 129, 0.1);
+    background-color: rgba(16, 185, 129, 0.15);
     color: var(--color-success);
   }
 
   &--warning {
-    background-color: rgba(245, 158, 11, 0.1);
+    background-color: rgba(245, 158, 11, 0.15);
     color: var(--color-warning);
   }
 }
@@ -165,6 +177,12 @@
   background-color: var(--color-bg-secondary);
   border-radius: var(--radius-md);
   border: var(--card-border-width) solid var(--color-border);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    background-color: var(--color-bg-tertiary);
+  }
 
   &__name {
     font-weight: var(--font-weight-medium);

@@ -1,6 +1,11 @@
 @import './variables.scss';
 
 // ============================================================================
+// FONT IMPORTS
+// ============================================================================
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+// ============================================================================
 // CSS RESET & NORMALIZATION
 // ============================================================================
 
@@ -28,7 +33,7 @@ body {
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
-  transition: background-color var(--transition-normal);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -39,48 +44,25 @@ body {
 // TYPOGRAPHY
 // ============================================================================
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
   margin: 0;
   padding: 0;
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-text-primary);
 }
 
-h1 {
-  font-size: var(--font-size-4xl);
-}
-
-h2 {
-  font-size: var(--font-size-3xl);
-}
-
-h3 {
-  font-size: var(--font-size-2xl);
-}
-
-h4 {
-  font-size: var(--font-size-xl);
-}
-
-h5 {
-  font-size: var(--font-size-lg);
-}
-
-h6 {
-  font-size: var(--font-size-base);
-}
+h1 { font-size: var(--font-size-4xl); }
+h2 { font-size: var(--font-size-3xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+h6 { font-size: var(--font-size-base); }
 
 p {
   margin: 0 0 var(--spacing-4) 0;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+  &:last-child { margin-bottom: 0; }
 }
 
 a {
@@ -88,10 +70,7 @@ a {
   text-decoration: none;
   transition: color var(--transition-fast);
 
-  &:hover {
-    color: var(--color-primary-dark);
-  }
-
+  &:hover { color: var(--color-primary-light); }
   &:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
@@ -99,47 +78,40 @@ a {
 }
 
 // ============================================================================
-// FORMS
+// FORMS – Dark-optimized
 // ============================================================================
 
-input,
-textarea,
-select,
-button {
+input, textarea, select, button {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
 }
 
-input,
-textarea,
-select {
+input, textarea, select {
   width: 100%;
   padding: var(--input-padding-y) var(--input-padding-x);
   border: var(--input-border-width) solid var(--input-border-color);
   border-radius: var(--radius-input);
-  background-color: var(--color-bg-primary);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
 
   &:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+    background-color: var(--color-bg-tertiary);
   }
 
   &:disabled {
-    background-color: var(--color-gray-100);
-    color: var(--color-gray-500);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
     cursor: not-allowed;
-    opacity: 0.6;
-
-    @media (prefers-color-scheme: dark) {
-      background-color: var(--color-gray-800);
-    }
+    opacity: 0.5;
   }
 
   &::placeholder {
-    color: var(--color-gray-400);
+    color: var(--color-text-muted);
   }
 }
 
@@ -169,32 +141,22 @@ button {
 // LISTS
 // ============================================================================
 
-ul,
-ol {
+ul, ol {
   margin: 0 0 var(--spacing-4) var(--spacing-6);
   padding: 0;
-
   li {
     margin-bottom: var(--spacing-2);
-
-    &:last-child {
-      margin-bottom: 0;
-    }
+    &:last-child { margin-bottom: 0; }
   }
 }
 
 dl {
   margin: 0;
-
   dt {
     font-weight: var(--font-weight-semibold);
     margin-top: var(--spacing-4);
-
-    &:first-child {
-      margin-top: 0;
-    }
+    &:first-child { margin-top: 0; }
   }
-
   dd {
     margin-left: var(--spacing-4);
     margin-bottom: var(--spacing-2);
@@ -205,35 +167,26 @@ dl {
 // CODE & PREFORMATTED TEXT
 // ============================================================================
 
-code,
-pre {
+code, pre {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
 }
 
 code {
-  background-color: var(--color-gray-100);
-  color: var(--color-danger);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-primary);
   padding: var(--spacing-1) var(--spacing-2);
   border-radius: var(--radius-sm);
-
-  @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-800);
-    color: var(--color-danger-light);
-  }
 }
 
 pre {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
   padding: var(--spacing-4);
   border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   overflow-x: auto;
   margin-bottom: var(--spacing-4);
-
-  @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-800);
-  }
 
   code {
     background: none;
@@ -243,7 +196,7 @@ pre {
 }
 
 // ============================================================================
-// TABLES
+// TABLES – Dark card style
 // ============================================================================
 
 table {
@@ -253,15 +206,10 @@ table {
 }
 
 thead {
-  background-color: var(--color-gray-50);
-
-  @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-800);
-  }
+  background-color: var(--color-bg-tertiary);
 }
 
-th,
-td {
+th, td {
   padding: var(--spacing-3) var(--spacing-4);
   text-align: left;
   border-bottom: 1px solid var(--color-border);
@@ -270,13 +218,16 @@ td {
 th {
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
 }
 
-tbody tr:hover {
-  background-color: var(--color-gray-50);
+tbody tr {
+  transition: background-color var(--transition-fast);
 
-  @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-800);
+  &:hover {
+    background-color: var(--color-bg-hover);
   }
 }
 
@@ -284,24 +235,19 @@ tbody tr:hover {
 // IMAGES & MEDIA
 // ============================================================================
 
-img,
-picture,
-video,
-canvas,
-svg {
+img, picture, video, canvas, svg {
   display: block;
   max-width: 100%;
   height: auto;
 }
 
-svg {
-  &:not([fill]) {
-    fill: currentColor;
-  }
+// ============================================================================
+// SELECTION
+// ============================================================================
 
-  &:not([stroke]) {
-    stroke: currentColor;
-  }
+::selection {
+  background-color: rgba(0, 212, 255, 0.2);
+  color: var(--color-text-primary);
 }
 
 // ============================================================================
@@ -321,29 +267,29 @@ svg {
 }
 
 // ============================================================================
-// SCROLLBAR STYLING
+// SCROLLBAR – Sleek dark style
 // ============================================================================
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-gray-400);
+  background: var(--color-gray-700);
   border-radius: var(--radius-full);
 
   &:hover {
-    background: var(--color-gray-500);
+    background: var(--color-gray-600);
   }
 }
 
 // ============================================================================
-// FOCUS VISIBLE OUTLINE
+// FOCUS VISIBLE
 // ============================================================================
 
 :focus-visible {

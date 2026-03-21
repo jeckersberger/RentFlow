@@ -4,8 +4,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
   z-index: var(--z-modal-backdrop);
   display: flex;
   align-items: flex-start;
@@ -21,8 +21,9 @@
 
 .modal {
   background: var(--color-bg-primary);
+  border: var(--card-border-width) solid var(--color-border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-2xl);
+  box-shadow: var(--shadow-modal);
   width: 100%;
   max-width: 600px;
   overflow: hidden;
@@ -199,55 +200,3 @@
   }
 }
 
-:root.dark-mode {
-  .backdrop {
-    background: rgba(0, 0, 0, 0.7);
-  }
-
-  .modal {
-    background: var(--color-bg-primary);
-  }
-
-  .search {
-    background: var(--color-bg-primary);
-    border-bottom-color: var(--color-border);
-  }
-
-  .search__icon {
-    color: var(--color-text-secondary);
-  }
-
-  .search__input {
-    color: var(--color-text-primary);
-
-    &::placeholder {
-      color: var(--color-text-secondary);
-    }
-  }
-
-  .item {
-    color: var(--color-text-primary);
-
-    &:hover {
-      background: var(--color-bg-secondary);
-    }
-
-    &--selected {
-      background: var(--color-primary);
-      color: white;
-    }
-  }
-
-  .item__hint {
-    color: var(--color-text-secondary);
-  }
-
-  .footer {
-    background: var(--color-bg-secondary);
-    border-top-color: var(--color-border);
-  }
-
-  .footer__text {
-    color: var(--color-text-secondary);
-  }
-}

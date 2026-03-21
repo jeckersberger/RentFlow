@@ -1,25 +1,29 @@
-// RentFlow Design System - CSS Custom Properties
-// Design tokens for colors, typography, spacing, shadows, and more
+// RentFlow Design System – Dashboard-Pro Theme
+// Dark-first design with bold accent colors (Vercel/GitHub-inspired)
 
 :root {
   // ============================================================================
-  // COLORS - Primary Palette
+  // COLORS - Primary Palette (Cyan-Blue Accent)
   // ============================================================================
-  --color-primary: #3b82f6;
-  --color-primary-light: #60a5fa;
-  --color-primary-dark: #1e40af;
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
+  --color-primary: #00d4ff;
+  --color-primary-light: #33ddff;
+  --color-primary-dark: #0099cc;
+  --color-primary-50: #e6faff;
+  --color-primary-100: #b3f0ff;
+  --color-primary-200: #80e6ff;
+  --color-primary-300: #4dddff;
+  --color-primary-400: #1ad4ff;
+  --color-primary-500: #00d4ff;
+  --color-primary-600: #00aacc;
+  --color-primary-700: #008099;
+  --color-primary-800: #005566;
+  --color-primary-900: #002b33;
 
   // Accent Colors
+  --color-accent: #8b5cf6;
+  --color-accent-light: #a78bfa;
+  --color-accent-dark: #6d28d9;
+
   --color-success: #10b981;
   --color-success-light: #34d399;
   --color-success-dark: #059669;
@@ -44,60 +48,49 @@
   --color-gray-600: #4b5563;
   --color-gray-700: #374151;
   --color-gray-800: #1f2937;
+  --color-gray-850: #1a1f2e;
   --color-gray-900: #111827;
-  --color-gray-950: #030712;
-
-  // Light Mode (default)
-  --color-bg-primary: var(--color-white);
-  --color-bg-secondary: var(--color-gray-50);
-  --color-bg-tertiary: var(--color-gray-100);
-  --color-text-primary: var(--color-gray-900);
-  --color-text-secondary: var(--color-gray-600);
-  --color-border: var(--color-gray-200);
+  --color-gray-950: #0a0f1a;
 
   // ============================================================================
-  // COLORS - Dark Mode
+  // DARK MODE (Default)
   // ============================================================================
-  @media (prefers-color-scheme: dark) {
-    --color-bg-primary: var(--color-gray-900);
-    --color-bg-secondary: var(--color-gray-800);
-    --color-bg-tertiary: var(--color-gray-700);
-    --color-text-primary: var(--color-gray-50);
-    --color-text-secondary: var(--color-gray-300);
-    --color-border: var(--color-gray-700);
-  }
-}
-
-:root.dark-mode {
-  --color-bg-primary: var(--color-gray-900);
-  --color-bg-secondary: var(--color-gray-800);
-  --color-bg-tertiary: var(--color-gray-700);
-  --color-text-primary: var(--color-gray-50);
-  --color-text-secondary: var(--color-gray-300);
-  --color-border: var(--color-gray-700);
+  --color-bg-primary: #0a0f1a;
+  --color-bg-secondary: #111827;
+  --color-bg-tertiary: #1a1f2e;
+  --color-bg-elevated: #1f2937;
+  --color-bg-hover: rgba(255, 255, 255, 0.04);
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
   color-scheme: dark;
+
+  // Glow effects for Dashboard-Pro
+  --glow-primary: 0 0 20px rgba(0, 212, 255, 0.15);
+  --glow-accent: 0 0 20px rgba(139, 92, 246, 0.15);
+  --glow-success: 0 0 20px rgba(16, 185, 129, 0.15);
+  --glow-danger: 0 0 20px rgba(239, 68, 68, 0.15);
 
   // ============================================================================
   // TYPOGRAPHY
   // ============================================================================
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
 
-  // Font Families
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  --font-mono: 'Courier New', Courier, monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 0.9375rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
 
-  // Font Sizes
-  --font-size-xs: 0.75rem; // 12px
-  --font-size-sm: 0.875rem; // 14px
-  --font-size-base: 1rem; // 16px
-  --font-size-lg: 1.125rem; // 18px
-  --font-size-xl: 1.25rem; // 20px
-  --font-size-2xl: 1.5rem; // 24px
-  --font-size-3xl: 1.875rem; // 30px
-  --font-size-4xl: 2.25rem; // 36px
-  --font-size-5xl: 3rem; // 48px
-
-  // Font Weights
   --font-weight-light: 300;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -105,42 +98,37 @@
   --font-weight-bold: 700;
   --font-weight-extrabold: 800;
 
-  // Line Heights
   --line-height-tight: 1.2;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
 
-  // Letter Spacing
-  --letter-spacing-tight: -0.02em;
+  --letter-spacing-tight: -0.025em;
   --letter-spacing-normal: 0em;
   --letter-spacing-wide: 0.05em;
 
   // ============================================================================
-  // SPACING
+  // SPACING (4px base)
   // ============================================================================
-
-  // Consistent spacing scale (4px base unit)
   --spacing-0: 0;
   --spacing-px: 1px;
-  --spacing-1: 0.25rem; // 4px
-  --spacing-2: 0.5rem; // 8px
-  --spacing-3: 0.75rem; // 12px
-  --spacing-4: 1rem; // 16px
-  --spacing-5: 1.25rem; // 20px
-  --spacing-6: 1.5rem; // 24px
-  --spacing-7: 1.75rem; // 28px
-  --spacing-8: 2rem; // 32px
-  --spacing-9: 2.25rem; // 36px
-  --spacing-10: 2.5rem; // 40px
-  --spacing-12: 3rem; // 48px
-  --spacing-14: 3.5rem; // 56px
-  --spacing-16: 4rem; // 64px
-  --spacing-20: 5rem; // 80px
-  --spacing-24: 6rem; // 96px
-  --spacing-28: 7rem; // 112px
-  --spacing-32: 8rem; // 128px
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-7: 1.75rem;
+  --spacing-8: 2rem;
+  --spacing-9: 2.25rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-14: 3.5rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+  --spacing-24: 6rem;
+  --spacing-28: 7rem;
+  --spacing-32: 8rem;
 
-  // Common component spacing
   --padding-xs: var(--spacing-2);
   --padding-sm: var(--spacing-3);
   --padding-md: var(--spacing-4);
@@ -156,81 +144,52 @@
   // ============================================================================
   // BORDER RADIUS
   // ============================================================================
-
   --radius-none: 0;
-  --radius-sm: 0.25rem; // 4px
-  --radius-base: 0.375rem; // 6px
-  --radius-md: 0.5rem; // 8px
-  --radius-lg: 0.75rem; // 12px
-  --radius-xl: 1rem; // 16px
-  --radius-2xl: 1.5rem; // 24px
+  --radius-sm: 0.25rem;
+  --radius-base: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
   --radius-full: 9999px;
 
-  // Common component border radius
   --radius-button: var(--radius-md);
   --radius-input: var(--radius-md);
-  --radius-card: var(--radius-lg);
+  --radius-card: var(--radius-xl);
   --radius-modal: var(--radius-xl);
 
   // ============================================================================
-  // SHADOWS
+  // SHADOWS (dark-optimized)
   // ============================================================================
-
-  // Elevation shadows
   --shadow-none: none;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-base: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 
-  // Component specific shadows
   --shadow-button: var(--shadow-sm);
-  --shadow-card: var(--shadow-base);
+  --shadow-card: 0 0 0 1px var(--color-border), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-card-hover: 0 0 0 1px var(--color-border-strong), 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-dropdown: var(--shadow-lg);
   --shadow-modal: var(--shadow-2xl);
-
-  // Dark mode shadows
-  @media (prefers-color-scheme: dark) {
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  }
 
   // ============================================================================
   // TRANSITIONS & ANIMATIONS
   // ============================================================================
-
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
 
-  // Easing functions
   --easing-linear: linear;
-  --easing-ease-in: ease-in;
-  --easing-ease-out: ease-out;
-  --easing-ease-in-out: ease-in-out;
-
-  // ============================================================================
-  // BREAKPOINTS (for reference, use in media queries)
-  // ============================================================================
-
-  // Mobile first approach:
-  // xs: 320px (default)
-  // sm: 640px
-  // md: 768px
-  // lg: 1024px
-  // xl: 1280px
-  // 2xl: 1536px
+  --easing-ease-in: cubic-bezier(0.4, 0, 1, 0.5);
+  --easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
   // ============================================================================
   // Z-INDEX SCALE
   // ============================================================================
-
   --z-hide: -1;
   --z-base: 0;
   --z-dropdown: 1000;
@@ -243,36 +202,68 @@
   --z-notification: 1080;
 
   // ============================================================================
-  // COMPONENT-SPECIFIC TOKENS
+  // COMPONENT TOKENS
   // ============================================================================
-
-  // Button
-  --button-height-sm: 2rem; // 32px
-  --button-height-md: 2.5rem; // 40px
-  --button-height-lg: 3rem; // 48px
+  --button-height-sm: 2rem;
+  --button-height-md: 2.5rem;
+  --button-height-lg: 3rem;
   --button-padding-x: var(--spacing-4);
   --button-padding-y: var(--spacing-2);
 
-  // Input/Form
-  --input-height: 2.5rem; // 40px
+  --input-height: 2.5rem;
   --input-padding-x: var(--spacing-4);
   --input-padding-y: var(--spacing-2);
   --input-border-width: 1px;
-  --input-border-color: var(--color-border);
+  --input-border-color: var(--color-border-strong);
 
-  // Card
   --card-padding: var(--padding-lg);
   --card-border-width: 1px;
   --card-border-color: var(--color-border);
 
-  // Modal
   --modal-padding: var(--padding-xl);
-  --modal-backdrop-opacity: 0.5;
+  --modal-backdrop-opacity: 0.7;
 
-  // Sidebar
-  --sidebar-width: 16rem; // 256px
-  --sidebar-width-collapsed: 5rem; // 80px
+  --sidebar-width: 16rem;
+  --sidebar-width-collapsed: 5rem;
 
-  // Header
-  --header-height: 4rem; // 64px
+  --header-height: 4rem;
+}
+
+// ============================================================================
+// LIGHT MODE (opt-in override)
+// ============================================================================
+:root.light-mode {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8fafc;
+  --color-bg-tertiary: #f1f5f9;
+  --color-bg-elevated: #ffffff;
+  --color-bg-hover: rgba(0, 0, 0, 0.03);
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-subtle: rgba(0, 0, 0, 0.04);
+  --color-border-strong: rgba(0, 0, 0, 0.12);
+  color-scheme: light;
+
+  --glow-primary: 0 0 20px rgba(0, 212, 255, 0.1);
+  --glow-accent: 0 0 20px rgba(139, 92, 246, 0.1);
+  --glow-success: 0 0 20px rgba(16, 185, 129, 0.1);
+  --glow-danger: 0 0 20px rgba(239, 68, 68, 0.1);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-base: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  --shadow-card: 0 0 0 1px var(--color-border), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 0 0 1px var(--color-border-strong), 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+// Legacy .dark-mode class support (redirect to default since dark IS default)
+:root.dark-mode {
+  // Dark is already default, just ensure colorScheme
+  color-scheme: dark;
 }

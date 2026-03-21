@@ -10,7 +10,7 @@ interface ThemeStore {
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set) => ({
-      isDarkMode: false,
+      isDarkMode: true, // Dark is default
 
       toggleDarkMode: () =>
         set((state) => {
@@ -37,10 +37,12 @@ function applyTheme(isDark: boolean) {
   const root = document.documentElement
   if (isDark) {
     root.style.colorScheme = 'dark'
+    root.classList.remove('light-mode')
     root.classList.add('dark-mode')
   } else {
     root.style.colorScheme = 'light'
     root.classList.remove('dark-mode')
+    root.classList.add('light-mode')
   }
 }
 

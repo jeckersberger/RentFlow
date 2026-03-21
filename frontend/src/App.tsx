@@ -4,7 +4,7 @@ import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { Theme } from '@radix-ui/themes'
 import '@radix-ui/themes/styles.css'
 import { useAuthStore } from './stores/authStore'
-import { initializeTheme } from './stores/themeStore'
+import { useThemeStore, initializeTheme } from './stores/themeStore'
 import MainLayout from './components/Layout/MainLayout'
 import { ToastContainer } from './components/Toast/Toast'
 import { CommandPalette } from './components/CommandPalette/CommandPalette'
@@ -53,15 +53,15 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const isDarkMode = useThemeStore((s) => s.isDarkMode)
+
   useEffect(() => {
     initializeTheme()
   }, [])
 
-  const isDarkMode = document.documentElement.classList.contains('dark-mode')
-
   return (
     <QueryClientProvider client={queryClient}>
-      <Theme appearance={isDarkMode ? 'dark' : 'light'} accentColor="blue" grayColor="slate">
+      <Theme appearance={isDarkMode ? 'dark' : 'light'} accentColor="cyan" grayColor="slate" panelBackground="translucent">
         <BrowserRouter>
           <Routes>
           <Route path="/login" element={<LoginPage />} />

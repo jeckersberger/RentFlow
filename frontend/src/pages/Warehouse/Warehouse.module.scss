@@ -14,6 +14,12 @@
   border-radius: var(--radius-card);
   padding: var(--padding-lg);
   box-shadow: var(--shadow-card);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
 
   &__header {
     margin-bottom: var(--spacing-4);
@@ -79,4 +85,10 @@
   padding: var(--padding-lg);
   box-shadow: var(--shadow-card);
   height: fit-content;
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
 }
