@@ -313,51 +313,6 @@ func (r *InvoicePostgres) Delete(ctx context.Context, tenantID, invoiceID string
 	return err
 }
 
-func (r *InvoicePostgres) GetOverdueInvoices(ctx context.Context, tenantID string) ([]*domain.Invoice, error) {
-	query := `
-		SELECT id, tenant_id, invoice_number, project_id, client_name, client_address_street,
-		       client_address_city, client_address_postcode, client_address_country,
-		       client_email, client_tax_id, sub_total, tax_rate, tax_amount, total,
-		       currency, status, issue_date, due_date, paid_date, payment_method,
-		       payment_ref, notes, internal_notes, pdf_ref, hash, created_at, updated_at
-		FROM invoice.invoices
-		WHERE tenant_id = $1 AND due_date < NOW() AND status != 'paid' AND status != 'cancelled'
-		ORDER BY due_date ASC
-	`
-
-	rows, err := r.db.Query(ctx, query, tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get overdue invoices: %w", err)
-	}
-	defer rows.Close()
-
-	var invoices []*domain.Invoice
-	for rows.Next() {
-		inv := &domain.Invoice{}
-		err := rows.Scan(
-			&inv.ID, &inv.TenantID, &inv.InvoiceNumber, &inv.ProjectID, &inv.ClientName,
-			&inv.ClientAddress.Street, &inv.ClientAddress.City, &inv.ClientAddress.PostCode,
-			&inv.ClientAddress.Country, &inv.ClientEmail, &inv.ClientTaxID,
-			&inv.SubTotal, &inv.TaxRate, &inv.TaxAmount, &inv.Total, &inv.Currency,
-			&inv.Status, &inv.IssueDate, &inv.DueDate, &inv.PaidDate,
-			&inv.PaymentMethod, &inv.PaymentRef, &inv.Notes, &inv.InternalNotes,
-			&inv.PDFRef, &inv.Hash, &inv.CreatedAt, &inv.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan invoice: %w", err)
-		}
-
-		items, err := r.getInvoiceItems(ctx, inv.ID)
-		if err == nil {
-			inv.Items = items
-		}
-
-		invoices = append(invoices, inv)
-	}
-
-	return invoices, nil
-}
-
 // Helper methods
 
 func (r *InvoicePostgres) getInvoiceItems(ctx context.Context, invoiceID string) ([]domain.InvoiceItem, error) {

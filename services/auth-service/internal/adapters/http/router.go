@@ -1,6 +1,7 @@
 package http
 
 import (
+	"crypto"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
@@ -131,7 +132,7 @@ func verifyRS256Token(token string, publicKey *rsa.PublicKey) (*application.Acce
 		return nil, err
 	}
 
-	err = rsa.VerifyPKCS1v15(publicKey, sha256.SHA256, hash[:], signature)
+	err = rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], signature)
 	if err != nil {
 		return nil, ErrInvalidSignature
 	}

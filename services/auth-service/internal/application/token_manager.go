@@ -1,6 +1,7 @@
 package application
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -224,7 +225,7 @@ func (tm *TokenManager) createToken(claims interface{}) (string, error) {
 	// Create signature
 	message := headerB64 + "." + payloadB64
 	hash := sha256.Sum256([]byte(message))
-	signature, err := rsa.SignPKCS1v15(rand.Reader, tm.privateKey, sha256.SHA256, hash[:])
+	signature, err := rsa.SignPKCS1v15(rand.Reader, tm.privateKey, crypto.SHA256, hash[:])
 	if err != nil {
 		return "", fmt.Errorf("failed to sign token: %w", err)
 	}
@@ -255,7 +256,7 @@ func (tm *TokenManager) VerifyAccessToken(token string) (*AccessTokenClaims, err
 		return nil, fmt.Errorf("failed to decode signature: %w", err)
 	}
 
-	err = rsa.VerifyPKCS1v15(tm.publicKey, sha256.SHA256, hash[:], signature)
+	err = rsa.VerifyPKCS1v15(tm.publicKey, crypto.SHA256, hash[:], signature)
 	if err != nil {
 		return nil, fmt.Errorf("invalid signature")
 	}
@@ -306,7 +307,7 @@ func (tm *TokenManager) VerifyRefreshToken(token string) (*RefreshTokenClaims, e
 		return nil, fmt.Errorf("failed to decode signature: %w", err)
 	}
 
-	err = rsa.VerifyPKCS1v15(tm.publicKey, sha256.SHA256, hash[:], signature)
+	err = rsa.VerifyPKCS1v15(tm.publicKey, crypto.SHA256, hash[:], signature)
 	if err != nil {
 		return nil, fmt.Errorf("invalid signature")
 	}
