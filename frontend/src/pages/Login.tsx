@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { authApi } from '../services/api'
@@ -8,6 +8,7 @@ import './Login.scss'
 function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
+  const emailInputRef = useRef<HTMLInputElement>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -15,6 +16,15 @@ function LoginPage() {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail')
+    if (rememberedEmail) {
+      setEmail(rememberedEmail)
+      setRememberMe(true)
+    }
+    emailInputRef.current?.focus()
+  }, [])
 
   const validateForm = () => {
     const errors: typeof fieldErrors = {}
@@ -58,7 +68,19 @@ function LoginPage() {
       navigate('/')
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const errorMessage = (err as any)?.response?.data?.message || (err as any)?.message || 'Login failed. Please check your credentials.'
+      const errorResponse = (err as any)?.response
+      let errorMessage = 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.'
+
+      if (errorResponse?.status === 401) {
+        errorMessage = 'Ungültige E-Mail oder Passwort. Bitte versuchen Sie es erneut.'
+      } else if (errorResponse?.status === 429) {
+        errorMessage = 'Zu viele Anmeldeversuche. Bitte warten Sie ein paar Minuten.'
+      } else if (errorResponse?.data?.message) {
+        errorMessage = errorResponse.data.message
+      } else if ((err as any)?.message) {
+        errorMessage = (err as any).message
+      }
+
       setError(errorMessage)
     } finally {
       setIsLoading(false)
@@ -81,12 +103,13 @@ function LoginPage() {
         <form className="login-form" onSubmit={handleSubmit}>
           {error && (
             <div className="login-form__error" role="alert">
-              {error}
+              <strong>Fehler:</strong> {error}
             </div>
           )}
 
           <Input
             id="email"
+            ref={emailInputRef}
             label="E-Mail-Adresse"
             type="email"
             value={email}
@@ -98,7 +121,6 @@ function LoginPage() {
             disabled={isLoading}
             error={fieldErrors.email}
             autoComplete="email"
-            autoFocus
           />
 
           <Input

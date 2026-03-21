@@ -69,6 +69,26 @@ export const equipmentApi = {
 
   delete: (id: string) =>
     api.delete(`/api/v1/equipment/${id}`).then(res => res.data),
+
+  getPrice: (id: string, days: number, discount = 0) =>
+    api.get(`/api/v1/equipment/${id}/price`, { params: { days, discount } }).then(res => res.data),
+
+  getAvailability: (id: string, start: string, end: string) =>
+    api.get(`/api/v1/equipment/${id}/availability`, { params: { start, end } }).then(res => res.data),
+
+  getQRCode: (id: string) =>
+    api.get(`/api/v1/equipment/${id}/qr-code`, { responseType: 'blob' }).then(res => res.data),
+
+  getHistory: (id: string, page = 1, limit = 50) =>
+    api.get(`/api/v1/equipment/${id}/history`, { params: { page, limit } }).then(res => res.data),
+
+  importCSV: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/api/v1/equipment/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(res => res.data)
+  },
 }
 
 // Project API endpoints
@@ -87,6 +107,18 @@ export const projectApi = {
 
   delete: (id: string) =>
     api.delete(`/api/v1/projects/${id}`).then(res => res.data),
+
+  getCalendar: (start: string, end: string) =>
+    api.get('/api/v1/projects/calendar', { params: { start, end } }).then(res => res.data),
+
+  getConflicts: (equipmentId: string, start: string, end: string) =>
+    api.get(`/api/v1/projects/conflicts/${equipmentId}`, { params: { start, end } }).then(res => res.data),
+
+  copyProject: (id: string) =>
+    api.post(`/api/v1/projects/${id}/copy`, {}).then(res => res.data),
+
+  getPackingListHTML: (id: string) =>
+    api.get(`/api/v1/projects/${id}/packing-list`, { responseType: 'blob' }).then(res => res.data),
 }
 
 // Invoice API endpoints
@@ -105,6 +137,36 @@ export const invoiceApi = {
 
   delete: (id: string) =>
     api.delete(`/api/v1/invoices/${id}`).then(res => res.data),
+
+  getOpen: () =>
+    api.get('/api/v1/invoices/open', {}).then(res => res.data),
+
+  getPDF: (id: string) =>
+    api.get(`/api/v1/invoices/${id}/pdf`, { responseType: 'blob' }).then(res => res.data),
+
+  createFromProject: (projectId: string) =>
+    api.post(`/api/v1/invoices/from-project/${projectId}`, {}).then(res => res.data),
+
+  getQuotePDF: (quoteId: string) =>
+    api.get(`/api/v1/invoices/${quoteId}/quote-pdf`, { responseType: 'blob' }).then(res => res.data),
+}
+
+// Customers API endpoints
+export const customerApi = {
+  list: (page = 1, limit = 50) =>
+    api.get('/api/v1/customers', { params: { page, limit } }).then(res => res.data),
+
+  getById: (id: string) =>
+    api.get(`/api/v1/customers/${id}`).then(res => res.data),
+
+  create: (data: unknown) =>
+    api.post('/api/v1/customers', data).then(res => res.data),
+
+  update: (id: string, data: unknown) =>
+    api.put(`/api/v1/customers/${id}`, data).then(res => res.data),
+
+  delete: (id: string) =>
+    api.delete(`/api/v1/customers/${id}`).then(res => res.data),
 }
 
 export default api

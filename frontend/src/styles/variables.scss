@@ -47,6 +47,14 @@
   --color-gray-900: #111827;
   --color-gray-950: #030712;
 
+  // Light Mode (default)
+  --color-bg-primary: var(--color-white);
+  --color-bg-secondary: var(--color-gray-50);
+  --color-bg-tertiary: var(--color-gray-100);
+  --color-text-primary: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+  --color-border: var(--color-gray-200);
+
   // ============================================================================
   // COLORS - Dark Mode
   // ============================================================================
@@ -58,14 +66,16 @@
     --color-text-secondary: var(--color-gray-300);
     --color-border: var(--color-gray-700);
   }
+}
 
-  // Light Mode (default)
-  --color-bg-primary: var(--color-white);
-  --color-bg-secondary: var(--color-gray-50);
-  --color-bg-tertiary: var(--color-gray-100);
-  --color-text-primary: var(--color-gray-900);
-  --color-text-secondary: var(--color-gray-600);
-  --color-border: var(--color-gray-200);
+:root.dark-mode {
+  --color-bg-primary: var(--color-gray-900);
+  --color-bg-secondary: var(--color-gray-800);
+  --color-bg-tertiary: var(--color-gray-700);
+  --color-text-primary: var(--color-gray-50);
+  --color-text-secondary: var(--color-gray-300);
+  --color-border: var(--color-gray-700);
+  color-scheme: dark;
 
   // ============================================================================
   // TYPOGRAPHY

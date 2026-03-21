@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, projectApi } from '../services/api'
 import { KPICard } from '../components/KPICard/KPICard'
 import './Dashboard.scss'
 
@@ -20,6 +20,14 @@ interface ActivityEvent {
   icon: string
 }
 
+interface UpcomingProject {
+  id: string
+  name: string
+  start_date: string
+  end_date: string
+  status: string
+}
+
 function DashboardPage() {
   const navigate = useNavigate()
 
@@ -34,6 +42,18 @@ function DashboardPage() {
     queryFn: () =>
       api.get('/api/v1/dashboard/activity').then(res => res.data || []).catch(() => []),
     staleTime: 1000 * 60 * 2,
+  })
+
+  const { data: upcomingProjects } = useQuery<UpcomingProject[]>({
+    queryKey: ['dashboard-upcoming-projects'],
+    queryFn: async () => {
+      const now = new Date()
+      const end = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+      return projectApi.getCalendar(now.toISOString().split('T')[0], end.toISOString().split('T')[0])
+        .then(res => (res.data || []).slice(0, 5))
+        .catch(() => [])
+    },
+    staleTime: 1000 * 60 * 10,
   })
 
   const equipmentDistribution = [
@@ -154,6 +174,44 @@ function DashboardPage() {
               <span className="quick-action-text">Scannen</span>
             </button>
           </div>
+        </div>
+
+        <div className="dashboard__section dashboard__section--full">
+          <h2 className="dashboard__section-title">Nächste Projekte (30 Tage)</h2>
+          {!upcomingProjects || upcomingProjects.length === 0 ? (
+            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+              Keine bevorstehenden Projekte geplant.
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-3)' }}>
+              {upcomingProjects.map((project) => (
+                <div
+                  key={project.id}
+                  style={{
+                    padding: 'var(--spacing-3)',
+                    borderLeft: '4px solid var(--color-primary)',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                  onClick={() => navigate(`/projects/${project.id}`)}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+                >
+                  <p style={{ margin: '0 0 var(--spacing-1) 0', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                    {project.name}
+                  </p>
+                  <p style={{ margin: '0 0 var(--spacing-2) 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                    {new Date(project.start_date).toLocaleDateString('de-DE')}
+                  </p>
+                  <span style={{ fontSize: 'var(--font-size-xs)', padding: 'var(--spacing-1) var(--spacing-2)', backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-900)', borderRadius: 'var(--radius-base)' }}>
+                    {project.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

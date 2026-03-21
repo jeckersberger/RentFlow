@@ -1,6 +1,10 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
+import { Theme } from '@radix-ui/themes'
+import '@radix-ui/themes/styles.css'
 import { useAuthStore } from './stores/authStore'
+import { initializeTheme } from './stores/themeStore'
 import MainLayout from './components/Layout/MainLayout'
 import LoginPage from './pages/Login'
 import DashboardPage from './pages/Dashboard'
@@ -47,10 +51,17 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  useEffect(() => {
+    initializeTheme()
+  }, [])
+
+  const isDarkMode = document.documentElement.classList.contains('dark-mode')
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
+      <Theme appearance={isDarkMode ? 'dark' : 'light'} accentColor="blue" grayColor="slate">
+        <BrowserRouter>
+          <Routes>
           <Route path="/login" element={<LoginPage />} />
 
           <Route
@@ -92,6 +103,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </Theme>
     </QueryClientProvider>
   )
 }

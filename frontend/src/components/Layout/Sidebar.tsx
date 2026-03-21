@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useThemeStore } from '../../stores/themeStore'
 import './Sidebar.scss'
 
 interface NavItem {
@@ -19,6 +20,8 @@ const navItems: NavItem[] = [
 
 function Sidebar() {
   const location = useLocation()
+  const isDarkMode = useThemeStore((state) => state.isDarkMode)
+  const toggleDarkMode = useThemeStore((state) => state.toggleDarkMode)
 
   return (
     <aside className="sidebar">
@@ -40,6 +43,29 @@ function Sidebar() {
       </nav>
 
       <div className="sidebar__footer">
+        <button
+          className="sidebar__theme-toggle"
+          onClick={toggleDarkMode}
+          title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1.25rem',
+            cursor: 'pointer',
+            padding: 'var(--spacing-2)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--color-text-secondary)',
+            transition: 'all var(--transition-fast)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          {isDarkMode ? '☀️' : '🌙'}
+        </button>
         <p className="sidebar__version">v1.0.0</p>
       </div>
     </aside>

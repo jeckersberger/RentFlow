@@ -9,6 +9,13 @@ TEST_TARGETS := $(addprefix test-,$(SERVICES))
 GO := ~/.local/go/bin/go
 GOBIN := $(shell pwd)/bin
 
+# Database configuration (from .env or defaults)
+POSTGRES_USER ?= rentflow_user
+POSTGRES_PASSWORD ?= change_me_very_secure_password_here_32chars_min
+POSTGRES_HOST ?= postgres
+POSTGRES_PORT ?= 5432
+POSTGRES_DB ?= rentflow
+
 help:
 	@echo "RentFlow Microservices - Available Targets"
 	@echo ""
@@ -31,8 +38,12 @@ help:
 	@echo "  make docker-down      - Stop all services"
 	@echo ""
 	@echo "Database:"
-	@echo "  make migrate-up       - Run database migrations"
-	@echo "  make migrate-down     - Rollback migrations"
+	@echo "  make migrate-up SERVICE=<service>    - Run migrations for a service"
+	@echo "  make migrate-down SERVICE=<service>  - Rollback migrations for a service"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make migrate-up SERVICE=auth-service"
+	@echo "  make migrate-down SERVICE=inventory-service"
 	@echo ""
 	@echo "Other:"
 	@echo "  make proto            - Generate protobuf code (placeholder)"
@@ -109,13 +120,52 @@ docker-down:
 	fi
 
 migrate-up:
-	@echo "Running database migrations..."
-	@echo "Placeholder for database migration tool (e.g., golang-migrate)"
-	@echo "Each service has migrations/ directory for its schema"
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "Error: SERVICE variable not set"; \
+		echo "Usage: make migrate-up SERVICE=auth-service"; \
+		exit 1; \
+	fi
+	@if [ ! -d "services/$(SERVICE)/migrations" ]; then \
+		echo "Error: services/$(SERVICE)/migrations directory not found"; \
+		exit 1; \
+	fi
+	@echo "Running migrations for $(SERVICE)..."
+	@docker run --rm \
+		-v $(PWD)/services/$(SERVICE)/migrations:/migrations \
+		-e POSTGRES_USER="$(POSTGRES_USER)" \
+		-e POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
+		-e POSTGRES_HOST="$(POSTGRES_HOST)" \
+		-e POSTGRES_PORT="$(POSTGRES_PORT)" \
+		-e POSTGRES_DB="$(POSTGRES_DB)" \
+		migrate/migrate:latest \
+		-path=/migrations \
+		-database="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" \
+		up
+	@echo "Migrations for $(SERVICE) completed successfully"
 
 migrate-down:
-	@echo "Rolling back database migrations..."
-	@echo "Placeholder for database rollback"
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "Error: SERVICE variable not set"; \
+		echo "Usage: make migrate-down SERVICE=auth-service"; \
+		exit 1; \
+	fi
+	@if [ ! -d "services/$(SERVICE)/migrations" ]; then \
+		echo "Error: services/$(SERVICE)/migrations directory not found"; \
+		exit 1; \
+	fi
+	@echo "Rolling back migrations for $(SERVICE)..."
+	@docker run --rm \
+		-v $(PWD)/services/$(SERVICE)/migrations:/migrations \
+		-e POSTGRES_USER="$(POSTGRES_USER)" \
+		-e POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
+		-e POSTGRES_HOST="$(POSTGRES_HOST)" \
+		-e POSTGRES_PORT="$(POSTGRES_PORT)" \
+		-e POSTGRES_DB="$(POSTGRES_DB)" \
+		migrate/migrate:latest \
+		-path=/migrations \
+		-database="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" \
+		down
+	@echo "Rollback for $(SERVICE) completed successfully"
 
 proto:
 	@echo "Generating protobuf code..."

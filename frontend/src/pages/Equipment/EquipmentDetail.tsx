@@ -5,6 +5,7 @@ import { equipmentApi } from '../../services/api'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
 import { Select } from '../../components/Form/Select'
+import { Input } from '../../components/Form/Input'
 import { EquipmentStatus } from '../../types/equipment'
 import './Equipment.module.scss'
 
@@ -21,6 +22,9 @@ function EquipmentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [newStatus, setNewStatus] = useState<EquipmentStatus | ''>('')
+  const [priceCalcDays, setPriceCalcDays] = useState('1')
+  const [priceCalcDiscount, setPriceCalcDiscount] = useState('0')
+  const [calculatedPrice, setCalculatedPrice] = useState<{ total: number; daily: number } | null>(null)
 
   const {
     data: equipment,
@@ -43,6 +47,31 @@ function EquipmentDetailPage() {
     },
   })
 
+  const { mutate: calculatePrice } = useMutation({
+    mutationFn: async () => {
+      return equipmentApi.getPrice(id!, parseInt(priceCalcDays), parseInt(priceCalcDiscount))
+    },
+    onSuccess: (data) => {
+      setCalculatedPrice(data)
+    },
+  })
+
+  const handleDownloadQRCode = async () => {
+    try {
+      const blob = await equipmentApi.getQRCode(id!)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${equipment?.name}-qr-code.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Failed to download QR code:', err)
+    }
+  }
+
   if (isLoading) return <div className="equipment-detail-page">Wird geladen...</div>
   if (error) return <div className="error-message">Fehler beim Laden der Ausrüstung</div>
   if (!equipment) return <div className="error-message">Ausrüstung nicht gefunden</div>
@@ -54,7 +83,13 @@ function EquipmentDetailPage() {
           <h1 className="page-title">{equipment.name}</h1>
           <p className="page-subtitle">SKU: {equipment.sku}</p>
         </div>
-        <div>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn--secondary"
+            onClick={handleDownloadQRCode}
+          >
+            QR-Code
+          </button>
           <button
             className="btn btn--secondary"
             onClick={() => navigate(`/equipment/${id}/edit`)}
@@ -133,6 +168,47 @@ function EquipmentDetailPage() {
                   €{equipment.price_monthly?.toFixed(2) || '—'}
                 </p>
               </div>
+            </div>
+          </div>
+
+          <div className="detail-card" style={{ marginTop: 'var(--spacing-4)' }}>
+            <h2 className="detail-card__title">Preisrechner</h2>
+            <div className="detail-card__content" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
+              <Input
+                type="number"
+                label="Anzahl Tage"
+                value={priceCalcDays}
+                onChange={(e) => setPriceCalcDays(e.target.value)}
+                min="1"
+              />
+              <Input
+                type="number"
+                label="Rabatt (%)"
+                value={priceCalcDiscount}
+                onChange={(e) => setPriceCalcDiscount(e.target.value)}
+                min="0"
+                max="100"
+              />
+              <button
+                className="btn btn--primary"
+                onClick={() => calculatePrice()}
+                style={{ width: '100%' }}
+              >
+                Berechnen
+              </button>
+              {calculatedPrice && (
+                <div style={{ padding: 'var(--spacing-3)', backgroundColor: 'var(--color-primary-50)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-primary)' }}>
+                  <p style={{ margin: '0 0 var(--spacing-1) 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                    Berechneter Preis
+                  </p>
+                  <p style={{ margin: 0, fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)' }}>
+                    €{calculatedPrice.total.toFixed(2)}
+                  </p>
+                  <p style={{ margin: 'var(--spacing-1) 0 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                    ({priceCalcDays} Tage × €{calculatedPrice.daily.toFixed(2)})
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

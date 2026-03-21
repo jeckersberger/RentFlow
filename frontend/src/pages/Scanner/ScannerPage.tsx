@@ -89,11 +89,21 @@ function ScannerPage() {
             )}
 
             <div className="scanner-panel__section">
+              <div style={{ padding: 'var(--spacing-4)', backgroundColor: 'var(--color-primary-50)', borderRadius: 'var(--radius-md)', textAlign: 'center', marginBottom: 'var(--spacing-4)' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 'var(--spacing-2)' }}>📷</div>
+                <p style={{ margin: '0 0 var(--spacing-2) 0', color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  QR-Code oder Barcode scannen
+                </p>
+                <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                  Verwenden Sie Ihr Gerät oder geben Sie den Code manuell ein
+                </p>
+              </div>
+
               <Input
                 ref={scanInputRef}
                 type="text"
-                label="Barcode"
-                placeholder="Barcode scannen oder manuell eingeben..."
+                label="Barcode / QR-Code"
+                placeholder="Hier eintragen oder scannen..."
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
                 onKeyPress={handleScan}
@@ -102,8 +112,8 @@ function ScannerPage() {
             </div>
 
             <div className="scanner-actions">
-              <button className="btn btn--primary" onClick={() => scanInputRef.current?.focus()}>
-                📱 Kamerascan
+              <button className="btn btn--primary" onClick={() => scanInputRef.current?.focus()} style={{ width: '100%' }}>
+                📱 Fokus setzen
               </button>
               <label className="scanner-batch-toggle">
                 <input
@@ -111,29 +121,46 @@ function ScannerPage() {
                   checked={batchMode}
                   onChange={(e) => setBatchMode(e.target.checked)}
                 />
-                Batch-Modus
+                <span>Batch-Modus aktivieren</span>
               </label>
             </div>
           </div>
 
           {recentScans.length > 0 && (
             <div className="scanner-history">
-              <h2 className="scanner-history__title">Letzte Scans</h2>
+              <h2 className="scanner-history__title">Scan-Verlauf ({recentScans.length})</h2>
               <div className="scanner-history__list">
-                {recentScans.map((scan) => (
-                  <div key={scan.id} className="scan-item">
-                    <div className="scan-item__icon">
-                      {scan.scan_type === 'check_in' ? '📥' : '📤'}
+                {recentScans.map((scan, index) => (
+                  <div
+                    key={scan.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--spacing-3)',
+                      padding: 'var(--spacing-3)',
+                      backgroundColor: index === 0 ? 'var(--color-primary-50)' : 'var(--color-bg-secondary)',
+                      borderRadius: 'var(--radius-md)',
+                      borderLeft: index === 0 ? '3px solid var(--color-primary)' : '3px solid var(--color-border)',
+                    }}
+                  >
+                    <div style={{ fontSize: '1.5rem' }}>
+                      {scan.scan_type === 'check_in' ? '📥' : scan.scan_type === 'check_out' ? '📤' : '📊'}
                     </div>
-                    <div className="scan-item__content">
-                      <p className="scan-item__name">
-                        {scan.equipment_name || scan.barcode}
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: '0 0 var(--spacing-1) 0', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                        {scan.equipment_name || `Barcode: ${scan.barcode}`}
                       </p>
-                      <p className="scan-item__meta">
-                        {scan.scan_type === 'check_in' ? 'Einchecken' : 'Auschecken'} •{' '}
+                      <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                        {scan.scan_type === 'check_in' && 'Einchecken'}
+                        {scan.scan_type === 'check_out' && 'Auschecken'}
+                        {scan.scan_type === 'inventory' && 'Inventur'}
+                        {' • '}
                         {new Date(scan.timestamp).toLocaleTimeString('de-DE')}
                       </p>
                     </div>
+                    <span style={{ fontSize: 'var(--font-size-xs)', padding: 'var(--spacing-1) var(--spacing-2)', backgroundColor: 'var(--color-success-light)', color: 'var(--color-success-dark)', borderRadius: 'var(--radius-base)' }}>
+                      ✓ OK
+                    </span>
                   </div>
                 ))}
               </div>

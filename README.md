@@ -321,7 +321,7 @@ make test-e2e
 - [x] Extensions (uuid-ossp, pg_trgm, btree_gin)
 - [x] Migration-Tool `golang-migrate/migrate` einrichten
 - [x] `migrations/` Verzeichnis pro Service anlegen
-- [ ] Makefile-Target `make migrate-up` / `make migrate-down`
+- [x] Makefile-Target `make migrate-up` / `make migrate-down`
 
 #### M0.4: Shared Go-Library `pkg/common`
 - [x] KurrentDB Go-Client-Wrapper mit exponential backoff
@@ -332,8 +332,8 @@ make test-e2e
 - [x] Health-Check-Handler (liveness + readiness)
 - [x] Domänen-Fehlertypen (NotFound, Conflict, Unauthorized, etc.)
 - [x] Cursor-Paginierung (keyset pagination)
-- [ ] gRPC-Server-Bootstrap mit TLS
-- [ ] Unit-Tests für alle gemeinsamen Pakete
+- [ ] gRPC-Server-Bootstrap mit TLS *(deferred – kein Service nutzt aktuell gRPC)*
+- [x] Unit-Tests für alle gemeinsamen Pakete
 
 #### M0.5: Service-Template
 - [x] Service-Template-Generator (Bash/Go-Skript)
@@ -347,28 +347,28 @@ make test-e2e
 - [x] TanStack Router mit Route-Tree
 - [x] TanStack Query mit Axios-Client
 - [x] Zustand-Stores (auth, ui, scanner, notification)
-- [ ] Radix UI Themes + Farbpalette
+- [x] Radix UI Themes + Farbpalette
 - [x] SCSS Design-Tokens (`src/styles/tokens.scss`)
-- [ ] i18n-Setup (DE/EN, Namespace-Splitting)
+- [x] i18n-Setup (DE/EN, Namespace-Splitting)
 - [x] PWA-Config (`vite.config.ts` + `vite-plugin-pwa`)
 - [x] Service-Worker für Offline-Funktionalität
 - [x] ESLint + Prettier-Konfiguration
-- [ ] Vitest + Testing-Library Setup
+- [x] Vitest + Testing-Library Setup
 
 #### M0.7: CI/CD-Pipeline
 - [x] GitHub Actions CI für alle Services
 - [x] Docker-Image-Build und Push nach GHCR
 - [x] Frontend-Build und -Tests in CI
-- [ ] Deployment-Skript für Self-Hosted (`scripts/deploy.sh`)
-- [ ] Watchtower für automatisches Image-Update konfigurieren
-- [ ] Rollback-Skript (`scripts/rollback.sh`)
+- [x] Deployment-Skript für Self-Hosted (`scripts/deploy.sh`)
+- [x] Watchtower für automatisches Image-Update konfigurieren
+- [x] Rollback-Skript (`scripts/rollback.sh`)
 - [x] Secrets-Management mit `.env`-Datei und Docker Secrets
 
 #### M0.8: Monitoring & Logging
 - [x] Prometheus Scraping-Config für alle Services
-- [ ] Grafana Dashboard-Templates (Latenz, Error-Rate, Event-Throughput)
-- [ ] Loki für zentrales Log-Aggregation
-- [ ] Alertmanager-Regeln (Service Down, hohe Fehlerrate)
+- [x] Grafana Dashboard-Templates (Latenz, Error-Rate, Event-Throughput)
+- [x] Loki für zentrales Log-Aggregation
+- [x] Alertmanager-Regeln (Service Down, hohe Fehlerrate)
 - [x] `docker-compose.monitoring.yml` (Prometheus + Grafana + Loki)
 - [x] Health-Check-Endpoint für alle Services (`GET /health/live`, `GET /health/ready`)
 

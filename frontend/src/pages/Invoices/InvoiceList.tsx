@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { invoiceApi } from '../../services/api'
 import { DataTable, Column } from '../../components/DataTable/DataTable'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Input } from '../../components/Form/Input'
+import { Modal } from '../../components/Modal/Modal'
 import { Invoice, InvoiceStatus } from '../../types/invoice'
 import '../Equipment/Equipment.module.scss'
 
@@ -21,7 +22,20 @@ function InvoiceListPage() {
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | ''>('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [projectIdInput, setProjectIdInput] = useState('')
   const limit = 20
+
+  const { mutate: createFromProject, isPending: isCreating } = useMutation({
+    mutationFn: async (projectId: string) => {
+      return invoiceApi.createFromProject(projectId)
+    },
+    onSuccess: (data) => {
+      setShowCreateModal(false)
+      setProjectIdInput('')
+      navigate(`/invoices/${data.id}`)
+    },
+  })
 
   const { data: invoiceData, isLoading: _isLoading, error } = useQuery({
     queryKey: ['invoice-list', page, searchQuery, selectedStatus],
@@ -90,12 +104,20 @@ function InvoiceListPage() {
           <h1 className="page-title">Rechnungen</h1>
           <p className="page-subtitle">Verwalten Sie alle Rechnungen und Zahlungen</p>
         </div>
-        <button
-          className="btn btn--primary"
-          onClick={() => navigate('/invoices/new')}
-        >
-          + Neue Rechnung
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn--secondary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            Aus Projekt erstellen
+          </button>
+          <button
+            className="btn btn--primary"
+            onClick={() => navigate('/invoices/new')}
+          >
+            + Neue Rechnung
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: 'var(--spacing-6)' }}>
@@ -144,6 +166,43 @@ function InvoiceListPage() {
           onPageChange: setPage,
         }}
       />
+
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false)
+          setProjectIdInput('')
+        }}
+        title="Rechnung aus Projekt erstellen"
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => {
+                setShowCreateModal(false)
+                setProjectIdInput('')
+              }}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={() => createFromProject(projectIdInput)}
+              disabled={!projectIdInput || isCreating}
+            >
+              {isCreating ? 'Wird erstellt...' : 'Erstellen'}
+            </button>
+          </div>
+        }
+      >
+        <Input
+          label="Projekt-ID"
+          placeholder="Geben Sie die Projekt-ID ein"
+          value={projectIdInput}
+          onChange={(e) => setProjectIdInput(e.target.value)}
+        />
+      </Modal>
     </div>
   )
 }

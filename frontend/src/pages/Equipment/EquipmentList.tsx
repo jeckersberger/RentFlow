@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useRef } from 'react'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { equipmentApi } from '../../services/api'
 import { DataTable, Column } from '../../components/DataTable/DataTable'
@@ -27,11 +27,28 @@ const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
 
 function EquipmentListPage() {
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
+  const [importMessage, setImportMessage] = useState('')
   const limit = 20
+
+  const { mutate: importCSV, isPending: isImporting } = useMutation({
+    mutationFn: async (file: File) => {
+      return equipmentApi.importCSV(file)
+    },
+    onSuccess: () => {
+      setImportMessage('Datei erfolgreich importiert!')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      setTimeout(() => setImportMessage(''), 3000)
+    },
+    onError: () => {
+      setImportMessage('Fehler beim Import. Bitte überprüfen Sie die CSV-Datei.')
+      setTimeout(() => setImportMessage(''), 3000)
+    },
+  })
 
   const { data: equipmentData, isLoading: _isLoading, error } = useQuery({
     queryKey: ['equipment-list', page, searchQuery, selectedCategory, selectedStatus],
@@ -94,6 +111,13 @@ function EquipmentListPage() {
     },
   ]
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      importCSV(file)
+    }
+  }
+
   return (
     <div className="equipment-list-page">
       <div className="page-header">
@@ -101,13 +125,35 @@ function EquipmentListPage() {
           <h1 className="page-title">Ausrüstungsverwaltung</h1>
           <p className="page-subtitle">Verwalten Sie Ihre Ausrüstung und verfügbaren Ressourcen</p>
         </div>
-        <button
-          className="btn btn--primary"
-          onClick={() => navigate('/equipment/new')}
-        >
-          + Neue Ausrüstung
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn--secondary"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+          >
+            {isImporting ? 'Wird importiert...' : '📥 CSV importieren'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+          />
+          <button
+            className="btn btn--primary"
+            onClick={() => navigate('/equipment/new')}
+          >
+            + Neue Ausrüstung
+          </button>
+        </div>
       </div>
+
+      {importMessage && (
+        <div style={{ padding: 'var(--spacing-3)', marginBottom: 'var(--spacing-4)', backgroundColor: importMessage.includes('erfolgreich') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${importMessage.includes('erfolgreich') ? 'var(--color-success)' : 'var(--color-danger)'}`, borderRadius: 'var(--radius-card)', color: importMessage.includes('erfolgreich') ? 'var(--color-success)' : 'var(--color-danger)' }}>
+          {importMessage}
+        </div>
+      )}
 
       <div className="filters-section">
         <Input
