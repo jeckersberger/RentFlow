@@ -106,10 +106,11 @@ function EquipmentFormPage() {
       [field]: value,
     }))
     if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: undefined,
-      }))
+      setErrors((prev) => {
+        const updated = { ...prev }
+        delete updated[field]
+        return updated
+      })
     }
   }
 

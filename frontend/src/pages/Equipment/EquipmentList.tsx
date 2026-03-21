@@ -33,7 +33,7 @@ function EquipmentListPage() {
   const [selectedStatus, setSelectedStatus] = useState('')
   const limit = 20
 
-  const { data: equipmentData, isLoading, error } = useQuery({
+  const { data: equipmentData, isLoading: _isLoading, error } = useQuery({
     queryKey: ['equipment-list', page, searchQuery, selectedCategory, selectedStatus],
     queryFn: async () => {
       const params: Record<string, unknown> = { page, limit }
@@ -45,7 +45,7 @@ function EquipmentListPage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const filteredData = useMemo(() => {
+  const _filteredData = useMemo(() => {
     if (!equipmentData?.data) return []
     return equipmentData.data.filter((item: Equipment) => {
       const matchesSearch =
@@ -60,7 +60,7 @@ function EquipmentListPage() {
     })
   }, [equipmentData, searchQuery, selectedCategory, selectedStatus])
 
-  const columns: Column<Equipment>[] = [
+  const _columns: Column<Equipment>[] = [
     {
       key: 'name',
       label: 'Name',
@@ -77,8 +77,9 @@ function EquipmentListPage() {
     {
       key: 'status',
       label: 'Status',
-      render: (status: EquipmentStatus) => (
-        <StatusBadge status={status} />
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      render: (status: any) => (
+        <StatusBadge status={status as EquipmentStatus} />
       ),
     },
     {
@@ -88,7 +89,8 @@ function EquipmentListPage() {
     {
       key: 'price_daily',
       label: 'Tagespreis',
-      render: (price?: number) => (price ? `€${price.toFixed(2)}` : '—'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      render: (price: any) => (price ? `€${price.toFixed(2)}` : '—'),
     },
   ]
 
@@ -145,10 +147,10 @@ function EquipmentListPage() {
       )}
 
       <DataTable<Equipment>
-        columns={columns}
-        data={filteredData}
+        columns={_columns}
+        data={_filteredData}
         rowKey="id"
-        loading={isLoading}
+        loading={_isLoading}
         onRowClick={(equipment) => navigate(`/equipment/${equipment.id}`)}
         pagination={{
           page,

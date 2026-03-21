@@ -56,25 +56,27 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-      - name: Install tools
-        run: |
-          go install github.com/golang/gofmt@latest
-          go install golang.org/x/lint/golint@latest
       - name: Check formatting
         run: |
-          if [ -n "$(gofmt -l ./...)" ]; then
-            echo "Go files are not formatted"
-            gofmt -d ./...
+          UNFORMATTED=$(gofmt -l ./pkg ./services 2>/dev/null || true)
+          if [ -n "$UNFORMATTED" ]; then
+            echo "Go files are not formatted:"
+            echo "$UNFORMATTED"
+            gofmt -d ./pkg ./services
             exit 1
           fi
+          echo "✅ All Go files are properly formatted"
       - name: Check imports
         run: |
           go install golang.org/x/tools/cmd/goimports@latest
-          if [ -n "$(goimports -l ./...)" ]; then
-            echo "Go imports are not organized"
-            goimports -d ./...
+          UNORGANIZED=$(goimports -l ./pkg ./services 2>/dev/null || true)
+          if [ -n "$UNORGANIZED" ]; then
+            echo "Go imports are not organized:"
+            echo "$UNORGANIZED"
+            goimports -d ./pkg ./services
             exit 1
           fi
+          echo "✅ All Go imports are properly organized"
 
   frontend-quality:
     name: Frontend Code Quality

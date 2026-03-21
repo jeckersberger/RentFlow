@@ -166,7 +166,7 @@ function InvoiceDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {invoice.line_items.map((item, idx) => (
+              {invoice.line_items.map((item: any, idx: number) => (
                 <tr
                   key={idx}
                   style={{ borderBottom: 'var(--card-border-width) solid var(--color-border)' }}

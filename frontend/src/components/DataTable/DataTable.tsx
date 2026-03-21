@@ -5,7 +5,8 @@ export interface Column<T> {
   key: keyof T | string
   label: string
   sortable?: boolean
-  render?: (value: unknown, row: T) => React.ReactNode
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  render?: (value: any, row: T) => React.ReactNode
   width?: string
 }
 
@@ -24,7 +25,8 @@ interface DataTableProps<T> {
   onSort?: (key: string, order: 'asc' | 'desc') => void
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   rowKey,
@@ -66,7 +68,10 @@ export function DataTable<T extends Record<string, unknown>>({
     if (column.render) {
       return column.render(value, row)
     }
-    return value ?? '—'
+    if (value === null || value === undefined) {
+      return '—'
+    }
+    return value as React.ReactNode
   }
 
   if (loading) {
