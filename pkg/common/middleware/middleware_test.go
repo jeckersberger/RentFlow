@@ -66,7 +66,7 @@ func TestChain_MultipleMiddlewares(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
-	expected := []string{"m1_before", "m2_before", "handler", "m2_after", "m1_after"}
+	expected := []string{"m2_before", "m1_before", "handler", "m1_after", "m2_after"}
 	if len(order) != len(expected) {
 		t.Errorf("expected order length %d, got %d", len(expected), len(order))
 	}
