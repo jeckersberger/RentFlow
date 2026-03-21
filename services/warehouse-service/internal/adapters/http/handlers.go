@@ -11,10 +11,10 @@ import (
 )
 
 type Handler struct {
-	locationSvc        *application.LocationService
-	movementSvc        *application.MovementService
-	inventoryCheckSvc  *application.InventoryCheckService
-	logger             logger.Logger
+	locationSvc       *application.LocationService
+	movementSvc       *application.MovementService
+	inventoryCheckSvc *application.InventoryCheckService
+	logger            logger.Logger
 }
 
 func NewHandler(
@@ -41,12 +41,12 @@ func (h *Handler) CreateLocation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload struct {
-		Name      string `json:"name"`
-		Type      string `json:"type"`
+		Name      string  `json:"name"`
+		Type      string  `json:"type"`
 		ParentID  *string `json:"parent_id"`
-		Capacity  int `json:"capacity"`
-		Barcode   string `json:"barcode"`
-		SortOrder int `json:"sort_order"`
+		Capacity  int     `json:"capacity"`
+		Barcode   string  `json:"barcode"`
+		SortOrder int     `json:"sort_order"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -148,9 +148,9 @@ func (h *Handler) UpdateLocation(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
 		Name      string `json:"name"`
-		Capacity  int `json:"capacity"`
+		Capacity  int    `json:"capacity"`
 		Barcode   string `json:"barcode"`
-		SortOrder int `json:"sort_order"`
+		SortOrder int    `json:"sort_order"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -219,13 +219,13 @@ func (h *Handler) RecordMovement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload struct {
-		EquipmentID    string `json:"equipment_id"`
+		EquipmentID    string  `json:"equipment_id"`
 		FromLocationID *string `json:"from_location_id"`
-		ToLocationID   string `json:"to_location_id"`
-		MovementType   string `json:"movement_type"`
-		Quantity       int `json:"quantity"`
-		Reason         string `json:"reason"`
-		UserID         string `json:"user_id"`
+		ToLocationID   string  `json:"to_location_id"`
+		MovementType   string  `json:"movement_type"`
+		Quantity       int     `json:"quantity"`
+		Reason         string  `json:"reason"`
+		UserID         string  `json:"user_id"`
 		ProjectID      *string `json:"project_id"`
 	}
 
@@ -338,7 +338,7 @@ func (h *Handler) StartInventoryCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload struct {
-		Name       string `json:"name"`
+		Name       string  `json:"name"`
 		LocationID *string `json:"location_id"`
 	}
 

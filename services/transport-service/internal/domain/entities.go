@@ -5,16 +5,16 @@ import "time"
 type VehicleType string
 
 const (
-	VehicleTypeVan    VehicleType = "van"
-	VehicleTypeTruck  VehicleType = "truck"
+	VehicleTypeVan     VehicleType = "van"
+	VehicleTypeTruck   VehicleType = "truck"
 	VehicleTypeTrailer VehicleType = "trailer"
 )
 
 type VehicleStatus string
 
 const (
-	VehicleStatusAvailable VehicleStatus = "available"
-	VehicleStatusInUse     VehicleStatus = "in_use"
+	VehicleStatusAvailable   VehicleStatus = "available"
+	VehicleStatusInUse       VehicleStatus = "in_use"
 	VehicleStatusMaintenance VehicleStatus = "maintenance"
 )
 
@@ -46,14 +46,14 @@ type TourStop struct {
 }
 
 type Tour struct {
-	ID        string      `json:"id"`
-	TenantID  string      `json:"tenant_id"`
-	ProjectID string      `json:"project_id"`
-	VehicleID string      `json:"vehicle_id"`
-	DriverID  string      `json:"driver_id"`
-	Date      time.Time   `json:"date"`
-	Stops     []TourStop  `json:"stops"`
-	Status    TourStatus  `json:"status"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	ID        string     `json:"id"`
+	TenantID  string     `json:"tenant_id"`
+	ProjectID string     `json:"project_id"`
+	VehicleID string     `json:"vehicle_id"`
+	DriverID  string     `json:"driver_id"`
+	Date      time.Time  `json:"date"`
+	Stops     []TourStop `json:"stops"`
+	Status    TourStatus `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }

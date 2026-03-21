@@ -41,14 +41,14 @@ func (e *AppError) Error() string {
 
 // Common error codes
 const (
-	CodeValidation      = "VALIDATION_ERROR"
-	CodeNotFound        = "NOT_FOUND"
-	CodeConflict        = "CONFLICT"
-	CodeInternalServer  = "INTERNAL_SERVER_ERROR"
-	CodeUnauthorized    = "UNAUTHORIZED"
-	CodeForbidden       = "FORBIDDEN"
-	CodeBadRequest      = "BAD_REQUEST"
-	CodeDatabaseError   = "DATABASE_ERROR"
+	CodeValidation       = "VALIDATION_ERROR"
+	CodeNotFound         = "NOT_FOUND"
+	CodeConflict         = "CONFLICT"
+	CodeInternalServer   = "INTERNAL_SERVER_ERROR"
+	CodeUnauthorized     = "UNAUTHORIZED"
+	CodeForbidden        = "FORBIDDEN"
+	CodeBadRequest       = "BAD_REQUEST"
+	CodeDatabaseError    = "DATABASE_ERROR"
 	CodeEventSourcingErr = "EVENT_SOURCING_ERROR"
 )
 

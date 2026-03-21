@@ -32,13 +32,13 @@ type PreferenceDTO struct {
 }
 
 type SendNotificationCommand struct {
-	TenantID  string `json:"tenant_id"`
-	UserID    string `json:"user_id"`
-	Type      string `json:"type"`
-	Channel   string `json:"channel"`
-	Title     string `json:"title"`
-	Message   string `json:"message"`
-	Link      string `json:"link,omitempty"`
+	TenantID string `json:"tenant_id"`
+	UserID   string `json:"user_id"`
+	Type     string `json:"type"`
+	Channel  string `json:"channel"`
+	Title    string `json:"title"`
+	Message  string `json:"message"`
+	Link     string `json:"link,omitempty"`
 }
 
 type NotificationService struct {

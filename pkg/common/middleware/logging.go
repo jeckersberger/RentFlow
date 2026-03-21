@@ -168,4 +168,3 @@ func (w *bodyCapturingWriter) Write(p []byte) (int, error) {
 func generateRequestID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
-

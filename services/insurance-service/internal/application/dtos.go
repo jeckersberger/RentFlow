@@ -44,18 +44,18 @@ type PolicyResponse struct {
 }
 
 type CreateClaimRequest struct {
-	PolicyID     string    `json:"policy_id"`
-	EquipmentID  string    `json:"equipment_id"`
-	IncidentDate string    `json:"incident_date"`
-	Description  string    `json:"description"`
-	DamageAmount float64   `json:"damage_amount"`
-	Documents    []string  `json:"documents"`
+	PolicyID     string   `json:"policy_id"`
+	EquipmentID  string   `json:"equipment_id"`
+	IncidentDate string   `json:"incident_date"`
+	Description  string   `json:"description"`
+	DamageAmount float64  `json:"damage_amount"`
+	Documents    []string `json:"documents"`
 }
 
 type UpdateClaimRequest struct {
-	Description  string    `json:"description"`
-	DamageAmount float64   `json:"damage_amount"`
-	Documents    []string  `json:"documents"`
+	Description  string   `json:"description"`
+	DamageAmount float64  `json:"damage_amount"`
+	Documents    []string `json:"documents"`
 }
 
 type ClaimResponse struct {

@@ -9,7 +9,7 @@ COPY pkg/common/ pkg/common/
 COPY services/document-service/ services/document-service/
 
 WORKDIR /build/services/document-service
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOWORK=off go build -ldflags="-s -w" -o /app ./cmd/server
 
 # Runtime stage
 FROM alpine:3.19

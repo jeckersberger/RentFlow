@@ -23,9 +23,9 @@ type HealthChecker struct {
 }
 
 type HealthResponse struct {
-	Status   Status                       `json:"status"`
-	Checks   map[string]CheckResult       `json:"checks"`
-	Timestamp time.Time                   `json:"timestamp"`
+	Status    Status                 `json:"status"`
+	Checks    map[string]CheckResult `json:"checks"`
+	Timestamp time.Time              `json:"timestamp"`
 }
 
 type CheckResult struct {

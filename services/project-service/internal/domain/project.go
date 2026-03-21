@@ -9,26 +9,26 @@ import (
 
 type Project struct {
 	events.AggregateRoot
-	TenantID       string
-	Name           string
-	Description    string
-	ClientName     string
-	ClientEmail    string
-	ClientPhone    string
-	ClientAddress  Address
-	VenueAddress   Address
-	Status         ProjectStatus
-	StartDate      time.Time
-	EndDate        time.Time
-	SetupDate      *time.Time
-	TeardownDate   *time.Time
-	ProjectManager string  // user ID
-	Budget         float64
-	Currency       string
-	Notes          string
-	Tags           []string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	TenantID        string
+	Name            string
+	Description     string
+	ClientName      string
+	ClientEmail     string
+	ClientPhone     string
+	ClientAddress   Address
+	VenueAddress    Address
+	Status          ProjectStatus
+	StartDate       time.Time
+	EndDate         time.Time
+	SetupDate       *time.Time
+	TeardownDate    *time.Time
+	ProjectManager  string // user ID
+	Budget          float64
+	Currency        string
+	Notes           string
+	Tags            []string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 	CreatedByUserID string
 }
 
@@ -47,15 +47,15 @@ const (
 func NewProject(id, tenantID, name, clientName, userID string) *Project {
 	now := time.Now()
 	return &Project{
-		AggregateRoot: *events.NewAggregateRoot(id, "project"),
-		TenantID:      tenantID,
-		Name:          name,
-		ClientName:    clientName,
-		Status:        ProjectDraft,
-		Tags:          []string{},
-		Currency:      "USD",
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		AggregateRoot:   *events.NewAggregateRoot(id, "project"),
+		TenantID:        tenantID,
+		Name:            name,
+		ClientName:      clientName,
+		Status:          ProjectDraft,
+		Tags:            []string{},
+		Currency:        "USD",
+		CreatedAt:       now,
+		UpdatedAt:       now,
 		CreatedByUserID: userID,
 	}
 }

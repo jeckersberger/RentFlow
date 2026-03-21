@@ -86,7 +86,7 @@ func (s *Server) setupHealthRoutes() {
 		}
 
 		w.WriteHeader(statusCode)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	})
 
 	// Ready check endpoint (similar to health but can be more strict)
@@ -100,14 +100,14 @@ func (s *Server) setupHealthRoutes() {
 		}
 
 		w.WriteHeader(statusCode)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	})
 
 	// Liveness probe
 	s.router.HandleFunc("/live", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status": "alive",
 		})
 	})
@@ -158,6 +158,7 @@ func (s *Server) Start(ctx context.Context) error {
 	s.logger.Info("Shutting down server")
 
 	// Create shutdown context with timeout
+	//nolint:contextcheck
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -241,7 +242,7 @@ func (s *Server) NotFoundHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"code":    "NOT_FOUND",
 			"message": "Resource not found",
 			"path":    r.RequestURI,
@@ -254,7 +255,7 @@ func (s *Server) MethodNotAllowedHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"code":    "METHOD_NOT_ALLOWED",
 			"message": "Method not allowed",
 			"method":  r.Method,

@@ -1,36 +1,36 @@
 package application
 
 import (
-	"time"
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
+	"time"
 )
 
 type PeerDTO struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	URL       string    `json:"url"`
-	PublicKey string    `json:"public_key"`
-	Status    string    `json:"status"`
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	URL       string     `json:"url"`
+	PublicKey string     `json:"public_key"`
+	Status    string     `json:"status"`
 	LastSeen  *time.Time `json:"last_seen,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time  `json:"created_at"`
 }
 
 type SharedEquipmentDTO struct {
-	ID          string  `json:"id"`
-	EquipmentID string  `json:"equipment_id"`
-	PeerID      string  `json:"peer_id"`
+	ID           string  `json:"id"`
+	EquipmentID  string  `json:"equipment_id"`
+	PeerID       string  `json:"peer_id"`
 	Availability string  `json:"availability"`
-	PricePerDay float64 `json:"price_per_day"`
+	PricePerDay  float64 `json:"price_per_day"`
 }
 
 type ShareRequestDTO struct {
-	ID          string `json:"id"`
-	FromPeerID  string `json:"from_peer_id"`
-	ToPeerID    string `json:"to_peer_id"`
-	EquipmentID string `json:"equipment_id"`
+	ID          string    `json:"id"`
+	FromPeerID  string    `json:"from_peer_id"`
+	ToPeerID    string    `json:"to_peer_id"`
+	EquipmentID string    `json:"equipment_id"`
 	StartDate   time.Time `json:"start_date"`
 	EndDate     time.Time `json:"end_date"`
-	Status      string `json:"status"`
+	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
@@ -48,11 +48,11 @@ func PeerToDTO(p *domain.Peer) *PeerDTO {
 
 func SharedEquipmentToDTO(se *domain.SharedEquipment) *SharedEquipmentDTO {
 	return &SharedEquipmentDTO{
-		ID:          se.ID,
-		EquipmentID: se.EquipmentID,
-		PeerID:      se.PeerID,
+		ID:           se.ID,
+		EquipmentID:  se.EquipmentID,
+		PeerID:       se.PeerID,
 		Availability: se.Availability,
-		PricePerDay: se.PricePerDay,
+		PricePerDay:  se.PricePerDay,
 	}
 }
 

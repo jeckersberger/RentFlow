@@ -27,12 +27,12 @@ const (
 type Role string
 
 const (
-	RoleAdmin       Role = "admin"
-	RoleManager     Role = "manager"
-	RoleWarehouse   Role = "warehouse"
-	RoleAccounting  Role = "accounting"
-	RoleFreelancer  Role = "freelancer"
-	RoleReadOnly    Role = "readonly"
+	RoleAdmin      Role = "admin"
+	RoleManager    Role = "manager"
+	RoleWarehouse  Role = "warehouse"
+	RoleAccounting Role = "accounting"
+	RoleFreelancer Role = "freelancer"
+	RoleReadOnly   Role = "readonly"
 )
 
 // User represents a user in the auth domain (Aggregate Root for event sourcing)
@@ -101,10 +101,10 @@ func (u *User) RecordLogin() error {
 	u.UpdatedAt = now
 
 	data, _ := NewEventData("UserLoggedIn", map[string]interface{}{
-		"id":             u.ID,
-		"email":          u.Email,
-		"lastLoginAt":    u.LastLoginAt,
-		"tenantID":       u.TenantID,
+		"id":          u.ID,
+		"email":       u.Email,
+		"lastLoginAt": u.LastLoginAt,
+		"tenantID":    u.TenantID,
 	}, nil)
 	u.Apply(*data)
 

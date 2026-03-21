@@ -5,13 +5,13 @@ import "time"
 // Invoice Events
 
 type InvoiceCreatedEvent struct {
-	TenantID       string
-	InvoiceNumber  string
-	ClientName     string
-	ClientEmail    string
-	Total          float64
-	Currency       string
-	CreatedAt      time.Time
+	TenantID      string
+	InvoiceNumber string
+	ClientName    string
+	ClientEmail   string
+	Total         float64
+	Currency      string
+	CreatedAt     time.Time
 }
 
 type InvoiceSentEvent struct {
@@ -46,19 +46,19 @@ type InvoiceCreditedEvent struct {
 // Quote Events
 
 type QuoteCreatedEvent struct {
-	TenantID   string
+	TenantID    string
 	QuoteNumber string
-	ClientName string
-	Total      float64
-	ValidUntil time.Time
-	CreatedAt  time.Time
+	ClientName  string
+	Total       float64
+	ValidUntil  time.Time
+	CreatedAt   time.Time
 }
 
 type QuoteSentEvent struct {
-	TenantID   string
+	TenantID    string
 	QuoteNumber string
-	SentAt     time.Time
-	SentTo     string
+	SentAt      time.Time
+	SentTo      string
 }
 
 type QuoteAcceptedEvent struct {

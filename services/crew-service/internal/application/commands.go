@@ -3,24 +3,24 @@ package application
 import "time"
 
 type CreateCrewMemberCommand struct {
-	TenantID string
-	UserID   string
+	TenantID  string
+	UserID    string
 	FirstName string
-	LastName string
-	Email    string
-	Phone    string
-	Type     string
+	LastName  string
+	Email     string
+	Phone     string
+	Type      string
 }
 
 type UpdateCrewMemberCommand struct {
-	ID       string
-	TenantID string
-	FirstName string
-	LastName string
-	Email    string
-	Phone    string
+	ID         string
+	TenantID   string
+	FirstName  string
+	LastName   string
+	Email      string
+	Phone      string
 	HourlyRate float64
-	DailyRate float64
+	DailyRate  float64
 }
 
 type CreateTimeEntryCommand struct {

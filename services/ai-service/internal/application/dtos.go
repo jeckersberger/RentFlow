@@ -29,12 +29,12 @@ type ClassifyRequest struct {
 }
 
 type ClassifyResponse struct {
-	ID           string            `json:"id"`
+	ID             string             `json:"id"`
 	Classification map[string]float64 `json:"classification"`
-	TopCategory  string            `json:"top_category"`
-	Confidence   float64           `json:"confidence"`
-	LatencyMs    int64             `json:"latency_ms"`
-	CreatedAt    time.Time         `json:"created_at"`
+	TopCategory    string             `json:"top_category"`
+	Confidence     float64            `json:"confidence"`
+	LatencyMs      int64              `json:"latency_ms"`
+	CreatedAt      time.Time          `json:"created_at"`
 }
 
 type AnonymizeRequest struct {
@@ -42,9 +42,9 @@ type AnonymizeRequest struct {
 }
 
 type AnonymizeResponse struct {
-	ID           string `json:"id"`
+	ID             string `json:"id"`
 	AnonymizedText string `json:"anonymized_text"`
-	MappingID    string `json:"mapping_id"`
+	MappingID      string `json:"mapping_id"`
 }
 
 type DeanonymizeRequest struct {
@@ -53,7 +53,7 @@ type DeanonymizeRequest struct {
 }
 
 type DeanonymizeResponse struct {
-	ID           string `json:"id"`
+	ID               string `json:"id"`
 	DeanonymizedText string `json:"deanonymized_text"`
 }
 
@@ -65,17 +65,17 @@ type SuggestRequest struct {
 }
 
 type SuggestResponse struct {
-	ID          string        `json:"id"`
-	Suggestions []string      `json:"suggestions"`
-	LatencyMs   int64         `json:"latency_ms"`
-	CreatedAt   time.Time     `json:"created_at"`
+	ID          string    `json:"id"`
+	Suggestions []string  `json:"suggestions"`
+	LatencyMs   int64     `json:"latency_ms"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type ProviderInfo struct {
-	Name     string `json:"name"`
-	Model    string `json:"model"`
-	Enabled  bool   `json:"enabled"`
-	Primary  bool   `json:"primary"`
+	Name    string `json:"name"`
+	Model   string `json:"model"`
+	Enabled bool   `json:"enabled"`
+	Primary bool   `json:"primary"`
 }
 
 type UsageStats struct {

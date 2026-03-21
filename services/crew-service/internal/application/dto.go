@@ -55,9 +55,9 @@ type AssignmentDTO struct {
 }
 
 type TimeEntrySummary struct {
-	CrewMemberID string  `json:"crew_member_id"`
-	TotalHours   float64 `json:"total_hours"`
-	Entries      int     `json:"entries"`
+	CrewMemberID  string  `json:"crew_member_id"`
+	TotalHours    float64 `json:"total_hours"`
+	Entries       int     `json:"entries"`
 	ApprovedHours float64 `json:"approved_hours"`
 }
 

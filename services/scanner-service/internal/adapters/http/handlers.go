@@ -30,16 +30,16 @@ func (h *Handler) ProcessScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload struct {
-		Barcode    string `json:"barcode"`
-		ScanType   string `json:"scan_type"`
-		UserID     string `json:"user_id"`
-		DeviceID   string `json:"device_id"`
-		DeviceType string `json:"device_type"`
-		ProjectID  *string `json:"project_id"`
-		LocationID *string `json:"location_id"`
+		Barcode    string   `json:"barcode"`
+		ScanType   string   `json:"scan_type"`
+		UserID     string   `json:"user_id"`
+		DeviceID   string   `json:"device_id"`
+		DeviceType string   `json:"device_type"`
+		ProjectID  *string  `json:"project_id"`
+		LocationID *string  `json:"location_id"`
 		Latitude   *float64 `json:"latitude"`
 		Longitude  *float64 `json:"longitude"`
-		Notes      string `json:"notes"`
+		Notes      string   `json:"notes"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -79,16 +79,16 @@ func (h *Handler) ProcessBatch(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
 		Scans []struct {
-			Barcode    string `json:"barcode"`
-			ScanType   string `json:"scan_type"`
-			UserID     string `json:"user_id"`
-			DeviceID   string `json:"device_id"`
-			DeviceType string `json:"device_type"`
-			ProjectID  *string `json:"project_id"`
-			LocationID *string `json:"location_id"`
+			Barcode    string   `json:"barcode"`
+			ScanType   string   `json:"scan_type"`
+			UserID     string   `json:"user_id"`
+			DeviceID   string   `json:"device_id"`
+			DeviceType string   `json:"device_type"`
+			ProjectID  *string  `json:"project_id"`
+			LocationID *string  `json:"location_id"`
 			Latitude   *float64 `json:"latitude"`
 			Longitude  *float64 `json:"longitude"`
-			Notes      string `json:"notes"`
+			Notes      string   `json:"notes"`
 		} `json:"scans"`
 	}
 
@@ -139,16 +139,16 @@ func (h *Handler) SyncOfflineScans(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
 		Scans []struct {
-			Barcode    string `json:"barcode"`
-			ScanType   string `json:"scan_type"`
-			UserID     string `json:"user_id"`
-			DeviceID   string `json:"device_id"`
-			DeviceType string `json:"device_type"`
-			ProjectID  *string `json:"project_id"`
-			LocationID *string `json:"location_id"`
+			Barcode    string   `json:"barcode"`
+			ScanType   string   `json:"scan_type"`
+			UserID     string   `json:"user_id"`
+			DeviceID   string   `json:"device_id"`
+			DeviceType string   `json:"device_type"`
+			ProjectID  *string  `json:"project_id"`
+			LocationID *string  `json:"location_id"`
 			Latitude   *float64 `json:"latitude"`
 			Longitude  *float64 `json:"longitude"`
-			Notes      string `json:"notes"`
+			Notes      string   `json:"notes"`
 		} `json:"scans"`
 	}
 

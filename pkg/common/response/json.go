@@ -40,7 +40,7 @@ func JSON(w http.ResponseWriter, status int, data interface{}) {
 		Data:    data,
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // Error writes an error JSON response
@@ -56,7 +56,7 @@ func Error(w http.ResponseWriter, status int, code string, message string) {
 		},
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // ErrorWithDetails writes an error response with detailed information
@@ -73,7 +73,7 @@ func ErrorWithDetails(w http.ResponseWriter, status int, code string, message st
 		},
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // ValidationError writes a validation error response
@@ -101,7 +101,7 @@ func Paginated(w http.ResponseWriter, data interface{}, page, perPage, total int
 		TotalPages: totalPages,
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // Created writes a 201 Created response

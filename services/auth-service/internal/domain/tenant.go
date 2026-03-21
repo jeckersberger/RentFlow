@@ -33,14 +33,14 @@ type TenantSettings struct {
 // Tenant represents a tenant (organization) in the system
 type Tenant struct {
 	AggregateRoot
-	Name       string
-	Slug       string
-	Address    Address
-	Logo       string
-	Settings   TenantSettings
-	Status     TenantStatus
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	Name      string
+	Slug      string
+	Address   Address
+	Logo      string
+	Settings  TenantSettings
+	Status    TenantStatus
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // NewTenant creates a new tenant aggregate
@@ -51,9 +51,9 @@ func NewTenant(id, name, slug string) *Tenant {
 			Type:    "Tenant",
 			Version: 0,
 		},
-		Name:   name,
-		Slug:   slug,
-		Status: TenantStatusActive,
+		Name:      name,
+		Slug:      slug,
+		Status:    TenantStatusActive,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Settings: TenantSettings{

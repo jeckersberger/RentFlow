@@ -2,9 +2,9 @@ package repositories
 
 import (
 	"context"
-	"time"
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/maintenance-service/internal/domain"
+	"time"
 )
 
 type MaintenanceRecordPostgres struct {

@@ -13,10 +13,10 @@ type CreateMaintenanceRecordCommand struct {
 }
 
 type CompleteMaintenanceCommand struct {
-	TenantID      string     `json:"tenant_id"`
-	RecordID      string     `json:"record_id"`
-	CompletedDate time.Time  `json:"completed_date"`
-	Notes         string     `json:"notes"`
+	TenantID       string    `json:"tenant_id"`
+	RecordID       string    `json:"record_id"`
+	CompletedDate  time.Time `json:"completed_date"`
+	Notes          string    `json:"notes"`
 	CertificateRef string    `json:"certificate_ref"`
 }
 

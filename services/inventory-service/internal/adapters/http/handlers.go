@@ -11,10 +11,10 @@ import (
 )
 
 type Handler struct {
-	equipmentSvc   *application.EquipmentService
-	categorySvc    *application.CategoryService
-	flightcaseSvc  *application.FlightcaseService
-	logger         logger.Logger
+	equipmentSvc  *application.EquipmentService
+	categorySvc   *application.CategoryService
+	flightcaseSvc *application.FlightcaseService
+	logger        logger.Logger
 }
 
 func NewHandler(

@@ -13,27 +13,27 @@ import (
 )
 
 type AuditEntryDTO struct {
-	ID           string      `json:"id"`
-	Timestamp    time.Time   `json:"timestamp"`
-	UserID       string      `json:"user_id"`
-	Action       string      `json:"action"`
-	EntityType   string      `json:"entity_type"`
-	EntityID     string      `json:"entity_id"`
-	IPAddress    string      `json:"ip_address"`
-	UserAgent    string      `json:"user_agent"`
-	Hash         string      `json:"hash"`
+	ID         string    `json:"id"`
+	Timestamp  time.Time `json:"timestamp"`
+	UserID     string    `json:"user_id"`
+	Action     string    `json:"action"`
+	EntityType string    `json:"entity_type"`
+	EntityID   string    `json:"entity_id"`
+	IPAddress  string    `json:"ip_address"`
+	UserAgent  string    `json:"user_agent"`
+	Hash       string    `json:"hash"`
 }
 
 type LogAuditCommand struct {
-	TenantID     string                 `json:"tenant_id"`
-	UserID       string                 `json:"user_id"`
-	Action       string                 `json:"action"`
-	EntityType   string                 `json:"entity_type"`
-	EntityID     string                 `json:"entity_id"`
+	TenantID      string                 `json:"tenant_id"`
+	UserID        string                 `json:"user_id"`
+	Action        string                 `json:"action"`
+	EntityType    string                 `json:"entity_type"`
+	EntityID      string                 `json:"entity_id"`
 	PreviousState map[string]interface{} `json:"previous_state,omitempty"`
-	NewState     map[string]interface{} `json:"new_state,omitempty"`
-	IPAddress    string                 `json:"ip_address"`
-	UserAgent    string                 `json:"user_agent"`
+	NewState      map[string]interface{} `json:"new_state,omitempty"`
+	IPAddress     string                 `json:"ip_address"`
+	UserAgent     string                 `json:"user_agent"`
 }
 
 type AuditService struct {
@@ -216,29 +216,29 @@ func (s *AuditService) VerifyIntegrity(ctx context.Context, tenantID string) (ma
 	}
 
 	check := &domain.IntegrityCheck{
-		LastVerified:  time.Now(),
-		Status:        "valid",
+		LastVerified:   time.Now(),
+		Status:         "valid",
 		EntriesChecked: len(entries),
-		ErrorsFound:   errorsFound,
+		ErrorsFound:    errorsFound,
 	}
 
 	if errorsFound > 0 {
 		check.Status = "invalid"
 		return map[string]interface{}{
-			"status":           "FAILED",
-			"entries_checked":  len(entries),
-			"errors_found":     errorsFound,
-			"verified_at":      time.Now(),
+			"status":          "FAILED",
+			"entries_checked": len(entries),
+			"errors_found":    errorsFound,
+			"verified_at":     time.Now(),
 		}, nil
 	}
 
 	s.integrityRepo.Create(ctx, check)
 
 	return map[string]interface{}{
-		"status":           "PASSED",
-		"entries_checked":  len(entries),
-		"errors_found":     errorsFound,
-		"verified_at":      time.Now(),
+		"status":          "PASSED",
+		"entries_checked": len(entries),
+		"errors_found":    errorsFound,
+		"verified_at":     time.Now(),
 	}, nil
 }
 

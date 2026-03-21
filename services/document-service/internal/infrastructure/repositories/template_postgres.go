@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/lib/pq"
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/document-service/internal/domain"
+	"github.com/lib/pq"
 )
 
 type TemplatePostgres struct {

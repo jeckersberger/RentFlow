@@ -23,16 +23,16 @@ type TokenPair struct {
 
 // TenantDTO represents a tenant in responses
 type TenantDTO struct {
-	ID                string `json:"id"`
-	Name              string `json:"name"`
-	Slug              string `json:"slug"`
-	Status            string `json:"status"`
-	DefaultLanguage   string `json:"default_language"`
-	Currency          string `json:"currency"`
-	TaxRate           float64 `json:"tax_rate"`
-	InvoicePrefix     string `json:"invoice_prefix"`
-	CreatedAt         string `json:"created_at"`
-	UpdatedAt         string `json:"updated_at"`
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	Slug            string  `json:"slug"`
+	Status          string  `json:"status"`
+	DefaultLanguage string  `json:"default_language"`
+	Currency        string  `json:"currency"`
+	TaxRate         float64 `json:"tax_rate"`
+	InvoicePrefix   string  `json:"invoice_prefix"`
+	CreatedAt       string  `json:"created_at"`
+	UpdatedAt       string  `json:"updated_at"`
 }
 
 // PaginatedResult represents a paginated response

@@ -38,14 +38,14 @@ func MovementToDTO(mov *domain.Movement) *MovementDTO {
 
 func InventoryCheckToDTO(check *domain.InventoryCheck) *InventoryCheckDTO {
 	dto := &InventoryCheckDTO{
-		ID:        check.ID,
-		TenantID:  check.TenantID,
-		Name:      check.Name,
+		ID:         check.ID,
+		TenantID:   check.TenantID,
+		Name:       check.Name,
 		LocationID: check.LocationID,
-		Status:    string(check.Status),
-		Items:     make([]InventoryCheckItemDTO, len(check.Items)),
-		CreatedAt: check.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt: check.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		Status:     string(check.Status),
+		Items:      make([]InventoryCheckItemDTO, len(check.Items)),
+		CreatedAt:  check.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:  check.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 
 	if check.StartedAt != nil {

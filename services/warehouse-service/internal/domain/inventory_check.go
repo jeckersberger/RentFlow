@@ -8,9 +8,9 @@ import (
 type InventoryCheckStatus string
 
 const (
-	InventoryCheckPlanned     InventoryCheckStatus = "planned"
-	InventoryCheckInProgress  InventoryCheckStatus = "in_progress"
-	InventoryCheckCompleted   InventoryCheckStatus = "completed"
+	InventoryCheckPlanned    InventoryCheckStatus = "planned"
+	InventoryCheckInProgress InventoryCheckStatus = "in_progress"
+	InventoryCheckCompleted  InventoryCheckStatus = "completed"
 )
 
 type InventoryCheck struct {

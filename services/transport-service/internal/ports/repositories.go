@@ -2,8 +2,8 @@ package ports
 
 import (
 	"context"
-	"time"
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/domain"
+	"time"
 )
 
 type VehicleRepository interface {

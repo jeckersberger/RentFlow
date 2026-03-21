@@ -109,7 +109,7 @@ func (p *PostgresPool) WithTx(ctx context.Context, fn func(*sql.Tx) error) error
 	}
 
 	if err := fn(tx); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 

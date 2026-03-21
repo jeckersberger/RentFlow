@@ -140,7 +140,10 @@ func (l *LocalStorageAdapter) Retrieve(ctx context.Context, fileRef string) (io.
 
 	// Extract metadata from path
 	// basePath/tenantID/entityType/entityID/fileRef
-	rel, _ := filepath.Rel(l.basePath, foundPath)
+	rel, err := filepath.Rel(l.basePath, foundPath)
+	if err != nil {
+		return f, nil, fmt.Errorf("failed to get relative path: %w", err)
+	}
 	parts := filepath.SplitList(rel)
 
 	if len(parts) >= 4 {
@@ -207,11 +210,17 @@ func (l *LocalStorageAdapter) List(ctx context.Context, entityType, entityID str
 		}
 
 		// Extract path components
-		rel, _ := filepath.Rel(l.basePath, path)
+		rel, err := filepath.Rel(l.basePath, path)
+		if err != nil {
+			return err
+		}
 		parts := filepath.SplitList(rel)
 
 		if len(parts) >= 3 && parts[1] == entityType && parts[2] == entityID {
-			stat, _ := os.Stat(path)
+			stat, err := os.Stat(path)
+			if err != nil {
+				return err
+			}
 			results = append(results, FileMetadata{
 				TenantID:   parts[0],
 				EntityType: parts[1],
@@ -394,11 +403,17 @@ func (n *NASStorageAdapter) List(ctx context.Context, entityType, entityID strin
 			return nil
 		}
 
-		rel, _ := filepath.Rel(n.mountPath, path)
+		rel, err := filepath.Rel(n.mountPath, path)
+		if err != nil {
+			return err
+		}
 		parts := filepath.SplitList(rel)
 
 		if len(parts) >= 3 && parts[1] == entityType && parts[2] == entityID {
-			stat, _ := os.Stat(path)
+			stat, err := os.Stat(path)
+			if err != nil {
+				return err
+			}
 			results = append(results, FileMetadata{
 				TenantID:   parts[0],
 				EntityType: parts[1],

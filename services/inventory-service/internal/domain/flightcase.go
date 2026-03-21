@@ -30,13 +30,13 @@ type FlightcaseItem struct {
 func NewFlightcase(id, tenantID, name, barcode, userID string) *Flightcase {
 	now := time.Now()
 	return &Flightcase{
-		AggregateRoot: *events.NewAggregateRoot(id, "flightcase"),
-		TenantID:      tenantID,
-		Name:          name,
-		Barcode:       barcode,
-		Contents:      []FlightcaseItem{},
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		AggregateRoot:   *events.NewAggregateRoot(id, "flightcase"),
+		TenantID:        tenantID,
+		Name:            name,
+		Barcode:         barcode,
+		Contents:        []FlightcaseItem{},
+		CreatedAt:       now,
+		UpdatedAt:       now,
 		CreatedByUserID: userID,
 	}
 }

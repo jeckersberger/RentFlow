@@ -3,14 +3,14 @@ package domain
 import "fmt"
 
 var (
-	ErrPeerNotFound       = fmt.Errorf("peer not found")
-	ErrEquipmentNotFound  = fmt.Errorf("equipment not found")
+	ErrPeerNotFound         = fmt.Errorf("peer not found")
+	ErrEquipmentNotFound    = fmt.Errorf("equipment not found")
 	ErrShareRequestNotFound = fmt.Errorf("share request not found")
-	ErrInvalidPeerStatus  = fmt.Errorf("invalid peer status")
-	ErrTenantIDRequired   = fmt.Errorf("tenant ID is required")
-	ErrInvalidInput       = fmt.Errorf("invalid input")
-	ErrUnauthorized       = fmt.Errorf("unauthorized")
-	ErrPeerBlocked        = fmt.Errorf("peer is blocked")
+	ErrInvalidPeerStatus    = fmt.Errorf("invalid peer status")
+	ErrTenantIDRequired     = fmt.Errorf("tenant ID is required")
+	ErrInvalidInput         = fmt.Errorf("invalid input")
+	ErrUnauthorized         = fmt.Errorf("unauthorized")
+	ErrPeerBlocked          = fmt.Errorf("peer is blocked")
 )
 
 type DomainError struct {

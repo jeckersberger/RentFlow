@@ -34,7 +34,7 @@ func PanicRecovery(log logger.Logger) func(http.Handler) http.Handler {
 						"message": "An internal error occurred",
 					}
 
-					json.NewEncoder(w).Encode(errorResponse)
+					_ = json.NewEncoder(w).Encode(errorResponse)
 				}
 			}()
 
@@ -110,7 +110,7 @@ func RecoveryWithDetails(log logger.Logger, includeStackTrace bool) func(http.Ha
 						details.StackTrace = stackTrace
 					}
 
-					json.NewEncoder(w).Encode(details)
+					_ = json.NewEncoder(w).Encode(details)
 				}
 			}()
 
@@ -118,4 +118,3 @@ func RecoveryWithDetails(log logger.Logger, includeStackTrace bool) func(http.Ha
 		})
 	}
 }
-

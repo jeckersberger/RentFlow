@@ -1,8 +1,8 @@
 package application
 
 import (
-	"time"
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/domain"
+	"time"
 )
 
 type VehicleDTO struct {
@@ -16,14 +16,14 @@ type VehicleDTO struct {
 }
 
 type TourDTO struct {
-	ID        string                 `json:"id"`
-	ProjectID string                 `json:"project_id"`
-	VehicleID string                 `json:"vehicle_id"`
-	DriverID  string                 `json:"driver_id"`
-	Date      time.Time              `json:"date"`
+	ID        string                   `json:"id"`
+	ProjectID string                   `json:"project_id"`
+	VehicleID string                   `json:"vehicle_id"`
+	DriverID  string                   `json:"driver_id"`
+	Date      time.Time                `json:"date"`
 	Stops     []map[string]interface{} `json:"stops"`
-	Status    string                 `json:"status"`
-	CreatedAt time.Time              `json:"created_at"`
+	Status    string                   `json:"status"`
+	CreatedAt time.Time                `json:"created_at"`
 }
 
 func VehicleToDTO(v *domain.Vehicle) *VehicleDTO {

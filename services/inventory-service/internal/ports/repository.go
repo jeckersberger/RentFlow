@@ -44,10 +44,10 @@ type EquipmentListQuery struct {
 }
 
 type EquipmentListResult struct {
-	Items      []*domain.Equipment
-	Total      int64
-	Limit      int
-	Offset     int
+	Items  []*domain.Equipment
+	Total  int64
+	Limit  int
+	Offset int
 }
 
 type FlightcaseListResult struct {

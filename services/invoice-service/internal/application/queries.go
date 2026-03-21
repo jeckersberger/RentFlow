@@ -38,12 +38,12 @@ type ListQuotesQuery struct {
 }
 
 type GetQuoteByNumberQuery struct {
-	TenantID   string
+	TenantID    string
 	QuoteNumber string
 }
 
 type GetDunningQuery struct {
-	TenantID string
+	TenantID  string
 	DunningID string
 }
 

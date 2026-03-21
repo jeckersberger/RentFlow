@@ -6,11 +6,11 @@ import (
 )
 
 var (
-	ErrAIRequestNotFound       = errors.New("ai request not found")
+	ErrAIRequestNotFound         = errors.New("ai request not found")
 	ErrAnonymizationRuleNotFound = errors.New("anonymization rule not found")
-	ErrInvalidInput            = errors.New("invalid input")
-	ErrTenantIDRequired        = errors.New("tenant ID required")
-	ErrProviderUnavailable     = errors.New("provider unavailable")
+	ErrInvalidInput              = errors.New("invalid input")
+	ErrTenantIDRequired          = errors.New("tenant ID required")
+	ErrProviderUnavailable       = errors.New("provider unavailable")
 )
 
 type AIStatus string
@@ -48,18 +48,18 @@ const (
 )
 
 type AnonymizationRule struct {
-	ID          string                 `json:"id"`
-	TenantID    string                 `json:"tenant_id"`
-	Pattern     string                 `json:"pattern"`
-	Replacement string                 `json:"replacement"`
-	Type        AnonymizationRuleType  `json:"type"`
-	CreatedAt   time.Time              `json:"created_at"`
+	ID          string                `json:"id"`
+	TenantID    string                `json:"tenant_id"`
+	Pattern     string                `json:"pattern"`
+	Replacement string                `json:"replacement"`
+	Type        AnonymizationRuleType `json:"type"`
+	CreatedAt   time.Time             `json:"created_at"`
 }
 
 type AnonymizationMapping struct {
-	ID           string            `json:"id"`
-	TenantID     string            `json:"tenant_id"`
-	Original     string            `json:"original"`
-	Anonymized   string            `json:"anonymized"`
-	CreatedAt    time.Time         `json:"created_at"`
+	ID         string    `json:"id"`
+	TenantID   string    `json:"tenant_id"`
+	Original   string    `json:"original"`
+	Anonymized string    `json:"anonymized"`
+	CreatedAt  time.Time `json:"created_at"`
 }

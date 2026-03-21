@@ -9,49 +9,49 @@ import (
 
 type Equipment struct {
 	events.AggregateRoot
-	TenantID         string
-	Name             string
-	Description      string
-	CategoryID       string
-	SKU              string
-	SerialNumber     string
-	Barcode          string
-	Status           EquipmentStatus
-	Condition        EquipmentCondition
-	PurchaseDate     *time.Time
-	PurchasePrice    float64
-	RentalPriceDay   float64
-	RentalPriceWeek  float64
-	Weight           float64
-	Dimensions       Dimensions
-	LocationID       string
-	ImageRefs        []string
-	Tags             []string
-	CustomFields     map[string]string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	CreatedByUserID  string
+	TenantID        string
+	Name            string
+	Description     string
+	CategoryID      string
+	SKU             string
+	SerialNumber    string
+	Barcode         string
+	Status          EquipmentStatus
+	Condition       EquipmentCondition
+	PurchaseDate    *time.Time
+	PurchasePrice   float64
+	RentalPriceDay  float64
+	RentalPriceWeek float64
+	Weight          float64
+	Dimensions      Dimensions
+	LocationID      string
+	ImageRefs       []string
+	Tags            []string
+	CustomFields    map[string]string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CreatedByUserID string
 }
 
 type EquipmentStatus string
 
 const (
-	StatusAvailable      EquipmentStatus = "available"
-	StatusReserved       EquipmentStatus = "reserved"
-	StatusCheckedOut     EquipmentStatus = "checked_out"
-	StatusInMaintenance  EquipmentStatus = "in_maintenance"
-	StatusRetired        EquipmentStatus = "retired"
-	StatusDamaged        EquipmentStatus = "damaged"
+	StatusAvailable     EquipmentStatus = "available"
+	StatusReserved      EquipmentStatus = "reserved"
+	StatusCheckedOut    EquipmentStatus = "checked_out"
+	StatusInMaintenance EquipmentStatus = "in_maintenance"
+	StatusRetired       EquipmentStatus = "retired"
+	StatusDamaged       EquipmentStatus = "damaged"
 )
 
 type EquipmentCondition string
 
 const (
-	ConditionNew        EquipmentCondition = "new"
-	ConditionGood       EquipmentCondition = "good"
-	ConditionFair       EquipmentCondition = "fair"
-	ConditionPoor       EquipmentCondition = "poor"
-	ConditionDefective  EquipmentCondition = "defective"
+	ConditionNew       EquipmentCondition = "new"
+	ConditionGood      EquipmentCondition = "good"
+	ConditionFair      EquipmentCondition = "fair"
+	ConditionPoor      EquipmentCondition = "poor"
+	ConditionDefective EquipmentCondition = "defective"
 )
 
 type Dimensions struct {
@@ -64,19 +64,19 @@ type Dimensions struct {
 func NewEquipment(id, tenantID, name, categoryID, sku, barcode, userID string) *Equipment {
 	now := time.Now()
 	return &Equipment{
-		AggregateRoot: *events.NewAggregateRoot(id, "equipment"),
-		TenantID:      tenantID,
-		Name:          name,
-		CategoryID:    categoryID,
-		SKU:           sku,
-		Barcode:       barcode,
-		Status:        StatusAvailable,
-		Condition:     ConditionGood,
-		Tags:          []string{},
-		CustomFields:  make(map[string]string),
-		ImageRefs:     []string{},
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		AggregateRoot:   *events.NewAggregateRoot(id, "equipment"),
+		TenantID:        tenantID,
+		Name:            name,
+		CategoryID:      categoryID,
+		SKU:             sku,
+		Barcode:         barcode,
+		Status:          StatusAvailable,
+		Condition:       ConditionGood,
+		Tags:            []string{},
+		CustomFields:    make(map[string]string),
+		ImageRefs:       []string{},
+		CreatedAt:       now,
+		UpdatedAt:       now,
 		CreatedByUserID: userID,
 	}
 }
@@ -109,28 +109,28 @@ func (e *Equipment) ChangeStatus(newStatus EquipmentStatus) error {
 	switch e.Status {
 	case StatusAvailable:
 		if newStatus != StatusReserved && newStatus != StatusCheckedOut &&
-		   newStatus != StatusInMaintenance && newStatus != StatusDamaged &&
-		   newStatus != StatusRetired {
+			newStatus != StatusInMaintenance && newStatus != StatusDamaged &&
+			newStatus != StatusRetired {
 			return fmt.Errorf("cannot transition from %s to %s", e.Status, newStatus)
 		}
 	case StatusReserved:
 		if newStatus != StatusCheckedOut && newStatus != StatusAvailable &&
-		   newStatus != StatusRetired {
+			newStatus != StatusRetired {
 			return fmt.Errorf("cannot transition from %s to %s", e.Status, newStatus)
 		}
 	case StatusCheckedOut:
 		if newStatus != StatusAvailable && newStatus != StatusDamaged &&
-		   newStatus != StatusInMaintenance && newStatus != StatusRetired {
+			newStatus != StatusInMaintenance && newStatus != StatusRetired {
 			return fmt.Errorf("cannot transition from %s to %s", e.Status, newStatus)
 		}
 	case StatusInMaintenance:
 		if newStatus != StatusAvailable && newStatus != StatusDamaged &&
-		   newStatus != StatusRetired {
+			newStatus != StatusRetired {
 			return fmt.Errorf("cannot transition from %s to %s", e.Status, newStatus)
 		}
 	case StatusDamaged:
 		if newStatus != StatusInMaintenance && newStatus != StatusAvailable &&
-		   newStatus != StatusRetired {
+			newStatus != StatusRetired {
 			return fmt.Errorf("cannot transition from %s to %s", e.Status, newStatus)
 		}
 	case StatusRetired:

@@ -3,9 +3,9 @@ package repositories
 import (
 	"context"
 	"encoding/json"
-	"time"
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/audit-service/internal/domain"
+	"time"
 )
 
 type AuditEntryPostgres struct {

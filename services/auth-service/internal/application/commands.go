@@ -57,21 +57,21 @@ type UnlockUserCommand struct {
 
 // CreateTenantCommand represents a tenant creation command
 type CreateTenantCommand struct {
-	Name              string  `json:"name"`
-	Slug              string  `json:"slug"`
-	DefaultLanguage   string  `json:"default_language"`
-	Currency          string  `json:"currency"`
-	TaxRate           float64 `json:"tax_rate"`
-	InvoicePrefix     string  `json:"invoice_prefix"`
+	Name            string  `json:"name"`
+	Slug            string  `json:"slug"`
+	DefaultLanguage string  `json:"default_language"`
+	Currency        string  `json:"currency"`
+	TaxRate         float64 `json:"tax_rate"`
+	InvoicePrefix   string  `json:"invoice_prefix"`
 }
 
 // UpdateTenantCommand represents a tenant update command
 type UpdateTenantCommand struct {
-	TenantID          string  `json:"tenant_id"`
-	Name              string  `json:"name"`
-	Slug              string  `json:"slug"`
-	DefaultLanguage   string  `json:"default_language"`
-	Currency          string  `json:"currency"`
-	TaxRate           float64 `json:"tax_rate"`
-	InvoicePrefix     string  `json:"invoice_prefix"`
+	TenantID        string  `json:"tenant_id"`
+	Name            string  `json:"name"`
+	Slug            string  `json:"slug"`
+	DefaultLanguage string  `json:"default_language"`
+	Currency        string  `json:"currency"`
+	TaxRate         float64 `json:"tax_rate"`
+	InvoicePrefix   string  `json:"invoice_prefix"`
 }

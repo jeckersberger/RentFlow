@@ -13,10 +13,10 @@ type DunningEntry struct {
 	TenantID      string
 	InvoiceID     string
 	InvoiceNumber string
-	Level         int       // 1 = Zahlungserinnerung, 2 = 1. Mahnung, 3 = 2. Mahnung
+	Level         int // 1 = Zahlungserinnerung, 2 = 1. Mahnung, 3 = 2. Mahnung
 	SentAt        time.Time
 	DueDate       time.Time
-	Fee           float64   // Mahngebühr (dunning fee)
+	Fee           float64 // Mahngebühr (dunning fee)
 	Notes         string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
@@ -31,8 +31,8 @@ const (
 
 // DunningFees in EUR (configurable per tenant)
 var DefaultDunningFees = map[int]float64{
-	DunningLevelPaymentReminder: 0,    // No fee for reminder
-	DunningLevelFirstNotice:     5.00, // €5 for first notice
+	DunningLevelPaymentReminder: 0,     // No fee for reminder
+	DunningLevelFirstNotice:     5.00,  // €5 for first notice
 	DunningLevelSecondNotice:    10.00, // €10 for second notice
 }
 

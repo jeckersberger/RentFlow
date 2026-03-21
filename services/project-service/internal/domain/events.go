@@ -5,13 +5,13 @@ import "time"
 // Domain Events
 
 type ProjectCreatedEvent struct {
-	ProjectID      string    `json:"project_id"`
-	TenantID       string    `json:"tenant_id"`
-	Name           string    `json:"name"`
-	ClientName     string    `json:"client_name"`
-	Status         string    `json:"status"`
-	CreatedByUserID string   `json:"created_by_user_id"`
-	CreatedAt      time.Time `json:"created_at"`
+	ProjectID       string    `json:"project_id"`
+	TenantID        string    `json:"tenant_id"`
+	Name            string    `json:"name"`
+	ClientName      string    `json:"client_name"`
+	Status          string    `json:"status"`
+	CreatedByUserID string    `json:"created_by_user_id"`
+	CreatedAt       time.Time `json:"created_at"`
 }
 
 type ProjectUpdatedEvent struct {
@@ -38,32 +38,32 @@ type PacklistCreatedEvent struct {
 }
 
 type PacklistItemAddedEvent struct {
-	PacklistID    string    `json:"packlist_id"`
-	ProjectID     string    `json:"project_id"`
-	TenantID      string    `json:"tenant_id"`
-	EquipmentID   string    `json:"equipment_id"`
-	Quantity      int       `json:"quantity"`
-	AddedAt       time.Time `json:"added_at"`
+	PacklistID  string    `json:"packlist_id"`
+	ProjectID   string    `json:"project_id"`
+	TenantID    string    `json:"tenant_id"`
+	EquipmentID string    `json:"equipment_id"`
+	Quantity    int       `json:"quantity"`
+	AddedAt     time.Time `json:"added_at"`
 }
 
 type PacklistItemPackedEvent struct {
-	PacklistID    string    `json:"packlist_id"`
-	ProjectID     string    `json:"project_id"`
-	TenantID      string    `json:"tenant_id"`
-	ItemID        string    `json:"item_id"`
-	EquipmentID   string    `json:"equipment_id"`
-	QuantityPacked int      `json:"quantity_packed"`
-	PackedAt      time.Time `json:"packed_at"`
+	PacklistID     string    `json:"packlist_id"`
+	ProjectID      string    `json:"project_id"`
+	TenantID       string    `json:"tenant_id"`
+	ItemID         string    `json:"item_id"`
+	EquipmentID    string    `json:"equipment_id"`
+	QuantityPacked int       `json:"quantity_packed"`
+	PackedAt       time.Time `json:"packed_at"`
 }
 
 type PacklistItemReturnedEvent struct {
-	PacklistID        string    `json:"packlist_id"`
-	ProjectID         string    `json:"project_id"`
-	TenantID          string    `json:"tenant_id"`
-	ItemID            string    `json:"item_id"`
-	EquipmentID       string    `json:"equipment_id"`
-	QuantityReturned  int       `json:"quantity_returned"`
-	ReturnedAt        time.Time `json:"returned_at"`
+	PacklistID       string    `json:"packlist_id"`
+	ProjectID        string    `json:"project_id"`
+	TenantID         string    `json:"tenant_id"`
+	ItemID           string    `json:"item_id"`
+	EquipmentID      string    `json:"equipment_id"`
+	QuantityReturned int       `json:"quantity_returned"`
+	ReturnedAt       time.Time `json:"returned_at"`
 }
 
 type ReservationCreatedEvent struct {

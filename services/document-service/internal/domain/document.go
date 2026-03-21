@@ -18,18 +18,18 @@ const (
 
 type Document struct {
 	events.AggregateRoot
-	TenantID    string
-	Name        string
-	Type        DocumentType
-	EntityType  string
-	EntityID    string
-	FileRef     string
-	MimeType    string
-	Size        int64
-	Checksum    string
-	CreatedBy   string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	TenantID   string
+	Name       string
+	Type       DocumentType
+	EntityType string
+	EntityID   string
+	FileRef    string
+	MimeType   string
+	Size       int64
+	Checksum   string
+	CreatedBy  string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 func NewDocument(id, tenantID, name string, docType DocumentType, entityType, entityID, fileRef, mimeType, createdBy string, size int64, checksum string) *Document {

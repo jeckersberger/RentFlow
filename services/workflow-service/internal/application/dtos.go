@@ -8,10 +8,10 @@ import (
 )
 
 type CreateWorkflowRequest struct {
-	Name         string                 `json:"name"`
-	Description  string                 `json:"description"`
-	TriggerEvent string                 `json:"trigger_event"`
-	Steps        []WorkflowStepRequest  `json:"steps"`
+	Name         string                `json:"name"`
+	Description  string                `json:"description"`
+	TriggerEvent string                `json:"trigger_event"`
+	Steps        []WorkflowStepRequest `json:"steps"`
 }
 
 type WorkflowStepRequest struct {
@@ -22,15 +22,15 @@ type WorkflowStepRequest struct {
 }
 
 type WorkflowResponse struct {
-	ID            string                   `json:"id"`
-	Name          string                   `json:"name"`
-	Description   string                   `json:"description"`
-	TriggerEvent  string                   `json:"trigger_event"`
-	Steps         []WorkflowStepResponse   `json:"steps"`
-	IsActive      bool                     `json:"is_active"`
-	Version       int                      `json:"version"`
-	CreatedAt     time.Time                `json:"created_at"`
-	UpdatedAt     time.Time                `json:"updated_at"`
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description"`
+	TriggerEvent string                 `json:"trigger_event"`
+	Steps        []WorkflowStepResponse `json:"steps"`
+	IsActive     bool                   `json:"is_active"`
+	Version      int                    `json:"version"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
 }
 
 type WorkflowStepResponse struct {
@@ -53,14 +53,14 @@ type TriggerWorkflowResponse struct {
 }
 
 type WorkflowRunResponse struct {
-	ID            string     `json:"id"`
-	WorkflowID    string     `json:"workflow_id"`
-	TriggerEventID string    `json:"trigger_event_id"`
-	Status        string     `json:"status"`
-	CurrentStep   string     `json:"current_step"`
-	StartedAt     time.Time  `json:"started_at"`
-	CompletedAt   *time.Time `json:"completed_at"`
-	Error         string     `json:"error"`
+	ID             string     `json:"id"`
+	WorkflowID     string     `json:"workflow_id"`
+	TriggerEventID string     `json:"trigger_event_id"`
+	Status         string     `json:"status"`
+	CurrentStep    string     `json:"current_step"`
+	StartedAt      time.Time  `json:"started_at"`
+	CompletedAt    *time.Time `json:"completed_at"`
+	Error          string     `json:"error"`
 }
 
 type ActivateWorkflowRequest struct {

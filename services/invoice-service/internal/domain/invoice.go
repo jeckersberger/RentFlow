@@ -78,7 +78,7 @@ type InvoiceItem struct {
 	ID          string
 	Description string
 	Quantity    float64
-	Unit        string    // "Stück", "Tag", "Pauschal", etc.
+	Unit        string // "Stück", "Tag", "Pauschal", etc.
 	UnitPrice   float64
 	TotalPrice  float64
 	TaxRate     TaxRate
@@ -327,4 +327,3 @@ func (i *Invoice) VerifyHash() bool {
 func (i *Invoice) IsFinalized() bool {
 	return i.Status != InvoiceDraft
 }
-

@@ -14,13 +14,13 @@ import (
 // Claims represents the claims in a JWT token
 // This is a simplified JWT implementation without external dependencies
 type Claims struct {
-	UserID   string   `json:"user_id"`
-	TenantID string   `json:"tenant_id"`
-	Email    string   `json:"email"`
-	Roles    []string `json:"roles"`
-	IssuedAt int64    `json:"iat"`
-	ExpiresAt int64   `json:"exp"`
-	Issuer   string   `json:"iss"`
+	UserID    string   `json:"user_id"`
+	TenantID  string   `json:"tenant_id"`
+	Email     string   `json:"email"`
+	Roles     []string `json:"roles"`
+	IssuedAt  int64    `json:"iat"`
+	ExpiresAt int64    `json:"exp"`
+	Issuer    string   `json:"iss"`
 }
 
 // SimpleJWT is a minimal JWT implementation without external dependencies
@@ -107,11 +107,11 @@ func (j *SimpleJWT) VerifyToken(token string) (*Claims, error) {
 
 // JWT-related errors
 var (
-	ErrInvalidToken    = &AuthError{Code: "INVALID_TOKEN", Message: "Invalid token"}
+	ErrInvalidToken     = &AuthError{Code: "INVALID_TOKEN", Message: "Invalid token"}
 	ErrInvalidSignature = &AuthError{Code: "INVALID_SIGNATURE", Message: "Invalid token signature"}
-	ErrTokenExpired    = &AuthError{Code: "TOKEN_EXPIRED", Message: "Token has expired"}
-	ErrMissingToken    = &AuthError{Code: "MISSING_TOKEN", Message: "Missing authorization token"}
-	ErrInvalidScheme   = &AuthError{Code: "INVALID_SCHEME", Message: "Invalid authorization scheme"}
+	ErrTokenExpired     = &AuthError{Code: "TOKEN_EXPIRED", Message: "Token has expired"}
+	ErrMissingToken     = &AuthError{Code: "MISSING_TOKEN", Message: "Missing authorization token"}
+	ErrInvalidScheme    = &AuthError{Code: "INVALID_SCHEME", Message: "Invalid authorization scheme"}
 )
 
 // AuthError represents an authentication error
@@ -285,5 +285,5 @@ func writeAuthError(w http.ResponseWriter, statusCode int, err error) {
 		"message": authErr.Message,
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }

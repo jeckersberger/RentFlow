@@ -11,17 +11,17 @@ type CreateVehicleCommand struct {
 }
 
 type UpdateVehicleCommand struct {
-	TenantID string `json:"tenant_id"`
+	TenantID  string `json:"tenant_id"`
 	VehicleID string `json:"vehicle_id"`
-	Status   string `json:"status"`
+	Status    string `json:"status"`
 }
 
 type CreateTourCommand struct {
-	TenantID  string      `json:"tenant_id"`
-	ProjectID string      `json:"project_id"`
-	VehicleID string      `json:"vehicle_id"`
-	DriverID  string      `json:"driver_id"`
-	Date      time.Time   `json:"date"`
+	TenantID  string                   `json:"tenant_id"`
+	ProjectID string                   `json:"project_id"`
+	VehicleID string                   `json:"vehicle_id"`
+	DriverID  string                   `json:"driver_id"`
+	Date      time.Time                `json:"date"`
 	Stops     []map[string]interface{} `json:"stops"`
 }
 

@@ -11,10 +11,10 @@ import (
 )
 
 type ScanService struct {
-	scanRepo       ports.ScanEventRepository
-	deviceRepo     ports.DeviceRepository
-	inventorySvc   ports.InventoryServiceClient
-	logger         logger.Logger
+	scanRepo     ports.ScanEventRepository
+	deviceRepo   ports.DeviceRepository
+	inventorySvc ports.InventoryServiceClient
+	logger       logger.Logger
 }
 
 func NewScanService(
@@ -24,10 +24,10 @@ func NewScanService(
 	logger logger.Logger,
 ) *ScanService {
 	return &ScanService{
-		scanRepo:      scanRepo,
-		deviceRepo:    deviceRepo,
-		inventorySvc:  inventorySvc,
-		logger:        logger,
+		scanRepo:     scanRepo,
+		deviceRepo:   deviceRepo,
+		inventorySvc: inventorySvc,
+		logger:       logger,
 	}
 }
 

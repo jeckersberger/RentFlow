@@ -10,7 +10,7 @@ import (
 type AssignmentStatus string
 
 const (
-	AssignmentStatusActive   AssignmentStatus = "active"
+	AssignmentStatusActive    AssignmentStatus = "active"
 	AssignmentStatusCompleted AssignmentStatus = "completed"
 	AssignmentStatusCancelled AssignmentStatus = "cancelled"
 )

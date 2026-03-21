@@ -177,9 +177,9 @@ func (s *InventoryCheckService) GetDiscrepancies(ctx context.Context, tenantID, 
 	}
 
 	return map[string]interface{}{
-		"check_id":       check.ID,
+		"check_id":          check.ID,
 		"discrepancy_count": len(dtos),
-		"discrepancies":  dtos,
+		"discrepancies":     dtos,
 	}, nil
 }
 

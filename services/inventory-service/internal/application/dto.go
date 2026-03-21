@@ -52,17 +52,17 @@ type CategoryDTO struct {
 }
 
 type FlightcaseDTO struct {
-	ID              string                `json:"id"`
-	TenantID        string                `json:"tenant_id"`
-	Name            string                `json:"name"`
-	Description     string                `json:"description"`
-	Barcode         string                `json:"barcode"`
-	Contents        []FlightcaseItemDTO   `json:"contents"`
-	Weight          float64               `json:"weight"`
-	LocationID      string                `json:"location_id"`
-	CreatedAt       time.Time             `json:"created_at"`
-	UpdatedAt       time.Time             `json:"updated_at"`
-	CreatedByUserID string                `json:"created_by_user_id"`
+	ID              string              `json:"id"`
+	TenantID        string              `json:"tenant_id"`
+	Name            string              `json:"name"`
+	Description     string              `json:"description"`
+	Barcode         string              `json:"barcode"`
+	Contents        []FlightcaseItemDTO `json:"contents"`
+	Weight          float64             `json:"weight"`
+	LocationID      string              `json:"location_id"`
+	CreatedAt       time.Time           `json:"created_at"`
+	UpdatedAt       time.Time           `json:"updated_at"`
+	CreatedByUserID string              `json:"created_by_user_id"`
 }
 
 type FlightcaseItemDTO struct {

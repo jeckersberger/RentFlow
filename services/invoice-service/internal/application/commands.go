@@ -9,19 +9,19 @@ import (
 // Invoice Commands
 
 type CreateInvoiceCommand struct {
-	TenantID      string
-	ProjectID     *string
-	ClientName    string
-	ClientAddress domain.Address
-	ClientEmail   string
-	ClientTaxID   string
-	Items         []CreateInvoiceItemCommand
-	TaxRate       float64
-	Currency      string
-	IssueDate     time.Time
-	DueDate       time.Time
-	Notes         string
-	InternalNotes string
+	TenantID        string
+	ProjectID       *string
+	ClientName      string
+	ClientAddress   domain.Address
+	ClientEmail     string
+	ClientTaxID     string
+	Items           []CreateInvoiceItemCommand
+	TaxRate         float64
+	Currency        string
+	IssueDate       time.Time
+	DueDate         time.Time
+	Notes           string
+	InternalNotes   string
 	CreatedByUserID string
 }
 
@@ -53,11 +53,11 @@ type SendInvoiceCommand struct {
 }
 
 type MarkInvoicePaidCommand struct {
-	ID             string
-	TenantID       string
-	PaymentMethod  string
-	PaymentRef     string
-	PaymentDate    *time.Time
+	ID            string
+	TenantID      string
+	PaymentMethod string
+	PaymentRef    string
+	PaymentDate   *time.Time
 }
 
 type CancelInvoiceCommand struct {
@@ -96,16 +96,16 @@ type GenerateInvoicePDFCommand struct {
 // Quote Commands
 
 type CreateQuoteCommand struct {
-	TenantID      string
-	ProjectID     *string
-	ClientName    string
-	ClientAddress domain.Address
-	ClientEmail   string
-	Items         []CreateInvoiceItemCommand
-	TaxRate       float64
-	Currency      string
-	ValidDays     int
-	Notes         string
+	TenantID        string
+	ProjectID       *string
+	ClientName      string
+	ClientAddress   domain.Address
+	ClientEmail     string
+	Items           []CreateInvoiceItemCommand
+	TaxRate         float64
+	Currency        string
+	ValidDays       int
+	Notes           string
 	CreatedByUserID string
 }
 
@@ -138,10 +138,10 @@ type RejectQuoteCommand struct {
 }
 
 type ConvertQuoteToInvoiceCommand struct {
-	QuoteID     string
-	TenantID    string
-	IssueDate   time.Time
-	DueDate     time.Time
+	QuoteID       string
+	TenantID      string
+	IssueDate     time.Time
+	DueDate       time.Time
 	InternalNotes string
 }
 
@@ -164,11 +164,11 @@ type RemoveQuoteItemCommand struct {
 // Dunning Commands
 
 type CreateDunningCommand struct {
-	TenantID    string
-	InvoiceID   string
-	Level       int
-	DaysToAdd   int
-	CustomFee   *float64
+	TenantID  string
+	InvoiceID string
+	Level     int
+	DaysToAdd int
+	CustomFee *float64
 }
 
 type SendDunningCommand struct {

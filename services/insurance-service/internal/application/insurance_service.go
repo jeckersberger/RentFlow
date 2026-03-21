@@ -381,10 +381,10 @@ func (s *RiskService) AssessEquipment(ctx context.Context, tenantID string, req 
 	riskScore := calculateRiskScore(req.Age, req.UsageHours)
 
 	factors := map[string]interface{}{
-		"age":           req.Age,
-		"value":         req.Value,
-		"usage_hours":   req.UsageHours,
-		"depreciation":  float64(req.Age) * 0.15,
+		"age":          req.Age,
+		"value":        req.Value,
+		"usage_hours":  req.UsageHours,
+		"depreciation": float64(req.Age) * 0.15,
 	}
 	factorsJSON, _ := json.Marshal(factors)
 
@@ -442,7 +442,7 @@ func (s *RiskService) ListAssessments(ctx context.Context, tenantID string) ([]*
 
 func calculateRiskScore(age, usageHours int) float64 {
 	// Simple risk calculation: higher age and usage = higher risk
-	ageRisk := float64(age) * 0.05 // 5% per year
+	ageRisk := float64(age) * 0.05                   // 5% per year
 	usageRisk := float64(usageHours) / 10000.0 * 0.3 // scale to 0-0.3
 
 	score := ageRisk + usageRisk

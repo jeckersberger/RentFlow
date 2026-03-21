@@ -10,7 +10,7 @@ import (
 )
 
 type Handler struct {
-	peerSvc   *application.PeerService
+	peerSvc    *application.PeerService
 	sharingSvc *application.SharingService
 	logger     logger.Logger
 }

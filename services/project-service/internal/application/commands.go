@@ -29,23 +29,23 @@ type CreateProjectCommand struct {
 }
 
 type UpdateProjectCommand struct {
-	ID              string
-	TenantID        string
-	Name            string
-	Description     string
-	ClientName      string
-	ClientEmail     string
-	ClientPhone     string
-	ClientAddress   AddressDTO
-	VenueAddress    AddressDTO
-	StartDate       time.Time
-	EndDate         time.Time
-	SetupDate       *time.Time
-	TeardownDate    *time.Time
-	Budget          float64
-	Currency        string
-	Notes           string
-	Tags            []string
+	ID            string
+	TenantID      string
+	Name          string
+	Description   string
+	ClientName    string
+	ClientEmail   string
+	ClientPhone   string
+	ClientAddress AddressDTO
+	VenueAddress  AddressDTO
+	StartDate     time.Time
+	EndDate       time.Time
+	SetupDate     *time.Time
+	TeardownDate  *time.Time
+	Budget        float64
+	Currency      string
+	Notes         string
+	Tags          []string
 }
 
 type ChangeProjectStatusCommand struct {
@@ -55,8 +55,8 @@ type ChangeProjectStatusCommand struct {
 }
 
 type SetProjectManagerCommand struct {
-	ID       string
-	TenantID string
+	ID        string
+	TenantID  string
 	ManagerID string
 }
 

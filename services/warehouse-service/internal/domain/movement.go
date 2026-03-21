@@ -8,26 +8,26 @@ import (
 type MovementType string
 
 const (
-	MovementInbound   MovementType = "inbound"
-	MovementOutbound  MovementType = "outbound"
-	MovementTransfer  MovementType = "transfer"
-	MovementReturn    MovementType = "return"
-	MovementAdjust    MovementType = "adjustment"
+	MovementInbound  MovementType = "inbound"
+	MovementOutbound MovementType = "outbound"
+	MovementTransfer MovementType = "transfer"
+	MovementReturn   MovementType = "return"
+	MovementAdjust   MovementType = "adjustment"
 )
 
 type Movement struct {
-	ID            string
-	TenantID      string
-	EquipmentID   string
+	ID             string
+	TenantID       string
+	EquipmentID    string
 	FromLocationID *string
 	ToLocationID   string
-	MovementType  MovementType
-	Quantity      int
-	Reason        string
-	UserID        string
-	ProjectID     *string
-	Timestamp     time.Time
-	CreatedAt     time.Time
+	MovementType   MovementType
+	Quantity       int
+	Reason         string
+	UserID         string
+	ProjectID      *string
+	Timestamp      time.Time
+	CreatedAt      time.Time
 }
 
 func NewMovement(

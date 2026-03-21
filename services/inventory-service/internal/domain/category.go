@@ -6,14 +6,14 @@ import (
 )
 
 type Category struct {
-	ID            string
-	TenantID      string
-	Name          string
-	ParentID      *string
-	Icon          string
-	Color         string
-	SortOrder     int
-	CreatedAt     time.Time
+	ID              string
+	TenantID        string
+	Name            string
+	ParentID        *string
+	Icon            string
+	Color           string
+	SortOrder       int
+	CreatedAt       time.Time
 	CreatedByUserID string
 }
 

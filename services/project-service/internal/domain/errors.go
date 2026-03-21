@@ -4,15 +4,15 @@ import "fmt"
 
 // Domain errors
 var (
-	ErrProjectNotFound        = fmt.Errorf("project not found")
-	ErrPacklistNotFound       = fmt.Errorf("packlist not found")
-	ErrReservationNotFound    = fmt.Errorf("reservation not found")
-	ErrInvalidProjectStatus   = fmt.Errorf("invalid project status")
-	ErrInvalidPacklistStatus  = fmt.Errorf("invalid packlist status")
-	ErrTenantIDRequired       = fmt.Errorf("tenant ID is required")
-	ErrInvalidInput           = fmt.Errorf("invalid input")
-	ErrUnauthorized           = fmt.Errorf("unauthorized")
-	ErrReservationConflict    = fmt.Errorf("reservation conflicts with existing reservations")
+	ErrProjectNotFound         = fmt.Errorf("project not found")
+	ErrPacklistNotFound        = fmt.Errorf("packlist not found")
+	ErrReservationNotFound     = fmt.Errorf("reservation not found")
+	ErrInvalidProjectStatus    = fmt.Errorf("invalid project status")
+	ErrInvalidPacklistStatus   = fmt.Errorf("invalid packlist status")
+	ErrTenantIDRequired        = fmt.Errorf("tenant ID is required")
+	ErrInvalidInput            = fmt.Errorf("invalid input")
+	ErrUnauthorized            = fmt.Errorf("unauthorized")
+	ErrReservationConflict     = fmt.Errorf("reservation conflicts with existing reservations")
 	ErrInvalidStatusTransition = fmt.Errorf("invalid status transition")
 )
 

@@ -3,13 +3,13 @@ package domain
 import "fmt"
 
 var (
-	ErrRecordNotFound      = fmt.Errorf("maintenance record not found")
-	ErrScheduleNotFound    = fmt.Errorf("maintenance schedule not found")
-	ErrEquipmentNotFound   = fmt.Errorf("equipment not found")
-	ErrInvalidStatus       = fmt.Errorf("invalid maintenance status")
-	ErrTenantIDRequired    = fmt.Errorf("tenant ID is required")
-	ErrInvalidInput        = fmt.Errorf("invalid input")
-	ErrUnauthorized        = fmt.Errorf("unauthorized")
+	ErrRecordNotFound    = fmt.Errorf("maintenance record not found")
+	ErrScheduleNotFound  = fmt.Errorf("maintenance schedule not found")
+	ErrEquipmentNotFound = fmt.Errorf("equipment not found")
+	ErrInvalidStatus     = fmt.Errorf("invalid maintenance status")
+	ErrTenantIDRequired  = fmt.Errorf("tenant ID is required")
+	ErrInvalidInput      = fmt.Errorf("invalid input")
+	ErrUnauthorized      = fmt.Errorf("unauthorized")
 )
 
 type DomainError struct {

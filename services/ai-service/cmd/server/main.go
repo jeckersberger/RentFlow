@@ -80,4 +80,3 @@ func main() {
 
 	log.Info("Server stopped")
 }
-

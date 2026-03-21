@@ -64,9 +64,9 @@ type SetLocationCommand struct {
 }
 
 type AddImageCommand struct {
-	ID         string
-	TenantID   string
-	ImageRef   string
+	ID       string
+	TenantID string
+	ImageRef string
 }
 
 type DeleteEquipmentCommand struct {
@@ -87,11 +87,11 @@ type CreateCategoryCommand struct {
 }
 
 type UpdateCategoryCommand struct {
-	ID       string
-	TenantID string
-	Name     string
-	Icon     string
-	Color    string
+	ID        string
+	TenantID  string
+	Name      string
+	Icon      string
+	Color     string
 	SortOrder int
 }
 

@@ -286,4 +286,3 @@ func (r *PostgresUserRepository) scanUserFromRow(rows *sql.Rows) (*domain.User, 
 
 	return user, nil
 }
-

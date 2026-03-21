@@ -37,9 +37,9 @@ type RejectShareRequestCommand struct {
 }
 
 type ShareEquipmentCommand struct {
-	TenantID    string  `json:"tenant_id"`
-	EquipmentID string  `json:"equipment_id"`
-	PeerID      string  `json:"peer_id"`
+	TenantID     string  `json:"tenant_id"`
+	EquipmentID  string  `json:"equipment_id"`
+	PeerID       string  `json:"peer_id"`
 	Availability string  `json:"availability"`
-	PricePerDay float64 `json:"price_per_day"`
+	PricePerDay  float64 `json:"price_per_day"`
 }

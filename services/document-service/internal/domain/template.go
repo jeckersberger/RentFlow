@@ -18,15 +18,15 @@ const (
 
 type Template struct {
 	events.AggregateRoot
-	TenantID    string
-	Name        string
-	Type        TemplateType
-	Content     string
-	Variables   []string
-	IsDefault   bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	CreatedBy   string
+	TenantID  string
+	Name      string
+	Type      TemplateType
+	Content   string
+	Variables []string
+	IsDefault bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	CreatedBy string
 }
 
 func NewTemplate(id, tenantID, name string, templateType TemplateType, content string, variables []string, createdBy string) *Template {

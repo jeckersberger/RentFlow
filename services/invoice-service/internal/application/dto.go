@@ -8,32 +8,32 @@ import (
 
 // InvoiceDTO for API responses
 type InvoiceDTO struct {
-	ID            string                `json:"id"`
-	TenantID      string                `json:"tenant_id"`
-	InvoiceNumber string                `json:"invoice_number"`
-	ProjectID     *string               `json:"project_id,omitempty"`
-	ClientName    string                `json:"client_name"`
-	ClientAddress AddressDTO            `json:"client_address"`
-	ClientEmail   string                `json:"client_email"`
-	ClientTaxID   string                `json:"client_tax_id"`
-	Items         []InvoiceItemDTO      `json:"items"`
-	SubTotal      float64               `json:"sub_total"`
-	TaxRate       float64               `json:"tax_rate"`
-	TaxAmount     float64               `json:"tax_amount"`
-	Total         float64               `json:"total"`
-	Currency      string                `json:"currency"`
-	Status        string                `json:"status"`
-	IssueDate     time.Time             `json:"issue_date"`
-	DueDate       time.Time             `json:"due_date"`
-	PaidDate      *time.Time            `json:"paid_date,omitempty"`
-	PaymentMethod string                `json:"payment_method"`
-	PaymentRef    string                `json:"payment_ref"`
-	Notes         string                `json:"notes"`
-	InternalNotes string                `json:"internal_notes"`
-	PDFRef        string                `json:"pdf_ref"`
-	Hash          string                `json:"hash"`
-	CreatedAt     time.Time             `json:"created_at"`
-	UpdatedAt     time.Time             `json:"updated_at"`
+	ID            string           `json:"id"`
+	TenantID      string           `json:"tenant_id"`
+	InvoiceNumber string           `json:"invoice_number"`
+	ProjectID     *string          `json:"project_id,omitempty"`
+	ClientName    string           `json:"client_name"`
+	ClientAddress AddressDTO       `json:"client_address"`
+	ClientEmail   string           `json:"client_email"`
+	ClientTaxID   string           `json:"client_tax_id"`
+	Items         []InvoiceItemDTO `json:"items"`
+	SubTotal      float64          `json:"sub_total"`
+	TaxRate       float64          `json:"tax_rate"`
+	TaxAmount     float64          `json:"tax_amount"`
+	Total         float64          `json:"total"`
+	Currency      string           `json:"currency"`
+	Status        string           `json:"status"`
+	IssueDate     time.Time        `json:"issue_date"`
+	DueDate       time.Time        `json:"due_date"`
+	PaidDate      *time.Time       `json:"paid_date,omitempty"`
+	PaymentMethod string           `json:"payment_method"`
+	PaymentRef    string           `json:"payment_ref"`
+	Notes         string           `json:"notes"`
+	InternalNotes string           `json:"internal_notes"`
+	PDFRef        string           `json:"pdf_ref"`
+	Hash          string           `json:"hash"`
+	CreatedAt     time.Time        `json:"created_at"`
+	UpdatedAt     time.Time        `json:"updated_at"`
 }
 
 // InvoiceItemDTO represents a line item
@@ -104,14 +104,14 @@ type PaginatedResult struct {
 
 // DATEVExportRow for German tax export
 type DATEVExportRow struct {
-	Umsatz       float64 `json:"umsatz"`           // Amount
-	SollHaben    string  `json:"soll_haben"`       // "S" or "H"
-	WKZUmsatz    string  `json:"wkz_umsatz"`       // EUR
-	Konto        string  `json:"konto"`            // GL account (SKR03: 8400, 8300, etc.)
-	Gegenkonto   string  `json:"gegenkonto"`       // AR account
-	Belegdatum   string  `json:"belegdatum"`       // DDMM
-	Belegnummer  string  `json:"belegnummer"`      // Invoice number
-	Buchungstext string  `json:"buchungstext"`     // Booking text
+	Umsatz       float64 `json:"umsatz"`       // Amount
+	SollHaben    string  `json:"soll_haben"`   // "S" or "H"
+	WKZUmsatz    string  `json:"wkz_umsatz"`   // EUR
+	Konto        string  `json:"konto"`        // GL account (SKR03: 8400, 8300, etc.)
+	Gegenkonto   string  `json:"gegenkonto"`   // AR account
+	Belegdatum   string  `json:"belegdatum"`   // DDMM
+	Belegnummer  string  `json:"belegnummer"`  // Invoice number
+	Buchungstext string  `json:"buchungstext"` // Booking text
 }
 
 // Converter functions

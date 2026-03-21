@@ -62,16 +62,16 @@ func NewScanEvent(
 	deviceType DeviceType,
 ) *ScanEvent {
 	return &ScanEvent{
-		ID:        id,
-		TenantID:  tenantID,
-		Barcode:   barcode,
-		ScanType:  scanType,
-		UserID:    userID,
-		DeviceID:  deviceID,
+		ID:         id,
+		TenantID:   tenantID,
+		Barcode:    barcode,
+		ScanType:   scanType,
+		UserID:     userID,
+		DeviceID:   deviceID,
 		DeviceType: deviceType,
-		Timestamp: time.Now(),
-		Status:    ScanPending,
-		CreatedAt: time.Now(),
+		Timestamp:  time.Now(),
+		Status:     ScanPending,
+		CreatedAt:  time.Now(),
 	}
 }
 
@@ -105,25 +105,25 @@ func (s *ScanEvent) MarkSynced() {
 }
 
 type Device struct {
-	ID       string
-	TenantID string
-	Name     string
-	Type     DeviceType
-	Serial   string
-	Active   bool
-	Location string
+	ID        string
+	TenantID  string
+	Name      string
+	Type      DeviceType
+	Serial    string
+	Active    bool
+	Location  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 func NewDevice(id, tenantID, name string, deviceType DeviceType, serial string) *Device {
 	return &Device{
-		ID:       id,
-		TenantID: tenantID,
-		Name:     name,
-		Type:     deviceType,
-		Serial:   serial,
-		Active:   true,
+		ID:        id,
+		TenantID:  tenantID,
+		Name:      name,
+		Type:      deviceType,
+		Serial:    serial,
+		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

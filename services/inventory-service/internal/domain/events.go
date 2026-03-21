@@ -92,17 +92,17 @@ type FlightcaseCreatedEvent struct {
 }
 
 type FlightcaseItemAddedEvent struct {
-	FlightcaseID  string    `json:"flightcase_id"`
-	TenantID      string    `json:"tenant_id"`
-	EquipmentID   string    `json:"equipment_id"`
-	Quantity      int       `json:"quantity"`
-	AddedAt       time.Time `json:"added_at"`
+	FlightcaseID string    `json:"flightcase_id"`
+	TenantID     string    `json:"tenant_id"`
+	EquipmentID  string    `json:"equipment_id"`
+	Quantity     int       `json:"quantity"`
+	AddedAt      time.Time `json:"added_at"`
 }
 
 type FlightcaseItemRemovedEvent struct {
-	FlightcaseID  string    `json:"flightcase_id"`
-	TenantID      string    `json:"tenant_id"`
-	EquipmentID   string    `json:"equipment_id"`
-	Quantity      int       `json:"quantity"`
-	RemovedAt     time.Time `json:"removed_at"`
+	FlightcaseID string    `json:"flightcase_id"`
+	TenantID     string    `json:"tenant_id"`
+	EquipmentID  string    `json:"equipment_id"`
+	Quantity     int       `json:"quantity"`
+	RemovedAt    time.Time `json:"removed_at"`
 }

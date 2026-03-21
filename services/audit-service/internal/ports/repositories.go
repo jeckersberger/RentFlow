@@ -2,8 +2,8 @@ package ports
 
 import (
 	"context"
-	"time"
 	"github.com/jeckersberger/rentflow/services/audit-service/internal/domain"
+	"time"
 )
 
 type AuditEntryRepository interface {

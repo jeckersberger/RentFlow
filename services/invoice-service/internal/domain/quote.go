@@ -31,23 +31,23 @@ func (s QuoteStatus) IsValidStatus() bool {
 // Quote represents an estimate/Angebot
 type Quote struct {
 	events.AggregateRoot
-	TenantID    string
-	QuoteNumber string
-	ProjectID   *string
-	ClientName  string
-	ClientEmail string
+	TenantID      string
+	QuoteNumber   string
+	ProjectID     *string
+	ClientName    string
+	ClientEmail   string
 	ClientAddress Address
-	Items       []InvoiceItem // reuse same item structure
-	SubTotal    float64
-	TaxRate     TaxRate
-	TaxAmount   float64
-	Total       float64
-	Currency    string
-	Status      QuoteStatus
-	ValidUntil  time.Time
-	Notes       string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Items         []InvoiceItem // reuse same item structure
+	SubTotal      float64
+	TaxRate       TaxRate
+	TaxAmount     float64
+	Total         float64
+	Currency      string
+	Status        QuoteStatus
+	ValidUntil    time.Time
+	Notes         string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 // NewQuote creates a new quote aggregate

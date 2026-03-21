@@ -27,10 +27,10 @@ type SyncOfflineCommand struct {
 }
 
 type RegisterDeviceCommand struct {
-	TenantID   string
-	Name       string
-	Type       domain.DeviceType
-	Serial     string
-	Location   string
+	TenantID        string
+	Name            string
+	Type            domain.DeviceType
+	Serial          string
+	Location        string
 	CreatedByUserID string
 }

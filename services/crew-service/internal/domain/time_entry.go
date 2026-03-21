@@ -11,9 +11,9 @@ type TimeEntryType string
 type TimeEntryStatus string
 
 const (
-	TimeTypWork    TimeEntryType = "work"
-	TimeTypeTravel TimeEntryType = "travel"
-	TimeTypeSetup  TimeEntryType = "setup"
+	TimeTypWork      TimeEntryType = "work"
+	TimeTypeTravel   TimeEntryType = "travel"
+	TimeTypeSetup    TimeEntryType = "setup"
 	TimeTypeTeardown TimeEntryType = "teardown"
 )
 
@@ -25,19 +25,19 @@ const (
 
 type TimeEntry struct {
 	events.AggregateRoot
-	TenantID      string
-	CrewMemberID  string
-	ProjectID     string
-	Date          time.Time
-	StartTime     time.Time
-	EndTime       time.Time
-	BreakMinutes  int
-	TotalHours    float64
-	Type          TimeEntryType
-	Notes         string
-	Status        TimeEntryStatus
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	TenantID     string
+	CrewMemberID string
+	ProjectID    string
+	Date         time.Time
+	StartTime    time.Time
+	EndTime      time.Time
+	BreakMinutes int
+	TotalHours   float64
+	Type         TimeEntryType
+	Notes        string
+	Status       TimeEntryStatus
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 func NewTimeEntry(id, tenantID, crewMemberID, projectID string, date time.Time, startTime, endTime time.Time, entryType TimeEntryType) *TimeEntry {

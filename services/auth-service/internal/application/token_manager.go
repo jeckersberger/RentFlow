@@ -12,11 +12,11 @@ import (
 
 // TokenManager handles JWT token creation and validation
 type TokenManager struct {
-	secret              string
-	accessTokenExpiry   time.Duration
-	refreshTokenExpiry  time.Duration
-	issuer              string
-	audience            []string
+	secret             string
+	accessTokenExpiry  time.Duration
+	refreshTokenExpiry time.Duration
+	issuer             string
+	audience           []string
 }
 
 // NewTokenManager creates a new token manager
@@ -32,13 +32,13 @@ func NewTokenManager(secret string) *TokenManager {
 
 // AccessTokenClaims represents claims in an access token
 type AccessTokenClaims struct {
-	Subject       string   `json:"sub"`     // user_id
-	Issuer        string   `json:"iss"`     // issuer
-	Audience      []string `json:"aud"`     // audience
-	ExpiresAt     int64    `json:"exp"`     // expiration time
-	IssuedAt      int64    `json:"iat"`     // issued at
-	NotBefore     int64    `json:"nbf"`     // not before
-	JWTID         string   `json:"jti"`     // JWT ID
+	Subject       string   `json:"sub"` // user_id
+	Issuer        string   `json:"iss"` // issuer
+	Audience      []string `json:"aud"` // audience
+	ExpiresAt     int64    `json:"exp"` // expiration time
+	IssuedAt      int64    `json:"iat"` // issued at
+	NotBefore     int64    `json:"nbf"` // not before
+	JWTID         string   `json:"jti"` // JWT ID
 	TenantID      string   `json:"tenant_id"`
 	Email         string   `json:"email"`
 	EmailVerified bool     `json:"email_verified"`
@@ -51,14 +51,14 @@ type AccessTokenClaims struct {
 
 // RefreshTokenClaims represents claims in a refresh token
 type RefreshTokenClaims struct {
-	Subject   string `json:"sub"`     // user_id
-	Issuer    string `json:"iss"`     // issuer
-	Audience  []string `json:"aud"`   // audience
-	ExpiresAt int64  `json:"exp"`     // expiration time
-	IssuedAt  int64  `json:"iat"`     // issued at
-	JWTID     string `json:"jti"`     // JWT ID
-	TenantID  string `json:"tenant_id"`
-	Email     string `json:"email"`
+	Subject   string   `json:"sub"` // user_id
+	Issuer    string   `json:"iss"` // issuer
+	Audience  []string `json:"aud"` // audience
+	ExpiresAt int64    `json:"exp"` // expiration time
+	IssuedAt  int64    `json:"iat"` // issued at
+	JWTID     string   `json:"jti"` // JWT ID
+	TenantID  string   `json:"tenant_id"`
+	Email     string   `json:"email"`
 }
 
 // CreateAccessToken creates a new access token

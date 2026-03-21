@@ -41,14 +41,14 @@ type AddressDTO struct {
 }
 
 type PacklistDTO struct {
-	ID        string             `json:"id"`
-	ProjectID string             `json:"project_id"`
-	TenantID  string             `json:"tenant_id"`
-	Name      string             `json:"name"`
-	Items     []PacklistItemDTO  `json:"items"`
-	Status    string             `json:"status"`
-	CreatedAt time.Time          `json:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at"`
+	ID        string            `json:"id"`
+	ProjectID string            `json:"project_id"`
+	TenantID  string            `json:"tenant_id"`
+	Name      string            `json:"name"`
+	Items     []PacklistItemDTO `json:"items"`
+	Status    string            `json:"status"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
 }
 
 type PacklistItemDTO struct {
@@ -85,13 +85,13 @@ type PaginatedResult struct {
 
 func ProjectToDTO(p *domain.Project) *ProjectDTO {
 	return &ProjectDTO{
-		ID:              p.ID,
-		TenantID:        p.TenantID,
-		Name:            p.Name,
-		Description:     p.Description,
-		ClientName:      p.ClientName,
-		ClientEmail:     p.ClientEmail,
-		ClientPhone:     p.ClientPhone,
+		ID:          p.ID,
+		TenantID:    p.TenantID,
+		Name:        p.Name,
+		Description: p.Description,
+		ClientName:  p.ClientName,
+		ClientEmail: p.ClientEmail,
+		ClientPhone: p.ClientPhone,
 		ClientAddress: AddressDTO{
 			Street:      p.ClientAddress.Street,
 			City:        p.ClientAddress.City,

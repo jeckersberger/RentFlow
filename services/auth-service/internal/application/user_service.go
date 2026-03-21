@@ -14,11 +14,11 @@ import (
 
 // UserService handles user-related business logic
 type UserService struct {
-	userRepo       ports.UserRepository
-	tenantRepo     ports.TenantRepository
-	passwordMgr    *PasswordManager
-	tokenMgr       *TokenManager
-	logger         logger.Logger
+	userRepo    ports.UserRepository
+	tenantRepo  ports.TenantRepository
+	passwordMgr *PasswordManager
+	tokenMgr    *TokenManager
+	logger      logger.Logger
 }
 
 // NewUserService creates a new user service
@@ -132,8 +132,8 @@ func (s *UserService) Login(ctx context.Context, cmd LoginCommand) (*TokenPair, 
 		fmt.Sprintf("%s %s", user.FirstName, user.LastName),
 		user.Roles,
 		jti,
-		"", // ipAddress - could come from request
-		"", // userAgentHash - could come from request
+		"",  // ipAddress - could come from request
+		"",  // userAgentHash - could come from request
 		jti, // sessionID
 	)
 	if err != nil {

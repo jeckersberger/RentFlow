@@ -45,10 +45,10 @@ type StartInventoryCheckCommand struct {
 }
 
 type ScanInventoryItemCommand struct {
-	TenantID       string
-	CheckID        string
-	EquipmentID    string
-	Notes          string
+	TenantID    string
+	CheckID     string
+	EquipmentID string
+	Notes       string
 }
 
 type CompleteInventoryCheckCommand struct {

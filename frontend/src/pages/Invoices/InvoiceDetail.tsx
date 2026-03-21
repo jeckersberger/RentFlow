@@ -166,6 +166,7 @@ function InvoiceDetailPage() {
               </tr>
             </thead>
             <tbody>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {invoice.line_items.map((item: any, idx: number) => (
                 <tr
                   key={idx}

@@ -1,16 +1,16 @@
 package application
 
 type CreateDocumentCommand struct {
-	TenantID    string
-	Name        string
-	Type        string
-	EntityType  string
-	EntityID    string
-	FileRef     string
-	MimeType    string
-	Size        int64
-	Checksum    string
-	CreatedBy   string
+	TenantID   string
+	Name       string
+	Type       string
+	EntityType string
+	EntityID   string
+	FileRef    string
+	MimeType   string
+	Size       int64
+	Checksum   string
+	CreatedBy  string
 }
 
 type GenerateDocumentCommand struct {
@@ -41,7 +41,7 @@ type UpdateTemplateCommand struct {
 }
 
 type SetTemplateDefaultCommand struct {
-	ID       string
-	TenantID string
+	ID        string
+	TenantID  string
 	IsDefault bool
 }

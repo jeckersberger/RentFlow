@@ -43,12 +43,12 @@ type PacklistItem struct {
 type PacklistItemStatus string
 
 const (
-	PacklistItemPending   PacklistItemStatus = "pending"
-	PacklistItemPacked    PacklistItemStatus = "packed"
-	PacklistItemLoaded    PacklistItemStatus = "loaded"
-	PacklistItemReturned  PacklistItemStatus = "returned"
-	PacklistItemMissing   PacklistItemStatus = "missing"
-	PacklistItemDamaged   PacklistItemStatus = "damaged"
+	PacklistItemPending  PacklistItemStatus = "pending"
+	PacklistItemPacked   PacklistItemStatus = "packed"
+	PacklistItemLoaded   PacklistItemStatus = "loaded"
+	PacklistItemReturned PacklistItemStatus = "returned"
+	PacklistItemMissing  PacklistItemStatus = "missing"
+	PacklistItemDamaged  PacklistItemStatus = "damaged"
 )
 
 func NewPacklist(id, projectID, tenantID, name string) *Packlist {

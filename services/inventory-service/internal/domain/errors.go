@@ -4,15 +4,15 @@ import "fmt"
 
 // Domain errors
 var (
-	ErrEquipmentNotFound      = fmt.Errorf("equipment not found")
-	ErrCategoryNotFound       = fmt.Errorf("category not found")
-	ErrFlightcaseNotFound     = fmt.Errorf("flightcase not found")
-	ErrBarcodeAlreadyExists   = fmt.Errorf("barcode already exists")
-	ErrInvalidEquipmentStatus = fmt.Errorf("invalid equipment status")
+	ErrEquipmentNotFound         = fmt.Errorf("equipment not found")
+	ErrCategoryNotFound          = fmt.Errorf("category not found")
+	ErrFlightcaseNotFound        = fmt.Errorf("flightcase not found")
+	ErrBarcodeAlreadyExists      = fmt.Errorf("barcode already exists")
+	ErrInvalidEquipmentStatus    = fmt.Errorf("invalid equipment status")
 	ErrInvalidEquipmentCondition = fmt.Errorf("invalid equipment condition")
-	ErrTenantIDRequired       = fmt.Errorf("tenant ID is required")
-	ErrInvalidInput           = fmt.Errorf("invalid input")
-	ErrUnauthorized           = fmt.Errorf("unauthorized")
+	ErrTenantIDRequired          = fmt.Errorf("tenant ID is required")
+	ErrInvalidInput              = fmt.Errorf("invalid input")
+	ErrUnauthorized              = fmt.Errorf("unauthorized")
 )
 
 type DomainError struct {

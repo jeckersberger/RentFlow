@@ -479,8 +479,8 @@ func (h *Handler) CreateDunningReminder(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var payload struct {
-		Level     int     `json:"level"`
-		DaysToAdd int     `json:"days_to_add"`
+		Level     int      `json:"level"`
+		DaysToAdd int      `json:"days_to_add"`
 		Fee       *float64 `json:"fee,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
