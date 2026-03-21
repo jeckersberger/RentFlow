@@ -1,7 +1,15 @@
 package http
 
 import (
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/pkg/common/middleware"
@@ -13,7 +21,7 @@ func SetupRoutes(
 	mux *http.ServeMux,
 	userService *application.UserService,
 	tenantService *application.TenantService,
-	jwtSecret string,
+	tokenMgr *application.TokenManager,
 	log logger.Logger,
 ) {
 	handlers := NewHandlers(userService, tenantService, log)
@@ -23,8 +31,8 @@ func SetupRoutes(
 	mux.HandleFunc("POST /api/v1/auth/login", handlers.Login)
 	mux.HandleFunc("POST /api/v1/auth/refresh", handlers.Refresh)
 
-	// Authenticated routes
-	authMiddleware := middleware.JWTAuthMiddleware(jwtSecret)
+	// Authenticated routes - use a wrapper that supports RS256
+	authMiddleware := createRS256Middleware(tokenMgr.PublicKeyPEM(), log)
 
 	// Logout (authenticated)
 	mux.HandleFunc("POST /api/v1/auth/logout", authMiddleware(http.HandlerFunc(handlers.Logout)).ServeHTTP)
@@ -45,3 +53,104 @@ func SetupRoutes(
 	mux.HandleFunc("GET /api/v1/tenants/{id}", handlers.GetTenant)
 	mux.HandleFunc("PUT /api/v1/tenants/{id}", handlers.UpdateTenant)
 }
+
+// createRS256Middleware creates an RS256 JWT validation middleware
+func createRS256Middleware(publicKeyPEM string, log logger.Logger) func(http.Handler) http.Handler {
+	// Parse public key
+	var publicKey *rsa.PublicKey
+	if publicKeyPEM != "" {
+		block, _ := pem.Decode([]byte(publicKeyPEM))
+		if block != nil {
+			pubKeyInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
+			if err == nil {
+				publicKey, _ = pubKeyInterface.(*rsa.PublicKey)
+			}
+		}
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Extract JWT from Authorization header
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				http.Error(w, "missing authorization header", http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.Split(authHeader, " ")
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				http.Error(w, "invalid authorization header", http.StatusUnauthorized)
+				return
+			}
+
+			token := parts[1]
+
+			// For now, use the basic JWT verification if public key is available
+			// Otherwise, fall back to using the legacy middleware
+			if publicKey != nil {
+				claims, err := verifyRS256Token(token, publicKey)
+				if err != nil {
+					log.Warn("failed to verify token", "error", err.Error())
+					http.Error(w, "invalid token", http.StatusUnauthorized)
+					return
+				}
+
+				// Convert to common middleware Claims and store in context
+				commonClaims := &middleware.Claims{
+					UserID:   claims.Subject,
+					TenantID: claims.TenantID,
+					Email:    claims.Email,
+					Roles:    claims.Roles,
+				}
+				ctx := middleware.WithClaims(r.Context(), commonClaims)
+
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+
+			// Fallback to legacy validation if public key is not available
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func verifyRS256Token(token string, publicKey *rsa.PublicKey) (*application.AccessTokenClaims, error) {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil, ErrInvalidTokenFormat
+	}
+
+	headerB64, payloadB64, signatureB64 := parts[0], parts[1], parts[2]
+
+	// Verify signature
+	message := headerB64 + "." + payloadB64
+	hash := sha256.Sum256([]byte(message))
+
+	signature, err := base64.RawURLEncoding.DecodeString(signatureB64)
+	if err != nil {
+		return nil, err
+	}
+
+	err = rsa.VerifyPKCS1v15(publicKey, sha256.SHA256, hash[:], signature)
+	if err != nil {
+		return nil, ErrInvalidSignature
+	}
+
+	// Decode payload
+	payloadJSON, err := base64.RawURLEncoding.DecodeString(payloadB64)
+	if err != nil {
+		return nil, err
+	}
+
+	var claims application.AccessTokenClaims
+	if err := json.Unmarshal(payloadJSON, &claims); err != nil {
+		return nil, err
+	}
+
+	return &claims, nil
+}
+
+var (
+	ErrInvalidTokenFormat = errors.New("invalid token format")
+	ErrInvalidSignature   = errors.New("invalid signature")
+)

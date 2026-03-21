@@ -665,3 +665,85 @@ func formatDATEVRow(row *application.DATEVExportRow) string {
 		row.Gegenkonto, row.Belegdatum, row.Belegnummer, row.Buchungstext,
 	)
 }
+
+// New Invoice Service Methods
+
+func (h *Handler) GetOpenInvoices(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	summary, err := h.invoiceSvc.GetOpenInvoices(r.Context(), tenantID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, summary)
+}
+
+func (h *Handler) GetInvoicePDF(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	html, err := h.invoiceSvc.GenerateInvoicePDF(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(html))
+}
+
+func (h *Handler) GetQuotePDF(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	html, err := h.quoteSvc.GenerateQuotePDF(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(html))
+}
+
+func (h *Handler) CreateInvoiceFromProject(w http.ResponseWriter, r *http.Request) {
+	projectID := r.PathValue("projectId")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		ClientName string `json:"client_name"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	dto, err := h.invoiceSvc.CreateInvoiceFromProject(r.Context(), tenantID, projectID, payload.ClientName)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}

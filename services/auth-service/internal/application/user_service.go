@@ -25,14 +25,14 @@ type UserService struct {
 func NewUserService(
 	userRepo ports.UserRepository,
 	tenantRepo ports.TenantRepository,
-	tokenSecret string,
+	tokenMgr *TokenManager,
 	log logger.Logger,
 ) *UserService {
 	return &UserService{
 		userRepo:    userRepo,
 		tenantRepo:  tenantRepo,
 		passwordMgr: NewPasswordManager(),
-		tokenMgr:    NewTokenManager(tokenSecret),
+		tokenMgr:    tokenMgr,
 		logger:      log,
 	}
 }
@@ -98,9 +98,23 @@ func (s *UserService) Login(ctx context.Context, cmd LoginCommand) (*TokenPair, 
 		return nil, domain.ErrInvalidCredentials
 	}
 
-	// Check if user is locked
-	if user.Status == domain.UserStatusLocked {
-		return nil, domain.ErrUserLocked
+	// Check if user is locked and handle auto-unlock
+	if user.IsLocked() {
+		if user.ShouldAutoUnlock() {
+			// Auto-unlock the account
+			user.Unlock()
+			if err := s.userRepo.Save(ctx, user); err != nil {
+				s.logger.Error("failed to auto-unlock user", err, "id", user.ID)
+			}
+			s.logger.Info("user auto-unlocked", "id", user.ID, "email", user.Email)
+		} else {
+			return nil, domain.ErrUserLocked
+		}
+	}
+
+	// Check if user is inactive
+	if user.Status == domain.UserStatusInactive {
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	// Verify password
@@ -109,11 +123,6 @@ func (s *UserService) Login(ctx context.Context, cmd LoginCommand) (*TokenPair, 
 		user.RecordFailedLogin()
 		s.userRepo.Save(ctx, user)
 		s.logger.Warn("failed login attempt", "email", cmd.Email, "failedAttempts", user.FailedLogins)
-		return nil, domain.ErrInvalidCredentials
-	}
-
-	// Check if user is inactive
-	if user.Status == domain.UserStatusInactive {
 		return nil, domain.ErrInvalidCredentials
 	}
 

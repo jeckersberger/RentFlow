@@ -28,7 +28,7 @@ func NewPostgresUserRepository(db *sql.DB, log logger.Logger) *PostgresUserRepos
 func (r *PostgresUserRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
 	query := `
 		SELECT id, tenant_id, email, password_hash, first_name, last_name,
-		       roles, status, failed_logins, last_login_at, created_at, updated_at
+		       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 		FROM auth.users
 		WHERE id = $1
 	`
@@ -45,7 +45,7 @@ func (r *PostgresUserRepository) FindByEmail(ctx context.Context, tenantID, emai
 	if tenantID != "" {
 		query = `
 			SELECT id, tenant_id, email, password_hash, first_name, last_name,
-			       roles, status, failed_logins, last_login_at, created_at, updated_at
+			       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 			FROM auth.users
 			WHERE tenant_id = $1 AND email = $2
 		`
@@ -53,7 +53,7 @@ func (r *PostgresUserRepository) FindByEmail(ctx context.Context, tenantID, emai
 	} else {
 		query = `
 			SELECT id, tenant_id, email, password_hash, first_name, last_name,
-			       roles, status, failed_logins, last_login_at, created_at, updated_at
+			       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 			FROM auth.users
 			WHERE email = $1
 		`
@@ -80,7 +80,7 @@ func (r *PostgresUserRepository) List(ctx context.Context, tenantID string, page
 	// Query users
 	query := `
 		SELECT id, tenant_id, email, password_hash, first_name, last_name,
-		       roles, status, failed_logins, last_login_at, created_at, updated_at
+		       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 		FROM auth.users
 		WHERE tenant_id = $1
 		ORDER BY created_at DESC
@@ -130,7 +130,7 @@ func (r *PostgresUserRepository) Save(ctx context.Context, user *domain.User) er
 		query := `
 			UPDATE auth.users
 			SET email = $2, password_hash = $3, first_name = $4, last_name = $5,
-			    roles = $6, status = $7, failed_logins = $8, last_login_at = $9, updated_at = $10
+			    roles = $6, status = $7, failed_logins = $8, last_login_at = $9, locked_at = $10, updated_at = $11
 			WHERE id = $1
 		`
 		_, err := r.db.ExecContext(ctx, query,
@@ -143,6 +143,7 @@ func (r *PostgresUserRepository) Save(ctx context.Context, user *domain.User) er
 			string(user.Status),
 			user.FailedLogins,
 			user.LastLoginAt,
+			user.LockedAt,
 			now,
 		)
 		if err != nil {
@@ -153,8 +154,8 @@ func (r *PostgresUserRepository) Save(ctx context.Context, user *domain.User) er
 		// Insert
 		query := `
 			INSERT INTO auth.users
-			(id, tenant_id, email, password_hash, first_name, last_name, roles, status, failed_logins, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			(id, tenant_id, email, password_hash, first_name, last_name, roles, status, failed_logins, locked_at, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		`
 		_, err := r.db.ExecContext(ctx, query,
 			user.ID,
@@ -166,6 +167,7 @@ func (r *PostgresUserRepository) Save(ctx context.Context, user *domain.User) er
 			rolesJSON,
 			string(user.Status),
 			user.FailedLogins,
+			user.LockedAt,
 			now,
 			now,
 		)
@@ -200,11 +202,11 @@ func (r *PostgresUserRepository) scanUserRow(row *sql.Row) (*domain.User, error)
 	var id, tenantID, email, passwordHash, firstName, lastName, status string
 	var rolesStr sql.NullString
 	var failedLogins int
-	var lastLoginAt sql.NullTime
+	var lastLoginAt, lockedAt sql.NullTime
 	var createdAt, updatedAt time.Time
 
 	err := row.Scan(&id, &tenantID, &email, &passwordHash, &firstName, &lastName,
-		&rolesStr, &status, &failedLogins, &lastLoginAt, &createdAt, &updatedAt)
+		&rolesStr, &status, &failedLogins, &lastLoginAt, &lockedAt, &createdAt, &updatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -240,6 +242,10 @@ func (r *PostgresUserRepository) scanUserRow(row *sql.Row) (*domain.User, error)
 		user.LastLoginAt = &lastLoginAt.Time
 	}
 
+	if lockedAt.Valid {
+		user.LockedAt = &lockedAt.Time
+	}
+
 	return user, nil
 }
 
@@ -247,11 +253,11 @@ func (r *PostgresUserRepository) scanUserFromRow(rows *sql.Rows) (*domain.User, 
 	var id, tenantID, email, passwordHash, firstName, lastName, status string
 	var rolesStr sql.NullString
 	var failedLogins int
-	var lastLoginAt sql.NullTime
+	var lastLoginAt, lockedAt sql.NullTime
 	var createdAt, updatedAt time.Time
 
 	err := rows.Scan(&id, &tenantID, &email, &passwordHash, &firstName, &lastName,
-		&rolesStr, &status, &failedLogins, &lastLoginAt, &createdAt, &updatedAt)
+		&rolesStr, &status, &failedLogins, &lastLoginAt, &lockedAt, &createdAt, &updatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +288,10 @@ func (r *PostgresUserRepository) scanUserFromRow(rows *sql.Rows) (*domain.User, 
 
 	if lastLoginAt.Valid {
 		user.LastLoginAt = &lastLoginAt.Time
+	}
+
+	if lockedAt.Valid {
+		user.LockedAt = &lockedAt.Time
 	}
 
 	return user, nil

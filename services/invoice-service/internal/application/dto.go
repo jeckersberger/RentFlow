@@ -227,3 +227,11 @@ func DunningToDTO(dunning *domain.DunningEntry) *DunningDTO {
 		UpdatedAt:     dunning.UpdatedAt,
 	}
 }
+
+type OpenInvoicesSummaryDTO struct {
+	TotalOpen      float64     `json:"total_open"`
+	TotalOverdue   float64     `json:"total_overdue"`
+	CountOpen      int         `json:"count_open"`
+	CountOverdue   int         `json:"count_overdue"`
+	Invoices       []*InvoiceDTO `json:"invoices"`
+}

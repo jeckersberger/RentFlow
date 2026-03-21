@@ -373,3 +373,264 @@ func (s *InvoiceService) GetOverdueInvoices(ctx context.Context, tenantID string
 
 	return dtos, nil
 }
+
+// GetOpenInvoices returns summary of open and overdue invoices
+func (s *InvoiceService) GetOpenInvoices(ctx context.Context, tenantID string) (*OpenInvoicesSummaryDTO, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	invoices, err := s.invoiceRepo.GetOverdueInvoices(ctx, tenantID)
+	if err != nil {
+		return nil, domain.NewDomainError("QUERY_ERROR", "failed to get open invoices", err)
+	}
+
+	dtos := make([]*InvoiceDTO, len(invoices))
+	var totalOpen, totalOverdue float64
+	var countOpen, countOverdue int
+
+	now := time.Now()
+	for i, inv := range invoices {
+		dtos[i] = InvoiceToDTO(inv)
+		if inv.Status == domain.InvoiceOverdue || inv.DueDate.Before(now) {
+			totalOverdue += inv.Total
+			countOverdue++
+		} else {
+			totalOpen += inv.Total
+			countOpen++
+		}
+	}
+
+	return &OpenInvoicesSummaryDTO{
+		TotalOpen:    totalOpen,
+		TotalOverdue: totalOverdue,
+		CountOpen:    countOpen,
+		CountOverdue: countOverdue,
+		Invoices:     dtos,
+	}, nil
+}
+
+// GenerateInvoicePDF generates printable invoice HTML
+func (s *InvoiceService) GenerateInvoicePDF(ctx context.Context, tenantID, invoiceID string) (string, error) {
+	invoice, err := s.invoiceRepo.GetByID(ctx, tenantID, invoiceID)
+	if err != nil {
+		return "", domain.NewDomainError("NOT_FOUND", "invoice not found", err)
+	}
+
+	html := buildInvoiceHTML(invoice)
+	return html, nil
+}
+
+// GenerateQuotePDF generates printable quote HTML
+func (s *InvoiceService) GenerateQuotePDF(ctx context.Context, tenantID, quoteID string) (string, error) {
+	// Placeholder for quote service call
+	quote := &domain.Quote{}
+	html := buildQuoteHTML(quote)
+	return html, nil
+}
+
+// CreateInvoiceFromProject creates invoice from project reference
+func (s *InvoiceService) CreateInvoiceFromProject(ctx context.Context, tenantID, projectID string, clientName string) (*InvoiceDTO, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if projectID == "" {
+		return nil, domain.NewDomainError("INVALID_INPUT", "project ID is required", nil)
+	}
+
+	seq, err := s.seqRepo.GetNextNumber(ctx, tenantID, "invoice")
+	if err != nil {
+		return nil, domain.NewDomainError("SEQUENCE_ERROR", "failed to get next invoice number", err)
+	}
+
+	now := time.Now()
+	invoiceNumber := fmt.Sprintf("RF-%d-%04d", now.Year(), seq)
+
+	invoice := domain.NewInvoice(fmt.Sprintf("inv_%d", hashString(tenantID+invoiceNumber)), tenantID, invoiceNumber, clientName, "")
+	invoice.ProjectID = &projectID
+	invoice.Status = domain.InvoiceDraft
+	invoice.IssueDate = now
+	invoice.DueDate = now.AddDate(0, 1, 0)
+	invoice.Currency = "EUR"
+
+	if err := invoice.Validate(); err != nil {
+		return nil, domain.NewDomainError("VALIDATION_ERROR", err.Error(), nil)
+	}
+
+	if err := s.invoiceRepo.Create(ctx, invoice); err != nil {
+		return nil, domain.NewDomainError("CREATE_ERROR", "failed to create invoice", err)
+	}
+
+	s.logger.Info("Invoice created from project", "id", invoice.ID, "project_id", projectID, "tenant_id", tenantID)
+	return InvoiceToDTO(invoice), nil
+}
+
+func buildInvoiceHTML(invoice *domain.Invoice) string {
+	html := `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice ` + invoice.InvoiceNumber + `</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 850px; margin: 0 auto; padding: 20px; }
+        .header { margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        .company-info { margin-bottom: 40px; }
+        .invoice-details { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .detail-section { width: 45%; }
+        .detail-label { font-weight: bold; color: #666; font-size: 12px; }
+        .detail-value { margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+        th { background-color: #f0f0f0; border-bottom: 2px solid #333; padding: 10px; text-align: left; }
+        td { border-bottom: 1px solid #ddd; padding: 10px; }
+        .total-section { float: right; width: 300px; margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; padding: 10px 0; }
+        .total-amount { font-weight: bold; font-size: 18px; border-top: 2px solid #333; padding-top: 10px; }
+        .footer { margin-top: 60px; border-top: 1px solid #ddd; padding-top: 20px; font-size: 12px; color: #666; }
+        @media print { body { margin: 0; padding: 0; } .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>INVOICE</h1>
+        <p style="margin: 0; font-size: 14px;">Invoice #` + invoice.InvoiceNumber + `</p>
+    </div>
+
+    <div class="invoice-details">
+        <div class="detail-section">
+            <div class="detail-label">INVOICE TO:</div>
+            <div class="detail-value">
+                <strong>` + invoice.ClientName + `</strong><br>
+                ` + invoice.ClientAddress.Street + `<br>
+                ` + invoice.ClientAddress.PostCode + ` ` + invoice.ClientAddress.City + `<br>
+                ` + invoice.ClientAddress.Country + `<br>
+                ` + invoice.ClientEmail + `
+            </div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-row"><div class="detail-label">Invoice Date:</div><div>` + invoice.IssueDate.Format("2006-01-02") + `</div></div>
+            <div class="detail-row"><div class="detail-label">Due Date:</div><div>` + invoice.DueDate.Format("2006-01-02") + `</div></div>
+            <div class="detail-row"><div class="detail-label">Status:</div><div>` + string(invoice.Status) + `</div></div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50%;">Description</th>
+                <th style="width: 15%; text-align: right;">Qty</th>
+                <th style="width: 15%; text-align: right;">Unit Price</th>
+                <th style="width: 20%; text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>`
+
+	for _, item := range invoice.Items {
+		html += `<tr>
+            <td>` + item.Description + `</td>
+            <td style="text-align: right;">` + fmt.Sprintf("%.2f", item.Quantity) + ` ` + item.Unit + `</td>
+            <td style="text-align: right;">` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", item.UnitPrice) + `</td>
+            <td style="text-align: right;">` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", item.TotalPrice) + `</td>
+        </tr>`
+	}
+
+	html += `</tbody>
+    </table>
+
+    <div class="total-section">
+        <div class="total-row">
+            <span>Subtotal:</span>
+            <span>` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", invoice.SubTotal) + `</span>
+        </div>
+        <div class="total-row">
+            <span>Tax (` + fmt.Sprintf("%.0f", float64(invoice.TaxRate)) + `%):</span>
+            <span>` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", invoice.TaxAmount) + `</span>
+        </div>
+        <div class="total-row total-amount">
+            <span>TOTAL:</span>
+            <span>` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", invoice.Total) + `</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>Payment Terms:</strong> Due by ` + invoice.DueDate.Format("2006-01-02") + `</p>
+        <p><strong>Notes:</strong> ` + invoice.Notes + `</p>
+        <p style="margin-top: 20px; color: #999;">This is an automated invoice. For questions, please contact our accounting department.</p>
+    </div>
+</body>
+</html>`
+
+	return html
+}
+
+func buildQuoteHTML(quote *domain.Quote) string {
+	html := `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote ` + quote.QuoteNumber + `</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 850px; margin: 0 auto; padding: 20px; }
+        .header { margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+        th { background-color: #f0f0f0; border-bottom: 2px solid #333; padding: 10px; text-align: left; }
+        td { border-bottom: 1px solid #ddd; padding: 10px; }
+        .total-section { float: right; width: 300px; margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; padding: 10px 0; }
+        @media print { body { margin: 0; padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>QUOTE / ANGEBOT</h1>
+        <p>Quote #` + quote.QuoteNumber + ` | Valid until ` + quote.ValidUntil.Format("2006-01-02") + `</p>
+    </div>
+
+    <div class="client-info">
+        <strong>` + quote.ClientName + `</strong><br>
+        ` + quote.ClientAddress.Street + `<br>
+        ` + quote.ClientAddress.PostCode + ` ` + quote.ClientAddress.City + `
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th style="text-align: right;">Qty</th>
+                <th style="text-align: right;">Unit Price</th>
+                <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>`
+
+	for _, item := range quote.Items {
+		html += `<tr>
+            <td>` + item.Description + `</td>
+            <td style="text-align: right;">` + fmt.Sprintf("%.2f", item.Quantity) + `</td>
+            <td style="text-align: right;">` + quote.Currency + ` ` + fmt.Sprintf("%.2f", item.UnitPrice) + `</td>
+            <td style="text-align: right;">` + quote.Currency + ` ` + fmt.Sprintf("%.2f", item.TotalPrice) + `</td>
+        </tr>`
+	}
+
+	html += `</tbody>
+    </table>
+
+    <div class="total-section">
+        <div class="total-row"><span>Subtotal:</span><span>` + quote.Currency + ` ` + fmt.Sprintf("%.2f", quote.SubTotal) + `</span></div>
+        <div class="total-row"><span>Tax:</span><span>` + quote.Currency + ` ` + fmt.Sprintf("%.2f", quote.TaxAmount) + `</span></div>
+        <div class="total-row"><span><strong>TOTAL:</strong></span><span><strong>` + quote.Currency + ` ` + fmt.Sprintf("%.2f", quote.Total) + `</strong></span></div>
+    </div>
+</body>
+</html>`
+
+	return html
+}
+
+func hashString(s string) int64 {
+	h := int64(5381)
+	for _, c := range s {
+		h = ((h << 5) + h) + int64(c)
+	}
+	return h & 0x7FFFFFFFFFFFFFFF
+}

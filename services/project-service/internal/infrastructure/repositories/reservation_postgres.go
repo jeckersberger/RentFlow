@@ -161,6 +161,43 @@ func (r *ReservationPostgres) ListByEquipmentID(ctx context.Context, tenantID, e
 	return reservations, nil
 }
 
+func (r *ReservationPostgres) FindOverlapping(ctx context.Context, tenantID, equipmentID, startDate, endDate string, excludeReservationID string) ([]*domain.Reservation, error) {
+	query := `
+		SELECT id, tenant_id, project_id, equipment_id, start_date, end_date,
+			   status, created_at, updated_at
+		FROM projects.reservations
+		WHERE tenant_id = $1 AND equipment_id = $2 AND status NOT IN ('cancelled')
+			AND start_date < $4 AND end_date > $3
+			AND id != $5
+		ORDER BY start_date ASC
+	`
+
+	rows, err := r.db.Query(ctx, query, tenantID, equipmentID, startDate, endDate, excludeReservationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find overlapping: %w", err)
+	}
+	defer rows.Close()
+
+	reservations := make([]*domain.Reservation, 0)
+	for rows.Next() {
+		res := &domain.Reservation{}
+		err := rows.Scan(
+			&res.ID, &res.TenantID, &res.ProjectID, &res.EquipmentID, &res.StartDate,
+			&res.EndDate, &res.Status, &res.CreatedAt, &res.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan reservation: %w", err)
+		}
+		reservations = append(reservations, res)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating reservations: %w", err)
+	}
+
+	return reservations, nil
+}
+
 func (r *ReservationPostgres) Delete(ctx context.Context, tenantID, reservationID string) error {
 	query := `DELETE FROM projects.reservations WHERE id = $1 AND tenant_id = $2`
 

@@ -1,33 +1,123 @@
 package application
 
 import (
-	"crypto/hmac"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"strings"
 	"time"
 )
 
-// TokenManager handles JWT token creation and validation
+// TokenManager handles JWT token creation and validation using RS256
 type TokenManager struct {
-	secret             string
+	privateKey         *rsa.PrivateKey
+	publicKey          *rsa.PublicKey
 	accessTokenExpiry  time.Duration
 	refreshTokenExpiry time.Duration
 	issuer             string
 	audience           []string
 }
 
-// NewTokenManager creates a new token manager
-func NewTokenManager(secret string) *TokenManager {
-	return &TokenManager{
-		secret:             secret,
-		accessTokenExpiry:  15 * time.Minute,
+// NewTokenManager creates a new token manager with RSA key pair
+func NewTokenManager(privateKeyPEM, publicKeyPEM string) (*TokenManager, error) {
+	var privKey *rsa.PrivateKey
+	var pubKey *rsa.PublicKey
+	var err error
+
+	// Parse private key
+	if privateKeyPEM != "" {
+		block, _ := pem.Decode([]byte(privateKeyPEM))
+		if block == nil {
+			return nil, fmt.Errorf("failed to parse private key PEM")
+		}
+		privKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse private key: %w", err)
+		}
+	}
+
+	// Parse public key
+	if publicKeyPEM != "" {
+		block, _ := pem.Decode([]byte(publicKeyPEM))
+		if block == nil {
+			return nil, fmt.Errorf("failed to parse public key PEM")
+		}
+		pubKeyInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse public key: %w", err)
+		}
+		pubKey, _ = pubKeyInterface.(*rsa.PublicKey)
+		if pubKey == nil {
+			return nil, fmt.Errorf("public key is not RSA")
+		}
+	}
+
+	tm := &TokenManager{
+		privateKey:         privKey,
+		publicKey:          pubKey,
+		accessTokenExpiry:  1 * time.Hour,
 		refreshTokenExpiry: 7 * 24 * time.Hour,
 		issuer:             "rentflow-auth-service",
 		audience:           []string{"rentflow-api"},
 	}
+
+	return tm, nil
+}
+
+// GenerateKeyPair generates a new RSA 2048-bit key pair
+func GenerateKeyPair() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, 2048)
+}
+
+// MarshalPrivateKeyPEM serializes an RSA private key to PEM string
+func MarshalPrivateKeyPEM(key *rsa.PrivateKey) string {
+	privBytes := x509.MarshalPKCS1PrivateKey(key)
+	privPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privBytes,
+	})
+	return string(privPEM)
+}
+
+// MarshalPublicKeyPEM serializes an RSA public key to PEM string
+func MarshalPublicKeyPEM(key *rsa.PublicKey) string {
+	pubBytes, _ := x509.MarshalPKIXPublicKey(key)
+	pubPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubBytes,
+	})
+	return string(pubPEM)
+}
+
+// PrivateKeyPEM returns the private key as PEM string
+func (tm *TokenManager) PrivateKeyPEM() string {
+	if tm.privateKey == nil {
+		return ""
+	}
+	privBytes := x509.MarshalPKCS1PrivateKey(tm.privateKey)
+	privPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privBytes,
+	})
+	return string(privPEM)
+}
+
+// PublicKeyPEM returns the public key as PEM string
+func (tm *TokenManager) PublicKeyPEM() string {
+	if tm.publicKey == nil {
+		return ""
+	}
+	pubBytes, _ := x509.MarshalPKIXPublicKey(tm.publicKey)
+	pubPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubBytes,
+	})
+	return string(pubPEM)
 }
 
 // AccessTokenClaims represents claims in an access token
@@ -106,11 +196,15 @@ func (tm *TokenManager) CreateRefreshToken(userID, tenantID, email string, jti s
 	return tm.createToken(claims)
 }
 
-// createToken creates a JWT token with the given claims
+// createToken creates a JWT token with RS256 signature
 func (tm *TokenManager) createToken(claims interface{}) (string, error) {
+	if tm.privateKey == nil {
+		return "", fmt.Errorf("private key not available")
+	}
+
 	// Create header
 	header := map[string]interface{}{
-		"alg": "HS256",
+		"alg": "RS256",
 		"typ": "JWT",
 	}
 
@@ -129,15 +223,22 @@ func (tm *TokenManager) createToken(claims interface{}) (string, error) {
 
 	// Create signature
 	message := headerB64 + "." + payloadB64
-	h := hmac.New(sha256.New, []byte(tm.secret))
-	h.Write([]byte(message))
-	signature := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+	hash := sha256.Sum256([]byte(message))
+	signature, err := rsa.SignPKCS1v15(rand.Reader, tm.privateKey, sha256.SHA256, hash[:])
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
 
-	return message + "." + signature, nil
+	signatureB64 := base64.RawURLEncoding.EncodeToString(signature)
+	return message + "." + signatureB64, nil
 }
 
 // VerifyAccessToken verifies and returns the claims from an access token
 func (tm *TokenManager) VerifyAccessToken(token string) (*AccessTokenClaims, error) {
+	if tm.publicKey == nil {
+		return nil, fmt.Errorf("public key not available")
+	}
+
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("invalid token format")
@@ -147,11 +248,15 @@ func (tm *TokenManager) VerifyAccessToken(token string) (*AccessTokenClaims, err
 
 	// Verify signature
 	message := headerB64 + "." + payloadB64
-	h := hmac.New(sha256.New, []byte(tm.secret))
-	h.Write([]byte(message))
-	expectedSignature := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+	hash := sha256.Sum256([]byte(message))
 
-	if signatureB64 != expectedSignature {
+	signature, err := base64.RawURLEncoding.DecodeString(signatureB64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode signature: %w", err)
+	}
+
+	err = rsa.VerifyPKCS1v15(tm.publicKey, sha256.SHA256, hash[:], signature)
+	if err != nil {
 		return nil, fmt.Errorf("invalid signature")
 	}
 
@@ -181,6 +286,10 @@ func (tm *TokenManager) VerifyAccessToken(token string) (*AccessTokenClaims, err
 
 // VerifyRefreshToken verifies and returns the claims from a refresh token
 func (tm *TokenManager) VerifyRefreshToken(token string) (*RefreshTokenClaims, error) {
+	if tm.publicKey == nil {
+		return nil, fmt.Errorf("public key not available")
+	}
+
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("invalid token format")
@@ -190,11 +299,15 @@ func (tm *TokenManager) VerifyRefreshToken(token string) (*RefreshTokenClaims, e
 
 	// Verify signature
 	message := headerB64 + "." + payloadB64
-	h := hmac.New(sha256.New, []byte(tm.secret))
-	h.Write([]byte(message))
-	expectedSignature := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+	hash := sha256.Sum256([]byte(message))
 
-	if signatureB64 != expectedSignature {
+	signature, err := base64.RawURLEncoding.DecodeString(signatureB64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode signature: %w", err)
+	}
+
+	err = rsa.VerifyPKCS1v15(tm.publicKey, sha256.SHA256, hash[:], signature)
+	if err != nil {
 		return nil, fmt.Errorf("invalid signature")
 	}
 

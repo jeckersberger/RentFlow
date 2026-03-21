@@ -56,3 +56,8 @@ type FlightcaseListResult struct {
 	Limit  int
 	Offset int
 }
+
+type EquipmentHistoryRepository interface {
+	Create(ctx context.Context, history *domain.EquipmentHistory) error
+	GetByEquipmentID(ctx context.Context, tenantID, equipmentID string, limit, offset int) ([]*domain.EquipmentHistory, int64, error)
+}

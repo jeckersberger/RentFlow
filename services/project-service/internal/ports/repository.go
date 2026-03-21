@@ -13,6 +13,7 @@ type ProjectRepository interface {
 	List(ctx context.Context, tenantID string, limit, offset int) (*ProjectListResult, error)
 	Delete(ctx context.Context, tenantID, projectID string) error
 	Search(ctx context.Context, tenantID, term string, limit, offset int) (*ProjectListResult, error)
+	ListByDateRange(ctx context.Context, tenantID, startDate, endDate string) ([]*domain.Project, error)
 }
 
 type PacklistRepository interface {
@@ -29,7 +30,17 @@ type ReservationRepository interface {
 	GetByID(ctx context.Context, tenantID, reservationID string) (*domain.Reservation, error)
 	ListByProjectID(ctx context.Context, tenantID, projectID string) ([]*domain.Reservation, error)
 	ListByEquipmentID(ctx context.Context, tenantID, equipmentID string, startDate, endDate string) ([]*domain.Reservation, error)
+	FindOverlapping(ctx context.Context, tenantID, equipmentID string, startDate, endDate string, excludeReservationID string) ([]*domain.Reservation, error)
 	Delete(ctx context.Context, tenantID, reservationID string) error
+}
+
+type CustomerRepository interface {
+	Create(ctx context.Context, customer *domain.Customer) error
+	GetByID(ctx context.Context, tenantID, customerID string) (*domain.Customer, error)
+	List(ctx context.Context, tenantID string, limit, offset int) (*CustomerListResult, error)
+	Update(ctx context.Context, customer *domain.Customer) error
+	Delete(ctx context.Context, tenantID, customerID string) error
+	Search(ctx context.Context, tenantID, term string, limit, offset int) (*CustomerListResult, error)
 }
 
 type ProjectListResult struct {
@@ -41,6 +52,13 @@ type ProjectListResult struct {
 
 type PacklistListResult struct {
 	Items  []*domain.Packlist
+	Total  int64
+	Limit  int
+	Offset int
+}
+
+type CustomerListResult struct {
+	Items  []*domain.Customer
 	Total  int64
 	Limit  int
 	Offset int

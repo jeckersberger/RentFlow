@@ -44,6 +44,7 @@ func main() {
 	projectRepo := repositories.NewProjectPostgres(dbPool)
 	packlistRepo := repositories.NewPacklistPostgres(dbPool)
 	reservationRepo := repositories.NewReservationPostgres(dbPool)
+	customerRepo := repositories.NewCustomerPostgres(dbPool)
 
 	log.Info("Repositories initialized")
 
@@ -51,11 +52,12 @@ func main() {
 	projectSvc := application.NewProjectService(projectRepo, log)
 	packlistSvc := application.NewPacklistService(packlistRepo, log)
 	reservationSvc := application.NewReservationService(reservationRepo, log)
+	customerSvc := application.NewCustomerService(customerRepo, log)
 
 	log.Info("Services initialized")
 
 	// Setup router
-	router := httpAdapter.NewRouter(projectSvc, packlistSvc, reservationSvc, log)
+	router := httpAdapter.NewRouter(projectSvc, packlistSvc, reservationSvc, customerSvc, log)
 
 	// Create HTTP server
 	srv := &http.Server{

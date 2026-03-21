@@ -14,6 +14,7 @@ type Handler struct {
 	projectSvc     *application.ProjectService
 	packlistSvc    *application.PacklistService
 	reservationSvc *application.ReservationService
+	customerSvc    *application.CustomerService
 	logger         logger.Logger
 }
 
@@ -21,12 +22,14 @@ func NewHandler(
 	projectSvc *application.ProjectService,
 	packlistSvc *application.PacklistService,
 	reservationSvc *application.ReservationService,
+	customerSvc *application.CustomerService,
 	logger logger.Logger,
 ) *Handler {
 	return &Handler{
 		projectSvc:     projectSvc,
 		packlistSvc:    packlistSvc,
 		reservationSvc: reservationSvc,
+		customerSvc:    customerSvc,
 		logger:         logger,
 	}
 }
@@ -732,4 +735,203 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 	}
 
 	h.respondError(w, http.StatusInternalServerError, "internal server error")
+}
+
+// Customer Handlers
+
+func (h *Handler) CreateCustomer(w http.ResponseWriter, r *http.Request) {
+	var cmd application.CreateCustomerCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+	cmd.TenantID = tenantID
+
+	dto, err := h.customerSvc.CreateCustomer(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) GetCustomer(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dto, err := h.customerSvc.GetCustomer(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) ListCustomers(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	limit := 20
+	offset := 0
+
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	if o := r.URL.Query().Get("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	query := application.ListCustomersQuery{
+		TenantID: tenantID,
+		Limit:    limit,
+		Offset:   offset,
+	}
+
+	result, err := h.customerSvc.ListCustomers(r.Context(), query)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var cmd application.UpdateCustomerCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	cmd.ID = id
+	cmd.TenantID = tenantID
+
+	dto, err := h.customerSvc.UpdateCustomer(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) DeleteCustomer(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	if err := h.customerSvc.DeleteCustomer(r.Context(), tenantID, id); err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// Calendar and Project Extended Handlers
+
+func (h *Handler) GetCalendar(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+
+	if startStr == "" || endStr == "" {
+		h.respondError(w, http.StatusBadRequest, "start and end dates required")
+		return
+	}
+
+	query := application.GetCalendarQuery{
+		TenantID:  tenantID,
+		StartDate: startStr,
+		EndDate:   endStr,
+	}
+
+	projects, err := h.projectSvc.GetCalendar(r.Context(), query)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, projects)
+}
+
+func (h *Handler) CopyProject(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		NewStartDate string `json:"new_start_date"`
+		NewEndDate   string `json:"new_end_date"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	dto, err := h.projectSvc.CopyProject(r.Context(), id, tenantID, payload.NewStartDate, payload.NewEndDate)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) GetPackingListHTML(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	html, err := h.projectSvc.GeneratePackingListHTML(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(html))
 }

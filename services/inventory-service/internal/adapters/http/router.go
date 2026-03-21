@@ -32,6 +32,15 @@ func NewRouter(
 	router.HandleFunc("POST /api/v1/equipment/{id}/images", handler.AddEquipmentImage)
 	router.HandleFunc("DELETE /api/v1/equipment/{id}", handler.DeleteEquipment)
 
+	// Phase 1 upgrade endpoints
+	router.HandleFunc("GET /api/v1/equipment/{id}/price", handler.GetEquipmentPrice)
+	router.HandleFunc("GET /api/v1/equipment/{id}/availability", handler.CheckEquipmentAvailability)
+	router.HandleFunc("GET /api/v1/equipment/{id}/qr-code", handler.GetEquipmentQRCode)
+	router.HandleFunc("GET /api/v1/equipment/{id}/label", handler.GetEquipmentLabel)
+	router.HandleFunc("GET /api/v1/equipment/{id}/history", handler.GetEquipmentHistory)
+	router.HandleFunc("POST /api/v1/equipment/availability-check", handler.BatchCheckAvailability)
+	router.HandleFunc("POST /api/v1/equipment/import", handler.ImportEquipmentFromCSV)
+
 	// Category routes
 	router.HandleFunc("POST /api/v1/categories", handler.CreateCategory)
 	router.HandleFunc("GET /api/v1/categories", handler.ListCategories)

@@ -298,89 +298,89 @@ make test-e2e
 ### Phase 0 – Infrastruktur & Setup (4–6 Wochen)
 
 #### M0.1: Repository & Projektstruktur
-- [ ] Git-Repository initialisieren
-- [ ] Verzeichnisstruktur anlegen
-- [ ] `.gitignore` für Go + Node + Docker konfigurieren
-- [ ] `go.work` für Multi-Module Workspace einrichten
-- [ ] Makefile mit Standard-Targets erstellen
+- [x] Git-Repository initialisieren
+- [x] Verzeichnisstruktur anlegen
+- [x] `.gitignore` für Go + Node + Docker konfigurieren
+- [x] `go.work` für Multi-Module Workspace einrichten
+- [x] Makefile mit Standard-Targets erstellen
 
 #### M0.2: Docker Compose Stack
-- [ ] `docker-compose.yml` für Infrastruktur-Services
-- [ ] `docker-compose.dev.yml` mit Hot-Reload für alle Services
-- [ ] `docker-compose.prod.yml` mit Ressource-Limits
-- [ ] `.env.example` Datei mit allen Umgebungsvariablen
-- [ ] PostgreSQL Init-Skript für alle 17 Schemas
-- [ ] KurrentDB TLS-Zertifikat-Generierung
-- [ ] Redis-Passwort und Persistence konfigurieren
-- [ ] Traefik TLS + ACME konfigurieren
-- [ ] Health-Check-Skript: `scripts/health-check.sh`
+- [x] `docker-compose.yml` für Infrastruktur-Services
+- [x] `docker-compose.dev.yml` mit Hot-Reload für alle Services
+- [x] `docker-compose.prod.yml` mit Ressource-Limits
+- [x] `.env.example` Datei mit allen Umgebungsvariablen
+- [x] PostgreSQL Init-Skript für alle 17 Schemas
+- [x] KurrentDB TLS-Zertifikat-Generierung
+- [x] Redis-Passwort und Persistence konfigurieren
+- [x] Traefik TLS + ACME konfigurieren
+- [x] Health-Check-Skript: `scripts/health-check.sh`
 
 #### M0.3: PostgreSQL Schema-Initialisierung
-- [ ] Init-SQL für alle 17 Schemas
-- [ ] Service-spezifische Datenbanknutzer
-- [ ] Extensions (uuid-ossp, pg_trgm, btree_gin)
-- [ ] Migration-Tool `golang-migrate/migrate` einrichten
-- [ ] `migrations/` Verzeichnis pro Service anlegen
+- [x] Init-SQL für alle 17 Schemas
+- [x] Service-spezifische Datenbanknutzer
+- [x] Extensions (uuid-ossp, pg_trgm, btree_gin)
+- [x] Migration-Tool `golang-migrate/migrate` einrichten
+- [x] `migrations/` Verzeichnis pro Service anlegen
 - [ ] Makefile-Target `make migrate-up` / `make migrate-down`
 
 #### M0.4: Shared Go-Library `pkg/common`
-- [ ] KurrentDB Go-Client-Wrapper mit exponential backoff
-- [ ] PostgreSQL Pool-Factory (pgxpool.Pool) mit Connection-Retry
-- [ ] Redis-Client-Factory
-- [ ] JWT-Middleware für chi-Router
-- [ ] Zerolog-Setup mit Correlation-ID, Request-ID
-- [ ] Health-Check-Handler (liveness + readiness)
-- [ ] Domänen-Fehlertypen (NotFound, Conflict, Unauthorized, etc.)
-- [ ] Cursor-Paginierung (keyset pagination)
+- [x] KurrentDB Go-Client-Wrapper mit exponential backoff
+- [x] PostgreSQL Pool-Factory (pgxpool.Pool) mit Connection-Retry
+- [x] Redis-Client-Factory
+- [x] JWT-Middleware für chi-Router
+- [x] Zerolog-Setup mit Correlation-ID, Request-ID
+- [x] Health-Check-Handler (liveness + readiness)
+- [x] Domänen-Fehlertypen (NotFound, Conflict, Unauthorized, etc.)
+- [x] Cursor-Paginierung (keyset pagination)
 - [ ] gRPC-Server-Bootstrap mit TLS
 - [ ] Unit-Tests für alle gemeinsamen Pakete
 
 #### M0.5: Service-Template
-- [ ] Service-Template-Generator (Bash/Go-Skript)
-- [ ] Template für alle 17 Services anwenden
-- [ ] Dockerfile (Multi-Stage Build, distroless/scratch)
-- [ ] Makefile pro Service (build, test, run, lint)
-- [ ] `go.work` alle Services einschließen
+- [x] Service-Template-Generator (Bash/Go-Skript)
+- [x] Template für alle 17 Services anwenden
+- [x] Dockerfile (Multi-Stage Build, distroless/scratch)
+- [x] Makefile pro Service (build, test, run, lint)
+- [x] `go.work` alle Services einschließen
 
 #### M0.6: Frontend-Scaffold
-- [ ] Vite-Projekt mit React + TypeScript
-- [ ] TanStack Router mit Route-Tree
-- [ ] TanStack Query mit Axios-Client
-- [ ] Zustand-Stores (auth, ui, scanner, notification)
+- [x] Vite-Projekt mit React + TypeScript
+- [x] TanStack Router mit Route-Tree
+- [x] TanStack Query mit Axios-Client
+- [x] Zustand-Stores (auth, ui, scanner, notification)
 - [ ] Radix UI Themes + Farbpalette
-- [ ] SCSS Design-Tokens (`src/styles/tokens.scss`)
+- [x] SCSS Design-Tokens (`src/styles/tokens.scss`)
 - [ ] i18n-Setup (DE/EN, Namespace-Splitting)
-- [ ] PWA-Config (`vite.config.ts` + `vite-plugin-pwa`)
-- [ ] Service-Worker für Offline-Funktionalität
-- [ ] ESLint + Prettier-Konfiguration
+- [x] PWA-Config (`vite.config.ts` + `vite-plugin-pwa`)
+- [x] Service-Worker für Offline-Funktionalität
+- [x] ESLint + Prettier-Konfiguration
 - [ ] Vitest + Testing-Library Setup
 
 #### M0.7: CI/CD-Pipeline
-- [ ] GitHub Actions CI für alle Services
-- [ ] Docker-Image-Build und Push nach GHCR
-- [ ] Frontend-Build und -Tests in CI
+- [x] GitHub Actions CI für alle Services
+- [x] Docker-Image-Build und Push nach GHCR
+- [x] Frontend-Build und -Tests in CI
 - [ ] Deployment-Skript für Self-Hosted (`scripts/deploy.sh`)
 - [ ] Watchtower für automatisches Image-Update konfigurieren
 - [ ] Rollback-Skript (`scripts/rollback.sh`)
-- [ ] Secrets-Management mit `.env`-Datei und Docker Secrets
+- [x] Secrets-Management mit `.env`-Datei und Docker Secrets
 
 #### M0.8: Monitoring & Logging
-- [ ] Prometheus Scraping-Config für alle Services
+- [x] Prometheus Scraping-Config für alle Services
 - [ ] Grafana Dashboard-Templates (Latenz, Error-Rate, Event-Throughput)
 - [ ] Loki für zentrales Log-Aggregation
 - [ ] Alertmanager-Regeln (Service Down, hohe Fehlerrate)
-- [ ] `docker-compose.monitoring.yml` (Prometheus + Grafana + Loki)
-- [ ] Health-Check-Endpoint für alle Services (`GET /health/live`, `GET /health/ready`)
+- [x] `docker-compose.monitoring.yml` (Prometheus + Grafana + Loki)
+- [x] Health-Check-Endpoint für alle Services (`GET /health/live`, `GET /health/ready`)
 
 #### Phase-0-Abnahmekriterien
-- [ ] `docker compose up -d` startet alle Infrastruktur-Services ohne Fehler
-- [ ] KurrentDB Admin-UI erreichbar unter `http://localhost:2113`
-- [ ] PostgreSQL-Verbindung mit allen 17 Schemas erfolgreich
-- [ ] Redis `PING` liefert `PONG`
-- [ ] Traefik-Dashboard erreichbar
-- [ ] CI-Pipeline läuft durch (grün)
-- [ ] Frontend lädt unter `http://localhost:5173`
-- [ ] Alle Services kompilieren fehlerfrei
+- [x] `docker compose up -d` startet alle Infrastruktur-Services ohne Fehler
+- [x] KurrentDB Admin-UI erreichbar unter `http://localhost:2113`
+- [x] PostgreSQL-Verbindung mit allen 17 Schemas erfolgreich
+- [x] Redis `PING` liefert `PONG`
+- [x] Traefik-Dashboard erreichbar
+- [x] CI-Pipeline läuft durch (grün)
+- [x] Frontend lädt unter `http://localhost:5173`
+- [x] Alle Services kompilieren fehlerfrei
 
 ---
 

@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/project-service/internal/domain"
@@ -242,6 +243,174 @@ func (s *ProjectService) DeleteProject(ctx context.Context, tenantID, projectID 
 
 	s.logger.Info("Project deleted", "id", projectID, "tenant_id", tenantID)
 	return nil
+}
+
+func (s *ProjectService) GetCalendar(ctx context.Context, query GetCalendarQuery) ([]CalendarEventDTO, error) {
+	projects, err := s.repo.ListByDateRange(ctx, query.TenantID, query.StartDate, query.EndDate)
+	if err != nil {
+		return nil, domain.NewDomainError("QUERY_ERROR", "failed to fetch calendar", err)
+	}
+
+	events := make([]CalendarEventDTO, len(projects))
+	for i, p := range projects {
+		color := getColorByStatus(p.Status)
+		events[i] = CalendarEventDTO{
+			ID:         p.ID,
+			Name:       p.Name,
+			ClientName: p.ClientName,
+			Status:     string(p.Status),
+			StartDate:  p.StartDate,
+			EndDate:    p.EndDate,
+			Color:      color,
+		}
+	}
+
+	return events, nil
+}
+
+func (s *ProjectService) CopyProject(ctx context.Context, projectID, tenantID, newStartDateStr, newEndDateStr string) (*ProjectDTO, error) {
+	project, err := s.repo.GetByID(ctx, tenantID, projectID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "project not found", err)
+	}
+
+	newProject := domain.NewProject(
+		fmt.Sprintf("proj_%d", hashString(tenantID+project.Name+newStartDateStr)),
+		tenantID,
+		project.Name+" (Copy)",
+		project.ClientName,
+		project.CreatedByUserID,
+	)
+
+	newProject.Description = project.Description
+	newProject.ClientEmail = project.ClientEmail
+	newProject.ClientPhone = project.ClientPhone
+	newProject.ClientAddress = project.ClientAddress
+	newProject.VenueAddress = project.VenueAddress
+	newProject.Status = domain.ProjectDraft
+	newProject.Budget = project.Budget
+	newProject.Currency = project.Currency
+	newProject.Notes = project.Notes
+	newProject.Tags = project.Tags
+
+	// Parse new dates
+	startTime, err := parseDate(newStartDateStr)
+	if err != nil {
+		return nil, domain.NewDomainError("INVALID_DATE", "invalid start date", err)
+	}
+	endTime, err := parseDate(newEndDateStr)
+	if err != nil {
+		return nil, domain.NewDomainError("INVALID_DATE", "invalid end date", err)
+	}
+
+	newProject.StartDate = startTime
+	newProject.EndDate = endTime
+
+	if err := newProject.Validate(); err != nil {
+		return nil, domain.NewDomainError("VALIDATION_ERROR", err.Error(), nil)
+	}
+
+	if err := s.repo.Create(ctx, newProject); err != nil {
+		return nil, domain.NewDomainError("CREATE_ERROR", "failed to copy project", err)
+	}
+
+	s.logger.Info("Project copied", "original_id", projectID, "new_id", newProject.ID, "tenant_id", tenantID)
+	return ProjectToDTO(newProject), nil
+}
+
+func (s *ProjectService) GeneratePackingListHTML(ctx context.Context, tenantID, projectID string) (string, error) {
+	project, err := s.repo.GetByID(ctx, tenantID, projectID)
+	if err != nil {
+		return "", domain.NewDomainError("NOT_FOUND", "project not found", err)
+	}
+
+	html := buildPackingListHTML(project)
+	return html, nil
+}
+
+func getColorByStatus(status domain.ProjectStatus) string {
+	switch status {
+	case domain.ProjectDraft:
+		return "#cccccc"
+	case domain.ProjectQuoted:
+		return "#ffc107"
+	case domain.ProjectConfirmed:
+		return "#17a2b8"
+	case domain.ProjectInProgress:
+		return "#28a745"
+	case domain.ProjectCompleted:
+		return "#6c757d"
+	case domain.ProjectInvoiced:
+		return "#007bff"
+	case domain.ProjectCancelled:
+		return "#dc3545"
+	default:
+		return "#cccccc"
+	}
+}
+
+func parseDate(dateStr string) (time.Time, error) {
+	// Try RFC3339 format first
+	formats := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02",
+	}
+	for _, format := range formats {
+		if t, err := time.Parse(format, dateStr); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
+}
+
+func buildPackingListHTML(project *domain.Project) string {
+	html := `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packing List - ` + project.Name + `</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { margin-bottom: 30px; }
+        .project-info { background: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .checkbox { width: 20px; height: 20px; }
+        @media print { body { margin: 0; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Packing List</h1>
+        <h2>` + project.Name + `</h2>
+    </div>
+    <div class="project-info">
+        <p><strong>Client:</strong> ` + project.ClientName + `</p>
+        <p><strong>Dates:</strong> ` + project.StartDate.Format("2006-01-02") + ` to ` + project.EndDate.Format("2006-01-02") + `</p>
+        <p><strong>Location:</strong> ` + project.VenueAddress.City + `, ` + project.VenueAddress.Country + `</p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Equipment</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Packed</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="5" style="text-align: center; background: #f0f0f0;">No equipment data available</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>`
+	return html
 }
 
 func hashString(s string) int64 {

@@ -27,10 +27,12 @@ const (
 type Role string
 
 const (
+	RoleSuperadmin Role = "superadmin"
 	RoleAdmin      Role = "admin"
 	RoleManager    Role = "manager"
 	RoleWarehouse  Role = "warehouse"
-	RoleAccounting Role = "accounting"
+	RoleDriver     Role = "driver"
+	RoleCrew       Role = "crew"
 	RoleFreelancer Role = "freelancer"
 	RoleReadOnly   Role = "readonly"
 )
@@ -49,6 +51,7 @@ type User struct {
 	UpdatedAt    time.Time
 	LastLoginAt  *time.Time
 	FailedLogins int
+	LockedAt     *time.Time
 }
 
 // NewUser creates a new user aggregate
@@ -119,6 +122,8 @@ func (u *User) RecordFailedLogin() error {
 	// Lock after 5 failed attempts
 	if u.FailedLogins >= 5 {
 		u.Status = UserStatusLocked
+		now := time.Now()
+		u.LockedAt = &now
 		data, _ := NewEventData("UserLocked", map[string]interface{}{
 			"id":           u.ID,
 			"email":        u.Email,
@@ -268,6 +273,20 @@ func (u *User) UpdateProfile(firstName, lastName string) error {
 // NewEventData creates event data from arbitrary data
 func NewEventData(eventType string, data interface{}, metadata interface{}) (*events.EventData, error) {
 	return events.NewEventData(eventType, data, metadata)
+}
+
+// IsLocked returns true if the user account is currently locked
+func (u *User) IsLocked() bool {
+	return u.Status == UserStatusLocked
+}
+
+// ShouldAutoUnlock checks if the user should be automatically unlocked (15 minutes have passed)
+func (u *User) ShouldAutoUnlock() bool {
+	if u.Status != UserStatusLocked || u.LockedAt == nil {
+		return false
+	}
+	// Auto-unlock after 15 minutes
+	return time.Since(*u.LockedAt) > 15*time.Minute
 }
 
 // Apply adds an event to the uncommitted changes

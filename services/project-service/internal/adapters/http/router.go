@@ -11,10 +11,11 @@ func NewRouter(
 	projectSvc *application.ProjectService,
 	packlistSvc *application.PacklistService,
 	reservationSvc *application.ReservationService,
+	customerSvc *application.CustomerService,
 	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
-	handler := NewHandler(projectSvc, packlistSvc, reservationSvc, logger)
+	handler := NewHandler(projectSvc, packlistSvc, reservationSvc, customerSvc, logger)
 
 	// Health & readiness
 	router.HandleFunc("GET /health", healthHandler)
@@ -23,8 +24,11 @@ func NewRouter(
 	// Project routes
 	router.HandleFunc("POST /api/v1/projects", handler.CreateProject)
 	router.HandleFunc("GET /api/v1/projects", handler.ListProjects)
+	router.HandleFunc("GET /api/v1/projects/calendar", handler.GetCalendar)
 	router.HandleFunc("GET /api/v1/projects/search", handler.SearchProjects)
 	router.HandleFunc("GET /api/v1/projects/{id}", handler.GetProject)
+	router.HandleFunc("POST /api/v1/projects/{id}/copy", handler.CopyProject)
+	router.HandleFunc("GET /api/v1/projects/{id}/packing-list/html", handler.GetPackingListHTML)
 	router.HandleFunc("PUT /api/v1/projects/{id}", handler.UpdateProject)
 	router.HandleFunc("PATCH /api/v1/projects/{id}/status", handler.ChangeProjectStatus)
 	router.HandleFunc("PATCH /api/v1/projects/{id}/manager", handler.SetProjectManager)
@@ -49,6 +53,13 @@ func NewRouter(
 	router.HandleFunc("PATCH /api/v1/reservations/{id}/confirm", handler.ConfirmReservation)
 	router.HandleFunc("PATCH /api/v1/reservations/{id}/cancel", handler.CancelReservation)
 	router.HandleFunc("DELETE /api/v1/reservations/{id}", handler.DeleteReservation)
+
+	// Customer routes
+	router.HandleFunc("POST /api/v1/customers", handler.CreateCustomer)
+	router.HandleFunc("GET /api/v1/customers", handler.ListCustomers)
+	router.HandleFunc("GET /api/v1/customers/{id}", handler.GetCustomer)
+	router.HandleFunc("PUT /api/v1/customers/{id}", handler.UpdateCustomer)
+	router.HandleFunc("DELETE /api/v1/customers/{id}", handler.DeleteCustomer)
 
 	return router
 }

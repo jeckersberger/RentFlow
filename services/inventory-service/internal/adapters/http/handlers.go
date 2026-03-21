@@ -637,3 +637,244 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 
 	h.respondError(w, http.StatusInternalServerError, "internal server error")
 }
+
+// Price Engine Handlers
+
+func (h *Handler) GetEquipmentPrice(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	// Parse query parameters
+	daysStr := r.URL.Query().Get("days")
+	if daysStr == "" {
+		h.respondError(w, http.StatusBadRequest, "days parameter is required")
+		return
+	}
+
+	days, err := strconv.Atoi(daysStr)
+	if err != nil || days <= 0 {
+		h.respondError(w, http.StatusBadRequest, "days must be a positive integer")
+		return
+	}
+
+	discountStr := r.URL.Query().Get("discount")
+	discount := 0.0
+	if discountStr != "" {
+		if d, err := strconv.ParseFloat(discountStr, 64); err == nil {
+			discount = d
+		}
+	}
+
+	// Get equipment
+	dto, err := h.equipmentSvc.GetEquipment(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	// Calculate price
+	priceEngine := application.NewPriceEngine(0.19) // 19% VAT
+	result, err := priceEngine.CalculatePrice(dto.RentalPriceDay, days, discount)
+	if err != nil {
+		h.respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+// Availability Handlers
+
+func (h *Handler) CheckEquipmentAvailability(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	// Parse query parameters
+	qtyStr := r.URL.Query().Get("qty")
+	qty := 1
+	if qtyStr != "" {
+		if q, err := strconv.Atoi(qtyStr); err == nil && q > 0 {
+			qty = q
+		}
+	}
+
+	availSvc := application.NewAvailabilityService(h.equipmentSvc.GetEquipmentRepo(), h.logger)
+	result, err := availSvc.CheckEquipmentAvailability(r.Context(), tenantID, id, qty)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) BatchCheckAvailability(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var requests []application.BatchAvailabilityRequest
+	if err := json.NewDecoder(r.Body).Decode(&requests); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	availSvc := application.NewAvailabilityService(h.equipmentSvc.GetEquipmentRepo(), h.logger)
+	result, err := availSvc.CheckBatchAvailability(r.Context(), tenantID, requests)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+// QR Code Handler
+
+func (h *Handler) GetEquipmentQRCode(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	sizeStr := r.URL.Query().Get("size")
+	size := 256
+	if sizeStr != "" {
+		if s, err := strconv.Atoi(sizeStr); err == nil && s > 0 {
+			size = s
+		}
+	}
+
+	qrSvc := application.NewQRService(h.equipmentSvc.GetEquipmentRepo(), h.logger)
+	png, err := qrSvc.GenerateQRCode(r.Context(), tenantID, id, size)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.WriteHeader(http.StatusOK)
+	w.Write(png)
+}
+
+// Label Handler
+
+func (h *Handler) GetEquipmentLabel(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	format := r.URL.Query().Get("format")
+	if format == "" {
+		format = "zpl"
+	}
+
+	if format != "zpl" {
+		h.respondError(w, http.StatusBadRequest, "only ZPL format is supported")
+		return
+	}
+
+	labelSvc := application.NewLabelService(h.equipmentSvc.GetEquipmentRepo(), h.logger)
+	zpl, err := labelSvc.GenerateZPLLabel(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(zpl))
+}
+
+// CSV Import Handler
+
+func (h *Handler) ImportEquipmentFromCSV(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		h.respondError(w, http.StatusBadRequest, "user ID required")
+		return
+	}
+
+	// Parse multipart form
+	if err := r.ParseMultipartForm(50 << 20); err != nil { // 50MB max
+		h.respondError(w, http.StatusBadRequest, "failed to parse form")
+		return
+	}
+
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		h.respondError(w, http.StatusBadRequest, "CSV file required")
+		return
+	}
+	defer file.Close()
+
+	importSvc := application.NewCSVImportService(h.equipmentSvc.GetEquipmentRepo(), h.categorySvc.GetCategoryRepo(), h.logger)
+	result, err := importSvc.ImportFromCSV(r.Context(), tenantID, file, userID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.logger.Info("CSV import completed", "filename", handler.Filename, "created", result.Created, "skipped", result.Skipped)
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+// Equipment History Handler
+
+func (h *Handler) GetEquipmentHistory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	limit := 20
+	offset := 0
+
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	if o := r.URL.Query().Get("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	// For Phase 1, return empty history with proper structure
+	// Future: integrate with actual history service
+	response := map[string]interface{}{
+		"equipment_id": id,
+		"items":        []interface{}{},
+		"total":        0,
+		"limit":        limit,
+		"offset":       offset,
+	}
+
+	h.respondJSON(w, http.StatusOK, response)
+}

@@ -24,16 +24,20 @@ func NewRouter(
 	// Invoice routes
 	router.HandleFunc("POST /api/v1/invoices", handler.CreateInvoice)
 	router.HandleFunc("GET /api/v1/invoices", handler.ListInvoices)
+	router.HandleFunc("GET /api/v1/invoices/open", handler.GetOpenInvoices)
 	router.HandleFunc("GET /api/v1/invoices/{id}", handler.GetInvoice)
+	router.HandleFunc("GET /api/v1/invoices/{id}/pdf", handler.GetInvoicePDF)
 	router.HandleFunc("POST /api/v1/invoices/{id}/send", handler.SendInvoice)
 	router.HandleFunc("POST /api/v1/invoices/{id}/mark-paid", handler.MarkInvoicePaid)
 	router.HandleFunc("POST /api/v1/invoices/{id}/cancel", handler.CancelInvoice)
 	router.HandleFunc("POST /api/v1/invoices/{id}/credit", handler.CreditInvoice)
+	router.HandleFunc("POST /api/v1/invoices/from-project/{projectId}", handler.CreateInvoiceFromProject)
 
 	// Quote routes
 	router.HandleFunc("POST /api/v1/quotes", handler.CreateQuote)
 	router.HandleFunc("GET /api/v1/quotes", handler.ListQuotes)
 	router.HandleFunc("GET /api/v1/quotes/{id}", handler.GetQuote)
+	router.HandleFunc("GET /api/v1/quotes/{id}/pdf", handler.GetQuotePDF)
 	router.HandleFunc("POST /api/v1/quotes/{id}/send", handler.SendQuote)
 	router.HandleFunc("POST /api/v1/quotes/{id}/accept", handler.AcceptQuote)
 	router.HandleFunc("POST /api/v1/quotes/{id}/reject", handler.RejectQuote)

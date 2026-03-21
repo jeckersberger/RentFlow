@@ -136,3 +136,8 @@ func (s *CategoryService) DeleteCategory(ctx context.Context, tenantID, category
 	s.logger.Info("Category deleted", "id", categoryID, "tenant_id", tenantID)
 	return nil
 }
+
+// GetCategoryRepo returns the category repository for use by other services
+func (s *CategoryService) GetCategoryRepo() ports.CategoryRepository {
+	return s.catRepo
+}

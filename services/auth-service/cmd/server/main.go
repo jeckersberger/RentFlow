@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	nethttp "net/http"
@@ -17,6 +19,7 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	authhttp "github.com/jeckersberger/rentflow/services/auth-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/auth-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/infrastructure/repositories"
 )
 
@@ -44,13 +47,32 @@ func main() {
 
 	log.Info("Connected to database")
 
+	// Generate or load RSA key pair
+	privKey, err := application.GenerateKeyPair()
+	if err != nil {
+		log.Fatal("failed to generate RSA key pair", err)
+	}
+
+	// Serialize RSA keys to PEM
+	privKeyPEM := application.MarshalPrivateKeyPEM(privKey)
+	pubKeyPEM := application.MarshalPublicKeyPEM(&privKey.PublicKey)
+
+	// Create token manager with RSA keys
+	tokenMgr, err := application.NewTokenManager(privKeyPEM, pubKeyPEM)
+	if err != nil {
+		log.Fatal("failed to create token manager", err)
+	}
+
 	// Create repositories
 	userRepo := repositories.NewPostgresUserRepository(db, log)
 	tenantRepo := repositories.NewPostgresTenantRepository(db, log)
 
 	// Create services
-	userService := application.NewUserService(userRepo, tenantRepo, cfg.JWTSecret, log)
+	userService := application.NewUserService(userRepo, tenantRepo, tokenMgr, log)
 	tenantService := application.NewTenantService(tenantRepo, log)
+
+	// Seed superadmin if configured
+	seedSuperadmin(db, userRepo, tenantRepo, userService, log)
 
 	// Setup router
 	router := nethttp.NewServeMux()
@@ -59,8 +81,11 @@ func main() {
 	router.HandleFunc("GET /health", healthHandler(serviceName))
 	router.HandleFunc("GET /ready", readyHandler(serviceName, db, log))
 
+	// JWKS endpoint
+	router.HandleFunc("GET /api/v1/auth/.well-known/jwks", jwksHandler(tokenMgr, log))
+
 	// Setup API routes
-	authhttp.SetupRoutes(router, userService, tenantService, cfg.JWTSecret, log)
+	authhttp.SetupRoutes(router, userService, tenantService, tokenMgr, log)
 
 	// Create HTTP server
 	srv := &nethttp.Server{
@@ -150,4 +175,95 @@ func connectPostgres(connectionString string, log logger.Logger) (*sql.DB, error
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	return db, nil
+}
+
+
+func jwksHandler(tokenMgr *application.TokenManager, log logger.Logger) nethttp.HandlerFunc {
+	return func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(nethttp.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"keys": []map[string]interface{}{
+				{
+					"kty": "RSA",
+					"use": "sig",
+					"alg": "RS256",
+					"key": tokenMgr.PublicKeyPEM(),
+				},
+			},
+		})
+	}
+}
+
+func seedSuperadmin(
+	db *sql.DB,
+	userRepo *repositories.PostgresUserRepository,
+	tenantRepo *repositories.PostgresTenantRepository,
+	userService *application.UserService,
+	log logger.Logger,
+) {
+	// Read environment variables
+	superadminEmail := os.Getenv("SUPERADMIN_EMAIL")
+	superadminPassword := os.Getenv("SUPERADMIN_PASSWORD")
+	defaultTenantName := os.Getenv("DEFAULT_TENANT_NAME")
+	defaultTenantSlug := os.Getenv("DEFAULT_TENANT_SLUG")
+
+	// Only seed if all required env vars are set
+	if superadminEmail == "" || superadminPassword == "" || defaultTenantName == "" || defaultTenantSlug == "" {
+		log.Debug("Superadmin seeding not configured (missing env vars)")
+		return
+	}
+
+	ctx := context.Background()
+
+	// Check if any users exist
+	var count int
+	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM auth.users").Scan(&count)
+	if err != nil && err != sql.ErrNoRows {
+		log.Error("failed to check user count", err)
+		return
+	}
+
+	if count > 0 {
+		log.Debug("Users already exist, skipping superadmin seed")
+		return
+	}
+
+	// Create default tenant
+	tenantID := generateUUID()
+	tenant := domain.NewTenant(tenantID, defaultTenantName, defaultTenantSlug)
+	if err := tenantRepo.Save(ctx, tenant); err != nil {
+		log.Error("failed to create default tenant", err)
+		return
+	}
+	log.Info("default tenant created", "id", tenantID, "name", defaultTenantName)
+
+	// Create superadmin user
+	userID := generateUUID()
+	user := domain.NewUser(userID, superadminEmail, "", "Super", "Admin", tenantID)
+	user.AssignRole("superadmin")
+
+	// Hash password
+	passwordMgr := application.NewPasswordManager()
+	passwordHash, err := passwordMgr.HashPassword(superadminPassword)
+	if err != nil {
+		log.Error("failed to hash superadmin password", err)
+		return
+	}
+	user.PasswordHash = passwordHash
+
+	if err := userRepo.Save(ctx, user); err != nil {
+		log.Error("failed to create superadmin user", err)
+		return
+	}
+
+	log.Info("superadmin user created", "id", userID, "email", superadminEmail)
+}
+
+func generateUUID() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(b)
 }

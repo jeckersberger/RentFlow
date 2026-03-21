@@ -279,6 +279,54 @@ func (r *ProjectPostgres) Search(ctx context.Context, tenantID, term string, lim
 	}, nil
 }
 
+func (r *ProjectPostgres) ListByDateRange(ctx context.Context, tenantID, startDate, endDate string) ([]*domain.Project, error) {
+	query := `
+		SELECT id, tenant_id, name, description, client_name, client_email,
+			   client_phone, client_street, client_city, client_state,
+			   client_postal_code, client_country, client_coordinates,
+			   venue_street, venue_city, venue_state, venue_postal_code,
+			   venue_country, venue_coordinates, status, start_date, end_date,
+			   setup_date, teardown_date, project_manager, budget, currency,
+			   notes, tags, created_at, updated_at, created_by_user_id
+		FROM projects.projects
+		WHERE tenant_id = $1 AND start_date <= $3 AND end_date >= $2
+		ORDER BY start_date ASC
+	`
+
+	rows, err := r.db.Query(ctx, query, tenantID, startDate, endDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list projects by date range: %w", err)
+	}
+	defer rows.Close()
+
+	projects := make([]*domain.Project, 0)
+	for rows.Next() {
+		var tags pq.StringArray
+		p := &domain.Project{}
+		err := rows.Scan(
+			&p.ID, &p.TenantID, &p.Name, &p.Description, &p.ClientName, &p.ClientEmail,
+			&p.ClientPhone, &p.ClientAddress.Street, &p.ClientAddress.City, &p.ClientAddress.State,
+			&p.ClientAddress.PostalCode, &p.ClientAddress.Country, &p.ClientAddress.Coordinates,
+			&p.VenueAddress.Street, &p.VenueAddress.City, &p.VenueAddress.State,
+			&p.VenueAddress.PostalCode, &p.VenueAddress.Country, &p.VenueAddress.Coordinates,
+			&p.Status, &p.StartDate, &p.EndDate, &p.SetupDate, &p.TeardownDate,
+			&p.ProjectManager, &p.Budget, &p.Currency, &p.Notes, &tags,
+			&p.CreatedAt, &p.UpdatedAt, &p.CreatedByUserID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan project: %w", err)
+		}
+		p.Tags = tags
+		projects = append(projects, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating projects: %w", err)
+	}
+
+	return projects, nil
+}
+
 func (r *ProjectPostgres) Delete(ctx context.Context, tenantID, projectID string) error {
 	query := `DELETE FROM projects.projects WHERE id = $1 AND tenant_id = $2`
 

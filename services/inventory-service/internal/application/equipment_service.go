@@ -342,3 +342,8 @@ func hashString(s string) int64 {
 	}
 	return h & 0x7FFFFFFFFFFFFFFF
 }
+
+// GetEquipmentRepo returns the equipment repository for use by other services
+func (s *EquipmentService) GetEquipmentRepo() ports.EquipmentRepository {
+	return s.equipRepo
+}

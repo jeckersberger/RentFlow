@@ -405,3 +405,14 @@ func (s *QuoteService) RemoveItem(ctx context.Context, cmd RemoveQuoteItemComman
 	s.logger.Info("Item removed from quote", "quote_id", cmd.QuoteID)
 	return QuoteToDTO(quote), nil
 }
+
+// GenerateQuotePDF generates printable quote HTML
+func (s *QuoteService) GenerateQuotePDF(ctx context.Context, tenantID, quoteID string) (string, error) {
+	quote, err := s.quoteRepo.GetByID(ctx, tenantID, quoteID)
+	if err != nil {
+		return "", domain.NewDomainError("NOT_FOUND", "quote not found", err)
+	}
+
+	html := buildQuoteHTML(quote)
+	return html, nil
+}

@@ -145,3 +145,49 @@ func FlightcaseToDTO(fc *domain.Flightcase) *FlightcaseDTO {
 		CreatedByUserID: fc.CreatedByUserID,
 	}
 }
+
+// Price and Availability DTOs
+
+type PriceQueryDTO struct {
+	Days            int     `json:"days"`
+	CustomDiscount  float64 `json:"custom_discount"`
+}
+
+type AvailabilityCheckRequest struct {
+	EquipmentID string `json:"equipment_id"`
+	Quantity    int    `json:"quantity"`
+}
+
+type ImportEquipmentRequest struct {
+	Name         string  `json:"name"`
+	Description  string  `json:"description"`
+	SKU          string  `json:"sku"`
+	SerialNumber string  `json:"serial_number"`
+	Barcode      string  `json:"barcode"`
+	CategoryName string  `json:"category_name"`
+	DailyRate    float64 `json:"daily_rate"`
+	WeeklyRate   float64 `json:"weekly_rate"`
+}
+
+type ImportResult struct {
+	Created int               `json:"created"`
+	Skipped int               `json:"skipped"`
+	Errors  []ImportErrorItem `json:"errors"`
+}
+
+type ImportErrorItem struct {
+	Row     int    `json:"row"`
+	Barcode string `json:"barcode"`
+	Error   string `json:"error"`
+}
+
+type EquipmentHistoryDTO struct {
+	ID         string            `json:"id"`
+	TenantID   string            `json:"tenant_id"`
+	EquipmentID string           `json:"equipment_id"`
+	Action     string            `json:"action"`
+	ChangedBy  string            `json:"changed_by,omitempty"`
+	OldValue   map[string]interface{} `json:"old_value,omitempty"`
+	NewValue   map[string]interface{} `json:"new_value,omitempty"`
+	CreatedAt  string            `json:"created_at"`
+}
