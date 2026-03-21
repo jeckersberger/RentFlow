@@ -291,50 +291,340 @@ make test-e2e
 
 ## 🗺️ Roadmap
 
-### Phase 0 – Foundation (Q2 2026) ✅
-- [x] Projekt-Setup: Monorepo, Docker Compose, CI/CD
-- [x] KurrentDB + PostgreSQL Infrastruktur (Docker-Config)
-- [x] Shared Go Library (pkg/common) – kompiliert ✅
-- [x] 18 Service-Skeletons mit Health-Checks – kompilieren ✅
-- [x] Traefik API Gateway Konfiguration
-- [x] Frontend-Grundgerüst (React 18, Design System) – baut ✅
+> **Detaillierte Planung:** [`docs/planning/05-IMPLEMENTATION-PHASES.md`](docs/planning/05-IMPLEMENTATION-PHASES.md)
+>
+> **Hinweis:** Alle 18 Services kompilieren fehlerfrei und das Frontend baut. Die Service-Skeletons (Hexagonale Architektur, HTTP-Handler, Domain-Models, Repository-Layer) sind vorhanden, aber noch nicht getestet oder produktionsbereit. Die nachfolgenden Checkboxen spiegeln den **tatsächlichen Fertigstellungsgrad** wider.
 
-### Phase 1 – MVP Core (Q3 2026) 🔄
-- [x] Auth-Service – Scaffolding (kompiliert, noch nicht getestet)
-- [x] Inventory-Service – Scaffolding (kompiliert, noch nicht getestet)
-- [x] Scanner-Service – Scaffolding (kompiliert, noch nicht getestet)
-- [x] Warehouse-Service – Scaffolding (kompiliert, noch nicht getestet)
-- [x] Basis-Frontend – Pages vorhanden (baut, noch nicht E2E-getestet)
-- [ ] Unit-Tests für Core-Services
-- [ ] KurrentDB Event Sourcing verdrahten
-- [ ] Passwort-Hashing auf bcrypt/argon2id upgraden
-- [ ] Integration-Tests mit echtem PostgreSQL
+### Phase 0 – Infrastruktur & Setup (4–6 Wochen)
 
-### Phase 2 – Business Logic (Q4 2026)
-- [x] Project-Service – Scaffolding (kompiliert)
-- [x] Invoice-Service – Scaffolding (kompiliert, GoBD-Struktur vorhanden)
-- [x] Document-Service – Scaffolding (kompiliert)
-- [x] Crew-Service – Scaffolding (kompiliert)
-- [x] Expense-Service – Scaffolding (kompiliert)
-- [ ] Business Logic verifizieren & testen
-- [ ] DATEV-Export verifizieren
+#### M0.1: Repository & Projektstruktur
+- [ ] Git-Repository initialisieren
+- [ ] Verzeichnisstruktur anlegen
+- [ ] `.gitignore` für Go + Node + Docker konfigurieren
+- [ ] `go.work` für Multi-Module Workspace einrichten
+- [ ] Makefile mit Standard-Targets erstellen
 
-### Phase 3 – Advanced Features (Q1 2027)
-- [x] Federation-Service – Scaffolding (kompiliert)
-- [x] Maintenance-Service – Scaffolding (kompiliert)
-- [x] Transport-Service – Scaffolding (kompiliert)
-- [x] Notification-Service – Scaffolding (kompiliert)
-- [ ] NAS-Storage Integration (nur Adapter-Interface vorhanden)
-- [ ] mTLS Federation tatsächlich implementieren
-- [ ] E-Mail/Push-Versand implementieren
+#### M0.2: Docker Compose Stack
+- [ ] `docker-compose.yml` für Infrastruktur-Services
+- [ ] `docker-compose.dev.yml` mit Hot-Reload für alle Services
+- [ ] `docker-compose.prod.yml` mit Ressource-Limits
+- [ ] `.env.example` Datei mit allen Umgebungsvariablen
+- [ ] PostgreSQL Init-Skript für alle 17 Schemas
+- [ ] KurrentDB TLS-Zertifikat-Generierung
+- [ ] Redis-Passwort und Persistence konfigurieren
+- [ ] Traefik TLS + ACME konfigurieren
+- [ ] Health-Check-Skript: `scripts/health-check.sh`
 
-### Phase 4 – Intelligence & Scale (Q2 2027+)
-- [x] AI-Service – Scaffolding (kompiliert)
-- [x] Workflow-Service – Scaffolding (kompiliert)
-- [x] Reporting-Service – Scaffolding (kompiliert)
-- [x] Insurance-Service – Scaffolding (kompiliert)
-- [ ] AI-Provider-Anbindung (Claude, OpenAI, Ollama)
-- [ ] Advanced Analytics & Performance-Optimierung
+#### M0.3: PostgreSQL Schema-Initialisierung
+- [ ] Init-SQL für alle 17 Schemas
+- [ ] Service-spezifische Datenbanknutzer
+- [ ] Extensions (uuid-ossp, pg_trgm, btree_gin)
+- [ ] Migration-Tool `golang-migrate/migrate` einrichten
+- [ ] `migrations/` Verzeichnis pro Service anlegen
+- [ ] Makefile-Target `make migrate-up` / `make migrate-down`
+
+#### M0.4: Shared Go-Library `pkg/common`
+- [ ] KurrentDB Go-Client-Wrapper mit exponential backoff
+- [ ] PostgreSQL Pool-Factory (pgxpool.Pool) mit Connection-Retry
+- [ ] Redis-Client-Factory
+- [ ] JWT-Middleware für chi-Router
+- [ ] Zerolog-Setup mit Correlation-ID, Request-ID
+- [ ] Health-Check-Handler (liveness + readiness)
+- [ ] Domänen-Fehlertypen (NotFound, Conflict, Unauthorized, etc.)
+- [ ] Cursor-Paginierung (keyset pagination)
+- [ ] gRPC-Server-Bootstrap mit TLS
+- [ ] Unit-Tests für alle gemeinsamen Pakete
+
+#### M0.5: Service-Template
+- [ ] Service-Template-Generator (Bash/Go-Skript)
+- [ ] Template für alle 17 Services anwenden
+- [ ] Dockerfile (Multi-Stage Build, distroless/scratch)
+- [ ] Makefile pro Service (build, test, run, lint)
+- [ ] `go.work` alle Services einschließen
+
+#### M0.6: Frontend-Scaffold
+- [ ] Vite-Projekt mit React + TypeScript
+- [ ] TanStack Router mit Route-Tree
+- [ ] TanStack Query mit Axios-Client
+- [ ] Zustand-Stores (auth, ui, scanner, notification)
+- [ ] Radix UI Themes + Farbpalette
+- [ ] SCSS Design-Tokens (`src/styles/tokens.scss`)
+- [ ] i18n-Setup (DE/EN, Namespace-Splitting)
+- [ ] PWA-Config (`vite.config.ts` + `vite-plugin-pwa`)
+- [ ] Service-Worker für Offline-Funktionalität
+- [ ] ESLint + Prettier-Konfiguration
+- [ ] Vitest + Testing-Library Setup
+
+#### M0.7: CI/CD-Pipeline
+- [ ] GitHub Actions CI für alle Services
+- [ ] Docker-Image-Build und Push nach GHCR
+- [ ] Frontend-Build und -Tests in CI
+- [ ] Deployment-Skript für Self-Hosted (`scripts/deploy.sh`)
+- [ ] Watchtower für automatisches Image-Update konfigurieren
+- [ ] Rollback-Skript (`scripts/rollback.sh`)
+- [ ] Secrets-Management mit `.env`-Datei und Docker Secrets
+
+#### M0.8: Monitoring & Logging
+- [ ] Prometheus Scraping-Config für alle Services
+- [ ] Grafana Dashboard-Templates (Latenz, Error-Rate, Event-Throughput)
+- [ ] Loki für zentrales Log-Aggregation
+- [ ] Alertmanager-Regeln (Service Down, hohe Fehlerrate)
+- [ ] `docker-compose.monitoring.yml` (Prometheus + Grafana + Loki)
+- [ ] Health-Check-Endpoint für alle Services (`GET /health/live`, `GET /health/ready`)
+
+#### Phase-0-Abnahmekriterien
+- [ ] `docker compose up -d` startet alle Infrastruktur-Services ohne Fehler
+- [ ] KurrentDB Admin-UI erreichbar unter `http://localhost:2113`
+- [ ] PostgreSQL-Verbindung mit allen 17 Schemas erfolgreich
+- [ ] Redis `PING` liefert `PONG`
+- [ ] Traefik-Dashboard erreichbar
+- [ ] CI-Pipeline läuft durch (grün)
+- [ ] Frontend lädt unter `http://localhost:5173`
+- [ ] Alle Services kompilieren fehlerfrei
+
+---
+
+### Phase 1 – Core MVP (10–14 Wochen)
+
+#### M1.1: Auth-Service
+- [ ] PostgreSQL-Schema: `users`, `sessions`, `refresh_tokens`
+- [ ] Argon2id-Passwort-Hashing
+- [ ] JWT-Ausstellung (RS256, 1h Lebensdauer)
+- [ ] Refresh-Token in Redis (7 Tage)
+- [ ] RBAC-Rollen: `superadmin`, `admin`, `manager`, `warehouse`, `driver`, `crew`, `freelancer`, `readonly`
+- [ ] Permissions-Matrix implementieren
+- [ ] Brute-Force-Schutz (5 Fehlversuche → 15 Min Sperre, Redis)
+- [ ] Rate-Limiting: 10 Anfragen/Minute pro IP
+- [ ] Initialer Superadmin-Nutzer per Umgebungsvariable
+
+#### M1.2: Inventory-Service
+- [ ] PostgreSQL-Migration: `equipment`, `equipment_stock`, `categories`, `equipment_images`
+- [ ] KurrentDB-Aggregate `EquipmentAggregate`
+- [ ] Volltext-Suche mit `pg_trgm`
+- [ ] Batch-Verfügbarkeitscheck (bis 500 Items gleichzeitig)
+- [ ] Preiskalkulations-Engine mit Staffelrabatten
+- [ ] ZPL-Label-Generierung für Zebra-Drucker
+- [ ] MinIO/S3-Integration für Equipment-Bilder
+- [ ] QR-Code-Generierung (`skip2/go-qrcode`)
+- [ ] Flightcase-Logik: Child-Equipment-Zuordnung
+- [ ] CSV-Import aus Bestandsdaten alter Systeme
+
+#### M1.3: Project-Service
+- [ ] PostgreSQL-Migration: `projects`, `project_equipment`, `customers`
+- [ ] Status-Zustandsmaschine (anfrage → archiviert)
+- [ ] Doppelbuchungs-Erkennung über alle Projekte
+- [ ] Packlisten-Generierung sortiert nach Lagerort
+- [ ] Kalenderansicht für Projektzeitraum-Übersicht
+- [ ] E-Mail-Benachrichtigung bei Status-Änderung
+- [ ] Kunden-Verwaltung (DSGVO-konforme Pflichtfelder)
+- [ ] Projekt-Kopieren-Funktion
+
+#### M1.4: Invoice-Service
+- [ ] Fortlaufende GoBD-konforme Rechnungsnummern (pro Mandant)
+- [ ] PDF-Generierung mit `chromedp` (HTML-Template → PDF)
+- [ ] Angebot → Auftragsbestätigung → Rechnung Konvertierung
+- [ ] Mahnwesen (3-stufig: Zahlungserinnerung / Mahnung 1 / Mahnung 2)
+- [ ] DATEV-Export SKR03 (CSV-Format)
+- [ ] Teilrechnung mit Restbetrag-Tracking
+- [ ] Stornierung nach GoBD (keine Löschung, nur Gegenbuchung)
+- [ ] Gutschriften mit Pflicht-Verweis auf Originalrechnung
+- [ ] E-Mail-Versand der Rechnung als PDF-Anhang
+
+#### M1.5: Frontend Core-Pages
+- [ ] TanStack Router Route-Tree aufbauen
+- [ ] Login-Page, Dashboard, Equipment-Liste, Equipment-Detail
+- [ ] Projekte-Liste, Projekt-Detail, Rechnungen-Liste, Rechnung-Detail
+- [ ] TanStack Query für alle API-Calls
+- [ ] Optimistic Updates für häufige Operationen
+- [ ] Fehlerbehandlung + Toast-Benachrichtigungen
+- [ ] Responsive Design (Desktop + Tablet Prio)
+- [ ] Dark-Mode-Toggle
+- [ ] Command Palette (⌘K) für Navigation
+
+#### M1.6: Scanner-Integration
+- [ ] `ScannerPage` (`/scan`) mit Kamera-QR-Scan
+- [ ] Equipment-Lookup nach QR-Code-UUID
+- [ ] Check-Out: Equipment einem Projekt zuweisen
+- [ ] Check-In: Equipment vom Projekt zurückgeben
+- [ ] Scan-Feedback (visuell + vibration)
+- [ ] Offline-Unterstützung für Service-Worker
+
+#### Phase-1-Abnahmekriterien
+- [ ] Marco kann ein neues Projekt anlegen und Equipment zuweisen
+- [ ] Lisa kann Equipment per Smartphone-Kamera scannen und check-out durchführen
+- [ ] Thomas kann eine Rechnung erstellen, als PDF herunterladen und per E-Mail senden
+- [ ] Thomas kann DATEV-Export für einen Monat herunterladen
+- [ ] Alle CRUD-Operationen für Equipment, Projekte, Rechnungen funktionieren
+- [ ] JWT-Auth schützt alle Endpunkte
+- [ ] Keine SQL-Injections, XSS, CSRF
+
+---
+
+### Phase 2 – Operations (8–12 Wochen)
+
+#### M2.1: Warehouse-Service
+- [ ] PostgreSQL-Migration: `warehouses`, `zones`, `racks`, `bays`, `stock_locations`, `movements`
+- [ ] Hierarchische Lagerstruktur (Lager → Zone → Regal → Fach)
+- [ ] Standort-Zuweisung für Equipment-Bestände
+- [ ] QR-Code-Label für jeden Lagerplatz (ZPL-Format für Zebra)
+- [ ] Bewegungs-Tracking: jede physische Bewegung als Event
+- [ ] Inventur-Workflow: Voll-Inventur, Zyklus-Inventur, Spot-Kontrolle
+- [ ] Lagerplatz-Kapazitäts-Tracking
+- [ ] KI-Lageroptimierung (Vorbereitung für Phase 4)
+
+#### M2.2: Scanner-Service mit Zebra TC21
+- [ ] Zebra DataWedge-Intent-Empfang in PWA
+- [ ] Scan-Kontext-System (check-out, check-in, lager-einräumen, inventur)
+- [ ] Multi-Scan für Packlisten (alle Items eines Projekts scannen)
+- [ ] Audio + visuelles Feedback pro Scan-Ergebnis
+- [ ] Offline-Scan-Queue (IndexedDB, bis 500 Scans)
+- [ ] Background-Sync wenn Verbindung wiederhergestellt
+- [ ] Scan-Session-Protokoll in `scanner_schema`
+- [ ] RFID-Vorbereitung (Zebra FX9600 Interface)
+- [ ] USB-Scanner via WebHID-API
+
+#### M2.3: Transport-Service
+- [ ] PostgreSQL-Migration: `vehicles`, `tours`, `tour_equipment`, `driver_logs`
+- [ ] Fahrzeug-Verwaltung (Kennzeichen, Kapazität kg + m³, DGUV-Prüfung)
+- [ ] Tour-Planung: welches Equipment in welches Fahrzeug
+- [ ] Kapazitäts-Check: Gewicht + Volumen nicht überschreiten
+- [ ] Fahrer-Zuweisung aus Crew-Service (gRPC)
+- [ ] Lieferschein-Generierung (Anknüpfung an Document-Service Phase 3)
+- [ ] Kilometer + Kosten-Tracking pro Tour
+- [ ] Tachograph-kompatible Fahrerlisten
+
+#### M2.4: Maintenance-Service
+- [ ] PostgreSQL-Migration: `maintenance_plans`, `maintenance_tasks`, `checklists`, `electrical_tests`
+- [ ] Wartungsplan-Typen: Intervall, Nach-Einsatz, Stunden-basiert
+- [ ] Aufgaben-Zustandsmaschine: geplant → in_bearbeitung → abgeschlossen
+- [ ] Checklisten mit JSON-Format
+- [ ] E-Check / DGUV Vorschrift 3 Workflow (VDE-0701-0702-Messwerte, Prüfplaketten-Druck)
+- [ ] IZYTRON.IQ XML-Import (Prüfergebnis-Import)
+- [ ] Equipment automatisch in Wartungs-Status setzen (sperrt für Buchung)
+- [ ] Wartungs-Dashboard: fällige und überfällige Wartungen
+
+#### M2.5: Frontend Operations-Pages
+- [ ] Lager-Übersicht (`/warehouse`) mit Zonen + Regalanzeige
+- [ ] Mobiler Scanner (`/scan`) erweitert mit Zebra DataWedge + Offline
+- [ ] Transport (`/transport`) mit Touren-Planung + Fahrzeug-Verfügbarkeit
+- [ ] Wartung (`/maintenance`) mit Fälligkeits-Kalender + E-Check-Dashboard
+
+#### Phase-2-Abnahmekriterien
+- [ ] Lisa kann Equipment mit Zebra TC21 scannen und in ein Projekt auschecken
+- [ ] Offline-Scans werden bei Reconnect automatisch synchronisiert
+- [ ] Wartungsfällige Geräte erscheinen in Dashboard-Warnung
+- [ ] DGUV/E-Check-Status pro Gerät ist sichtbar
+- [ ] Touren können Fahrzeugen zugewiesen werden mit Kapazitätsprüfung
+
+---
+
+### Phase 3 – Business (8–10 Wochen)
+
+#### M3.1: Crew-Service
+- [ ] PostgreSQL-Migration: `crew_members`, `qualifications`, `crew_assignments`, `time_records`
+- [ ] Qualifikations-System (IPAF, Rigger, Tonmeister, etc.)
+- [ ] Verfügbarkeits-Matrix für Crew-Mitglieder
+- [ ] Konflikt-Erkennung: Doppel-Buchung eines Crew-Mitglieds
+- [ ] CalDAV-Feed für Crew-Kalender (Thunderbird/iOS)
+- [ ] Freelancer-Portal: Eigene Einsätze und Aufgaben sehen
+- [ ] Zeiterfassung pro Einsatz (Start/Stop-Timer)
+- [ ] Fahrerliste: Wer fährt wann mit welchem Fahrzeug
+
+#### M3.2: Document-Service
+- [ ] PostgreSQL-Migration: `documents`, `document_versions`, `signatures`
+- [ ] Dokument-Typen: Angebot, AB, Lieferschein, Abholschein, Rechnung, Mietvertrag, Schadensbericht
+- [ ] Go-Template-basierte PDF-Generierung (chromedp)
+- [ ] Lieferschein-Generierung aus Packliste
+- [ ] Digitale Unterschriften (Canvas-Signature-Pad)
+- [ ] GoBD-konformes Archiv: SHA-256-Checksummen-Kette
+- [ ] Versionierung: `v1`, `v2` ... bei Änderungen
+- [ ] Scan-to-Document: Scan-Upload + OCR (tesseract)
+- [ ] Kunden-Portal: Dokument zum Unterschreiben per Link
+
+#### M3.3: Insurance-Service
+- [ ] PostgreSQL-Migration: `policies`, `claims`, `claim_items`
+- [ ] Versicherungspolice-Verwaltung (Betriebshaftpflicht, Kasko, Transport, Mieter)
+- [ ] Equipment automatisch versicherungsrelevant markieren (ab Wiederbeschaffungswert)
+- [ ] Schadensfall-Workflow: Erfassung → Dokumentation → Einreichung → Abschluss
+- [ ] Schadensformular mit Foto-Upload
+- [ ] Forderungs-Tracking: Wieviel erstattet, wieviel offen
+- [ ] Jahres-Auswertung: Schäden pro Jahr, Prämienentwicklung
+
+#### M3.4: Reporting-Service
+- [ ] PostgreSQL-Migration: `report_definitions`, `report_runs`, `kpi_snapshots`
+- [ ] Rollen-spezifische KPI-Dashboards (GF, Lager, Buchhaltung)
+- [ ] Report-Typen: Umsatzbericht, Auslastung, Mahnstatistik, Equipment-Inventur
+- [ ] Zeitraumauswahl: Woche, Monat, Quartal, Jahr, Custom
+- [ ] CSV + PDF-Export für jeden Report
+- [ ] Geplante E-Mail-Reports (wöchentlicher Umsatz-Report)
+- [ ] Recharts/Victory-basierte Diagramme im Frontend
+
+#### M3.5: Frontend Business-Pages
+- [ ] Crew-Management (`/crew`) mit Qualifikations-Badges + Verfügbarkeitskalender
+- [ ] Freelancer-Ansicht (`/my-assignments`) mobiloptimiert
+- [ ] Dokumente (`/documents`) mit Archiv + Unterschriften-Status
+- [ ] Versicherung (`/insurance`) mit Policen-Übersicht + Schadensmeldung
+- [ ] Reports (`/reports`) mit KPI-Dashboard + Diagramme + Export
+
+#### Phase-3-Abnahmekriterien
+- [ ] Kevin kann seine Einsätze auf dem iPhone sehen und Zeiten erfassen
+- [ ] Lieferschein wird aus Packliste automatisch generiert und kann digital unterschrieben werden
+- [ ] Thomas kann monatlichen Umsatzbericht als PDF/CSV exportieren
+- [ ] Schadensfall kann dokumentiert und mit Fotos eingereicht werden
+- [ ] GoBD-Archiv speichert Dokumente mit Checksummen-Kette
+
+---
+
+### Phase 4 – Advanced Features (10–14 Wochen)
+
+#### M4.1: AI-Service
+- [ ] PostgreSQL-Migration: `ai_requests`, `ai_feedback`, `few_shot_examples`, `ai_providers`
+- [ ] Multi-Provider-Architektur: Claude / GPT-4o / Gemini / Mistral / Ollama
+- [ ] Anonymisierungs-Service (7 Muster: Name, E-Mail, IBAN, Tel., Adresse, Steuernr., Kundennr.)
+- [ ] KI-Funktionen: Preisoptimierung, Nachfrageprognose, Smart Asset Creator, Prädiktive Wartung
+- [ ] Feedback-Mechanismus + Few-Shot-Learning
+
+#### M4.2: Workflow-Service
+- [ ] PostgreSQL-Migration: `workflow_definitions`, `workflow_instances`, `workflow_steps`
+- [ ] Trigger-Typen: Event-basiert, Zeitbasiert (Cron), Manuell
+- [ ] Aktions-Typen: E-Mail, Webhook, Service-Call (gRPC), Status-Änderung
+- [ ] Vordefinierte Templates (Onboarding, Erinnerungen, Warnungen)
+- [ ] Visueller Workflow-Editor (React Flow)
+
+#### M4.3: Federation-Service
+- [ ] mTLS-Zertifikat-Management (Cert-auf-Cert-Austausch)
+- [ ] Partner-Einrichtung + Equipment-Verfügbarkeit im Partner-Netzwerk
+- [ ] Sub-Vermietungs-Anfrage senden + empfangen
+- [ ] Handover-Dokumentation + automatische Eingangsrechnung
+- [ ] Data-Sovereignty: Nur explizit freigegebene Daten werden geteilt
+
+#### M4.4: Notification-Service
+- [ ] PostgreSQL-Migration: `notifications`, `notification_channels`, `user_preferences`
+- [ ] E-Mail via SMTP, Web Push (VAPID), In-App (WebSocket + Redis Pub/Sub)
+- [ ] Nutzer-Präferenzen: Welcher Kanal für welchen Ereignistyp
+- [ ] Notification-Center, Tages-Digest, Stille Stunden, Batch-Benachrichtigungen
+
+#### M4.5: Audit-Service
+- [ ] PostgreSQL-Migration: `audit_log`, `audit_exports`
+- [ ] Immutables Audit-Log: SHA-256-Checksummen-Kette für GoBD-Konformität
+- [ ] Alle schreibenden Operationen in Audit-Log schreiben
+- [ ] GoBD-Prüfung: Prüf-Funktion für Checksummen-Integrität
+- [ ] DSGVO-Pseudonymisierung nach Nutzerlöschung
+- [ ] Betriebsprüfungs-Export (ZIP mit Audit-Logs + KurrentDB-Events)
+
+#### M4.6: Frontend Advanced-Pages
+- [ ] KI-Assistent (`/ai`) mit Chat-Interface + Smart Asset Creator
+- [ ] Workflow-Editor (`/workflows`) mit React Flow Canvas
+- [ ] Federation (`/federation`) mit Partner-Netzwerk-Übersicht
+- [ ] Audit-Log (`/audit`) mit Volltext-Suche + GoBD-Prüfbericht
+- [ ] Admin (`/admin`) mit System-Einstellungen + Service-Health
+
+#### Phase-4-Abnahmekriterien
+- [ ] KI-Preisoptimierung liefert nachvollziehbare Empfehlungen
+- [ ] Stefan (SoundPro) kann sich als Federation-Partner verbinden
+- [ ] Audit-Log zeigt lückenlose Checksummen-Kette (GoBD-Prüfung bestanden)
+- [ ] Workflow-Engine sendet automatisch E-Mail 7 Tage vor Projektstart
+- [ ] Web Push funktioniert auf Chrome Desktop + Android + iOS Safari
 
 ---
 
