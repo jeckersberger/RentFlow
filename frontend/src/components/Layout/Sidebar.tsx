@@ -9,11 +9,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: '📊' },
-  { label: 'Equipment', href: '/equipment', icon: '📦' },
-  { label: 'Projects', href: '/projects', icon: '📋' },
-  { label: 'Invoices', href: '/invoices', icon: '💰' },
-  { label: 'Crew', href: '/crew', icon: '👥' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
+  { label: 'Ausrüstung', href: '/equipment', icon: '📦' },
+  { label: 'Projekte', href: '/projects', icon: '📋' },
+  { label: 'Rechnungen', href: '/invoices', icon: '💰' },
+  { label: 'Scanner', href: '/scanner', icon: '📱' },
+  { label: 'Lager', href: '/warehouse', icon: '🏢' },
+  { label: 'Einstellungen', href: '/settings', icon: '⚙️' },
 ]
 
 function Sidebar() {

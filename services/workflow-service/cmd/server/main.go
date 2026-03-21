@@ -10,7 +10,11 @@ import (
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	httpAdapter "github.com/jeckersberger/rentflow/services/workflow-service/internal/adapters/http"
+	"github.com/jeckersberger/rentflow/services/workflow-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/workflow-service/internal/infrastructure/repositories"
 )
 
 const (
@@ -27,19 +31,25 @@ func main() {
 
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
-	router := http.NewServeMux()
+	dbPool, err := database.NewPostgresPool(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+	defer dbPool.Close()
 
-	// Health & readiness
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	log.Info("Connected to database")
 
-	// API routes (v1)
-	router.HandleFunc("GET /api/v1/workflows", listWorkflowsHandler)
-	router.HandleFunc("POST /api/v1/workflows", createWorkflowHandler)
-	router.HandleFunc("POST /api/v1/workflows/{id}/trigger", triggerWorkflowHandler)
-	router.HandleFunc("GET /api/v1/workflow-runs", listWorkflowRunsHandler)
+	workflowRepo := repositories.NewWorkflowPostgres(dbPool)
+	runRepo := repositories.NewWorkflowRunPostgres(dbPool)
 
-	// Graceful shutdown
+	log.Info("Repositories initialized")
+
+	workflowSvc := application.NewWorkflowService(workflowRepo, runRepo, log)
+
+	log.Info("Services initialized")
+
+	router := httpAdapter.NewRouter(workflowSvc, log)
+
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
@@ -62,43 +72,11 @@ func main() {
 	log.Info("Shutting down gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	srv.Shutdown(ctx)
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("Server shutdown error", err)
+	}
+
 	log.Info("Server stopped")
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"%s","timestamp":"%s"}`, serviceName, time.Now().UTC().Format(time.RFC3339))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, KurrentDB, Redis connections
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
-}
-
-func listWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"workflow-service"}`))
-}
-
-func createWorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"workflow-service"}`))
-}
-
-func triggerWorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"workflow-service"}`))
-}
-
-func listWorkflowRunsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"workflow-service"}`))
-}

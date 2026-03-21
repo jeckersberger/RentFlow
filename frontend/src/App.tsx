@@ -5,6 +5,28 @@ import MainLayout from './components/Layout/MainLayout'
 import LoginPage from './pages/Login'
 import DashboardPage from './pages/Dashboard'
 
+// Equipment Pages
+import EquipmentListPage from './pages/Equipment/EquipmentList'
+import EquipmentDetailPage from './pages/Equipment/EquipmentDetail'
+import EquipmentFormPage from './pages/Equipment/EquipmentForm'
+
+// Project Pages
+import ProjectListPage from './pages/Projects/ProjectList'
+import ProjectDetailPage from './pages/Projects/ProjectDetail'
+
+// Invoice Pages
+import InvoiceListPage from './pages/Invoices/InvoiceList'
+import InvoiceDetailPage from './pages/Invoices/InvoiceDetail'
+
+// Scanner Page
+import ScannerPage from './pages/Scanner/ScannerPage'
+
+// Warehouse Page
+import WarehouseViewPage from './pages/Warehouse/WarehousePage'
+
+// Settings Page
+import SettingsPage from './pages/Settings/SettingsPage'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -39,8 +61,34 @@ function App() {
               </PrivateRoute>
             }
           >
+            {/* Dashboard */}
             <Route index element={<DashboardPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
+
+            {/* Equipment Routes */}
+            <Route path="equipment" element={<EquipmentListPage />} />
+            <Route path="equipment/new" element={<EquipmentFormPage />} />
+            <Route path="equipment/:id" element={<EquipmentDetailPage />} />
+            <Route path="equipment/:id/edit" element={<EquipmentFormPage />} />
+
+            {/* Project Routes */}
+            <Route path="projects" element={<ProjectListPage />} />
+            <Route path="projects/new" element={<div>Neues Projekt - Formular</div>} />
+            <Route path="projects/:id" element={<ProjectDetailPage />} />
+            <Route path="projects/:id/edit" element={<div>Projekt bearbeiten - Formular</div>} />
+
+            {/* Invoice Routes */}
+            <Route path="invoices" element={<InvoiceListPage />} />
+            <Route path="invoices/new" element={<div>Neue Rechnung - Formular</div>} />
+            <Route path="invoices/:id" element={<InvoiceDetailPage />} />
+            <Route path="invoices/:id/edit" element={<div>Rechnung bearbeiten - Formular</div>} />
+
+            {/* Scanner & Warehouse */}
+            <Route path="scanner" element={<ScannerPage />} />
+            <Route path="warehouse" element={<WarehouseViewPage />} />
+
+            {/* Settings */}
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

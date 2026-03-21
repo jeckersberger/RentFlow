@@ -10,7 +10,11 @@ import (
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/config"
+	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	httpAdapter "github.com/jeckersberger/rentflow/services/insurance-service/internal/adapters/http"
+	"github.com/jeckersberger/rentflow/services/insurance-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/insurance-service/internal/infrastructure/repositories"
 )
 
 const (
@@ -27,19 +31,28 @@ func main() {
 
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
-	router := http.NewServeMux()
+	dbPool, err := database.NewPostgresPool(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+	defer dbPool.Close()
 
-	// Health & readiness
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	log.Info("Connected to database")
 
-	// API routes (v1)
-	router.HandleFunc("GET /api/v1/policies", listPoliciesHandler)
-	router.HandleFunc("POST /api/v1/policies", createPolicyHandler)
-	router.HandleFunc("POST /api/v1/claims", createClaimHandler)
-	router.HandleFunc("GET /api/v1/risk-analysis", getRiskAnalysisHandler)
+	policyRepo := repositories.NewPolicyPostgres(dbPool)
+	claimRepo := repositories.NewClaimPostgres(dbPool)
+	riskRepo := repositories.NewRiskAssessmentPostgres(dbPool)
 
-	// Graceful shutdown
+	log.Info("Repositories initialized")
+
+	policySvc := application.NewPolicyService(policyRepo, log)
+	claimSvc := application.NewClaimService(claimRepo, policyRepo, log)
+	riskSvc := application.NewRiskService(riskRepo, log)
+
+	log.Info("Services initialized")
+
+	router := httpAdapter.NewRouter(policySvc, claimSvc, riskSvc, log)
+
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
@@ -62,43 +75,11 @@ func main() {
 	log.Info("Shutting down gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	srv.Shutdown(ctx)
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("Server shutdown error", err)
+	}
+
 	log.Info("Server stopped")
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"%s","timestamp":"%s"}`, serviceName, time.Now().UTC().Format(time.RFC3339))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, KurrentDB, Redis connections
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
-}
-
-func listPoliciesHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":[],"message":"not yet implemented","service":"insurance-service"}`))
-}
-
-func createPolicyHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"insurance-service"}`))
-}
-
-func createClaimHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"insurance-service"}`))
-}
-
-func getRiskAnalysisHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"insurance-service"}`))
-}

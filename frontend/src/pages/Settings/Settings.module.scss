@@ -1,0 +1,210 @@
+.settings-container {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: var(--spacing-6);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  background-color: var(--color-bg-primary);
+  border: var(--card-border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--padding-md);
+  height: fit-content;
+  box-shadow: var(--shadow-card);
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--padding-md);
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-align: left;
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+
+    &:hover {
+      background-color: var(--color-bg-secondary);
+      color: var(--color-text-primary);
+    }
+
+    &--active {
+      background-color: var(--color-primary);
+      color: white;
+    }
+  }
+
+  &__icon {
+    font-size: 1.25rem;
+  }
+
+  &__label {
+    font-size: var(--font-size-sm);
+  }
+}
+
+.settings-main {
+  background-color: var(--color-bg-primary);
+  border: var(--card-border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--padding-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.users-table {
+  border: var(--card-border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+
+  &__header {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr 1.5fr 80px;
+    gap: var(--spacing-3);
+    padding: var(--padding-md);
+    background-color: var(--color-bg-secondary);
+    border-bottom: var(--card-border-width) solid var(--color-border);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+
+      > div {
+        display: none;
+
+        &:nth-child(1),
+        &:nth-child(2) {
+          display: block;
+        }
+      }
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr 1.5fr 80px;
+    gap: var(--spacing-3);
+    padding: var(--padding-md);
+    border-bottom: var(--card-border-width) solid var(--color-border);
+    align-items: center;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+
+      > div {
+        display: none;
+
+        &:nth-child(1),
+        &:nth-child(2) {
+          display: block;
+        }
+      }
+    }
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+
+  &--primary {
+    background-color: var(--color-primary);
+    color: white;
+  }
+
+  &--secondary {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+  }
+
+  &--success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--color-success);
+  }
+
+  &--warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--color-warning);
+  }
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--padding-md);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  border: var(--card-border-width) solid var(--color-border);
+
+  &__name {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--spacing-2);
+  }
+}
+
+.notification-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.notification-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--padding-md);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+
+  &:hover {
+    background-color: var(--color-bg-tertiary);
+  }
+
+  input[type='checkbox'] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+  }
+
+  span {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+  }
+}

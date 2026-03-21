@@ -1,0 +1,127 @@
+.scanner-container {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--spacing-6);
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scanner-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-6);
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scanner-panel {
+  background-color: var(--color-bg-primary);
+  border: var(--card-border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--padding-lg);
+  box-shadow: var(--shadow-card);
+
+  &__title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    margin: 0 0 var(--spacing-4) 0;
+    color: var(--color-text-primary);
+  }
+
+  &__section {
+    margin-bottom: var(--spacing-4);
+  }
+}
+
+.scanner-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+}
+
+.scanner-batch-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--padding-md);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    cursor: pointer;
+  }
+}
+
+.scanner-history {
+  background-color: var(--color-bg-primary);
+  border: var(--card-border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--padding-lg);
+  box-shadow: var(--shadow-card);
+  max-height: 600px;
+  overflow-y: auto;
+
+  &__title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    margin: 0 0 var(--spacing-4) 0;
+    color: var(--color-text-primary);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+}
+
+.scan-item {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--padding-md);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-primary);
+
+  &__icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--spacing-1) 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__meta {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+}
+
+.scanner-sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.scanner-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
