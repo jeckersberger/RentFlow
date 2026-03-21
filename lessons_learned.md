@@ -60,13 +60,40 @@
   - Grund: In vorheriger Session gescheitert, diesmal direkt PAT-basiert gearbeitet.
 
 **Offene Punkte für nächste Session:**
-1. `go build` für alle 18 Services testen (Code wurde ohne Compiler geschrieben)
-2. `go mod tidy` für alle Module (externe Dependencies wie lib/pq, jwt-go holen)
-3. Frontend `npm install` + Dev-Server testen
+1. ~~`go build` für alle 18 Services testen~~ ✅ Erledigt (21.03.2026)
+2. ~~`go mod tidy` für alle Module~~ ✅ Erledigt (21.03.2026)
+3. ~~Frontend `npm install` + Dev-Server testen~~ ✅ Erledigt (21.03.2026)
 4. Unit-Tests für Core-Services schreiben (auth, inventory, invoice)
 5. KurrentDB Event Sourcing tatsächlich verdrahten (aktuell nur PostgreSQL direkt)
 6. Passwort-Hashing auf bcrypt/argon2id upgraden
-7. Import-Konflikte `net/http` vs `internal/adapters/http` auflösen
-8. Aufräumen: generierte Markdown-Dateien im Root (MONOREPO_STRUCTURE.md etc.)
+7. ~~Import-Konflikte `net/http` vs `internal/adapters/http` auflösen~~ ✅ Erledigt (21.03.2026)
+8. ~~Aufräumen: generierte Markdown-Dateien im Root~~ ✅ Erledigt (21.03.2026)
 
 **Kategorie:** Architektur | Implementierung | DevOps
+
+### 2026-03-21 – Fehlerüberprüfung: Alle 18 Services kompilieren
+
+**Was passiert ist:** Systematische Kompilierungsprüfung aller Go-Services und des Frontends. 151 Dateien gefixt, 5 Build-Runden bis 18/18 Services fehlerfrei kompilieren.
+
+**Behobene Fehler-Kategorien:**
+1. `*logger.Logger` pointer-to-interface statt `logger.Logger` (63 Dateien)
+2. Import-Pfade `github.com/rentflow/` → `github.com/jeckersberger/rentflow/` (5 Dateien in pkg/common)
+3. `cfg.DatabaseURL` → `cfg.ConnectionString()` (18 main.go Dateien)
+4. Repository-Konstruktoren: `*pgxpool.Pool` / `*sql.DB` → `*database.PostgresPool` (14 Dateien)
+5. `QueryContext`/`ExecContext` → `Query`/`Exec` (PostgresPool-API hat kein Context-Suffix)
+6. Invoice TaxRate: Custom Type brauchte `float64()` Casts
+7. Auth-Service: `net/http` Package-Namenskonflikt mit eigenem `internal/adapters/http`
+8. Frontend: `jsx: "react-jsx"` fehlte in tsconfig.json, `terser` als DevDependency
+
+**Neue Regeln:**
+- [2026-03-21] Regel: Nach jeder Code-Generierung sofort `go build ./...` laufen lassen. Niemals Code committen der nicht kompiliert.
+- [2026-03-21] Regel: Interface-Typen in Go NIEMALS als Pointer übergeben (`*logger.Logger` ist falsch, `logger.Logger` ist richtig). Interfaces sind bereits Referenztypen.
+- [2026-03-21] Regel: Bei eigenem Package namens `http` in `internal/adapters/http/`: In `main.go` IMMER Aliases verwenden (`nethttp "net/http"`, `svchttp "...internal/adapters/http"`).
+
+**Offene Punkte:**
+1. Unit-Tests für Core-Services schreiben
+2. KurrentDB Event Sourcing verdrahten
+3. Passwort-Hashing auf bcrypt/argon2id upgraden
+4. TypeScript strict-mode Fehler fixen (unused imports in einigen Pages)
+
+**Kategorie:** Qualitätssicherung | Bugfix

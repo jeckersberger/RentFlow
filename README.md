@@ -293,43 +293,48 @@ make test-e2e
 
 ### Phase 0 – Foundation (Q2 2026) ✅
 - [x] Projekt-Setup: Monorepo, Docker Compose, CI/CD
-- [x] KurrentDB + PostgreSQL Infrastruktur
-- [x] Shared Go Library (pkg/common)
-- [x] 17 Service-Skeletons mit Health-Checks
+- [x] KurrentDB + PostgreSQL Infrastruktur (Docker-Config)
+- [x] Shared Go Library (pkg/common) – kompiliert ✅
+- [x] 18 Service-Skeletons mit Health-Checks – kompilieren ✅
 - [x] Traefik API Gateway Konfiguration
-- [x] Frontend-Grundgerüst (React 18, Design System)
+- [x] Frontend-Grundgerüst (React 18, Design System) – baut ✅
 
 ### Phase 1 – MVP Core (Q3 2026) 🔄
-- [x] Auth-Service (JWT, RBAC, Multi-Tenancy)
-- [x] Inventory-Service (Equipment CRUD, Labels)
-- [x] Scanner-Service (QR/Barcode, Offline-Sync)
-- [x] Warehouse-Service (Lagerplätze, Check-In/Out)
-- [x] Basis-Frontend (Dashboard, Equipment, Scanner)
-> ⚠️ Code geschrieben, Kompilierung & Tests ausstehend
+- [x] Auth-Service – Scaffolding (kompiliert, noch nicht getestet)
+- [x] Inventory-Service – Scaffolding (kompiliert, noch nicht getestet)
+- [x] Scanner-Service – Scaffolding (kompiliert, noch nicht getestet)
+- [x] Warehouse-Service – Scaffolding (kompiliert, noch nicht getestet)
+- [x] Basis-Frontend – Pages vorhanden (baut, noch nicht E2E-getestet)
+- [ ] Unit-Tests für Core-Services
+- [ ] KurrentDB Event Sourcing verdrahten
+- [ ] Passwort-Hashing auf bcrypt/argon2id upgraden
+- [ ] Integration-Tests mit echtem PostgreSQL
 
-### Phase 2 – Business Logic (Q4 2026) 🔄
-- [x] Project-Service (Projekte, Packlisten, Reservierungen)
-- [x] Invoice-Service (Rechnungen, DATEV, Mahnwesen)
-- [x] Document-Service (PDF, Templates, OCR)
-- [x] Crew-Service (Personal, Zeiterfassung)
-- [x] Expense-Service (Ausgaben, Kassenbon-OCR, Steuerexport)
-> ⚠️ Code geschrieben, Kompilierung & Tests ausstehend
+### Phase 2 – Business Logic (Q4 2026)
+- [x] Project-Service – Scaffolding (kompiliert)
+- [x] Invoice-Service – Scaffolding (kompiliert, GoBD-Struktur vorhanden)
+- [x] Document-Service – Scaffolding (kompiliert)
+- [x] Crew-Service – Scaffolding (kompiliert)
+- [x] Expense-Service – Scaffolding (kompiliert)
+- [ ] Business Logic verifizieren & testen
+- [ ] DATEV-Export verifizieren
 
-### Phase 3 – Advanced Features (Q1 2027) 🔄
-- [x] Federation-Service (mTLS P2P, Equipment-Sharing)
-- [x] Maintenance-Service (DGUV V3, E-Check)
-- [x] Transport-Service (Fahrzeuge, Touren)
-- [ ] NAS-Storage Integration (lokale Dateiablage)
-- [x] Notification-Service (Push, E-Mail, In-App)
-> ⚠️ Code geschrieben, Kompilierung & Tests ausstehend. NAS-Integration nur als Adapter-Interface.
+### Phase 3 – Advanced Features (Q1 2027)
+- [x] Federation-Service – Scaffolding (kompiliert)
+- [x] Maintenance-Service – Scaffolding (kompiliert)
+- [x] Transport-Service – Scaffolding (kompiliert)
+- [x] Notification-Service – Scaffolding (kompiliert)
+- [ ] NAS-Storage Integration (nur Adapter-Interface vorhanden)
+- [ ] mTLS Federation tatsächlich implementieren
+- [ ] E-Mail/Push-Versand implementieren
 
-### Phase 4 – Intelligence & Scale (Q2 2027+) 🔄
-- [x] AI-Service (Multi-Provider, Prognosen, Anonymisierung)
-- [x] Workflow-Service (No-Code Automations)
-- [x] Reporting-Service (KPIs, Dashboards)
-- [x] Insurance-Service (Policen, Schäden)
+### Phase 4 – Intelligence & Scale (Q2 2027+)
+- [x] AI-Service – Scaffolding (kompiliert)
+- [x] Workflow-Service – Scaffolding (kompiliert)
+- [x] Reporting-Service – Scaffolding (kompiliert)
+- [x] Insurance-Service – Scaffolding (kompiliert)
+- [ ] AI-Provider-Anbindung (Claude, OpenAI, Ollama)
 - [ ] Advanced Analytics & Performance-Optimierung
-> ⚠️ Code geschrieben, Kompilierung & Tests ausstehend
 
 ---
 
