@@ -344,7 +344,7 @@ make test-e2e
 
 #### M0.6: Frontend-Scaffold
 - [x] Vite-Projekt mit React + TypeScript
-- [x] TanStack Router mit Route-Tree
+- [x] React Router DOM v6 mit Route-Tree
 - [x] TanStack Query mit Axios-Client
 - [x] Zustand-Stores (auth, ui, scanner, notification)
 - [x] Radix UI Themes + Farbpalette
