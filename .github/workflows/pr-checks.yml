@@ -1,0 +1,175 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  pull-requests: write
+  contents: read
+  checks: write
+
+jobs:
+  label-check:
+    name: Check PR Labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            const requiredLabels = ['type:', 'priority:', 'area:'];
+            const hasRequiredLabel = requiredLabels.some(required =>
+              labels.some(label => label.startsWith(required))
+            );
+
+            if (!hasRequiredLabel) {
+              core.warning('PR should have at least one label for type, priority, and area');
+            }
+
+  title-check:
+    name: Check PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title format
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            const validPatterns = [
+              /^(feat|fix|docs|style|refactor|perf|test|chore|ci)(\(.+\))?:.+/,
+              /^(feat|fix|docs|style|refactor|perf|test|chore|ci)!:.+/
+            ];
+
+            const isValid = validPatterns.some(pattern => pattern.test(title));
+
+            if (!isValid) {
+              core.setFailed(
+                `Invalid PR title format. Use: "type(scope): description" or "type!: description"\n` +
+                `Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci`
+              );
+            }
+
+  commit-lint:
+    name: Lint Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: commitlint-action/action@v1
+        continue-on-error: true
+
+  size-check:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const totalChanges = additions + deletions;
+            const commitCount = pr.commits;
+
+            let warnings = [];
+
+            if (totalChanges > 1000) {
+              warnings.push(`Large PR detected: ${totalChanges} changes across ${commitCount} commits`);
+            }
+
+            if (commitCount > 20) {
+              warnings.push(`Many commits detected: ${commitCount} commits in this PR`);
+            }
+
+            if (warnings.length > 0) {
+              core.warning(warnings.join('\n'));
+            }
+
+  affected-services:
+    name: Detect Affected Services
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect changed files
+        id: detect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+
+            const baseRef = context.payload.pull_request.base.ref;
+            const headRef = context.payload.pull_request.head.ref;
+
+            let files = [];
+            try {
+              const output = execSync(
+                `git diff --name-only origin/${baseRef}...origin/${headRef}`,
+                { encoding: 'utf-8' }
+              );
+              files = output.trim().split('\n');
+            } catch (e) {
+              core.warning('Could not detect changed files');
+            }
+
+            const services = new Set();
+            const serviceMatch = /^services\/([a-z-]+)\//;
+
+            files.forEach(file => {
+              const match = file.match(serviceMatch);
+              if (match) {
+                services.add(match[1]);
+              }
+            });
+
+            if (files.some(f => f.startsWith('pkg/'))) {
+              core.notice('Changes to common package detected - all services may be affected');
+            }
+
+            if (files.some(f => f.startsWith('frontend/'))) {
+              core.notice('Frontend changes detected');
+            }
+
+            core.setOutput('services', Array.from(services).join(','));
+
+  create-summary:
+    name: Create PR Summary
+    runs-on: ubuntu-latest
+    needs: [affected-services]
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const services = '${{ needs.affected-services.outputs.services }}'
+              .split(',')
+              .filter(s => s.length > 0);
+
+            let summary = `## PR Summary\n\n`;
+            summary += `**Branch:** ${pr.head.ref} → ${pr.base.ref}\n`;
+            summary += `**Changes:** +${pr.additions} -${pr.deletions}\n`;
+            summary += `**Commits:** ${pr.commits}\n`;
+
+            if (services.length > 0) {
+              summary += `\n**Affected Services:**\n`;
+              services.forEach(service => {
+                summary += `- \`${service}\`\n`;
+              });
+            }
+
+            summary += `\n---\n`;
+            summary += `*This PR summary was automatically generated.*\n`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

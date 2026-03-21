@@ -1,0 +1,125 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+  build-tags:
+    - integration
+  skip-dirs:
+    - vendor
+    - .git
+  skip-files:
+    - ".*_test.go"
+    - ".*_mock.go"
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-source: false
+
+linters:
+  enable:
+    # Error checks
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # Security
+    - gosec
+    # Performance
+    - bodyclose
+    - contextcheck
+  disable-all: false
+  fast: false
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - encoding/json.Marshal
+      - encoding/json.MarshalIndent
+
+  gosec:
+    excludes:
+      - G101  # Look for hard coded credentials
+      - G104  # Audit errors not being checked
+      - G204  # Audit use of command execution
+    severity: medium
+    confidence: high
+
+  govet:
+    disable-all: false
+    enable:
+      - asmdecl
+      - assign
+      - atomic
+      - atomicalign
+      - bools
+      - buildtag
+      - cgocall
+      - composites
+      - copylock
+      - directive
+      - errorsas
+      - framepointer
+      - httpresponse
+      - ifaceassert
+      - loopclosure
+      - lostcancel
+      - nilfunc
+      - nilness
+      - printf
+      - shift
+      - stdmethods
+      - stringintconv
+      - structtag
+      - testinggoroutine
+      - tests
+      - unmarshal
+      - unreachable
+      - unsafeptr
+      - unusedresult
+
+  contextcheck:
+    skip-type-check: false
+
+  staticcheck:
+    go: "1.22"
+    checks:
+      - "all"
+      - "-SA1019"  # Using deprecated packages
+      - "-SA5009"  # Empty build tag
+
+  unused:
+    go: "1.22"
+    field-writes-are-uses: true
+    post-statements-are-reads: false
+    exported-fields-are-used: false
+    exported-is-used: true
+    exported-variables-are-used: true
+
+  bodyclose:
+    check-response-body: true
+    check-all-io-readers: false
+
+issues:
+  exclude-rules:
+    - path: "^.*_test\\.go$"
+      linters:
+        - gosec
+        - errcheck
+      text: "Error return value not checked"
+    - path: "pkg/common"
+      linters:
+        - unused
+      text: "is unused"
+    - text: "Error return value of .*(Close|Write)"
+      linters:
+        - errcheck
+  exclude-case-sensitive: false
+  exclude-generated: true
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false

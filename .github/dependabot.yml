@@ -1,0 +1,421 @@
+version: 2
+updates:
+  # Go module dependencies
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: "/"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    reviewers:
+      - "dependabot-reviewers"
+    assignees:
+      - "maintainers"
+    labels:
+      - "dependencies"
+      - "go"
+
+  # Go module dependencies in pkg/common
+  - package-ecosystem: gomod
+    directory: "/pkg/common"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:15"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "pkg/common"
+
+  # Go module dependencies in auth-service
+  - package-ecosystem: gomod
+    directory: "/services/auth-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "auth-service"
+
+  # Go module dependencies in inventory-service
+  - package-ecosystem: gomod
+    directory: "/services/inventory-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "inventory-service"
+
+  # Go module dependencies in project-service
+  - package-ecosystem: gomod
+    directory: "/services/project-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "project-service"
+
+  # Go module dependencies in scanner-service
+  - package-ecosystem: gomod
+    directory: "/services/scanner-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "scanner-service"
+
+  # Go module dependencies in warehouse-service
+  - package-ecosystem: gomod
+    directory: "/services/warehouse-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "warehouse-service"
+
+  # Go module dependencies in invoice-service
+  - package-ecosystem: gomod
+    directory: "/services/invoice-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "invoice-service"
+
+  # Go module dependencies in document-service
+  - package-ecosystem: gomod
+    directory: "/services/document-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "document-service"
+
+  # Go module dependencies in crew-service
+  - package-ecosystem: gomod
+    directory: "/services/crew-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "crew-service"
+
+  # Go module dependencies in federation-service
+  - package-ecosystem: gomod
+    directory: "/services/federation-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "federation-service"
+
+  # Go module dependencies in maintenance-service
+  - package-ecosystem: gomod
+    directory: "/services/maintenance-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "maintenance-service"
+
+  # Go module dependencies in transport-service
+  - package-ecosystem: gomod
+    directory: "/services/transport-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "transport-service"
+
+  # Go module dependencies in insurance-service
+  - package-ecosystem: gomod
+    directory: "/services/insurance-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "insurance-service"
+
+  # Go module dependencies in workflow-service
+  - package-ecosystem: gomod
+    directory: "/services/workflow-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "workflow-service"
+
+  # Go module dependencies in ai-service
+  - package-ecosystem: gomod
+    directory: "/services/ai-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "ai-service"
+
+  # Go module dependencies in notification-service
+  - package-ecosystem: gomod
+    directory: "/services/notification-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "notification-service"
+
+  # Go module dependencies in reporting-service
+  - package-ecosystem: gomod
+    directory: "/services/reporting-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "reporting-service"
+
+  # Go module dependencies in audit-service
+  - package-ecosystem: gomod
+    directory: "/services/audit-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "audit-service"
+
+  # Go module dependencies in expense-service
+  - package-ecosystem: gomod
+    directory: "/services/expense-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "expense-service"
+
+  # NPM dependencies in frontend
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: "/"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    reviewers:
+      - "frontend-reviewers"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "frontend"
+
+  # Docker images
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: "02:00"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "02:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci"

@@ -2,50 +2,565 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
-	"github.com/jeckersberger/rentflow/services/auth-service/internal/application"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	"github.com/jeckersberger/rentflow/pkg/common/middleware"
+	"github.com/jeckersberger/rentflow/services/auth-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/auth-service/internal/domain"
 )
 
-// AuthHandler handles authentication HTTP endpoints
-type AuthHandler struct {
-	registerUC *application.RegisterUserUseCase
-	log        logger.Logger
+// Handlers holds references to all service handlers
+type Handlers struct {
+	userService   *application.UserService
+	tenantService *application.TenantService
+	logger        logger.Logger
 }
 
-// NewAuthHandler creates a new auth handler
-func NewAuthHandler(registerUC *application.RegisterUserUseCase, log logger.Logger) *AuthHandler {
-	return &AuthHandler{
-		registerUC: registerUC,
-		log:        log,
+// NewHandlers creates a new handlers instance
+func NewHandlers(
+	userService *application.UserService,
+	tenantService *application.TenantService,
+	log logger.Logger,
+) *Handlers {
+	return &Handlers{
+		userService:   userService,
+		tenantService: tenantService,
+		logger:        log,
 	}
 }
 
-// RegisterRequest handles user registration requests
-func (h *AuthHandler) RegisterRequest(w http.ResponseWriter, r *http.Request) {
+// Register handles user registration
+func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
 		return
 	}
 
-	var req application.RegisterUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+	var cmd application.RegisterUserCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
 		return
 	}
 
-	resp, err := h.registerUC.Execute(&req)
+	user, err := h.userService.Register(r.Context(), cmd)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		switch err {
+		case domain.ErrEmailExists:
+			writeError(w, http.StatusConflict, "EMAIL_EXISTS", "Email already exists")
+		case domain.ErrTenantNotFound:
+			writeError(w, http.StatusNotFound, "TENANT_NOT_FOUND", "Tenant not found")
+		default:
+			h.logger.Error("register error", err)
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		}
 		return
 	}
 
+	writeJSON(w, http.StatusCreated, map[string]interface{}{
+		"data":    user,
+		"message": "User registered successfully",
+	})
+}
+
+// Login handles user login
+func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	var cmd application.LoginCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	tokens, err := h.userService.Login(r.Context(), cmd)
+	if err != nil {
+		switch err {
+		case domain.ErrInvalidCredentials:
+			writeError(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid email or password")
+		case domain.ErrUserLocked:
+			writeError(w, http.StatusForbidden, "USER_LOCKED", "User account is locked")
+		default:
+			h.logger.Error("login error", err)
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		}
+		return
+	}
+
+	// Set refresh token as HTTP-only cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    tokens.RefreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   7 * 24 * 60 * 60, // 7 days
+	})
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data": map[string]interface{}{
+			"access_token":  tokens.AccessToken,
+			"refresh_token": tokens.RefreshToken,
+			"expires_in":    tokens.ExpiresIn,
+			"token_type":    tokens.TokenType,
+		},
+		"message": "Login successful",
+	})
+}
+
+// Refresh handles token refresh
+func (h *Handlers) Refresh(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	// Get refresh token from cookie or body
+	var refreshToken string
+	cookie, err := r.Cookie("refresh_token")
+	if err == nil {
+		refreshToken = cookie.Value
+	} else {
+		var req map[string]string
+		json.NewDecoder(r.Body).Decode(&req)
+		refreshToken = req["refresh_token"]
+	}
+
+	if refreshToken == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_REFRESH_TOKEN", "Refresh token is required")
+		return
+	}
+
+	tokens, err := h.userService.RefreshToken(r.Context(), refreshToken)
+	if err != nil {
+		h.logger.Warn("refresh token error", "error", err.Error())
+		writeError(w, http.StatusUnauthorized, "INVALID_REFRESH_TOKEN", "Invalid or expired refresh token")
+		return
+	}
+
+	// Update refresh token cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    tokens.RefreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   7 * 24 * 60 * 60,
+	})
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data": map[string]interface{}{
+			"access_token":  tokens.AccessToken,
+			"refresh_token": tokens.RefreshToken,
+			"expires_in":    tokens.ExpiresIn,
+			"token_type":    tokens.TokenType,
+		},
+		"message": "Token refreshed successfully",
+	})
+}
+
+// Logout handles user logout
+func (h *Handlers) Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	// Clear refresh token cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GetMe handles getting current user
+func (h *Handlers) GetMe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	// Extract user ID from JWT claims
+	userID := middleware.GetUserID(r.Context())
+	if userID == "" {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated")
+		return
+	}
+
+	user, err := h.userService.GetUser(r.Context(), userID)
+	if err != nil {
+		h.logger.Error("get user error", err)
+		writeError(w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    user,
+		"message": "User retrieved successfully",
+	})
+}
+
+// ChangePassword handles password change
+func (h *Handlers) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if userID == "" {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated")
+		return
+	}
+
+	var cmd application.ChangePasswordCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	cmd.UserID = userID
+	if err := h.userService.ChangePassword(r.Context(), cmd); err != nil {
+		switch err {
+		case domain.ErrInvalidCredentials:
+			writeError(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Current password is incorrect")
+		default:
+			h.logger.Error("change password error", err)
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Password changed successfully",
+	})
+}
+
+// ListUsers handles listing users (admin only)
+func (h *Handlers) ListUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	tenantID := middleware.GetTenantIDFromClaims(r.Context())
+	if tenantID == "" {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated")
+		return
+	}
+
+	// Check admin role
+	if !middleware.HasRole(r.Context(), "admin") {
+		writeError(w, http.StatusForbidden, "FORBIDDEN", "Admin role required")
+		return
+	}
+
+	page := 1
+	perPage := 20
+
+	if p := r.URL.Query().Get("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	if pp := r.URL.Query().Get("per_page"); pp != "" {
+		if parsed, err := strconv.Atoi(pp); err == nil && parsed > 0 {
+			perPage = parsed
+		}
+	}
+
+	query := application.ListUsersQuery{
+		TenantID: tenantID,
+		Page:     page,
+		PerPage:  perPage,
+	}
+
+	result, err := h.userService.ListUsers(r.Context(), query)
+	if err != nil {
+		h.logger.Error("list users error", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    result,
+		"message": "Users retrieved successfully",
+	})
+}
+
+// GetUser handles getting a specific user
+func (h *Handlers) GetUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	userID := extractUserIDFromPath(r.URL.Path)
+	if userID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "User ID is required")
+		return
+	}
+
+	user, err := h.userService.GetUser(r.Context(), userID)
+	if err != nil {
+		h.logger.Error("get user error", err)
+		writeError(w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    user,
+		"message": "User retrieved successfully",
+	})
+}
+
+// UpdateProfile handles profile update
+func (h *Handlers) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if userID == "" {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated")
+		return
+	}
+
+	var cmd application.UpdateProfileCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	cmd.UserID = userID
+	if err := h.userService.UpdateProfile(r.Context(), cmd); err != nil {
+		h.logger.Error("update profile error", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	user, _ := h.userService.GetUser(r.Context(), userID)
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    user,
+		"message": "Profile updated successfully",
+	})
+}
+
+// AssignRole handles role assignment (admin only)
+func (h *Handlers) AssignRole(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	if !middleware.HasRole(r.Context(), "admin") {
+		writeError(w, http.StatusForbidden, "FORBIDDEN", "Admin role required")
+		return
+	}
+
+	userID := extractUserIDFromPath(r.URL.Path)
+	if userID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "User ID is required")
+		return
+	}
+
+	var req map[string]string
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	cmd := application.AssignRoleCommand{
+		UserID:   userID,
+		Role:     req["role"],
+		TenantID: middleware.GetTenantIDFromClaims(r.Context()),
+	}
+
+	if err := h.userService.AssignRole(r.Context(), cmd); err != nil {
+		h.logger.Error("assign role error", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Role assigned successfully",
+	})
+}
+
+// DeleteUser handles user deletion (admin only)
+func (h *Handlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	if !middleware.HasRole(r.Context(), "admin") {
+		writeError(w, http.StatusForbidden, "FORBIDDEN", "Admin role required")
+		return
+	}
+
+	userID := extractUserIDFromPath(r.URL.Path)
+	if userID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "User ID is required")
+		return
+	}
+
+	tenantID := middleware.GetTenantIDFromClaims(r.Context())
+	if err := h.userService.DeactivateUser(r.Context(), application.DeactivateUserCommand{
+		UserID:   userID,
+		TenantID: tenantID,
+	}); err != nil {
+		h.logger.Error("delete user error", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// CreateTenant handles tenant creation
+func (h *Handlers) CreateTenant(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	var cmd application.CreateTenantCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	tenant, err := h.tenantService.CreateTenant(r.Context(), cmd)
+	if err != nil {
+		h.logger.Error("create tenant error", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]interface{}{
+		"data":    tenant,
+		"message": "Tenant created successfully",
+	})
+}
+
+// GetTenant handles getting a tenant
+func (h *Handlers) GetTenant(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	tenantID := extractTenantIDFromPath(r.URL.Path)
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Tenant ID is required")
+		return
+	}
+
+	tenant, err := h.tenantService.GetTenant(r.Context(), application.GetTenantByIDQuery{
+		TenantID: tenantID,
+	})
+	if err != nil {
+		h.logger.Error("get tenant error", err)
+		writeError(w, http.StatusNotFound, "TENANT_NOT_FOUND", "Tenant not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    tenant,
+		"message": "Tenant retrieved successfully",
+	})
+}
+
+// UpdateTenant handles tenant update
+func (h *Handlers) UpdateTenant(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	tenantID := extractTenantIDFromPath(r.URL.Path)
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Tenant ID is required")
+		return
+	}
+
+	var cmd application.UpdateTenantCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	cmd.TenantID = tenantID
+	tenant, err := h.tenantService.UpdateTenant(r.Context(), cmd)
+	if err != nil {
+		h.logger.Error("update tenant error", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    tenant,
+		"message": "Tenant updated successfully",
+	})
+}
+
+// Helper functions
+
+func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(data)
+}
+
+func writeError(w http.ResponseWriter, statusCode int, code, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"code":    code,
+		"message": message,
+	})
+}
+
+func extractUserIDFromPath(path string) string {
+	parts := strings.Split(path, "/")
+	if len(parts) > 4 && parts[4] != "" && parts[4] != "roles" {
+		return parts[4]
+	}
+	return ""
+}
+
+func extractTenantIDFromPath(path string) string {
+	parts := strings.Split(path, "/")
+	if len(parts) > 4 {
+		return parts[4]
+	}
+	return ""
+}
+
+// readBody reads the entire request body as a string
+func readBody(r *http.Request) (string, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }

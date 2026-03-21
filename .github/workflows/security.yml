@@ -1,0 +1,117 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy'
+
+  gosec:
+    name: Go Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Run gosec
+        uses: securego/gosec@master
+        with:
+          args: '-no-fail -fmt sarif -out gosec-results.sarif ./...'
+      - name: Upload gosec results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'gosec-results.sarif'
+          category: 'gosec'
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Install nancy
+        run: go install github.com/sonatype-nexus-community/nancy@latest
+      - name: Run nancy
+        run: |
+          go list -json -m all | nancy sleuth -o sarif > nancy-results.sarif || true
+      - name: Upload nancy results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'nancy-results.sarif'
+          category: 'nancy'
+        continue-on-error: true
+
+  container-scan:
+    name: Container Image Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        service:
+          - auth-service
+          - inventory-service
+          - project-service
+          - scanner-service
+          - warehouse-service
+          - invoice-service
+          - document-service
+          - crew-service
+          - federation-service
+          - maintenance-service
+          - transport-service
+          - insurance-service
+          - workflow-service
+          - ai-service
+          - notification-service
+          - reporting-service
+          - audit-service
+          - expense-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          push: false
+          tags: rentflow/${{ matrix.service }}:scan
+          outputs: type=docker,dest=/tmp/${{ matrix.service }}.tar
+      - name: Run Trivy on image
+        uses: aquasecurity/trivy-action@master
+        with:
+          input: '/tmp/${{ matrix.service }}.tar'
+          format: 'sarif'
+          output: '${{ matrix.service }}-results.sarif'
+      - name: Upload image scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: '${{ matrix.service }}-results.sarif'
+          category: 'container-${{ matrix.service }}'
+        continue-on-error: true

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,8 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/lib/pq"
+
 	"github.com/jeckersberger/rentflow/pkg/common/config"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	"github.com/jeckersberger/rentflow/services/auth-service/internal/adapters/http"
+	"github.com/jeckersberger/rentflow/services/auth-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/auth-service/internal/infrastructure/repositories"
 )
 
 const (
@@ -19,6 +26,7 @@ const (
 )
 
 func main() {
+	// Load configuration
 	cfg := config.Load(serviceName)
 	if cfg.ServicePort == 8080 {
 		cfg.ServicePort = servicePort
@@ -27,18 +35,34 @@ func main() {
 
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
+	// Connect to PostgreSQL
+	db, err := connectPostgres(cfg.DatabaseURL, log)
+	if err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+	defer db.Close()
+
+	log.Info("Connected to database")
+
+	// Create repositories
+	userRepo := repositories.NewPostgresUserRepository(db, log)
+	tenantRepo := repositories.NewPostgresTenantRepository(db, log)
+
+	// Create services
+	userService := application.NewUserService(userRepo, tenantRepo, cfg.JWTSecret, log)
+	tenantService := application.NewTenantService(tenantRepo, log)
+
+	// Setup router
 	router := http.NewServeMux()
 
 	// Health & readiness
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	router.HandleFunc("GET /health", healthHandler(serviceName))
+	router.HandleFunc("GET /ready", readyHandler(serviceName, db, log))
 
-	// API routes (v1)
-	router.HandleFunc("POST /api/v1/auth/login", loginHandler)
-	router.HandleFunc("POST /api/v1/auth/logout", logoutHandler)
-	router.HandleFunc("POST /api/v1/auth/refresh", refreshHandler)
+	// Setup API routes
+	http.SetupRoutes(router, userService, tenantService, cfg.JWTSecret, log)
 
-	// Graceful shutdown
+	// Create HTTP server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
@@ -47,6 +71,7 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	// Start server in a goroutine
 	go func() {
 		log.Info("Listening", "addr", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -54,6 +79,7 @@ func main() {
 		}
 	}()
 
+	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -65,33 +91,63 @@ func main() {
 	log.Info("Server stopped")
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"%s","timestamp":"%s"}`, serviceName, time.Now().UTC().Format(time.RFC3339))
+func healthHandler(serviceName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":    "healthy",
+			"service":   serviceName,
+			"timestamp": time.Now().UTC().Format(time.RFC3339),
+		})
+	}
 }
 
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: check DB, Redis connections
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"ready","service":"%s"}`, serviceName)
+func readyHandler(serviceName string, db *sql.DB, log logger.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Check database connection
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := db.PingContext(ctx); err != nil {
+			log.Error("Database not ready", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"status":  "not ready",
+				"service": serviceName,
+				"reason":  "database connection failed",
+			})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  "ready",
+			"service": serviceName,
+		})
+	}
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
-}
+func connectPostgres(connectionString string, log logger.Logger) (*sql.DB, error) {
+	db, err := sql.Open("postgres", connectionString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
-}
+	// Test the connection with a context timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-func refreshHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"data":{},"message":"not yet implemented","service":"auth-service"}`))
+	if err := db.PingContext(ctx); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	// Set connection pool settings
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	return db, nil
 }

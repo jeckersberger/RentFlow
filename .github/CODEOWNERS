@@ -1,0 +1,43 @@
+# Global owners
+* @team-rentflow
+
+# Frontend
+/frontend/ @frontend-team
+/frontend/src/ @frontend-team
+
+# Common package
+/pkg/common/ @backend-team
+
+# Services
+/services/auth-service/ @auth-team
+/services/inventory-service/ @inventory-team
+/services/project-service/ @project-team
+/services/scanner-service/ @scanner-team
+/services/warehouse-service/ @warehouse-team
+/services/invoice-service/ @invoice-team
+/services/document-service/ @document-team
+/services/crew-service/ @crew-team
+/services/federation-service/ @federation-team
+/services/maintenance-service/ @maintenance-team
+/services/transport-service/ @transport-team
+/services/insurance-service/ @insurance-team
+/services/workflow-service/ @workflow-team
+/services/ai-service/ @ai-team
+/services/notification-service/ @notification-team
+/services/reporting-service/ @reporting-team
+/services/audit-service/ @audit-team
+/services/expense-service/ @expense-team
+
+# Infrastructure
+/infra/ @devops-team
+/config/ @devops-team
+/scripts/ @devops-team
+
+# CI/CD and GitHub
+/.github/ @devops-team
+/Makefile @devops-team
+/docker-compose.yml @devops-team
+
+# Documentation
+/docs/ @tech-writer
+*.md @tech-writer
