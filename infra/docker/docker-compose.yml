@@ -47,7 +47,7 @@ services:
 
   # ─── KurrentDB (EventStoreDB) ───────────────────────────
   kurrentdb:
-    image: ghcr.io/eventstore/eventstore:24.2.0
+    image: eventstore/eventstore:24.2.0-jammy
     container_name: rentflow-kurrentdb
     restart: unless-stopped
     environment:
