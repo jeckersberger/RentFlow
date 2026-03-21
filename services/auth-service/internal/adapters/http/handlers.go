@@ -17,6 +17,7 @@ import (
 type Handlers struct {
 	userService   *application.UserService
 	tenantService *application.TenantService
+	sessionMgr    *application.SessionManager
 	logger        logger.Logger
 }
 
@@ -81,6 +82,13 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := h.userService.Login(r.Context(), cmd)
 	if err != nil {
+		// Fehlgeschlagenen Login in Redis tracken
+		ip := extractIPFromRequest(r)
+		if h.sessionMgr != nil {
+			count, _ := h.sessionMgr.RecordFailedLogin(r.Context(), ip)
+			h.logger.Warn("failed login attempt", "email", cmd.Email, "ip", ip, "failCount", count)
+		}
+
 		switch err {
 		case domain.ErrInvalidCredentials:
 			writeError(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid email or password")
@@ -91,6 +99,12 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
 		}
 		return
+	}
+
+	// Erfolgreicher Login: Brute-Force-Counter zuruecksetzen
+	ip := extractIPFromRequest(r)
+	if h.sessionMgr != nil {
+		_ = h.sessionMgr.ResetFailedLogins(r.Context(), ip)
 	}
 
 	// Set refresh token as HTTP-only cookie
@@ -562,4 +576,23 @@ func readBody(r *http.Request) (string, error) {
 		return "", err
 	}
 	return string(body), nil
+}
+
+// extractIPFromRequest extrahiert die Client-IP aus dem Request
+func extractIPFromRequest(r *http.Request) string {
+	if cfip := r.Header.Get("CF-Connecting-IP"); cfip != "" {
+		return cfip
+	}
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		return strings.TrimSpace(parts[0])
+	}
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return xri
+	}
+	parts := strings.Split(r.RemoteAddr, ":")
+	if len(parts) > 0 {
+		return parts[0]
+	}
+	return r.RemoteAddr
 }

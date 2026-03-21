@@ -15,6 +15,7 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"github.com/jeckersberger/rentflow/pkg/common/cache"
 	"github.com/jeckersberger/rentflow/pkg/common/config"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	authhttp "github.com/jeckersberger/rentflow/services/auth-service/internal/adapters/http"
@@ -67,6 +68,22 @@ func main() {
 	userRepo := repositories.NewPostgresUserRepository(db, log)
 	tenantRepo := repositories.NewPostgresTenantRepository(db, log)
 
+	// Connect to Redis (fuer Sessions und Brute-Force-Schutz)
+	redisAddr := os.Getenv("REDIS_URL")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisCache, err := cache.NewRedisCache(redisAddr, redisPassword, 0)
+	if err != nil {
+		log.Fatal("Failed to connect to Redis", err)
+	}
+	defer redisCache.Close()
+	log.Info("Redis connected", "addr", redisAddr)
+
+	// Create session manager
+	sessionMgr := application.NewSessionManager(redisCache, log)
+
 	// Create services
 	userService := application.NewUserService(userRepo, tenantRepo, tokenMgr, log)
 	tenantService := application.NewTenantService(tenantRepo, log)
@@ -85,7 +102,7 @@ func main() {
 	router.HandleFunc("GET /api/v1/auth/.well-known/jwks", jwksHandler(tokenMgr, log))
 
 	// Setup API routes
-	authhttp.SetupRoutes(router, userService, tenantService, tokenMgr, log)
+	authhttp.SetupRoutes(router, userService, tenantService, tokenMgr, sessionMgr, log)
 
 	// Create HTTP server
 	srv := &nethttp.Server{

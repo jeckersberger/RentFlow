@@ -11,6 +11,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/pkg/common/middleware"
@@ -23,13 +24,22 @@ func SetupRoutes(
 	userService *application.UserService,
 	tenantService *application.TenantService,
 	tokenMgr *application.TokenManager,
+	sessionMgr *application.SessionManager,
 	log logger.Logger,
 ) {
 	handlers := NewHandlers(userService, tenantService, log)
+	handlers.sessionMgr = sessionMgr
+
+	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login
+	loginRateLimiter := NewRateLimiter(10, 1*time.Minute, log)
 
 	// Auth routes (no authentication required)
+	// Login mit Rate-Limiting und Brute-Force-Schutz
+	loginHandler := http.HandlerFunc(handlers.Login)
+	protectedLogin := BruteForceMiddleware(sessionMgr, log)(RateLimitMiddleware(loginRateLimiter)(loginHandler))
+	mux.Handle("POST /api/v1/auth/login", protectedLogin)
+
 	mux.HandleFunc("POST /api/v1/auth/register", handlers.Register)
-	mux.HandleFunc("POST /api/v1/auth/login", handlers.Login)
 	mux.HandleFunc("POST /api/v1/auth/refresh", handlers.Refresh)
 
 	// Authenticated routes - use a wrapper that supports RS256
