@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
 )
 

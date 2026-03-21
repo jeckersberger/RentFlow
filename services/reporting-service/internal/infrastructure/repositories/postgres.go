@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/reporting-service/internal/domain"
 )

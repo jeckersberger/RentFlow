@@ -1,8 +1,9 @@
 package application
 
 import (
-	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
 	"time"
+
+	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
 )
 
 type PeerDTO struct {

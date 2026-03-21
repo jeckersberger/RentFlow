@@ -158,11 +158,10 @@ func (s *Server) Start(ctx context.Context) error {
 	s.logger.Info("Shutting down server")
 
 	// Create shutdown context with timeout
-	//nolint:contextcheck
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second) //nolint:contextcheck // intentional new context for graceful shutdown
 	defer cancel()
 
-	if err := s.server.Shutdown(shutdownCtx); err != nil {
+	if err := s.server.Shutdown(shutdownCtx); err != nil { //nolint:contextcheck // using shutdown context from above
 		s.logger.Error("Server shutdown error", err)
 		return err
 	}
@@ -204,7 +203,7 @@ func (s *Server) StartWithContext(ctx context.Context) <-chan error {
 	// Monitor context for cancellation
 	go func() {
 		<-ctx.Done()
-		s.Shutdown()
+		_ = s.Shutdown()
 		errChan <- ctx.Err()
 	}()
 

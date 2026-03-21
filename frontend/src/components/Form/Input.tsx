@@ -1,3 +1,4 @@
+import { forwardRef } from 'react'
 import './Form.module.scss'
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -6,29 +7,28 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   helperText?: string
 }
 
-export function Input({
-  label,
-  error,
-  helperText,
-  id,
-  ...props
-}: InputProps) {
-  const inputId = id || `input-${Math.random()}`
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ label, error, helperText, id, ...props }, ref) => {
+    const inputId = id || `input-${Math.random()}`
 
-  return (
-    <div className="form-group">
-      {label && (
-        <label htmlFor={inputId} className="form-label">
-          {label}
-        </label>
-      )}
-      <input
-        id={inputId}
-        className={`form-input ${error ? 'form-input--error' : ''}`}
-        {...props}
-      />
-      {error && <span className="form-error">{error}</span>}
-      {helperText && <span className="form-helper">{helperText}</span>}
-    </div>
-  )
-}
+    return (
+      <div className="form-group">
+        {label && (
+          <label htmlFor={inputId} className="form-label">
+            {label}
+          </label>
+        )}
+        <input
+          ref={ref}
+          id={inputId}
+          className={`form-input ${error ? 'form-input--error' : ''}`}
+          {...props}
+        />
+        {error && <span className="form-error">{error}</span>}
+        {helperText && <span className="form-helper">{helperText}</span>}
+      </div>
+    )
+  }
+)
+
+Input.displayName = 'Input'

@@ -1,8 +1,9 @@
 package application
 
 import (
-	"github.com/jeckersberger/rentflow/services/maintenance-service/internal/domain"
 	"time"
+
+	"github.com/jeckersberger/rentflow/services/maintenance-service/internal/domain"
 )
 
 type MaintenanceRecordDTO struct {

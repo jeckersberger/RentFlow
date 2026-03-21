@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+
 	"github.com/jeckersberger/rentflow/services/notification-service/internal/domain"
 )
 

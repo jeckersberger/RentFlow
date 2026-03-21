@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"encoding/json"
+
 	"github.com/lib/pq"
 )
 

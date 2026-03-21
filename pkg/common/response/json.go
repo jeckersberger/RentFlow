@@ -183,7 +183,7 @@ func Custom(w http.ResponseWriter, status int, data interface{}) {
 func RawJSON(w http.ResponseWriter, status int, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 // ListResponse represents a list response

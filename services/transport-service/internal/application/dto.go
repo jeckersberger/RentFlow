@@ -1,8 +1,9 @@
 package application
 
 import (
-	"github.com/jeckersberger/rentflow/services/transport-service/internal/domain"
 	"time"
+
+	"github.com/jeckersberger/rentflow/services/transport-service/internal/domain"
 )
 
 type VehicleDTO struct {

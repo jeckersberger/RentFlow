@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/notification-service/internal/domain"
 )
