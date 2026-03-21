@@ -5,7 +5,7 @@ export interface Column<T> {
   key: keyof T | string
   label: string
   sortable?: boolean
-  render?: (value: any, row: T) => React.ReactNode
+  render?: (value: unknown, row: T) => React.ReactNode
   width?: string
 }
 
@@ -24,7 +24,7 @@ interface DataTableProps<T> {
   onSort?: (key: string, order: 'asc' | 'desc') => void
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   columns,
   data,
   rowKey,
@@ -56,8 +56,9 @@ export function DataTable<T extends Record<string, any>>({
     return String(row[rowKey])
   }
 
-  const getNestedValue = (obj: any, path: string): any => {
-    return path.split('.').reduce((current, prop) => current?.[prop], obj)
+  const getNestedValue = (obj: unknown, path: string): unknown => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return path.split('.').reduce((current: unknown, prop) => (current as any)?.[prop], obj)
   }
 
   const renderCell = (column: Column<T>, row: T): React.ReactNode => {

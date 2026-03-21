@@ -56,8 +56,9 @@ function LoginPage() {
       }
 
       navigate('/')
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Login failed. Please check your credentials.'
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorMessage = (err as any)?.response?.data?.message || (err as any)?.message || 'Login failed. Please check your credentials.'
       setError(errorMessage)
     } finally {
       setIsLoading(false)

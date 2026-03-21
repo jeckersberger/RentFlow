@@ -1,22 +1,14 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { invoiceApi } from '../../services/api'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
 import { Select } from '../../components/Form/Select'
-import { Invoice, InvoiceStatus } from '../../types/invoice'
+import { InvoiceStatus } from '../../types/invoice'
 import '../Equipment/Equipment.module.scss'
 
-const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'draft', label: 'Entwurf' },
-  { value: 'sent', label: 'Gesendet' },
-  { value: 'paid', label: 'Bezahlt' },
-  { value: 'cancelled', label: 'Storniert' },
-]
-
 function InvoiceDetailPage() {
-  const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const [showActionModal, setShowActionModal] = useState(false)
   const [selectedAction, setSelectedAction] = useState<string>('')

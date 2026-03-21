@@ -6,7 +6,7 @@ import { Input } from '../../components/Form/Input'
 import { Select } from '../../components/Form/Select'
 import { TextArea } from '../../components/Form/TextArea'
 import { FileUpload } from '../../components/Form/FileUpload'
-import { Equipment, CreateEquipmentDTO } from '../../types/equipment'
+import { CreateEquipmentDTO } from '../../types/equipment'
 import './Equipment.module.scss'
 
 const CATEGORIES = [
@@ -36,7 +36,6 @@ function EquipmentFormPage() {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [imageFiles, setImageFiles] = useState<File[]>([])
 
   const { data: equipment, isLoading: isLoadingEquipment } = useQuery(
     {
@@ -57,8 +56,9 @@ function EquipmentFormPage() {
     onSuccess: (data) => {
       navigate(`/equipment/${data.id}`)
     },
-    onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 'Fehler beim Speichern'
+    onError: (error: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorMessage = (error as any)?.response?.data?.message || 'Fehler beim Speichern'
       setErrors({ submit: errorMessage })
     },
   })
@@ -99,7 +99,7 @@ function EquipmentFormPage() {
 
   const handleInputChange = (
     field: keyof CreateEquipmentDTO,
-    value: any
+    value: unknown
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -230,7 +230,7 @@ function EquipmentFormPage() {
           label="Bilder"
           accept="image/*"
           multiple={true}
-          onChange={setImageFiles}
+          onChange={() => {}}
         />
 
         <div className="form-section__footer">

@@ -36,7 +36,7 @@ function EquipmentListPage() {
   const { data: equipmentData, isLoading, error } = useQuery({
     queryKey: ['equipment-list', page, searchQuery, selectedCategory, selectedStatus],
     queryFn: async () => {
-      const params: any = { page, limit }
+      const params: Record<string, unknown> = { page, limit }
       if (searchQuery) params.search = searchQuery
       if (selectedCategory) params.category = selectedCategory
       if (selectedStatus) params.status = selectedStatus

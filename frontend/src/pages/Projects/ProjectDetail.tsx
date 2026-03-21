@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { projectApi } from '../../services/api'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
-import { Project } from '../../types/project'
 import '../Equipment/Equipment.module.scss'
 
 function ProjectDetailPage() {

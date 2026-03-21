@@ -5,7 +5,7 @@ import { equipmentApi } from '../../services/api'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
 import { Select } from '../../components/Form/Select'
-import { Equipment, EquipmentStatus } from '../../types/equipment'
+import { EquipmentStatus } from '../../types/equipment'
 import './Equipment.module.scss'
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
