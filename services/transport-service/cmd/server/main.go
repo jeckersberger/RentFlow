@@ -39,9 +39,11 @@ func main() {
 
 	vehicleRepo := repositories.NewVehiclePostgres(dbPool)
 	tourRepo := repositories.NewTourPostgres(dbPool)
+	equipmentRepo := repositories.NewTourEquipmentPostgres(dbPool)
+	driverLogRepo := repositories.NewDriverLogPostgres(dbPool)
 
 	vehicleSvc := application.NewVehicleService(vehicleRepo, log)
-	tourSvc := application.NewTourService(tourRepo, vehicleRepo, log)
+	tourSvc := application.NewTourService(tourRepo, vehicleRepo, equipmentRepo, driverLogRepo, log)
 
 	router := httpAdapter.NewRouter(vehicleSvc, tourSvc, log)
 

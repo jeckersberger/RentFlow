@@ -33,6 +33,14 @@ import WarehouseViewPage from './pages/Warehouse/WarehousePage'
 // Settings Page
 import SettingsPage from './pages/Settings/SettingsPage'
 
+// Transport Pages
+import TransportPage from './pages/Transport/TransportPage'
+import TransportDetailPage from './pages/Transport/TransportDetail'
+
+// Maintenance Pages
+import MaintenancePage from './pages/Maintenance/MaintenancePage'
+import MaintenanceDetailPage from './pages/Maintenance/MaintenanceDetail'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -95,6 +103,20 @@ function App() {
             <Route path="invoices/new" element={<div>Neue Rechnung - Formular</div>} />
             <Route path="invoices/:id" element={<InvoiceDetailPage />} />
             <Route path="invoices/:id/edit" element={<div>Rechnung bearbeiten - Formular</div>} />
+
+            {/* Transport Routes */}
+            <Route path="transport" element={<TransportPage />} />
+            <Route path="transport/tours/:id" element={<TransportDetailPage />} />
+            <Route path="transport/new-tour" element={<div>Neuer Transport - Formular</div>} />
+            <Route path="transport/new-vehicle" element={<div>Neues Fahrzeug - Formular</div>} />
+            <Route path="transport/vehicles/:id" element={<div>Fahrzeug Details</div>} />
+
+            {/* Maintenance Routes */}
+            <Route path="maintenance" element={<MaintenancePage />} />
+            <Route path="maintenance/tasks/:id" element={<MaintenanceDetailPage />} />
+            <Route path="maintenance/new-task" element={<div>Neue Aufgabe - Formular</div>} />
+            <Route path="maintenance/new-echeck" element={<div>E-Check durchführen - Formular</div>} />
+            <Route path="maintenance/plans/:id" element={<div>Wartungsplan Details</div>} />
 
             {/* Scanner & Warehouse */}
             <Route path="scanner" element={<ScannerPage />} />

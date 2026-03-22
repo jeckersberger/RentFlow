@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode'
 import { Select } from '../../components/Form/Select'
 import { Input } from '../../components/Form/Input'
@@ -23,11 +23,21 @@ interface Project {
   status: string
 }
 
+interface ScanSession {
+  id: string
+  context: 'check-out' | 'check-in' | 'warehouse-store' | 'inventory'
+  project_id?: string
+  started_at: string
+  total_scans: number
+  successful_scans: number
+  failed_scans: number
+}
+
 function ScannerPage() {
   const scanInputRef = useRef<HTMLInputElement>(null)
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null)
   const [barcode, setBarcode] = useState('')
-  const [scanType, setScanType] = useState('check_in')
+  const [scanContext, setScanContext] = useState<'check-out' | 'check-in' | 'warehouse-store' | 'inventory'>('check-in')
   const [projectId, setProjectId] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
   const [recentScans, setRecentScans] = useState<ScanEvent[]>([])
@@ -36,14 +46,37 @@ function ScannerPage() {
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [scanCount, setScanCount] = useState(0)
+  const [successCount, setSuccessCount] = useState(0)
   const [errorCount, setErrorCount] = useState(0)
+  const [sessionActive, setSessionActive] = useState(false)
+  const [offlineMode] = useState(false)
+  const [offlineQueue] = useState(0)
+
+  // Mock session data
+  const currentSession: ScanSession = {
+    id: 'session-' + Date.now(),
+    context: scanContext,
+    project_id: projectId,
+    started_at: new Date().toISOString(),
+    total_scans: scanCount,
+    successful_scans: successCount,
+    failed_scans: errorCount,
+  }
+
+  // Compute session stats
+  const sessionStats = useMemo(() => ({
+    total: scanCount,
+    successful: successCount,
+    failed: errorCount,
+    successRate: scanCount > 0 ? Math.round((successCount / scanCount) * 100) : 0,
+  }), [scanCount, successCount, errorCount])
 
   // Projekte für Check-Out laden
   useEffect(() => {
     projectApi.list(1, 100)
       .then((data) => {
-        const projectList = (data?.data || []).filter(
-          (p: Project) => p.status === 'confirmed' || p.status === 'in_progress'
+        const projectList = (data?.items || []).filter(
+          (p: Project) => p.status === 'confirmed' || p.status === 'in_progress' || p.status === 'active' || p.status === 'planning'
         )
         setProjects(projectList)
       })
@@ -81,11 +114,12 @@ function ScannerPage() {
     const pendingScan: ScanEvent = {
       id: scanId,
       barcode: scannedBarcode,
-      scan_type: scanType,
+      scan_type: scanContext,
       timestamp: new Date().toISOString(),
       status: 'pending',
     }
     setRecentScans((prev) => [pendingScan, ...prev.slice(0, 49)])
+    setScanCount((prev) => prev + 1)
 
     try {
       // Schritt 1: Equipment per Barcode/UUID suchen
@@ -105,16 +139,21 @@ function ScannerPage() {
         throw new Error('Ausrüstung nicht gefunden')
       }
 
-      // Schritt 2: Aktion basierend auf Scan-Typ ausführen
-      if (scanType === 'check_out') {
+      // Schritt 2: Aktion basierend auf Scan-Kontext ausführen
+      if (scanContext === 'check-out') {
         if (!projectId) {
           throw new Error('Bitte wählen Sie ein Projekt für das Auschecken')
         }
         await equipmentApi.checkOut(equipment.id, projectId)
-      } else if (scanType === 'check_in') {
+      } else if (scanContext === 'check-in') {
         await equipmentApi.checkIn(equipment.id)
+      } else if (scanContext === 'warehouse-store') {
+        // Warehouse location update (mock)
+        await new Promise(resolve => setTimeout(resolve, 200))
+      } else if (scanContext === 'inventory') {
+        // Inventory check (mock, no action needed)
+        await new Promise(resolve => setTimeout(resolve, 100))
       }
-      // Bei 'inventory' nur Equipment-Lookup, keine Aktion
 
       // Erfolg
       const successScan: ScanEvent = {
@@ -126,7 +165,7 @@ function ScannerPage() {
       setRecentScans((prev) =>
         prev.map((s) => (s.id === scanId ? successScan : s))
       )
-      setScanCount((prev) => prev + 1)
+      setSuccessCount((prev) => prev + 1)
 
       // Vibrieren: Erfolg (kurz-kurz)
       if ('vibrate' in navigator) {
@@ -157,7 +196,7 @@ function ScannerPage() {
         scanInputRef.current?.focus()
       }
     }
-  }, [scanType, projectId, isProcessing, cameraActive])
+  }, [scanContext, projectId, isProcessing, cameraActive])
 
   // Manuelle Eingabe per Enter
   const handleManualScan = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -218,46 +257,89 @@ function ScannerPage() {
     }
   }
 
+  const handleStartSession = () => {
+    setSessionActive(true)
+    setScanCount(0)
+    setSuccessCount(0)
+    setErrorCount(0)
+    setRecentScans([])
+  }
+
+  const handleEndSession = () => {
+    setSessionActive(false)
+  }
+
   return (
     <div className="scanner-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Scanner & Bestand</h1>
+          <h1 className="page-title">Scanner & Bestandsverwaltung</h1>
           <p className="page-subtitle">
             Scannen Sie Equipment per Kamera oder geben Sie den Code manuell ein
           </p>
+        </div>
+        <div className="header-actions">
+          {!sessionActive ? (
+            <button className="btn btn--primary" onClick={handleStartSession}>
+              ▶ Sitzung starten
+            </button>
+          ) : (
+            <button className="btn btn--secondary" onClick={handleEndSession}>
+              ⏹ Sitzung beenden
+            </button>
+          )}
+        </div>
+      </div>
+
+      {offlineMode && (
+        <div className="offline-banner">
+          <span>📡 Offline-Modus aktiv</span>
+          <span className="offline-queue">Queue: {offlineQueue} Scans</span>
+        </div>
+      )}
+
+      <div className="context-selector">
+        <h3 className="context-selector__title">Scan-Kontext</h3>
+        <div className="context-cards">
+          {(['check-in', 'check-out', 'warehouse-store', 'inventory'] as const).map((ctx) => (
+            <button
+              key={ctx}
+              className={`context-card ${scanContext === ctx ? 'context-card--active' : ''}`}
+              onClick={() => setScanContext(ctx)}
+            >
+              <div className="context-card__icon">
+                {ctx === 'check-in' && '📥'}
+                {ctx === 'check-out' && '📤'}
+                {ctx === 'warehouse-store' && '🏢'}
+                {ctx === 'inventory' && '📊'}
+              </div>
+              <div className="context-card__label">
+                {ctx === 'check-in' && 'Einchecken'}
+                {ctx === 'check-out' && 'Auschecken'}
+                {ctx === 'warehouse-store' && 'Lagerort'}
+                {ctx === 'inventory' && 'Inventur'}
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="scanner-container">
         <div className="scanner-main">
           <div className="scanner-panel">
-            <h2 className="scanner-panel__title">Ausrüstung scannen</h2>
+            <h2 className="scanner-panel__title">Scan-Eingabe</h2>
 
-            <div className="scanner-panel__section">
-              <Select
-                label="Scantyp"
-                options={[
-                  { value: 'check_in', label: 'Einchecken (Rückgabe)' },
-                  { value: 'check_out', label: 'Auschecken (Projekt zuweisen)' },
-                  { value: 'inventory', label: 'Inventur (nur prüfen)' },
-                ]}
-                value={scanType}
-                onChange={(e) => setScanType(e.target.value)}
-              />
-            </div>
-
-            {scanType === 'check_out' && (
+            {scanContext === 'check-out' && (
               <div className="scanner-panel__section">
                 <Select
-                  label="Projekt (für Auschecken)"
+                  label="Projekt auswählen"
                   options={projects.map((p) => ({
                     value: p.id,
                     label: p.name,
                   }))}
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
-                  placeholder="Projekt auswählen"
+                  placeholder="Projekt für Auschecken..."
                 />
               </div>
             )}
@@ -489,45 +571,79 @@ function ScannerPage() {
         </div>
 
         <div className="scanner-sidebar">
+          <div className="session-info">
+            <div className="session-info__status">
+              {sessionActive ? (
+                <>
+                  <span className="status-badge status-badge--active">Sitzung aktiv</span>
+                  <span className="session-timer">
+                    {Math.floor(Date.now() / 1000 % 3600 / 60)}m aktiv
+                  </span>
+                </>
+              ) : (
+                <span className="status-badge">Keine Sitzung</span>
+              )}
+            </div>
+          </div>
+
           <div className="scanner-stats">
             <div className="stat-box">
-              <p className="stat-box__label">Heute gescannt</p>
-              <p className="stat-box__value">{scanCount}</p>
+              <p className="stat-box__label">Gesamt gescannt</p>
+              <p className="stat-box__value">{sessionStats.total}</p>
             </div>
 
             <div className="stat-box">
-              <p className="stat-box__label">Fehlgeschlagen</p>
-              <p className="stat-box__value" style={{ color: errorCount > 0 ? 'var(--color-error)' : undefined }}>
-                {errorCount}
+              <p className="stat-box__label">Erfolgreich</p>
+              <p className="stat-box__value" style={{ color: 'var(--color-success)' }}>
+                {sessionStats.successful}
               </p>
             </div>
 
             <div className="stat-box">
-              <p className="stat-box__label">Im Verlauf</p>
-              <p className="stat-box__value">{recentScans.length}</p>
+              <p className="stat-box__label">Fehler</p>
+              <p className="stat-box__value" style={{ color: errorCount > 0 ? 'var(--color-danger)' : undefined }}>
+                {sessionStats.failed}
+              </p>
             </div>
+
+            {sessionStats.total > 0 && (
+              <div className="stat-box">
+                <p className="stat-box__label">Erfolgsquote</p>
+                <p className="stat-box__value" style={{ color: 'var(--color-primary)' }}>
+                  {sessionStats.successRate}%
+                </p>
+              </div>
+            )}
           </div>
 
-          <div
-            className="scanner-panel"
-            style={{ marginTop: 'var(--spacing-4)' }}
-          >
-            <h2 className="scanner-panel__title">Hilfe</h2>
-            <ul
-              style={{
-                margin: 0,
-                paddingLeft: 'var(--spacing-4)',
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-text-secondary)',
-                lineHeight: '1.6',
-              }}
-            >
-              <li>Tippen Sie auf den Kamera-Bereich zum Scannen</li>
-              <li>QR-Codes und Barcodes werden automatisch erkannt</li>
-              <li>Oder geben Sie den Code manuell ein</li>
-              <li>Bei Auschecken muss ein Projekt ausgewählt sein</li>
-              <li>Im Batch-Modus bleibt die Kamera nach dem Scan aktiv</li>
-            </ul>
+          <div className="session-protocol">
+            <h3 className="session-protocol__title">Sitzungsprotokoll</h3>
+            <div className="protocol-info">
+              <div className="info-row">
+                <span className="info-label">Kontext</span>
+                <span className="info-value">
+                  {scanContext === 'check-in' && 'Einchecken'}
+                  {scanContext === 'check-out' && 'Auschecken'}
+                  {scanContext === 'warehouse-store' && 'Lagerort'}
+                  {scanContext === 'inventory' && 'Inventur'}
+                </span>
+              </div>
+              {projectId && projects.find(p => p.id === projectId) && (
+                <div className="info-row">
+                  <span className="info-label">Projekt</span>
+                  <span className="info-value">{projects.find(p => p.id === projectId)?.name}</span>
+                </div>
+              )}
+              <div className="info-row">
+                <span className="info-label">Gestartet</span>
+                <span className="info-value">
+                  {new Date(currentSession.started_at).toLocaleTimeString('de-DE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

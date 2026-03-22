@@ -15,6 +15,8 @@ const navItems: NavItem[] = [
   { label: 'Rechnungen', href: '/invoices', icon: '💰' },
   { label: 'Scanner', href: '/scanner', icon: '📱' },
   { label: 'Lager', href: '/warehouse', icon: '🏢' },
+  { label: 'Transport', href: '/transport', icon: '🚛' },
+  { label: 'Wartung', href: '/maintenance', icon: '🔧' },
   { label: 'Einstellungen', href: '/settings', icon: '⚙️' },
 ]
 

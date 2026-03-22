@@ -15,6 +15,15 @@ const (
 	ScanReturn    ScanType = "return"
 )
 
+type ScanContext string
+
+const (
+	ContextCheckOut       ScanContext = "check_out"
+	ContextCheckIn        ScanContext = "check_in"
+	ContextWarehouseStore ScanContext = "lager_einraeumen"
+	ContextInventory      ScanContext = "inventur"
+)
+
 type DeviceType string
 
 const (
@@ -102,6 +111,104 @@ func (s *ScanEvent) MarkFailed() {
 
 func (s *ScanEvent) MarkSynced() {
 	s.Status = ScanSynced
+}
+
+type ScanSession struct {
+	ID             string
+	TenantID       string
+	UserID         string
+	Context        ScanContext
+	ProjectID      *string
+	StartedAt      time.Time
+	EndedAt        *time.Time
+	DeviceType     DeviceType
+	DeviceID       string
+	TotalScans     int
+	SuccessfulScans int
+	FailedScans    int
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func NewScanSession(
+	id string,
+	tenantID string,
+	userID string,
+	context ScanContext,
+	deviceType DeviceType,
+	deviceID string,
+) *ScanSession {
+	return &ScanSession{
+		ID:           id,
+		TenantID:     tenantID,
+		UserID:       userID,
+		Context:      context,
+		DeviceType:   deviceType,
+		DeviceID:     deviceID,
+		StartedAt:    time.Now(),
+		TotalScans:   0,
+		SuccessfulScans: 0,
+		FailedScans:    0,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+}
+
+func (s *ScanSession) End() {
+	now := time.Now()
+	s.EndedAt = &now
+	s.UpdatedAt = now
+}
+
+func (s *ScanSession) IncrementTotal() {
+	s.TotalScans++
+	s.UpdatedAt = time.Now()
+}
+
+func (s *ScanSession) IncrementSuccessful() {
+	s.SuccessfulScans++
+	s.UpdatedAt = time.Now()
+}
+
+func (s *ScanSession) IncrementFailed() {
+	s.FailedScans++
+	s.UpdatedAt = time.Now()
+}
+
+type OfflineQueueItem struct {
+	ID        string
+	TenantID  string
+	DeviceID  string
+	Payload   string // JSON
+	CreatedAt time.Time
+	SyncedAt  *time.Time
+	SyncStatus string // pending, syncing, synced, failed
+}
+
+func NewOfflineQueueItem(
+	id string,
+	tenantID string,
+	deviceID string,
+	payload string,
+) *OfflineQueueItem {
+	return &OfflineQueueItem{
+		ID:         id,
+		TenantID:   tenantID,
+		DeviceID:   deviceID,
+		Payload:    payload,
+		CreatedAt:  time.Now(),
+		SyncStatus: "pending",
+	}
+}
+
+func (o *OfflineQueueItem) MarkSynced() {
+	now := time.Now()
+	o.SyncedAt = &now
+	o.SyncStatus = "synced"
+}
+
+func (o *OfflineQueueItem) MarkFailed() {
+	o.SyncStatus = "failed"
 }
 
 type Device struct {

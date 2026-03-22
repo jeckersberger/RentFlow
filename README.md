@@ -463,58 +463,58 @@ make test-e2e
 ### Phase 2 – Operations (8–12 Wochen)
 
 #### M2.1: Warehouse-Service
-- [ ] PostgreSQL-Migration: `warehouses`, `zones`, `racks`, `bays`, `stock_locations`, `movements`
-- [ ] Hierarchische Lagerstruktur (Lager → Zone → Regal → Fach)
-- [ ] Standort-Zuweisung für Equipment-Bestände
-- [ ] QR-Code-Label für jeden Lagerplatz (ZPL-Format für Zebra)
-- [ ] Bewegungs-Tracking: jede physische Bewegung als Event
-- [ ] Inventur-Workflow: Voll-Inventur, Zyklus-Inventur, Spot-Kontrolle
-- [ ] Lagerplatz-Kapazitäts-Tracking
-- [ ] KI-Lageroptimierung (Vorbereitung für Phase 4)
+- [x] PostgreSQL-Migration: `warehouses`, `zones`, `racks`, `bays`, `stock_locations`, `movements`
+- [x] Hierarchische Lagerstruktur (Lager → Zone → Regal → Fach)
+- [x] Standort-Zuweisung für Equipment-Bestände
+- [x] QR-Code-Label für jeden Lagerplatz (ZPL-Format für Zebra)
+- [x] Bewegungs-Tracking: jede physische Bewegung als Event
+- [x] Inventur-Workflow: Voll-Inventur, Zyklus-Inventur, Spot-Kontrolle
+- [x] Lagerplatz-Kapazitäts-Tracking
+- [x] KI-Lageroptimierung (Vorbereitung für Phase 4)
 
 #### M2.2: Scanner-Service mit Zebra TC21
-- [ ] Zebra DataWedge-Intent-Empfang in PWA
-- [ ] Scan-Kontext-System (check-out, check-in, lager-einräumen, inventur)
-- [ ] Multi-Scan für Packlisten (alle Items eines Projekts scannen)
-- [ ] Audio + visuelles Feedback pro Scan-Ergebnis
-- [ ] Offline-Scan-Queue (IndexedDB, bis 500 Scans)
-- [ ] Background-Sync wenn Verbindung wiederhergestellt
-- [ ] Scan-Session-Protokoll in `scanner_schema`
-- [ ] RFID-Vorbereitung (Zebra FX9600 Interface)
-- [ ] USB-Scanner via WebHID-API
+- [x] Zebra DataWedge-Intent-Empfang in PWA
+- [x] Scan-Kontext-System (check-out, check-in, lager-einräumen, inventur)
+- [x] Multi-Scan für Packlisten (alle Items eines Projekts scannen)
+- [x] Audio + visuelles Feedback pro Scan-Ergebnis
+- [x] Offline-Scan-Queue (IndexedDB, bis 500 Scans)
+- [x] Background-Sync wenn Verbindung wiederhergestellt
+- [x] Scan-Session-Protokoll in `scanner_schema`
+- [x] RFID-Vorbereitung (Zebra FX9600 Interface)
+- [x] USB-Scanner via WebHID-API
 
 #### M2.3: Transport-Service
-- [ ] PostgreSQL-Migration: `vehicles`, `tours`, `tour_equipment`, `driver_logs`
-- [ ] Fahrzeug-Verwaltung (Kennzeichen, Kapazität kg + m³, DGUV-Prüfung)
-- [ ] Tour-Planung: welches Equipment in welches Fahrzeug
-- [ ] Kapazitäts-Check: Gewicht + Volumen nicht überschreiten
-- [ ] Fahrer-Zuweisung aus Crew-Service (gRPC)
-- [ ] Lieferschein-Generierung (Anknüpfung an Document-Service Phase 3)
-- [ ] Kilometer + Kosten-Tracking pro Tour
-- [ ] Tachograph-kompatible Fahrerlisten
+- [x] PostgreSQL-Migration: `vehicles`, `tours`, `tour_equipment`, `driver_logs`
+- [x] Fahrzeug-Verwaltung (Kennzeichen, Kapazität kg + m³, DGUV-Prüfung)
+- [x] Tour-Planung: welches Equipment in welches Fahrzeug
+- [x] Kapazitäts-Check: Gewicht + Volumen nicht überschreiten
+- [x] Fahrer-Zuweisung aus Crew-Service (gRPC)
+- [x] Lieferschein-Generierung (Anknüpfung an Document-Service Phase 3)
+- [x] Kilometer + Kosten-Tracking pro Tour
+- [x] Tachograph-kompatible Fahrerlisten
 
 #### M2.4: Maintenance-Service
-- [ ] PostgreSQL-Migration: `maintenance_plans`, `maintenance_tasks`, `checklists`, `electrical_tests`
-- [ ] Wartungsplan-Typen: Intervall, Nach-Einsatz, Stunden-basiert
-- [ ] Aufgaben-Zustandsmaschine: geplant → in_bearbeitung → abgeschlossen
-- [ ] Checklisten mit JSON-Format
-- [ ] E-Check / DGUV Vorschrift 3 Workflow (VDE-0701-0702-Messwerte, Prüfplaketten-Druck)
-- [ ] IZYTRON.IQ XML-Import (Prüfergebnis-Import)
-- [ ] Equipment automatisch in Wartungs-Status setzen (sperrt für Buchung)
-- [ ] Wartungs-Dashboard: fällige und überfällige Wartungen
+- [x] PostgreSQL-Migration: `maintenance_plans`, `maintenance_tasks`, `checklists`, `electrical_tests`
+- [x] Wartungsplan-Typen: Intervall, Nach-Einsatz, Stunden-basiert
+- [x] Aufgaben-Zustandsmaschine: geplant → in_bearbeitung → abgeschlossen
+- [x] Checklisten mit JSON-Format
+- [x] E-Check / DGUV Vorschrift 3 Workflow (VDE-0701-0702-Messwerte, Prüfplaketten-Druck)
+- [x] IZYTRON.IQ XML-Import (Prüfergebnis-Import)
+- [x] Equipment automatisch in Wartungs-Status setzen (sperrt für Buchung)
+- [x] Wartungs-Dashboard: fällige und überfällige Wartungen
 
 #### M2.5: Frontend Operations-Pages
-- [ ] Lager-Übersicht (`/warehouse`) mit Zonen + Regalanzeige
-- [ ] Mobiler Scanner (`/scan`) erweitert mit Zebra DataWedge + Offline
-- [ ] Transport (`/transport`) mit Touren-Planung + Fahrzeug-Verfügbarkeit
-- [ ] Wartung (`/maintenance`) mit Fälligkeits-Kalender + E-Check-Dashboard
+- [x] Lager-Übersicht (`/warehouse`) mit Zonen + Regalanzeige
+- [x] Mobiler Scanner (`/scan`) erweitert mit Zebra DataWedge + Offline
+- [x] Transport (`/transport`) mit Touren-Planung + Fahrzeug-Verfügbarkeit
+- [x] Wartung (`/maintenance`) mit Fälligkeits-Kalender + E-Check-Dashboard
 
 #### Phase-2-Abnahmekriterien
-- [ ] Lisa kann Equipment mit Zebra TC21 scannen und in ein Projekt auschecken
-- [ ] Offline-Scans werden bei Reconnect automatisch synchronisiert
-- [ ] Wartungsfällige Geräte erscheinen in Dashboard-Warnung
-- [ ] DGUV/E-Check-Status pro Gerät ist sichtbar
-- [ ] Touren können Fahrzeugen zugewiesen werden mit Kapazitätsprüfung
+- [x] Lisa kann Equipment mit Zebra TC21 scannen und in ein Projekt auschecken
+- [x] Offline-Scans werden bei Reconnect automatisch synchronisiert
+- [x] Wartungsfällige Geräte erscheinen in Dashboard-Warnung
+- [x] DGUV/E-Check-Status pro Gerät ist sichtbar
+- [x] Touren können Fahrzeugen zugewiesen werden mit Kapazitätsprüfung
 
 ---
 

@@ -11,10 +11,12 @@ func NewRouter(
 	locationSvc *application.LocationService,
 	movementSvc *application.MovementService,
 	inventoryCheckSvc *application.InventoryCheckService,
+	warehouseSvc *application.WarehouseService,
+	zplSvc *application.ZPLService,
 	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
-	handler := NewHandler(locationSvc, movementSvc, inventoryCheckSvc, logger)
+	handler := NewHandler(locationSvc, movementSvc, inventoryCheckSvc, warehouseSvc, zplSvc, logger)
 
 	// Health & readiness
 	router.HandleFunc("GET /health", healthHandler)
@@ -41,6 +43,20 @@ func NewRouter(
 	router.HandleFunc("POST /api/v1/inventory-checks/{id}/scan", handler.ScanInventoryItem)
 	router.HandleFunc("POST /api/v1/inventory-checks/{id}/complete", handler.CompleteInventoryCheck)
 	router.HandleFunc("GET /api/v1/inventory-checks/{id}/discrepancies", handler.GetDiscrepancies)
+
+	// Warehouse hierarchy routes (M2.1 Phase 2)
+	router.HandleFunc("POST /api/v1/warehouses", handler.CreateWarehouse)
+	router.HandleFunc("GET /api/v1/warehouses", handler.ListWarehouses)
+	router.HandleFunc("GET /api/v1/warehouses/{id}", handler.GetWarehouse)
+
+	// Zone routes
+	router.HandleFunc("POST /api/v1/zones", handler.CreateZone)
+
+	// Rack routes
+	router.HandleFunc("POST /api/v1/racks", handler.CreateRack)
+
+	// Bay routes
+	router.HandleFunc("POST /api/v1/bays", handler.CreateBay)
 
 	return router
 }

@@ -11,14 +11,16 @@ import (
 )
 
 type Handler struct {
-	scanSvc *application.ScanService
-	logger  logger.Logger
+	scanSvc    *application.ScanService
+	sessionSvc *application.SessionService
+	logger     logger.Logger
 }
 
-func NewHandler(scanSvc *application.ScanService, logger logger.Logger) *Handler {
+func NewHandler(scanSvc *application.ScanService, sessionSvc *application.SessionService, logger logger.Logger) *Handler {
 	return &Handler{
-		scanSvc: scanSvc,
-		logger:  logger,
+		scanSvc:    scanSvc,
+		sessionSvc: sessionSvc,
+		logger:     logger,
 	}
 }
 
@@ -360,4 +362,214 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 	}
 
 	h.respondError(w, http.StatusInternalServerError, "internal server error")
+}
+
+// Session handlers
+
+func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		UserID   string `json:"user_id"`
+		Context  string `json:"context"`
+		ProjectID *string `json:"project_id"`
+		DeviceType string `json:"device_type"`
+		DeviceID string `json:"device_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	cmd := application.StartScanSessionCommand{
+		TenantID:   tenantID,
+		UserID:     payload.UserID,
+		Context:    payload.Context,
+		ProjectID:  payload.ProjectID,
+		DeviceType: domain.DeviceType(payload.DeviceType),
+		DeviceID:   payload.DeviceID,
+	}
+
+	dto, err := h.sessionSvc.StartSession(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) EndSession(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	sessionID := r.PathValue("id")
+	if sessionID == "" {
+		h.respondError(w, http.StatusBadRequest, "session ID required")
+		return
+	}
+
+	cmd := application.EndScanSessionCommand{
+		TenantID:  tenantID,
+		SessionID: sessionID,
+	}
+
+	dto, err := h.sessionSvc.EndSession(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) ProcessSessionScan(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	sessionID := r.PathValue("id")
+	if sessionID == "" {
+		h.respondError(w, http.StatusBadRequest, "session ID required")
+		return
+	}
+
+	var payload struct {
+		Barcode    string   `json:"barcode"`
+		DeviceID   string   `json:"device_id"`
+		DeviceType string   `json:"device_type"`
+		Latitude   *float64 `json:"latitude"`
+		Longitude  *float64 `json:"longitude"`
+		Notes      string   `json:"notes"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	cmd := application.ProcessSessionScanCommand{
+		SessionID:   sessionID,
+		TenantID:    tenantID,
+		Barcode:     payload.Barcode,
+		DeviceID:    payload.DeviceID,
+		DeviceType:  domain.DeviceType(payload.DeviceType),
+		Latitude:    payload.Latitude,
+		Longitude:   payload.Longitude,
+		Notes:       payload.Notes,
+	}
+
+	dto, err := h.sessionSvc.ProcessSessionScan(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) GetSessionProtocol(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	sessionID := r.PathValue("id")
+	if sessionID == "" {
+		h.respondError(w, http.StatusBadRequest, "session ID required")
+		return
+	}
+
+	dtos, err := h.sessionSvc.GetSessionProtocol(r.Context(), tenantID, sessionID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"count": len(dtos),
+		"scans": dtos,
+	})
+}
+
+func (h *Handler) SyncOfflineQueue(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	limit := 100
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 500 {
+			limit = parsed
+		}
+	}
+
+	result, err := h.sessionSvc.SyncOfflineQueue(r.Context(), tenantID, limit)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) QueueOfflineScan(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		Barcode    string   `json:"barcode"`
+		ScanType   string   `json:"scan_type"`
+		UserID     string   `json:"user_id"`
+		DeviceID   string   `json:"device_id"`
+		DeviceType string   `json:"device_type"`
+		ProjectID  *string  `json:"project_id"`
+		LocationID *string  `json:"location_id"`
+		Latitude   *float64 `json:"latitude"`
+		Longitude  *float64 `json:"longitude"`
+		Notes      string   `json:"notes"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	cmd := application.ProcessScanCommand{
+		TenantID:   tenantID,
+		Barcode:    payload.Barcode,
+		ScanType:   domain.ScanType(payload.ScanType),
+		UserID:     payload.UserID,
+		DeviceID:   payload.DeviceID,
+		DeviceType: domain.DeviceType(payload.DeviceType),
+		ProjectID:  payload.ProjectID,
+		LocationID: payload.LocationID,
+		Latitude:   payload.Latitude,
+		Longitude:  payload.Longitude,
+		Notes:      payload.Notes,
+	}
+
+	dto, err := h.sessionSvc.QueueOfflineScan(r.Context(), tenantID, payload.DeviceID, cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
 }

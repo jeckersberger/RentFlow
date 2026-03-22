@@ -34,8 +34,14 @@ func (s *InventoryCheckService) StartCheck(ctx context.Context, cmd StartInvento
 	}
 
 	checkID := fmt.Sprintf("inv_%d", hashCheckString(cmd.TenantID+cmd.Name+time.Now().String()))
-	check := domain.NewInventoryCheck(checkID, cmd.TenantID, cmd.Name)
-	check.LocationID = cmd.LocationID
+	checkType := domain.InventoryCheckTypeFull
+	if cmd.CheckType != "" {
+		checkType = domain.InventoryCheckType(cmd.CheckType)
+	}
+	check := domain.NewInventoryCheck(checkID, cmd.TenantID, cmd.Name, checkType)
+	check.WarehouseID = cmd.WarehouseID
+	check.ZoneID = cmd.ZoneID
+	check.Description = cmd.Description
 
 	// Validate
 	if err := check.Validate(); err != nil {
@@ -102,16 +108,24 @@ func (s *InventoryCheckService) ScanItem(ctx context.Context, cmd ScanInventoryI
 		return nil, domain.NewDomainError("NOT_FOUND", "inventory check not found", err)
 	}
 
-	if check.Status != domain.InventoryCheckInProgress {
+	if check.Status != domain.InventoryCheckStatusInProgress {
 		return nil, domain.NewDomainError("INVALID_STATE", "inventory check is not in progress", nil)
 	}
 
-	item, err := check.ScanItem(cmd.EquipmentID)
+	err = check.ScanItem(cmd.EquipmentID, cmd.LocationID)
 	if err != nil {
 		return nil, domain.NewDomainError("SCAN_ERROR", err.Error(), nil)
 	}
 
-	item.Notes = cmd.Notes
+	// Update notes if provided
+	if cmd.Notes != "" {
+		for i := range check.Items {
+			if check.Items[i].EquipmentID == cmd.EquipmentID {
+				check.Items[i].Notes = cmd.Notes
+				break
+			}
+		}
+	}
 
 	// Persist updated check
 	if err := s.checkRepo.Update(ctx, check); err != nil {
@@ -132,11 +146,11 @@ func (s *InventoryCheckService) CompleteCheck(ctx context.Context, cmd CompleteI
 		return nil, domain.NewDomainError("NOT_FOUND", "inventory check not found", err)
 	}
 
-	if check.Status != domain.InventoryCheckInProgress {
+	if check.Status != domain.InventoryCheckStatusInProgress {
 		return nil, domain.NewDomainError("INVALID_STATE", "inventory check is not in progress", nil)
 	}
 
-	if err := check.Complete(); err != nil {
+	if err := check.Complete(cmd.CompletedBy); err != nil {
 		return nil, domain.NewDomainError("COMPLETION_ERROR", err.Error(), nil)
 	}
 
@@ -167,7 +181,7 @@ func (s *InventoryCheckService) GetDiscrepancies(ctx context.Context, tenantID, 
 			EquipmentID:   item.EquipmentID,
 			ExpectedCount: item.ExpectedCount,
 			ActualCount:   item.ActualCount,
-			Status:        item.Status,
+			Status:        string(item.Status),
 			Notes:         item.Notes,
 		}
 		if item.ScannedAt != nil {

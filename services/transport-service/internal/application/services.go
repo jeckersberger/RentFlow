@@ -2,9 +2,9 @@ package application
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/ports"
@@ -20,20 +20,24 @@ func NewVehicleService(repo ports.VehicleRepository, log logger.Logger) *Vehicle
 }
 
 func (s *VehicleService) CreateVehicle(ctx context.Context, cmd CreateVehicleCommand) (*VehicleDTO, error) {
-	if cmd.TenantID == "" || cmd.Name == "" {
+	if cmd.TenantID == "" || cmd.Name == "" || cmd.LicensePlate == "" {
 		return nil, domain.ErrInvalidInput
 	}
 
+	now := time.Now()
 	vehicle := &domain.Vehicle{
-		ID:           fmt.Sprintf("veh_%d", time.Now().UnixNano()),
-		TenantID:     cmd.TenantID,
-		Name:         cmd.Name,
-		LicensePlate: cmd.LicensePlate,
-		Type:         domain.VehicleType(cmd.Type),
-		Capacity:     cmd.Capacity,
-		Status:       domain.VehicleStatusAvailable,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:            uuid.New().String(),
+		TenantID:      cmd.TenantID,
+		Name:          cmd.Name,
+		LicensePlate:  cmd.LicensePlate,
+		CapacityKg:    cmd.CapacityKg,
+		CapacityM3:    cmd.CapacityM3,
+		VehicleType:   domain.VehicleType(cmd.VehicleType),
+		Status:        domain.VehicleStatusAvailable,
+		DGUVLastCheck: cmd.DGUVLastCheck,
+		DGUVNextCheck: cmd.DGUVNextCheck,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	if err := s.repo.Create(ctx, vehicle); err != nil {
@@ -77,6 +81,12 @@ func (s *VehicleService) UpdateVehicle(ctx context.Context, cmd UpdateVehicleCom
 	}
 
 	vehicle.Status = domain.VehicleStatus(cmd.Status)
+	if cmd.DGUVLastCheck != nil {
+		vehicle.DGUVLastCheck = cmd.DGUVLastCheck
+	}
+	if cmd.DGUVNextCheck != nil {
+		vehicle.DGUVNextCheck = cmd.DGUVNextCheck
+	}
 	vehicle.UpdatedAt = time.Now()
 
 	if err := s.repo.Update(ctx, vehicle); err != nil {
@@ -88,13 +98,23 @@ func (s *VehicleService) UpdateVehicle(ctx context.Context, cmd UpdateVehicleCom
 }
 
 type TourService struct {
-	tourRepo    ports.TourRepository
-	vehicleRepo ports.VehicleRepository
-	logger      logger.Logger
+	tourRepo           ports.TourRepository
+	vehicleRepo        ports.VehicleRepository
+	equipmentRepo      ports.TourEquipmentRepository
+	driverLogRepo      ports.DriverLogRepository
+	logger             logger.Logger
 }
 
-func NewTourService(tourRepo ports.TourRepository, vehicleRepo ports.VehicleRepository, log logger.Logger) *TourService {
-	return &TourService{tourRepo: tourRepo, vehicleRepo: vehicleRepo, logger: log}
+func NewTourService(tourRepo ports.TourRepository, vehicleRepo ports.VehicleRepository,
+	equipmentRepo ports.TourEquipmentRepository, driverLogRepo ports.DriverLogRepository,
+	log logger.Logger) *TourService {
+	return &TourService{
+		tourRepo:      tourRepo,
+		vehicleRepo:   vehicleRepo,
+		equipmentRepo: equipmentRepo,
+		driverLogRepo: driverLogRepo,
+		logger:        log,
+	}
 }
 
 func (s *TourService) CreateTour(ctx context.Context, cmd CreateTourCommand) (*TourDTO, error) {
@@ -102,27 +122,27 @@ func (s *TourService) CreateTour(ctx context.Context, cmd CreateTourCommand) (*T
 		return nil, domain.ErrInvalidInput
 	}
 
-	stops := make([]domain.TourStop, len(cmd.Stops))
-	for i, stop := range cmd.Stops {
-		stops[i] = domain.TourStop{
-			Address:       stop["address"].(string),
-			ArrivalTime:   stop["arrival_time"].(time.Time),
-			DepartureTime: stop["departure_time"].(time.Time),
-			Type:          stop["type"].(string),
-		}
+	// Verify vehicle exists
+	vehicle, err := s.vehicleRepo.GetByID(ctx, cmd.TenantID, cmd.VehicleID)
+	if err != nil {
+		return nil, err
+	}
+	if vehicle == nil {
+		return nil, domain.ErrVehicleNotFound
 	}
 
+	now := time.Now()
 	tour := &domain.Tour{
-		ID:        fmt.Sprintf("tour_%d", time.Now().UnixNano()),
-		TenantID:  cmd.TenantID,
-		ProjectID: cmd.ProjectID,
-		VehicleID: cmd.VehicleID,
-		DriverID:  cmd.DriverID,
-		Date:      cmd.Date,
-		Stops:     stops,
-		Status:    domain.TourStatusPlanned,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:          uuid.New().String(),
+		TenantID:    cmd.TenantID,
+		ProjectID:   cmd.ProjectID,
+		VehicleID:   cmd.VehicleID,
+		DriverID:    cmd.DriverID,
+		Status:      domain.TourStatusPlanned,
+		DepartureAt: cmd.DepartureAt,
+		Notes:       cmd.Notes,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
 	if err := s.tourRepo.Create(ctx, tour); err != nil {
@@ -156,18 +176,6 @@ func (s *TourService) ListTours(ctx context.Context, tenantID string) ([]*TourDT
 	return dtos, nil
 }
 
-func (s *TourService) ListToursByDate(ctx context.Context, tenantID string, date time.Time) ([]*TourDTO, error) {
-	tours, err := s.tourRepo.ListByDate(ctx, tenantID, date)
-	if err != nil {
-		return nil, err
-	}
-	dtos := make([]*TourDTO, len(tours))
-	for i, t := range tours {
-		dtos[i] = TourToDTO(t)
-	}
-	return dtos, nil
-}
-
 func (s *TourService) UpdateTourStatus(ctx context.Context, cmd UpdateTourStatusCommand) (*TourDTO, error) {
 	tour, err := s.tourRepo.GetByID(ctx, cmd.TenantID, cmd.TourID)
 	if err != nil {
@@ -186,4 +194,203 @@ func (s *TourService) UpdateTourStatus(ctx context.Context, cmd UpdateTourStatus
 	}
 
 	return TourToDTO(tour), nil
+}
+
+func (s *TourService) StartTour(ctx context.Context, cmd StartTourCommand) (*TourDTO, error) {
+	tour, err := s.tourRepo.GetByID(ctx, cmd.TenantID, cmd.TourID)
+	if err != nil {
+		return nil, err
+	}
+	if tour == nil {
+		return nil, domain.ErrTourNotFound
+	}
+
+	tour.Status = domain.TourStatusInTransit
+	tour.KmStart = cmd.KmStart
+	now := time.Now()
+	tour.DepartureAt = &now
+	tour.UpdatedAt = now
+
+	if err := s.tourRepo.Update(ctx, tour); err != nil {
+		s.logger.Error("Failed to start tour", err)
+		return nil, err
+	}
+
+	return TourToDTO(tour), nil
+}
+
+func (s *TourService) CompleteTour(ctx context.Context, cmd CompleteTourCommand) (*TourDTO, error) {
+	tour, err := s.tourRepo.GetByID(ctx, cmd.TenantID, cmd.TourID)
+	if err != nil {
+		return nil, err
+	}
+	if tour == nil {
+		return nil, domain.ErrTourNotFound
+	}
+
+	tour.Status = domain.TourStatusCompleted
+	tour.KmEnd = cmd.KmEnd
+	tour.TotalCost = cmd.TotalCost
+	now := time.Now()
+	tour.ArrivalAt = &now
+	tour.UpdatedAt = now
+
+	if err := s.tourRepo.Update(ctx, tour); err != nil {
+		s.logger.Error("Failed to complete tour", err)
+		return nil, err
+	}
+
+	return TourToDTO(tour), nil
+}
+
+func (s *TourService) AddEquipmentToTour(ctx context.Context, cmd AddEquipmentToTourCommand) (*TourEquipmentDTO, error) {
+	tour, err := s.tourRepo.GetByID(ctx, cmd.TenantID, cmd.TourID)
+	if err != nil {
+		return nil, err
+	}
+	if tour == nil {
+		return nil, domain.ErrTourNotFound
+	}
+
+	// Get vehicle to check capacity
+	vehicle, err := s.vehicleRepo.GetByID(ctx, cmd.TenantID, tour.VehicleID)
+	if err != nil {
+		return nil, err
+	}
+	if vehicle == nil {
+		return nil, domain.ErrVehicleNotFound
+	}
+
+	// Check capacity
+	totalWeight, totalVolume, err := s.equipmentRepo.GetCapacityByTour(ctx, cmd.TourID)
+	if err != nil {
+		return nil, err
+	}
+
+	if totalWeight+cmd.WeightKg > vehicle.CapacityKg || totalVolume+cmd.VolumeM3 > vehicle.CapacityM3 {
+		return nil, domain.ErrCapacityExceeded
+	}
+
+	now := time.Now()
+	equipment := &domain.TourEquipment{
+		ID:          uuid.New().String(),
+		TourID:      cmd.TourID,
+		EquipmentID: cmd.EquipmentID,
+		WeightKg:    cmd.WeightKg,
+		VolumeM3:    cmd.VolumeM3,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := s.equipmentRepo.Create(ctx, equipment); err != nil {
+		s.logger.Error("Failed to add equipment to tour", err)
+		return nil, err
+	}
+
+	return TourEquipmentToDTO(equipment), nil
+}
+
+func (s *TourService) RemoveEquipmentFromTour(ctx context.Context, cmd RemoveEquipmentFromTourCommand) error {
+	tour, err := s.tourRepo.GetByID(ctx, cmd.TenantID, cmd.TourID)
+	if err != nil {
+		return err
+	}
+	if tour == nil {
+		return domain.ErrTourNotFound
+	}
+
+	if err := s.equipmentRepo.DeleteByTourAndEquipment(ctx, cmd.TourID, cmd.EquipmentID); err != nil {
+		s.logger.Error("Failed to remove equipment from tour", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *TourService) GetTourCapacity(ctx context.Context, tenantID, tourID string) (*TourCapacityDTO, error) {
+	tour, err := s.tourRepo.GetByID(ctx, tenantID, tourID)
+	if err != nil {
+		return nil, err
+	}
+	if tour == nil {
+		return nil, domain.ErrTourNotFound
+	}
+
+	vehicle, err := s.vehicleRepo.GetByID(ctx, tenantID, tour.VehicleID)
+	if err != nil {
+		return nil, err
+	}
+	if vehicle == nil {
+		return nil, domain.ErrVehicleNotFound
+	}
+
+	totalWeight, totalVolume, err := s.equipmentRepo.GetCapacityByTour(ctx, tourID)
+	if err != nil {
+		return nil, err
+	}
+
+	exceeded := totalWeight > vehicle.CapacityKg || totalVolume > vehicle.CapacityM3
+
+	return &TourCapacityDTO{
+		TourID:           tourID,
+		TotalCapacityKg:  vehicle.CapacityKg,
+		TotalCapacityM3:  vehicle.CapacityM3,
+		UsedCapacityKg:   totalWeight,
+		UsedCapacityM3:   totalVolume,
+		RemainingKg:      vehicle.CapacityKg - totalWeight,
+		RemainingM3:      vehicle.CapacityM3 - totalVolume,
+		CapacityExceeded: exceeded,
+	}, nil
+}
+
+func (s *TourService) LogDriverActivity(ctx context.Context, cmd LogDriverActivityCommand) (*DriverLogDTO, error) {
+	tour, err := s.tourRepo.GetByID(ctx, cmd.TenantID, cmd.TourID)
+	if err != nil {
+		return nil, err
+	}
+	if tour == nil {
+		return nil, domain.ErrTourNotFound
+	}
+
+	now := time.Now()
+	log := &domain.DriverLog{
+		ID:            uuid.New().String(),
+		TourID:        cmd.TourID,
+		DriverID:      cmd.DriverID,
+		StartTime:     cmd.StartTime,
+		EndTime:       cmd.EndTime,
+		BreakMinutes:  cmd.BreakMinutes,
+		KmDriven:      cmd.KmDriven,
+		Notes:         cmd.Notes,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	if err := s.driverLogRepo.Create(ctx, log); err != nil {
+		s.logger.Error("Failed to log driver activity", err)
+		return nil, err
+	}
+
+	return DriverLogToDTO(log), nil
+}
+
+func (s *TourService) GetDriverLogs(ctx context.Context, tenantID, tourID string) ([]*DriverLogDTO, error) {
+	tour, err := s.tourRepo.GetByID(ctx, tenantID, tourID)
+	if err != nil {
+		return nil, err
+	}
+	if tour == nil {
+		return nil, domain.ErrTourNotFound
+	}
+
+	logs, err := s.driverLogRepo.ListByTour(ctx, tourID)
+	if err != nil {
+		return nil, err
+	}
+
+	dtos := make([]*DriverLogDTO, len(logs))
+	for i, l := range logs {
+		dtos[i] = DriverLogToDTO(l)
+	}
+	return dtos, nil
 }

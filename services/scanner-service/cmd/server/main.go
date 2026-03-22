@@ -43,16 +43,19 @@ func main() {
 	// Initialize repositories
 	scanEventRepo := repositories.NewScanEventPostgres(dbPool)
 	deviceRepo := repositories.NewDevicePostgres(dbPool)
+	sessionRepo := repositories.NewScanSessionPostgres(dbPool)
+	queueRepo := repositories.NewOfflineQueuePostgres(dbPool)
 
 	log.Info("Repositories initialized")
 
 	// Initialize services (inventorySvc can be nil for now)
 	scanSvc := application.NewScanService(scanEventRepo, deviceRepo, nil, log)
+	sessionSvc := application.NewSessionService(sessionRepo, scanEventRepo, queueRepo, deviceRepo, nil, log)
 
 	log.Info("Services initialized")
 
 	// Setup router
-	router := httpAdapter.NewRouter(scanSvc, log)
+	router := httpAdapter.NewRouter(scanSvc, sessionSvc, log)
 
 	// Create HTTP server
 	srv := &http.Server{

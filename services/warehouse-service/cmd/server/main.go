@@ -44,6 +44,11 @@ func main() {
 	locationRepo := repositories.NewLocationPostgres(dbPool)
 	movementRepo := repositories.NewMovementPostgres(dbPool)
 	inventoryCheckRepo := repositories.NewInventoryCheckPostgres(dbPool)
+	warehouseRepo := repositories.NewWarehousePostgres(dbPool)
+	zoneRepo := repositories.NewZonePostgres(dbPool)
+	rackRepo := repositories.NewRackPostgres(dbPool)
+	bayRepo := repositories.NewBayPostgres(dbPool)
+	_ = repositories.NewStockLocationPostgres(dbPool) // stockLocationRepo - used in future endpoints
 
 	log.Info("Repositories initialized")
 
@@ -51,11 +56,13 @@ func main() {
 	locationSvc := application.NewLocationService(locationRepo, log)
 	movementSvc := application.NewMovementService(movementRepo, locationRepo, log)
 	inventoryCheckSvc := application.NewInventoryCheckService(inventoryCheckRepo, log)
+	warehouseSvc := application.NewWarehouseService(warehouseRepo, zoneRepo, rackRepo, bayRepo, log)
+	zplSvc := application.NewZPLService(log)
 
 	log.Info("Services initialized")
 
 	// Setup router
-	router := httpAdapter.NewRouter(locationSvc, movementSvc, inventoryCheckSvc, log)
+	router := httpAdapter.NewRouter(locationSvc, movementSvc, inventoryCheckSvc, warehouseSvc, zplSvc, log)
 
 	// Create HTTP server
 	srv := &http.Server{

@@ -2,8 +2,6 @@ package repositories
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/domain"
@@ -19,18 +17,18 @@ func NewVehiclePostgres(db *database.PostgresPool) *VehiclePostgres {
 
 func (r *VehiclePostgres) Create(ctx context.Context, vehicle *domain.Vehicle) error {
 	query := `
-		INSERT INTO vehicles (id, tenant_id, name, license_plate, type, capacity, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO vehicles (id, tenant_id, name, license_plate, capacity_kg, capacity_m3, vehicle_type, status, dguv_last_check, dguv_next_check, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
-	_, err := r.db.Exec(ctx, query, vehicle.ID, vehicle.TenantID, vehicle.Name, vehicle.LicensePlate, vehicle.Type, vehicle.Capacity, vehicle.Status, vehicle.CreatedAt, vehicle.UpdatedAt)
+	_, err := r.db.Exec(ctx, query, vehicle.ID, vehicle.TenantID, vehicle.Name, vehicle.LicensePlate, vehicle.CapacityKg, vehicle.CapacityM3, vehicle.VehicleType, vehicle.Status, vehicle.DGUVLastCheck, vehicle.DGUVNextCheck, vehicle.CreatedAt, vehicle.UpdatedAt)
 	return err
 }
 
 func (r *VehiclePostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.Vehicle, error) {
-	query := `SELECT id, tenant_id, name, license_plate, type, capacity, status, created_at, updated_at FROM vehicles WHERE id = $1 AND tenant_id = $2`
+	query := `SELECT id, tenant_id, name, license_plate, capacity_kg, capacity_m3, vehicle_type, status, dguv_last_check, dguv_next_check, created_at, updated_at FROM vehicles WHERE id = $1 AND tenant_id = $2`
 	row := r.db.QueryRow(ctx, query, id, tenantID)
 	vehicle := &domain.Vehicle{}
-	err := row.Scan(&vehicle.ID, &vehicle.TenantID, &vehicle.Name, &vehicle.LicensePlate, &vehicle.Type, &vehicle.Capacity, &vehicle.Status, &vehicle.CreatedAt, &vehicle.UpdatedAt)
+	err := row.Scan(&vehicle.ID, &vehicle.TenantID, &vehicle.Name, &vehicle.LicensePlate, &vehicle.CapacityKg, &vehicle.CapacityM3, &vehicle.VehicleType, &vehicle.Status, &vehicle.DGUVLastCheck, &vehicle.DGUVNextCheck, &vehicle.CreatedAt, &vehicle.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +36,7 @@ func (r *VehiclePostgres) GetByID(ctx context.Context, tenantID, id string) (*do
 }
 
 func (r *VehiclePostgres) ListByTenant(ctx context.Context, tenantID string) ([]*domain.Vehicle, error) {
-	query := `SELECT id, tenant_id, name, license_plate, type, capacity, status, created_at, updated_at FROM vehicles WHERE tenant_id = $1 ORDER BY created_at DESC`
+	query := `SELECT id, tenant_id, name, license_plate, capacity_kg, capacity_m3, vehicle_type, status, dguv_last_check, dguv_next_check, created_at, updated_at FROM vehicles WHERE tenant_id = $1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query, tenantID)
 	if err != nil {
 		return nil, err
@@ -48,7 +46,7 @@ func (r *VehiclePostgres) ListByTenant(ctx context.Context, tenantID string) ([]
 	var vehicles []*domain.Vehicle
 	for rows.Next() {
 		v := &domain.Vehicle{}
-		if err := rows.Scan(&v.ID, &v.TenantID, &v.Name, &v.LicensePlate, &v.Type, &v.Capacity, &v.Status, &v.CreatedAt, &v.UpdatedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.TenantID, &v.Name, &v.LicensePlate, &v.CapacityKg, &v.CapacityM3, &v.VehicleType, &v.Status, &v.DGUVLastCheck, &v.DGUVNextCheck, &v.CreatedAt, &v.UpdatedAt); err != nil {
 			return nil, err
 		}
 		vehicles = append(vehicles, v)
@@ -57,8 +55,8 @@ func (r *VehiclePostgres) ListByTenant(ctx context.Context, tenantID string) ([]
 }
 
 func (r *VehiclePostgres) Update(ctx context.Context, vehicle *domain.Vehicle) error {
-	query := `UPDATE vehicles SET name = $1, status = $2, updated_at = $3 WHERE id = $4 AND tenant_id = $5`
-	_, err := r.db.Exec(ctx, query, vehicle.Name, vehicle.Status, vehicle.UpdatedAt, vehicle.ID, vehicle.TenantID)
+	query := `UPDATE vehicles SET name = $1, status = $2, dguv_last_check = $3, dguv_next_check = $4, updated_at = $5 WHERE id = $6 AND tenant_id = $7`
+	_, err := r.db.Exec(ctx, query, vehicle.Name, vehicle.Status, vehicle.DGUVLastCheck, vehicle.DGUVNextCheck, vehicle.UpdatedAt, vehicle.ID, vehicle.TenantID)
 	return err
 }
 
@@ -77,30 +75,27 @@ func NewTourPostgres(db *database.PostgresPool) *TourPostgres {
 }
 
 func (r *TourPostgres) Create(ctx context.Context, tour *domain.Tour) error {
-	stopsJSON, _ := json.Marshal(tour.Stops)
 	query := `
-		INSERT INTO tours (id, tenant_id, project_id, vehicle_id, driver_id, date, stops, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO tours (id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, notes, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	`
-	_, err := r.db.Exec(ctx, query, tour.ID, tour.TenantID, tour.ProjectID, tour.VehicleID, tour.DriverID, tour.Date, stopsJSON, tour.Status, tour.CreatedAt, tour.UpdatedAt)
+	_, err := r.db.Exec(ctx, query, tour.ID, tour.TenantID, tour.ProjectID, tour.VehicleID, tour.DriverID, tour.Status, tour.DepartureAt, tour.ArrivalAt, tour.KmStart, tour.KmEnd, tour.TotalCost, tour.Notes, tour.CreatedAt, tour.UpdatedAt)
 	return err
 }
 
 func (r *TourPostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.Tour, error) {
-	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, date, stops, status, created_at, updated_at FROM tours WHERE id = $1 AND tenant_id = $2`
+	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, notes, created_at, updated_at FROM tours WHERE id = $1 AND tenant_id = $2`
 	row := r.db.QueryRow(ctx, query, id, tenantID)
 	tour := &domain.Tour{}
-	var stopsJSON []byte
-	err := row.Scan(&tour.ID, &tour.TenantID, &tour.ProjectID, &tour.VehicleID, &tour.DriverID, &tour.Date, &stopsJSON, &tour.Status, &tour.CreatedAt, &tour.UpdatedAt)
+	err := row.Scan(&tour.ID, &tour.TenantID, &tour.ProjectID, &tour.VehicleID, &tour.DriverID, &tour.Status, &tour.DepartureAt, &tour.ArrivalAt, &tour.KmStart, &tour.KmEnd, &tour.TotalCost, &tour.Notes, &tour.CreatedAt, &tour.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
-	json.Unmarshal(stopsJSON, &tour.Stops)
 	return tour, nil
 }
 
 func (r *TourPostgres) ListByTenant(ctx context.Context, tenantID string) ([]*domain.Tour, error) {
-	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, date, stops, status, created_at, updated_at FROM tours WHERE tenant_id = $1 ORDER BY date DESC`
+	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, notes, created_at, updated_at FROM tours WHERE tenant_id = $1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query, tenantID)
 	if err != nil {
 		return nil, err
@@ -110,45 +105,136 @@ func (r *TourPostgres) ListByTenant(ctx context.Context, tenantID string) ([]*do
 	var tours []*domain.Tour
 	for rows.Next() {
 		t := &domain.Tour{}
-		var stopsJSON []byte
-		if err := rows.Scan(&t.ID, &t.TenantID, &t.ProjectID, &t.VehicleID, &t.DriverID, &t.Date, &stopsJSON, &t.Status, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.TenantID, &t.ProjectID, &t.VehicleID, &t.DriverID, &t.Status, &t.DepartureAt, &t.ArrivalAt, &t.KmStart, &t.KmEnd, &t.TotalCost, &t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, err
 		}
-		json.Unmarshal(stopsJSON, &t.Stops)
-		tours = append(tours, t)
-	}
-	return tours, rows.Err()
-}
-
-func (r *TourPostgres) ListByDate(ctx context.Context, tenantID string, date time.Time) ([]*domain.Tour, error) {
-	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, date, stops, status, created_at, updated_at FROM tours WHERE tenant_id = $1 AND DATE(date) = DATE($2) ORDER BY date ASC`
-	rows, err := r.db.Query(ctx, query, tenantID, date)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var tours []*domain.Tour
-	for rows.Next() {
-		t := &domain.Tour{}
-		var stopsJSON []byte
-		if err := rows.Scan(&t.ID, &t.TenantID, &t.ProjectID, &t.VehicleID, &t.DriverID, &t.Date, &stopsJSON, &t.Status, &t.CreatedAt, &t.UpdatedAt); err != nil {
-			return nil, err
-		}
-		json.Unmarshal(stopsJSON, &t.Stops)
 		tours = append(tours, t)
 	}
 	return tours, rows.Err()
 }
 
 func (r *TourPostgres) Update(ctx context.Context, tour *domain.Tour) error {
-	query := `UPDATE tours SET status = $1, updated_at = $2 WHERE id = $3 AND tenant_id = $4`
-	_, err := r.db.Exec(ctx, query, tour.Status, tour.UpdatedAt, tour.ID, tour.TenantID)
+	query := `UPDATE tours SET status = $1, departure_at = $2, arrival_at = $3, km_start = $4, km_end = $5, total_cost = $6, notes = $7, updated_at = $8 WHERE id = $9 AND tenant_id = $10`
+	_, err := r.db.Exec(ctx, query, tour.Status, tour.DepartureAt, tour.ArrivalAt, tour.KmStart, tour.KmEnd, tour.TotalCost, tour.Notes, tour.UpdatedAt, tour.ID, tour.TenantID)
 	return err
 }
 
 func (r *TourPostgres) Delete(ctx context.Context, tenantID, id string) error {
 	query := `DELETE FROM tours WHERE id = $1 AND tenant_id = $2`
 	_, err := r.db.Exec(ctx, query, id, tenantID)
+	return err
+}
+
+type TourEquipmentPostgres struct {
+	db *database.PostgresPool
+}
+
+func NewTourEquipmentPostgres(db *database.PostgresPool) *TourEquipmentPostgres {
+	return &TourEquipmentPostgres{db: db}
+}
+
+func (r *TourEquipmentPostgres) Create(ctx context.Context, equipment *domain.TourEquipment) error {
+	query := `
+		INSERT INTO tour_equipment (id, tour_id, equipment_id, weight_kg, volume_m3, loaded_at, unloaded_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`
+	_, err := r.db.Exec(ctx, query, equipment.ID, equipment.TourID, equipment.EquipmentID, equipment.WeightKg, equipment.VolumeM3, equipment.LoadedAt, equipment.UnloadedAt, equipment.CreatedAt, equipment.UpdatedAt)
+	return err
+}
+
+func (r *TourEquipmentPostgres) GetByID(ctx context.Context, id string) (*domain.TourEquipment, error) {
+	query := `SELECT id, tour_id, equipment_id, weight_kg, volume_m3, loaded_at, unloaded_at, created_at, updated_at FROM tour_equipment WHERE id = $1`
+	row := r.db.QueryRow(ctx, query, id)
+	equipment := &domain.TourEquipment{}
+	err := row.Scan(&equipment.ID, &equipment.TourID, &equipment.EquipmentID, &equipment.WeightKg, &equipment.VolumeM3, &equipment.LoadedAt, &equipment.UnloadedAt, &equipment.CreatedAt, &equipment.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return equipment, nil
+}
+
+func (r *TourEquipmentPostgres) ListByTour(ctx context.Context, tourID string) ([]*domain.TourEquipment, error) {
+	query := `SELECT id, tour_id, equipment_id, weight_kg, volume_m3, loaded_at, unloaded_at, created_at, updated_at FROM tour_equipment WHERE tour_id = $1 ORDER BY created_at ASC`
+	rows, err := r.db.Query(ctx, query, tourID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var equipment []*domain.TourEquipment
+	for rows.Next() {
+		e := &domain.TourEquipment{}
+		if err := rows.Scan(&e.ID, &e.TourID, &e.EquipmentID, &e.WeightKg, &e.VolumeM3, &e.LoadedAt, &e.UnloadedAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
+			return nil, err
+		}
+		equipment = append(equipment, e)
+	}
+	return equipment, rows.Err()
+}
+
+func (r *TourEquipmentPostgres) DeleteByTourAndEquipment(ctx context.Context, tourID, equipmentID string) error {
+	query := `DELETE FROM tour_equipment WHERE tour_id = $1 AND equipment_id = $2`
+	_, err := r.db.Exec(ctx, query, tourID, equipmentID)
+	return err
+}
+
+func (r *TourEquipmentPostgres) GetCapacityByTour(ctx context.Context, tourID string) (float64, float64, error) {
+	query := `SELECT COALESCE(SUM(weight_kg), 0), COALESCE(SUM(volume_m3), 0) FROM tour_equipment WHERE tour_id = $1`
+	row := r.db.QueryRow(ctx, query, tourID)
+	var totalWeight, totalVolume float64
+	err := row.Scan(&totalWeight, &totalVolume)
+	return totalWeight, totalVolume, err
+}
+
+type DriverLogPostgres struct {
+	db *database.PostgresPool
+}
+
+func NewDriverLogPostgres(db *database.PostgresPool) *DriverLogPostgres {
+	return &DriverLogPostgres{db: db}
+}
+
+func (r *DriverLogPostgres) Create(ctx context.Context, log *domain.DriverLog) error {
+	query := `
+		INSERT INTO driver_logs (id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, notes, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	`
+	_, err := r.db.Exec(ctx, query, log.ID, log.TourID, log.DriverID, log.StartTime, log.EndTime, log.BreakMinutes, log.KmDriven, log.Notes, log.CreatedAt, log.UpdatedAt)
+	return err
+}
+
+func (r *DriverLogPostgres) GetByID(ctx context.Context, id string) (*domain.DriverLog, error) {
+	query := `SELECT id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, notes, created_at, updated_at FROM driver_logs WHERE id = $1`
+	row := r.db.QueryRow(ctx, query, id)
+	log := &domain.DriverLog{}
+	err := row.Scan(&log.ID, &log.TourID, &log.DriverID, &log.StartTime, &log.EndTime, &log.BreakMinutes, &log.KmDriven, &log.Notes, &log.CreatedAt, &log.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return log, nil
+}
+
+func (r *DriverLogPostgres) ListByTour(ctx context.Context, tourID string) ([]*domain.DriverLog, error) {
+	query := `SELECT id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, notes, created_at, updated_at FROM driver_logs WHERE tour_id = $1 ORDER BY start_time ASC`
+	rows, err := r.db.Query(ctx, query, tourID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []*domain.DriverLog
+	for rows.Next() {
+		l := &domain.DriverLog{}
+		if err := rows.Scan(&l.ID, &l.TourID, &l.DriverID, &l.StartTime, &l.EndTime, &l.BreakMinutes, &l.KmDriven, &l.Notes, &l.CreatedAt, &l.UpdatedAt); err != nil {
+			return nil, err
+		}
+		logs = append(logs, l)
+	}
+	return logs, rows.Err()
+}
+
+func (r *DriverLogPostgres) Update(ctx context.Context, log *domain.DriverLog) error {
+	query := `UPDATE driver_logs SET end_time = $1, break_minutes = $2, km_driven = $3, notes = $4, updated_at = $5 WHERE id = $6`
+	_, err := r.db.Exec(ctx, query, log.EndTime, log.BreakMinutes, log.KmDriven, log.Notes, log.UpdatedAt, log.ID)
 	return err
 }

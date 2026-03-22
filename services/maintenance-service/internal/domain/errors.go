@@ -10,6 +10,11 @@ var (
 	ErrTenantIDRequired  = fmt.Errorf("tenant ID is required")
 	ErrInvalidInput      = fmt.Errorf("invalid input")
 	ErrUnauthorized      = fmt.Errorf("unauthorized")
+	ErrPlanNotFound      = fmt.Errorf("maintenance plan not found")
+	ErrTaskNotFound      = fmt.Errorf("maintenance task not found")
+	ErrChecklistNotFound = fmt.Errorf("checklist not found")
+	ErrTestNotFound      = fmt.Errorf("electrical test not found")
+	ErrInvalidTaskStatus = fmt.Errorf("invalid task status transition")
 )
 
 type DomainError struct {

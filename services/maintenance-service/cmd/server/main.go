@@ -41,15 +41,23 @@ func main() {
 
 	recordRepo := repositories.NewMaintenanceRecordPostgres(dbPool)
 	scheduleRepo := repositories.NewMaintenanceSchedulePostgres(dbPool)
+	planRepo := repositories.NewMaintenancePlanPostgres(dbPool)
+	taskRepo := repositories.NewMaintenanceTaskPostgres(dbPool)
+	checklistRepo := repositories.NewChecklistPostgres(dbPool)
+	testRepo := repositories.NewElectricalTestPostgres(dbPool)
 
 	log.Info("Repositories initialized")
 
 	recordSvc := application.NewMaintenanceRecordService(recordRepo, log)
 	scheduleSvc := application.NewMaintenanceScheduleService(scheduleRepo, recordRepo, log)
+	planSvc := application.NewMaintenancePlanService(planRepo, taskRepo, log)
+	taskSvc := application.NewMaintenanceTaskService(taskRepo, planRepo, log)
+	checklistSvc := application.NewChecklistService(checklistRepo, log)
+	testSvc := application.NewElectricalTestService(testRepo, log)
 
 	log.Info("Services initialized")
 
-	router := httpAdapter.NewRouter(recordSvc, scheduleSvc, log)
+	router := httpAdapter.NewRouter(recordSvc, scheduleSvc, planSvc, taskSvc, checklistSvc, testSvc, log)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),

@@ -40,6 +40,23 @@ type DeviceRepository interface {
 	Delete(ctx context.Context, tenantID, id string) error
 }
 
+type ScanSessionRepository interface {
+	Create(ctx context.Context, session *domain.ScanSession) error
+	GetByID(ctx context.Context, tenantID, id string) (*domain.ScanSession, error)
+	Update(ctx context.Context, session *domain.ScanSession) error
+	List(ctx context.Context, tenantID string, limit, offset int) ([]*domain.ScanSession, int, error)
+	GetByUserAndContext(ctx context.Context, tenantID, userID string, context domain.ScanContext) (*domain.ScanSession, error)
+}
+
+type OfflineQueueRepository interface {
+	Create(ctx context.Context, item *domain.OfflineQueueItem) error
+	GetByID(ctx context.Context, id string) (*domain.OfflineQueueItem, error)
+	GetPending(ctx context.Context, tenantID string, limit int) ([]*domain.OfflineQueueItem, error)
+	Update(ctx context.Context, item *domain.OfflineQueueItem) error
+	DeleteByID(ctx context.Context, id string) error
+	GetCount(ctx context.Context, tenantID string, status string) (int, error)
+}
+
 type InventoryServiceClient interface {
 	ResolveBarcode(ctx context.Context, tenantID, barcode string) (string, error)
 	UpdateEquipmentStatus(ctx context.Context, tenantID, equipmentID, status string) error
