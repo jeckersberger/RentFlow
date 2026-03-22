@@ -1,19 +1,39 @@
-export type ProjectStatus = 'draft' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+export type ProjectStatus = 'draft' | 'quoted' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'invoiced'
+
+export interface AddressDTO {
+  street: string
+  city: string
+  state: string
+  postal_code: string
+  country: string
+  coordinates?: string
+}
 
 export interface Project {
   id: string
   name: string
   description?: string
-  client_id: string
   client_name?: string
+  client_email?: string
+  client_phone?: string
+  client_address?: AddressDTO
+  venue_address?: AddressDTO
   status: ProjectStatus
   start_date: string
   end_date: string
-  location?: string
+  setup_date?: string
+  teardown_date?: string
+  project_manager?: string
   budget?: number
+  currency?: string
   notes?: string
+  tags?: string[]
   created_at: string
   updated_at: string
+  created_by_user_id?: string
+  // Legacy fields kept for backward compat
+  client_id?: string
+  location?: string
 }
 
 export interface ProjectPackItem {
@@ -39,12 +59,15 @@ export interface ProjectCrew {
 export interface CreateProjectDTO {
   name: string
   description?: string
-  client_id: string
+  client_name: string
+  client_email?: string
+  client_phone?: string
+  venue_address?: AddressDTO
   status?: ProjectStatus
   start_date: string
   end_date: string
-  location?: string
   budget?: number
+  currency?: string
   notes?: string
 }
 

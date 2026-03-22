@@ -21,10 +21,12 @@ import EquipmentFormPage from './pages/Equipment/EquipmentForm'
 // Project Pages
 import ProjectListPage from './pages/Projects/ProjectList'
 import ProjectDetailPage from './pages/Projects/ProjectDetail'
+import ProjectFormPage from './pages/Projects/ProjectForm'
 
 // Invoice Pages
 import InvoiceListPage from './pages/Invoices/InvoiceList'
 import InvoiceDetailPage from './pages/Invoices/InvoiceDetail'
+import InvoiceFormPage from './pages/Invoices/InvoiceForm'
 
 // Scanner Page
 import ScannerPage from './pages/Scanner/ScannerPage'
@@ -146,15 +148,15 @@ function App() {
 
             {/* Project Routes */}
             <Route path="projects" element={<ProjectListPage />} />
-            <Route path="projects/new" element={<div>Neues Projekt - Formular</div>} />
+            <Route path="projects/new" element={<ProjectFormPage />} />
             <Route path="projects/:id" element={<ProjectDetailPage />} />
-            <Route path="projects/:id/edit" element={<div>Projekt bearbeiten - Formular</div>} />
+            <Route path="projects/:id/edit" element={<ProjectFormPage />} />
 
             {/* Invoice Routes */}
             <Route path="invoices" element={<InvoiceListPage />} />
-            <Route path="invoices/new" element={<div>Neue Rechnung - Formular</div>} />
+            <Route path="invoices/new" element={<InvoiceFormPage />} />
             <Route path="invoices/:id" element={<InvoiceDetailPage />} />
-            <Route path="invoices/:id/edit" element={<div>Rechnung bearbeiten - Formular</div>} />
+            <Route path="invoices/:id/edit" element={<InvoiceFormPage />} />
 
             {/* Transport Routes */}
             <Route path="transport" element={<TransportPage />} />

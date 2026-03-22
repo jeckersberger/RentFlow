@@ -217,11 +217,15 @@ export const equipmentApi = {
 
   // Equipment einem Projekt zuweisen (Check-Out)
   checkOut: (equipmentId: string, projectId: string) =>
-    api.post(`/api/v1/equipment/${equipmentId}/check-out`, { project_id: projectId }).then(res => res.data),
+    MOCK_MODE
+      ? mockDelay({ id: equipmentId, project_id: projectId, status: 'checked_out' })
+      : api.post(`/api/v1/equipment/${equipmentId}/check-out`, { project_id: projectId }).then(res => res.data),
 
   // Equipment vom Projekt zurückgeben (Check-In)
   checkIn: (equipmentId: string) =>
-    api.post(`/api/v1/equipment/${equipmentId}/check-in`, {}).then(res => res.data),
+    MOCK_MODE
+      ? mockDelay({ id: equipmentId, status: 'available' })
+      : api.post(`/api/v1/equipment/${equipmentId}/check-in`).then(res => res.data),
 }
 
 // Category API endpoints

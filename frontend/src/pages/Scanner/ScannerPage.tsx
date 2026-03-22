@@ -387,8 +387,9 @@ function ScannerPage() {
       // Play success beep
       playBeep('success')
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message :
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Unbekannter Fehler'
+      const axiosError = (err as { response?: { data?: { error?: string; detail?: string } } })?.response?.data
+      const errorMessage = axiosError?.error || axiosError?.detail ||
+        (err instanceof Error ? err.message : 'Unbekannter Fehler')
 
       // Check if offline and add to queue instead
       if (!navigator.onLine) {
@@ -754,9 +755,9 @@ function ScannerPage() {
                         ? '⏳'
                         : scan.status === 'error'
                         ? '❌'
-                        : scan.scan_type === 'check_in'
+                        : scan.scan_type === 'check-in'
                         ? '📥'
-                        : scan.scan_type === 'check_out'
+                        : scan.scan_type === 'check-out'
                         ? '📤'
                         : '📊'}
                     </div>
@@ -786,8 +787,8 @@ function ScannerPage() {
                           ? 'Wird verarbeitet...'
                           : (
                             <>
-                              {scan.scan_type === 'check_in' && 'Eingecheckt'}
-                              {scan.scan_type === 'check_out' && 'Ausgecheckt'}
+                              {scan.scan_type === 'check-in' && 'Eingecheckt'}
+                              {scan.scan_type === 'check-out' && 'Ausgecheckt'}
                               {scan.scan_type === 'inventory' && 'Inventur'}
                               {' • '}
                               {new Date(scan.timestamp).toLocaleTimeString('de-DE')}
