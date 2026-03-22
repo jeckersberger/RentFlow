@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -635,7 +636,8 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 		case "BARCODE_EXISTS", "INVALID_PARENT", "EQUIPMENT_NOT_FOUND":
 			h.respondError(w, http.StatusConflict, domainErr.Message)
 		default:
-			h.respondError(w, http.StatusInternalServerError, "internal server error")
+			h.logger.Error("unhandled domain error", fmt.Errorf("%s: %s", domainErr.Code, domainErr.Message), "code", domainErr.Code)
+			h.respondError(w, http.StatusInternalServerError, domainErr.Message)
 		}
 		return
 	}

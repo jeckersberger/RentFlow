@@ -34,14 +34,14 @@ func (r *EquipmentPostgres) Create(ctx context.Context, eq *domain.Equipment) er
 		)
 	`
 
-	var imageRefs pq.StringArray
-	if len(eq.ImageRefs) > 0 {
-		imageRefs = pq.StringArray(eq.ImageRefs)
+	imageRefs := pq.StringArray(eq.ImageRefs)
+	if imageRefs == nil {
+		imageRefs = pq.StringArray{}
 	}
 
-	var tags pq.StringArray
-	if len(eq.Tags) > 0 {
-		tags = pq.StringArray(eq.Tags)
+	tags := pq.StringArray(eq.Tags)
+	if tags == nil {
+		tags = pq.StringArray{}
 	}
 
 	customFields := toJSONB(eq.CustomFields)
@@ -74,14 +74,14 @@ func (r *EquipmentPostgres) Update(ctx context.Context, eq *domain.Equipment) er
 		WHERE id = $1 AND tenant_id = $2
 	`
 
-	var imageRefs pq.StringArray
-	if len(eq.ImageRefs) > 0 {
-		imageRefs = pq.StringArray(eq.ImageRefs)
+	imageRefs := pq.StringArray(eq.ImageRefs)
+	if imageRefs == nil {
+		imageRefs = pq.StringArray{}
 	}
 
-	var tags pq.StringArray
-	if len(eq.Tags) > 0 {
-		tags = pq.StringArray(eq.Tags)
+	tags := pq.StringArray(eq.Tags)
+	if tags == nil {
+		tags = pq.StringArray{}
 	}
 
 	customFields := toJSONB(eq.CustomFields)

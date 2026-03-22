@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/pkg/common/storage"
@@ -357,9 +358,11 @@ func (s *EquipmentService) CheckOut(ctx context.Context, cmd CheckOutCommand) (*
 	}
 
 	eq.LocationID = cmd.ProjectID
+	eq.UpdatedAt = time.Now()
 
 	if err := s.equipRepo.Update(ctx, eq); err != nil {
-		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to check out equipment", err)
+		s.logger.Error("CheckOut update failed", err, "id", cmd.ID, "status", string(eq.Status))
+		return nil, domain.NewDomainError("UPDATE_ERROR", fmt.Sprintf("failed to check out equipment: %v", err), nil)
 	}
 
 	s.logger.Info("Equipment checked out", "id", cmd.ID, "tenant_id", cmd.TenantID, "project_id", cmd.ProjectID, "user_id", cmd.UserID)
@@ -381,6 +384,7 @@ func (s *EquipmentService) CheckIn(ctx context.Context, cmd CheckInCommand) (*Eq
 	}
 
 	eq.LocationID = ""
+	eq.UpdatedAt = time.Now()
 
 	if err := s.equipRepo.Update(ctx, eq); err != nil {
 		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to check in equipment", err)
