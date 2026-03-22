@@ -167,14 +167,14 @@
   align-items: center;
   border-bottom: var(--card-border-width) solid var(--color-border);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast);
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background: var(--color-bg-hover);
+    background: var(--color-bg-tertiary);
   }
 }
 
@@ -271,6 +271,16 @@
     &:hover {
       background-color: var(--color-bg-hover);
       border-color: var(--color-border-strong);
+    }
+  }
+
+  &--danger {
+    background-color: var(--color-danger);
+    color: white;
+
+    &:hover {
+      background-color: rgba(239, 68, 68, 0.8);
+      box-shadow: var(--glow-danger);
     }
   }
 
