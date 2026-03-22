@@ -280,36 +280,7 @@ func (r *EquipmentPostgres) Delete(ctx context.Context, tenantID, equipmentID st
 
 // Helper methods
 
-func (r *EquipmentPostgres) scanEquipment(row *sql.Row) (*domain.Equipment, error) {
-	eq := &domain.Equipment{}
-	var imageRefs pq.StringArray
-	var tags pq.StringArray
-	var customFieldsJSON []byte
-
-	err := row.Scan(
-		&eq.ID, &eq.TenantID, &eq.Name, &eq.Description, &eq.CategoryID, &eq.SKU,
-		&eq.SerialNumber, &eq.Barcode, (*string)(&eq.Status), (*string)(&eq.Condition),
-		&eq.PurchaseDate, &eq.PurchasePrice, &eq.RentalPriceDay, &eq.RentalPriceWeek,
-		&eq.Weight, &eq.Dimensions.Length, &eq.Dimensions.Width, &eq.Dimensions.Height,
-		&eq.Dimensions.Unit, &eq.LocationID, &imageRefs, &tags, &customFieldsJSON,
-		&eq.CreatedAt, &eq.UpdatedAt, &eq.CreatedByUserID,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, domain.ErrEquipmentNotFound
-		}
-		return nil, fmt.Errorf("failed to scan equipment: %w", err)
-	}
-
-	eq.ImageRefs = []string(imageRefs)
-	eq.Tags = []string(tags)
-	eq.CustomFields = fromJSONB(customFieldsJSON)
-
-	return eq, nil
-}
-
-func (r *EquipmentPostgres) scanEquipmentRow(rows interface {
+func (r *EquipmentPostgres) scanEquipmentFields(scanner interface {
 	Scan(...interface{}) error
 }) (*domain.Equipment, error) {
 	eq := &domain.Equipment{}
@@ -317,22 +288,72 @@ func (r *EquipmentPostgres) scanEquipmentRow(rows interface {
 	var tags pq.StringArray
 	var customFieldsJSON []byte
 
-	err := rows.Scan(
-		&eq.ID, &eq.TenantID, &eq.Name, &eq.Description, &eq.CategoryID, &eq.SKU,
-		&eq.SerialNumber, &eq.Barcode, (*string)(&eq.Status), (*string)(&eq.Condition),
-		&eq.PurchaseDate, &eq.PurchasePrice, &eq.RentalPriceDay, &eq.RentalPriceWeek,
-		&eq.Weight, &eq.Dimensions.Length, &eq.Dimensions.Width, &eq.Dimensions.Height,
-		&eq.Dimensions.Unit, &eq.LocationID, &imageRefs, &tags, &customFieldsJSON,
+	// Use sql.Null* types for nullable columns
+	var description, sku, serialNumber, locationID, dimUnit sql.NullString
+	var purchasePrice, rentalPriceDay, rentalPriceWeek, weight sql.NullFloat64
+	var dimLength, dimWidth, dimHeight sql.NullFloat64
+	var status, condition sql.NullString
+
+	err := scanner.Scan(
+		&eq.ID, &eq.TenantID, &eq.Name, &description, &eq.CategoryID, &sku,
+		&serialNumber, &eq.Barcode, &status, &condition,
+		&eq.PurchaseDate, &purchasePrice, &rentalPriceDay, &rentalPriceWeek,
+		&weight, &dimLength, &dimWidth, &dimHeight,
+		&dimUnit, &locationID, &imageRefs, &tags, &customFieldsJSON,
 		&eq.CreatedAt, &eq.UpdatedAt, &eq.CreatedByUserID,
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan equipment: %w", err)
+		return nil, err
 	}
 
+	eq.Description = description.String
+	eq.SKU = sku.String
+	eq.SerialNumber = serialNumber.String
+	eq.LocationID = locationID.String
+	eq.PurchasePrice = purchasePrice.Float64
+	eq.RentalPriceDay = rentalPriceDay.Float64
+	eq.RentalPriceWeek = rentalPriceWeek.Float64
+	eq.Weight = weight.Float64
+	eq.Dimensions.Length = dimLength.Float64
+	eq.Dimensions.Width = dimWidth.Float64
+	eq.Dimensions.Height = dimHeight.Float64
+	eq.Dimensions.Unit = dimUnit.String
+	if eq.Dimensions.Unit == "" {
+		eq.Dimensions.Unit = "cm"
+	}
+	eq.Status = domain.EquipmentStatus(status.String)
+	if eq.Status == "" {
+		eq.Status = domain.StatusAvailable
+	}
+	eq.Condition = domain.EquipmentCondition(condition.String)
+	if eq.Condition == "" {
+		eq.Condition = domain.ConditionGood
+	}
 	eq.ImageRefs = []string(imageRefs)
 	eq.Tags = []string(tags)
 	eq.CustomFields = fromJSONB(customFieldsJSON)
 
+	return eq, nil
+}
+
+func (r *EquipmentPostgres) scanEquipment(row *sql.Row) (*domain.Equipment, error) {
+	eq, err := r.scanEquipmentFields(row)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, domain.ErrEquipmentNotFound
+		}
+		return nil, fmt.Errorf("failed to scan equipment: %w", err)
+	}
+	return eq, nil
+}
+
+func (r *EquipmentPostgres) scanEquipmentRow(rows interface {
+	Scan(...interface{}) error
+}) (*domain.Equipment, error) {
+	eq, err := r.scanEquipmentFields(rows)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan equipment row: %w", err)
+	}
 	return eq, nil
 }

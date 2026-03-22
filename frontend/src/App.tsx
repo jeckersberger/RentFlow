@@ -60,6 +60,20 @@ import InsuranceDetail from './pages/Insurance/InsuranceDetail'
 // Reports Pages
 import ReportsPage from './pages/Reports/ReportsPage'
 
+// Placeholder Pages
+import {
+  NewTourPage,
+  NewVehiclePage,
+  VehicleDetailPage,
+  NewMaintenanceTaskPage,
+  NewECheckPage,
+  MaintenancePlanDetailPage,
+  NewCrewMemberPage,
+  DocumentDetailPage,
+  NewDocumentPage,
+  NewClaimPage,
+} from './pages/PlaceholderPages'
+
 // Phase 4 Pages
 import AIPage from './pages/AI/AIPage'
 import WorkflowsPage from './pages/Workflows/WorkflowsPage'
@@ -161,32 +175,32 @@ function App() {
             {/* Transport Routes */}
             <Route path="transport" element={<TransportPage />} />
             <Route path="transport/tours/:id" element={<TransportDetailPage />} />
-            <Route path="transport/new-tour" element={<div>Neuer Transport - Formular</div>} />
-            <Route path="transport/new-vehicle" element={<div>Neues Fahrzeug - Formular</div>} />
-            <Route path="transport/vehicles/:id" element={<div>Fahrzeug Details</div>} />
+            <Route path="transport/new-tour" element={<NewTourPage />} />
+            <Route path="transport/new-vehicle" element={<NewVehiclePage />} />
+            <Route path="transport/vehicles/:id" element={<VehicleDetailPage />} />
 
             {/* Maintenance Routes */}
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="maintenance/tasks/:id" element={<MaintenanceDetailPage />} />
-            <Route path="maintenance/new-task" element={<div>Neue Aufgabe - Formular</div>} />
-            <Route path="maintenance/new-echeck" element={<div>E-Check durchführen - Formular</div>} />
-            <Route path="maintenance/plans/:id" element={<div>Wartungsplan Details</div>} />
+            <Route path="maintenance/new-task" element={<NewMaintenanceTaskPage />} />
+            <Route path="maintenance/new-echeck" element={<NewECheckPage />} />
+            <Route path="maintenance/plans/:id" element={<MaintenancePlanDetailPage />} />
 
             {/* Crew Routes */}
             <Route path="crew" element={<CrewPage />} />
             <Route path="crew/:id" element={<CrewDetail />} />
-            <Route path="crew/new" element={<div>Neuer Mitarbeiter - Formular</div>} />
+            <Route path="crew/new" element={<NewCrewMemberPage />} />
             <Route path="my-assignments" element={<MyAssignments />} />
 
             {/* Documents Routes */}
             <Route path="documents" element={<DocumentsPage />} />
-            <Route path="documents/:id" element={<div>Dokumentdetails</div>} />
-            <Route path="documents/new" element={<div>Neues Dokument - Formular</div>} />
+            <Route path="documents/:id" element={<DocumentDetailPage />} />
+            <Route path="documents/new" element={<NewDocumentPage />} />
 
             {/* Insurance Routes */}
             <Route path="insurance" element={<InsurancePage />} />
             <Route path="insurance/claims/:id" element={<InsuranceDetail />} />
-            <Route path="insurance/new-claim" element={<div>Neuer Schadensfall - Formular</div>} />
+            <Route path="insurance/new-claim" element={<NewClaimPage />} />
 
             {/* Reports Routes */}
             <Route path="reports" element={<ReportsPage />} />
