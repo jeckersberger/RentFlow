@@ -249,3 +249,19 @@ func (s *AssignmentService) DetectConflicts(ctx context.Context, crewMemberID st
 
 	return conflicts, nil
 }
+
+// GetAssignmentsForMember retrieves all assignments for a crew member as DTOs
+func (s *AssignmentService) GetAssignmentsForMember(ctx context.Context, crewMemberID string) ([]*CrewAssignmentDTO, error) {
+	assignments, err := s.assignmentRepo.ListByCrewMember(ctx, crewMemberID)
+	if err != nil {
+		s.logger.Error("failed to list assignments for member", err, "member_id", crewMemberID)
+		return nil, err
+	}
+
+	dtos := make([]*CrewAssignmentDTO, len(assignments))
+	for i, assignment := range assignments {
+		dtos[i] = ToCrewAssignmentDTO(assignment)
+	}
+
+	return dtos, nil
+}

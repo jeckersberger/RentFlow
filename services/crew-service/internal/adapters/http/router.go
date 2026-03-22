@@ -29,8 +29,14 @@ func SetupRoutes(
 	mux.HandleFunc("GET /api/v1/crew/members/{id}/qualifications", handlers.GetQualifications)
 	mux.HandleFunc("POST /api/v1/crew/members/{id}/qualifications", handlers.CreateQualification)
 
+	// Calendar export routes
+	mux.HandleFunc("GET /api/v1/crew/members/{id}/calendar.ics", handlers.ExportCalendarICS)
+
 	// Availability routes
 	mux.HandleFunc("GET /api/v1/crew/members/{id}/availability", handlers.CheckAvailability)
+
+	// Driver routes
+	mux.HandleFunc("GET /api/v1/crew/drivers", handlers.GetDriverList)
 
 	// Crew assignment routes
 	mux.HandleFunc("GET /api/v1/crew/assignments", handlers.ListAssignments)

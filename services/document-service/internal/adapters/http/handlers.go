@@ -3,8 +3,11 @@ package http
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/document-service/internal/application"
 	"github.com/jeckersberger/rentflow/services/document-service/internal/domain"
@@ -276,6 +279,137 @@ func (h *Handler) VerifyChecksumChain(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.chkSvc.VerifyChecksumChain(r.Context(), tenantID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) UploadScan(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	userID := r.Header.Get("X-User-ID")
+	if tenantID == "" || userID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID and user ID required")
+		return
+	}
+
+	// Parse multipart form (max 50MB)
+	if err := r.ParseMultipartForm(50 * 1024 * 1024); err != nil {
+		h.respondError(w, http.StatusBadRequest, "failed to parse form")
+		return
+	}
+
+	// Get file from form
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		h.respondError(w, http.StatusBadRequest, "file is required")
+		return
+	}
+	defer file.Close()
+
+	// Get form values
+	referenceID := r.FormValue("reference_id")
+	scanType := r.FormValue("scan_type")
+
+	if referenceID == "" || scanType == "" {
+		h.respondError(w, http.StatusBadRequest, "reference_id and scan_type are required")
+		return
+	}
+
+	// Create document record for scan
+	docID := uuid.New().String()
+	docNumber := "SCAN-" + docID[:8]
+
+	// Create request
+	createReq := application.CreateDocumentRequest{
+		DocumentType:   application.DocumentTypeDTO(scanType),
+		ReferenceID:    referenceID,
+		DocumentNumber: docNumber,
+		Title:          handler.Filename,
+		Metadata: map[string]interface{}{
+			"original_filename": handler.Filename,
+			"file_size":         handler.Size,
+			"content_type":      handler.Header.Get("Content-Type"),
+		},
+	}
+
+	// Create document
+	docResp, err := h.docSvc.CreateDocument(r.Context(), tenantID, userID, createReq)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	// Save uploaded file to disk
+	filePath := filepath.Join("/documents", tenantID, docID, handler.Filename)
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		h.respondError(w, http.StatusInternalServerError, "failed to save file")
+		return
+	}
+
+	dst, err := os.Create(filePath)
+	if err != nil {
+		h.respondError(w, http.StatusInternalServerError, "failed to create file")
+		return
+	}
+	defer dst.Close()
+
+	if _, err := dst.ReadFrom(file); err != nil {
+		h.respondError(w, http.StatusInternalServerError, "failed to write file")
+		return
+	}
+
+	h.logger.Info("Scan uploaded", "id", docID, "tenant", tenantID)
+	h.respondJSON(w, http.StatusCreated, docResp)
+}
+
+func (h *Handler) GetPublicSignaturePage(w http.ResponseWriter, r *http.Request) {
+	sigID := strings.TrimPrefix(r.URL.Path, "/api/v1/public/sign/")
+
+	// Get signature (no tenant check)
+	sig, err := h.sigSvc.GetSignatureByID(r.Context(), sigID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	resp := &application.PublicSignatureResponse{
+		ID:          sig.ID,
+		DocumentID:  sig.DocumentID,
+		SignerName:  sig.SignerName,
+		SignerEmail: sig.SignerEmail,
+		SignedAt:    sig.SignedAt,
+		Verified:    sig.Verified,
+	}
+
+	h.respondJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) SubmitPublicSignature(w http.ResponseWriter, r *http.Request) {
+	sigID := strings.TrimPrefix(r.URL.Path, "/api/v1/public/sign/")
+
+	var req application.PublicSignatureSubmitRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.SignatureData == "" || req.SignerName == "" {
+		h.respondError(w, http.StatusBadRequest, "signature_data and signer_name are required")
+		return
+	}
+
+	// Get signature to find document/tenant info
+	sig, err := h.sigSvc.GetSignatureByID(r.Context(), sigID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	// Update signature (public endpoint, no tenant check needed)
+	resp, err := h.sigSvc.SubmitPublicSignature(r.Context(), sig.DocumentID, sigID, req)
 	if err != nil {
 		h.handleError(w, err)
 		return

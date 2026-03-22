@@ -101,6 +101,15 @@ type DashboardDTO struct {
 	ValidQualifications int `json:"valid_qualifications"`
 }
 
+// DriverDTO represents a driver with vehicle assignment info
+type DriverDTO struct {
+	MemberID           string     `json:"member_id"`
+	Name               string     `json:"name"`
+	PreferredVehicleID *string    `json:"preferred_vehicle_id,omitempty"`
+	AssignmentStartDate *time.Time `json:"assignment_start_date,omitempty"`
+	AssignmentEndDate   *time.Time `json:"assignment_end_date,omitempty"`
+}
+
 // PaginatedResult represents a paginated response
 type PaginatedResult struct {
 	Data       interface{} `json:"data"`

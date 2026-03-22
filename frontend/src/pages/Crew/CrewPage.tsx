@@ -237,6 +237,14 @@ function CrewPage() {
 
                 <div className="crew-card__availability">
                   <span className={`availability-badge availability-badge--${member.availability}`}>
+                    <span className="availability-indicator" style={{
+                      display: 'inline-block',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: member.availability === 'available' ? 'var(--color-success)' :
+                                        member.availability === 'busy' ? 'var(--color-warning)' : 'var(--color-primary)',
+                    }}></span>
                     {getAvailabilityLabel(member.availability)}
                   </span>
                 </div>
@@ -248,6 +256,49 @@ function CrewPage() {
                   {member.current_assignment && (
                     <p><strong>Einsatz:</strong> {member.current_assignment}</p>
                   )}
+                </div>
+
+                {/* Weekly Calendar Indicator */}
+                <div style={{
+                  display: 'flex',
+                  gap: 'var(--spacing-1)',
+                  paddingTop: 'var(--spacing-2)',
+                  borderTop: 'var(--card-border-width) solid var(--color-border)',
+                }}>
+                  {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day, idx) => {
+                    const isBusy = idx >= 0 && idx <= 4 && member.hours_this_week > 0 && member.availability === 'busy'
+                    const isAvailable = member.availability === 'available'
+                    const isOnLeave = member.availability === 'on_leave'
+                    return (
+                      <div
+                        key={day}
+                        title={`${day} - ${isBusy ? 'Beschäftigt' : isOnLeave ? 'Urlaub' : 'Frei'}`}
+                        style={{
+                          flex: 1,
+                          aspectRatio: '1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: 'var(--radius-md)',
+                          fontSize: 'var(--font-size-2xs)',
+                          fontWeight: 'var(--font-weight-semibold)',
+                          backgroundColor: isBusy ? 'rgba(245, 158, 11, 0.2)' :
+                                          isOnLeave ? 'rgba(0, 212, 255, 0.2)' :
+                                          isAvailable ? 'rgba(16, 185, 129, 0.2)' : 'var(--color-bg-tertiary)',
+                          color: isBusy ? 'var(--color-warning)' :
+                                 isOnLeave ? 'var(--color-primary)' :
+                                 isAvailable ? 'var(--color-success)' : 'var(--color-text-secondary)',
+                          border: '1px solid',
+                          borderColor: isBusy ? 'rgba(245, 158, 11, 0.4)' :
+                                      isOnLeave ? 'rgba(0, 212, 255, 0.4)' :
+                                      isAvailable ? 'rgba(16, 185, 129, 0.4)' : 'var(--color-border)',
+                          cursor: 'default',
+                        }}
+                      >
+                        {day}
+                      </div>
+                    )
+                  })}
                 </div>
 
                 <div className="crew-card__qualifications">

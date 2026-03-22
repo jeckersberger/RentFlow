@@ -16,6 +16,7 @@ type DocumentService struct {
 	versionRepo   ports.DocumentVersionRepository
 	sigRepo       ports.SignatureRepository
 	checksumSvc   *ChecksumService
+	pdfGen        *PDFGenerator
 	logger        logger.Logger
 }
 
@@ -24,6 +25,7 @@ func NewDocumentService(
 	versionRepo ports.DocumentVersionRepository,
 	sigRepo ports.SignatureRepository,
 	checksumSvc *ChecksumService,
+	pdfGen *PDFGenerator,
 	log logger.Logger,
 ) *DocumentService {
 	return &DocumentService{
@@ -31,6 +33,7 @@ func NewDocumentService(
 		versionRepo:   versionRepo,
 		sigRepo:       sigRepo,
 		checksumSvc:   checksumSvc,
+		pdfGen:        pdfGen,
 		logger:        log,
 	}
 }
@@ -168,6 +171,13 @@ func (s *DocumentService) GenerateFromTemplate(
 		return nil, domain.ErrDocumentNotFound
 	}
 
+	// Generate PDF file
+	filePath := fmt.Sprintf("/documents/%s/%s-v%d.pdf", tenantID, docID, doc.CurrentVersion)
+	if err := s.pdfGen.GenerateAndWritePDF(filePath, doc.Title, doc.DocumentNumber, userID); err != nil {
+		s.logger.Error("Failed to generate PDF", err)
+		return nil, fmt.Errorf("failed to generate PDF: %w", err)
+	}
+
 	// Update document status
 	doc.Status = domain.DocumentStatusGenerated
 	doc.UpdatedAt = time.Now()
@@ -187,7 +197,7 @@ func (s *DocumentService) GenerateFromTemplate(
 		ID:                 uuid.New().String(),
 		DocumentID:         docID,
 		VersionNumber:      doc.CurrentVersion,
-		FilePath:           fmt.Sprintf("/documents/%s/%s-v%d.pdf", tenantID, docID, doc.CurrentVersion),
+		FilePath:           filePath,
 		MimeType:           "application/pdf",
 		ChecksumSHA256:     doc.ChecksumSHA256,
 		ChangesDescription: "Generated from template",

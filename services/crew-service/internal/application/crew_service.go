@@ -211,3 +211,71 @@ func (s *CrewService) VerifyQualification(ctx context.Context, crewMemberID stri
 
 	return member.HasQualification(domain.QualificationType(qualType), qualifications), nil
 }
+
+// GetDriverList retrieves drivers with their vehicle assignments and upcoming assignment dates
+func (s *CrewService) GetDriverList(ctx context.Context, tenantID string) ([]*DriverDTO, error) {
+	// Get all crew members for the tenant
+	// We'll fetch all with high perPage to avoid pagination
+	members, _, err := s.crewRepo.List(ctx, tenantID, 1, 1000)
+	if err != nil {
+		s.logger.Error("failed to list crew members", err)
+		return nil, err
+	}
+
+	var drivers []*DriverDTO
+
+	// Get all qualifications for filtering
+	qualifications := make(map[string][]*domain.Qualification)
+	for _, member := range members {
+		quals, err := s.qualificationRepo.ListByCrewMember(ctx, member.ID)
+		if err != nil {
+			s.logger.Error("failed to list qualifications", err, "member_id", member.ID)
+			continue
+		}
+		qualifications[member.ID] = quals
+	}
+
+	// Get all assignments to find upcoming ones
+	for _, member := range members {
+		// Check if member is a driver or has driver qualifications
+		quals := qualifications[member.ID]
+		isDriver := member.Role == domain.CrewRoleDriver || member.CanDrive(quals)
+
+		if !isDriver {
+			continue
+		}
+
+		// Get assignments for this driver
+		assignments, err := s.assignmentRepo.ListByCrewMember(ctx, member.ID)
+		if err != nil {
+			s.logger.Error("failed to list assignments for member", err, "member_id", member.ID)
+			continue
+		}
+
+		// Find upcoming assignments
+		now := time.Now()
+		var upcomingStart, upcomingEnd *time.Time
+		for _, assignment := range assignments {
+			if assignment.Status != domain.AssignmentStatusCancelled && assignment.EndDate.After(now) {
+				if upcomingStart == nil || assignment.StartDate.Before(*upcomingStart) {
+					upcomingStart = &assignment.StartDate
+				}
+				if upcomingEnd == nil || assignment.EndDate.After(*upcomingEnd) {
+					upcomingEnd = &assignment.EndDate
+				}
+			}
+		}
+
+		driverDTO := &DriverDTO{
+			MemberID:       member.ID,
+			Name:           member.FirstName + " " + member.LastName,
+			PreferredVehicleID: member.PreferredVehicleID,
+			AssignmentStartDate: upcomingStart,
+			AssignmentEndDate:   upcomingEnd,
+		}
+
+		drivers = append(drivers, driverDTO)
+	}
+
+	return drivers, nil
+}

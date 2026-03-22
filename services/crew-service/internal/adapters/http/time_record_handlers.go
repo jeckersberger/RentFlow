@@ -193,6 +193,25 @@ func (h *Handlers) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Get upcoming assignments
+	assignments, err := h.assignmentSvc.GetAssignmentsForMember(r.Context(), crewMemberID)
+	if err != nil {
+		h.logger.Error("failed to get assignments for member", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to get assignments")
+		return
+	}
+
+	// Count upcoming assignments (not cancelled, end date is in the future)
+	upcomingCount := 0
+	for _, assignment := range assignments {
+		if assignment.Status != "cancelled" {
+			endDate, parseErr := time.Parse(time.RFC3339, assignment.EndDate)
+			if parseErr == nil && endDate.After(now) {
+				upcomingCount++
+			}
+		}
+	}
+
 	dashboard := application.DashboardDTO{
 		CrewMemberID:             crewMemberID,
 		Name:                     crewDTO.FirstName + " " + crewDTO.LastName,
@@ -200,6 +219,7 @@ func (h *Handlers) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		Status:                   crewDTO.Status,
 		TotalHoursThisWeek:       totalHours,
 		TotalEarningsThisWeek:    totalEarnings,
+		UpcomingAssignments:      upcomingCount,
 		ValidQualifications:      validQuals,
 	}
 

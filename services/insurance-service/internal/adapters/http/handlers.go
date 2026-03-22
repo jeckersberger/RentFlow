@@ -435,6 +435,74 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
+// CheckEquipmentInsuranceRelevance checks if equipment should be insured based on replacement value
+func (h *Handler) CheckEquipmentInsuranceRelevance(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		EquipmentID      uuid.UUID `json:"equipment_id"`
+		ReplacementValue float64   `json:"replacement_value"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Threshold for insurance relevance: 5000 EUR
+	const insuranceThreshold = 5000.0
+	isRelevant := req.ReplacementValue >= insuranceThreshold
+
+	response := map[string]interface{}{
+		"equipment_id":      req.EquipmentID,
+		"replacement_value": req.ReplacementValue,
+		"threshold":         insuranceThreshold,
+		"should_insure":     isRelevant,
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
+
+// UploadClaimPhoto uploads a photo for a claim item
+func (h *Handler) UploadClaimPhoto(w http.ResponseWriter, r *http.Request) {
+	claimID, err := extractUUID(r.PathValue("id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid claim ID")
+		return
+	}
+
+	itemID, err := extractUUID(r.PathValue("itemId"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid item ID")
+		return
+	}
+
+	// Parse multipart form with 10MB max size
+	if err := r.ParseMultipartForm(10 * 1024 * 1024); err != nil {
+		writeError(w, http.StatusBadRequest, "failed to parse form")
+		return
+	}
+
+	file, handler, err := r.FormFile("image")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "failed to get image file")
+		return
+	}
+	defer file.Close()
+
+	// Generate file path (would typically save to S3 or file system)
+	// For now, we store just the reference path
+	filePath := "/uploads/claims/" + claimID.String() + "/" + itemID.String() + "/" + handler.Filename
+
+	response := map[string]interface{}{
+		"claim_id":  claimID,
+		"item_id":   itemID,
+		"file_path": filePath,
+		"file_name": handler.Filename,
+		"size":      handler.Size,
+	}
+
+	writeJSON(w, http.StatusCreated, response)
+}
+
 // Ready checks if service is ready
 func (h *Handler) Ready(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ready"})

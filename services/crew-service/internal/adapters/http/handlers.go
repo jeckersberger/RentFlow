@@ -2,8 +2,10 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
@@ -403,6 +405,145 @@ func (h *Handlers) DetectConflicts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, conflicts)
+}
+
+// ---- Driver Handlers ----
+
+// GetDriverList retrieves the list of drivers with vehicle assignments
+func (h *Handlers) GetDriverList(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
+
+	drivers, err := h.crewService.GetDriverList(r.Context(), tenantID)
+	if err != nil {
+		h.logger.Error("failed to get driver list", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to get driver list")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, drivers)
+}
+
+// ---- Calendar Handlers ----
+
+// ExportCalendarICS exports a crew member's assignments as an iCalendar feed
+func (h *Handlers) ExportCalendarICS(w http.ResponseWriter, r *http.Request) {
+	memberID := r.PathValue("id")
+	if memberID == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "crew member ID is required")
+		return
+	}
+
+	// Get crew member details
+	crewDTO, err := h.crewService.GetCrewMember(r.Context(), memberID)
+	if err != nil {
+		if err == domain.ErrCrewMemberNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "crew member not found")
+		} else {
+			h.logger.Error("failed to get crew member", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to get crew member")
+		}
+		return
+	}
+
+	// Get all assignments for the member
+	assignments, err := h.assignmentSvc.GetAssignmentsForMember(r.Context(), memberID)
+	if err != nil {
+		h.logger.Error("failed to get assignments for member", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to get assignments")
+		return
+	}
+
+	// Generate ICS content
+	icsContent := generateICSCalendar(crewDTO, assignments)
+
+	// Set proper headers for calendar feed
+	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s-schedule.ics", memberID))
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(icsContent))
+}
+
+// generateICSCalendar generates an iCalendar format string from crew member and assignments
+func generateICSCalendar(crew *application.CrewMemberDTO, assignments []*application.CrewAssignmentDTO) string {
+	sb := strings.Builder{}
+
+	// Write iCalendar header
+	sb.WriteString("BEGIN:VCALENDAR\r\n")
+	sb.WriteString("VERSION:2.0\r\n")
+	sb.WriteString("PRODID:-//RentFlow//Crew Schedule//EN\r\n")
+	sb.WriteString(fmt.Sprintf("CALSCALE:GREGORIAN\r\n"))
+	sb.WriteString(fmt.Sprintf("METHOD:PUBLISH\r\n"))
+	sb.WriteString(fmt.Sprintf("X-WR-CALNAME:%s Schedule\r\n", crew.FirstName+" "+crew.LastName))
+	sb.WriteString(fmt.Sprintf("X-WR-TIMEZONE:UTC\r\n"))
+
+	// Write events for each assignment
+	for _, assignment := range assignments {
+		// Skip cancelled assignments
+		if assignment.Status == "cancelled" {
+			continue
+		}
+
+		// Parse dates
+		startDate, _ := time.Parse(time.RFC3339, assignment.StartDate)
+		endDate, _ := time.Parse(time.RFC3339, assignment.EndDate)
+
+		// Create unique identifier for the event
+		eventUID := fmt.Sprintf("%s-%s@rentflow.local", assignment.ID, crew.ID)
+
+		sb.WriteString("BEGIN:VEVENT\r\n")
+		sb.WriteString(fmt.Sprintf("UID:%s\r\n", eventUID))
+		sb.WriteString(fmt.Sprintf("DTSTAMP:%s\r\n", time.Now().UTC().Format("20060102T150405Z")))
+		sb.WriteString(fmt.Sprintf("DTSTART:%s\r\n", startDate.UTC().Format("20060102T150405Z")))
+		sb.WriteString(fmt.Sprintf("DTEND:%s\r\n", endDate.UTC().Format("20060102T150405Z")))
+		sb.WriteString(fmt.Sprintf("SUMMARY:%s - %s\r\n", assignment.Role, assignment.Status))
+
+		// Add optional project or tour reference
+		description := "Crew Assignment"
+		if assignment.ProjectID != nil && *assignment.ProjectID != "" {
+			description += fmt.Sprintf("\nProject ID: %s", *assignment.ProjectID)
+		}
+		if assignment.TourID != nil && *assignment.TourID != "" {
+			description += fmt.Sprintf("\nTour ID: %s", *assignment.TourID)
+		}
+		if assignment.Notes != "" {
+			description += fmt.Sprintf("\nNotes: %s", assignment.Notes)
+		}
+		sb.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(description)))
+		sb.WriteString(fmt.Sprintf("STATUS:%s\r\n", mapAssignmentStatusToICS(assignment.Status)))
+		sb.WriteString(fmt.Sprintf("LOCATION:Assignment\r\n"))
+		sb.WriteString("END:VEVENT\r\n")
+	}
+
+	// Write iCalendar footer
+	sb.WriteString("END:VCALENDAR\r\n")
+
+	return sb.String()
+}
+
+// escapeICSText escapes special characters in ICS text fields
+func escapeICSText(text string) string {
+	text = strings.ReplaceAll(text, "\\", "\\\\")
+	text = strings.ReplaceAll(text, ",", "\\,")
+	text = strings.ReplaceAll(text, ";", "\\;")
+	text = strings.ReplaceAll(text, "\n", "\\n")
+	return text
+}
+
+// mapAssignmentStatusToICS maps assignment status to ICS status
+func mapAssignmentStatusToICS(status string) string {
+	switch status {
+	case "completed":
+		return "COMPLETED"
+	case "cancelled":
+		return "CANCELLED"
+	default:
+		return "CONFIRMED"
+	}
 }
 
 // ---- Availability Handlers ----

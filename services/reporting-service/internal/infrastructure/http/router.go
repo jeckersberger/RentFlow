@@ -21,8 +21,10 @@ func SetupRoutes(mux *http.ServeMux, reportService *application.ReportService, k
 
 	mux.HandleFunc("GET /api/v1/reports/runs", handler.ListReportRuns)
 	mux.HandleFunc("GET /api/v1/reports/runs/{id}", handler.GetReportRun)
+	mux.HandleFunc("GET /api/v1/reports/runs/{id}/export/csv", handler.ExportReportCSV)
 
 	mux.HandleFunc("GET /api/v1/reports/kpi/dashboard", handler.GetKPIDashboard)
+	mux.HandleFunc("GET /api/v1/reports/kpi/dashboard-by-role", handler.GetKPIDashboardByRole)
 	mux.HandleFunc("GET /api/v1/reports/kpi/trends", handler.GetKPITrends)
 	mux.HandleFunc("GET /api/v1/reports/kpi/snapshot", handler.GetKPISnapshot)
 }

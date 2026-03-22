@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { ReportPeriod, ReportDefinition, ReportRun, ReportingStats } from '../../types/reporting'
 import './Reports.module.scss'
 
@@ -76,6 +77,15 @@ const mockReportRuns: ReportRun[] = [
     generated_date: '2026-03-22T11:00:00Z',
     generated_by: 'admin',
   },
+]
+
+const mockMonthlyRevenueData = [
+  { month: 'Januar', revenue: 125000 },
+  { month: 'Februar', revenue: 148000 },
+  { month: 'März', revenue: 167000 },
+  { month: 'April', revenue: 142000 },
+  { month: 'Mai', revenue: 189000 },
+  { month: 'Juni', revenue: 201000 },
 ]
 
 function ReportsPage() {
@@ -248,6 +258,43 @@ function ReportsPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Monthly Revenue Chart */}
+      <div className="chart-section">
+        <h2 className="section-title">📈 Monatlicher Umsatz</h2>
+        <div className="chart-container">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={mockMonthlyRevenueData}
+              margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+              <XAxis
+                dataKey="month"
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }}
+              />
+              <YAxis
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }}
+                label={{ value: 'Umsatz (€)', angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip
+                formatter={(value: any) => `€${(value as number).toLocaleString('de-DE')}`}
+                contentStyle={{
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--color-text-primary)',
+                }}
+              />
+              <Bar
+                dataKey="revenue"
+                fill="var(--color-primary)"
+                radius={[8, 8, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

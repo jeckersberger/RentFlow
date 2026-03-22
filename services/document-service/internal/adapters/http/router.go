@@ -41,6 +41,13 @@ func NewRouter(
 	// GoBD verification
 	router.HandleFunc("GET /api/v1/documents/verify-chain", handler.VerifyChecksumChain)
 
+	// Scan upload endpoint
+	router.HandleFunc("POST /api/v1/documents/upload", handler.UploadScan)
+
+	// Public signature endpoints (no tenant required)
+	router.HandleFunc("GET /api/v1/public/sign/{token}", handler.GetPublicSignaturePage)
+	router.HandleFunc("POST /api/v1/public/sign/{token}", handler.SubmitPublicSignature)
+
 	return router
 }
 

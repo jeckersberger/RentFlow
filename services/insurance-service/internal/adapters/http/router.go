@@ -25,6 +25,12 @@ func RegisterRoutes(mux *http.ServeMux, handler *Handler) {
 	mux.HandleFunc("GET /api/v1/insurance/claims/{id}/items", handler.GetClaimItems)
 	mux.HandleFunc("POST /api/v1/insurance/claims/{id}/items", handler.CreateClaimItem)
 
+	// Equipment insurance relevance check
+	mux.HandleFunc("POST /api/v1/insurance/equipment/check-relevance", handler.CheckEquipmentInsuranceRelevance)
+
+	// Claim photo upload
+	mux.HandleFunc("POST /api/v1/insurance/claims/{id}/items/{itemId}/photos", handler.UploadClaimPhoto)
+
 	// Dashboard routes
 	mux.HandleFunc("GET /api/v1/insurance/dashboard", handler.GetDashboard)
 

@@ -280,6 +280,34 @@ func (h *ReportHandler) ListReportRuns(w http.ResponseWriter, r *http.Request) {
 	h.jsonResponse(w, http.StatusOK, responses)
 }
 
+// ExportReportCSV exports a report run to CSV format
+func (h *ReportHandler) ExportReportCSV(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	tenantID, err := extractTenantID(r)
+	if err != nil {
+		h.errorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	runID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid run ID")
+		return
+	}
+
+	csvData, err := h.reportService.ExportCSV(ctx, tenantID, runID)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Failed to export report as CSV")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"report-"+runID.String()+".csv\"")
+	w.WriteHeader(http.StatusOK)
+	w.Write(csvData)
+}
+
 func (h *ReportHandler) GetKPIDashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -300,6 +328,41 @@ func (h *ReportHandler) GetKPIDashboard(w http.ResponseWriter, r *http.Request) 
 	}
 
 	dashboard, err := h.kpiService.GetDashboard(ctx, cmd)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Failed to get KPI dashboard")
+		return
+	}
+
+	h.jsonResponse(w, http.StatusOK, dashboard)
+}
+
+// GetKPIDashboardByRole returns KPIs filtered by user role
+func (h *ReportHandler) GetKPIDashboardByRole(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	tenantID, err := extractTenantID(r)
+	if err != nil {
+		h.errorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	role := r.URL.Query().Get("role")
+	if role == "" {
+		h.errorResponse(w, http.StatusBadRequest, "role query parameter is required")
+		return
+	}
+
+	period := r.URL.Query().Get("period")
+	if period == "" {
+		period = string(domain.PeriodMonth)
+	}
+
+	cmd := &application.GetKPIDashboardCommand{
+		TenantID: tenantID,
+		Period:   period,
+	}
+
+	dashboard, err := h.kpiService.GetDashboardByRole(ctx, cmd, role)
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to get KPI dashboard")
 		return

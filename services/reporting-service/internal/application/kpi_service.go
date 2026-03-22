@@ -162,3 +162,82 @@ func (s *KPIService) GetTrends(ctx context.Context, cmd *GetKPITrendsCommand) (*
 
 	return trendData, nil
 }
+
+// GetDashboardByRole returns KPIs filtered by user role
+func (s *KPIService) GetDashboardByRole(ctx context.Context, cmd *GetKPIDashboardCommand, role string) (*domain.KPIDashboard, error) {
+	// Define KPIs available per role
+	var kpiTypes []domain.KPIType
+
+	switch role {
+	case "gf": // Geschäftsführer (Business Director) - all KPIs
+		kpiTypes = []domain.KPIType{
+			domain.KPITypeRevenue,
+			domain.KPITypeUtilization,
+			domain.KPITypeEquipmentCount,
+			domain.KPITypeActiveProjects,
+			domain.KPITypeOverdueInvoices,
+			domain.KPITypeAvgRentalDays,
+		}
+	case "lager": // Warehouse - equipment and utilization only
+		kpiTypes = []domain.KPIType{
+			domain.KPITypeEquipmentCount,
+			domain.KPITypeUtilization,
+		}
+	case "buchhaltung": // Accounting - revenue and overdue invoices only
+		kpiTypes = []domain.KPIType{
+			domain.KPITypeRevenue,
+			domain.KPITypeOverdueInvoices,
+		}
+	default:
+		// Default to empty dashboard for unknown roles
+		return &domain.KPIDashboard{
+			Period:     domain.PeriodMonth,
+			ReportedAt: time.Now(),
+			Items:      []domain.KPIDashboardItem{},
+		}, nil
+	}
+
+	period := domain.Period(cmd.Period)
+	if period == "" {
+		period = domain.PeriodMonth
+	}
+
+	dashboard := &domain.KPIDashboard{
+		Period:     period,
+		ReportedAt: time.Now(),
+		Items:      []domain.KPIDashboardItem{},
+	}
+
+	for _, kpiType := range kpiTypes {
+		latest, err := s.kpiRepo.GetLatestSnapshot(ctx, cmd.TenantID, kpiType)
+		if err != nil && err != sql.ErrNoRows {
+			continue
+		}
+
+		item := domain.KPIDashboardItem{
+			Type:              kpiType,
+			CurrentValue:      nil,
+			PreviousValue:     nil,
+			ChangePercentage:  nil,
+			FormattedValue:    "-",
+			FormattedPrevious: "-",
+		}
+
+		if latest != nil {
+			item.CurrentValue = latest.Value
+			item.PreviousValue = latest.PreviousValue
+			item.ChangePercentage = latest.ChangePercentage
+
+			if latest.Value != nil {
+				item.FormattedValue = fmt.Sprintf("%.2f", *latest.Value)
+			}
+			if latest.PreviousValue != nil {
+				item.FormattedPrevious = fmt.Sprintf("%.2f", *latest.PreviousValue)
+			}
+		}
+
+		dashboard.Items = append(dashboard.Items, item)
+	}
+
+	return dashboard, nil
+}

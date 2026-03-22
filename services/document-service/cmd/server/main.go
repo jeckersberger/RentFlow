@@ -48,7 +48,8 @@ func main() {
 
 	// Initialize services
 	checksumSvc := application.NewChecksumService(docRepo, log)
-	docSvc := application.NewDocumentService(docRepo, versionRepo, sigRepo, checksumSvc, log)
+	pdfGen := application.NewPDFGenerator()
+	docSvc := application.NewDocumentService(docRepo, versionRepo, sigRepo, checksumSvc, pdfGen, log)
 	sigSvc := application.NewSignatureService(docRepo, sigRepo, log)
 
 	log.Info("Services initialized")

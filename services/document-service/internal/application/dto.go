@@ -81,6 +81,27 @@ type ChecksumChainVerificationResponse struct {
 	Errors         []string `json:"errors"`
 }
 
+type UploadScanRequest struct {
+	ReferenceID string `json:"reference_id"`
+	ScanType    string `json:"scan_type"` // document_type: invoice, contract, etc.
+}
+
+type PublicSignatureResponse struct {
+	ID          string     `json:"id"`
+	DocumentID  string     `json:"document_id"`
+	SignerName  string     `json:"signer_name"`
+	SignerEmail string     `json:"signer_email"`
+	SignedAt    *time.Time `json:"signed_at"`
+	Verified    bool       `json:"verified"`
+}
+
+type PublicSignatureSubmitRequest struct {
+	SignerName    string `json:"signer_name"`
+	SignatureData string `json:"signature_data"`
+	IPAddress     string `json:"ip_address"`
+	UserAgent     string `json:"user_agent"`
+}
+
 func DocumentToResponse(doc *domain.Document) *DocumentResponse {
 	return &DocumentResponse{
 		ID:               doc.ID,

@@ -44,6 +44,7 @@ import MaintenanceDetailPage from './pages/Maintenance/MaintenanceDetail'
 // Crew Pages
 import CrewPage from './pages/Crew/CrewPage'
 import CrewDetail from './pages/Crew/CrewDetail'
+import MyAssignments from './pages/Crew/MyAssignments'
 
 // Documents Pages
 import DocumentsPage from './pages/Documents/DocumentsPage'
@@ -136,6 +137,7 @@ function App() {
             <Route path="crew" element={<CrewPage />} />
             <Route path="crew/:id" element={<CrewDetail />} />
             <Route path="crew/new" element={<div>Neuer Mitarbeiter - Formular</div>} />
+            <Route path="my-assignments" element={<MyAssignments />} />
 
             {/* Documents Routes */}
             <Route path="documents" element={<DocumentsPage />} />

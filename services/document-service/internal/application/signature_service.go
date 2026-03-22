@@ -160,3 +160,66 @@ func (s *SignatureService) GetSignatures(
 
 	return responses, nil
 }
+
+// GetSignatureByID retrieves a signature by ID without tenant requirement (for public endpoints)
+func (s *SignatureService) GetSignatureByID(
+	ctx context.Context,
+	sigID string,
+) (*domain.Signature, error) {
+	if sigID == "" {
+		return nil, domain.ErrTenantIDRequired
+	}
+
+	sig, err := s.sigRepo.GetByID(ctx, sigID)
+	if err != nil {
+		return nil, err
+	}
+	if sig == nil {
+		return nil, domain.ErrSignatureNotFound
+	}
+
+	return sig, nil
+}
+
+// SubmitPublicSignature submits a signature from a public link (no tenant check)
+func (s *SignatureService) SubmitPublicSignature(
+	ctx context.Context,
+	docID, sigID string,
+	req PublicSignatureSubmitRequest,
+) (*SignatureResponse, error) {
+	if docID == "" || sigID == "" {
+		return nil, domain.ErrTenantIDRequired
+	}
+	if req.SignatureData == "" {
+		return nil, domain.ErrInvalidInput
+	}
+
+	// Get the signature
+	sig, err := s.sigRepo.GetByID(ctx, sigID)
+	if err != nil {
+		return nil, err
+	}
+	if sig == nil {
+		return nil, domain.ErrSignatureNotFound
+	}
+
+	if sig.DocumentID != docID {
+		return nil, domain.ErrInvalidInput
+	}
+
+	// Update signature with submitted data
+	now := time.Now()
+	sig.SignatureData = req.SignatureData
+	sig.SignedAt = &now
+	sig.IPAddress = req.IPAddress
+	sig.UserAgent = req.UserAgent
+	sig.Verified = true
+	sig.SignerName = req.SignerName // Update signer name if provided
+
+	if err := s.sigRepo.Update(ctx, sig); err != nil {
+		s.logger.Error("Failed to update signature", err)
+		return nil, err
+	}
+
+	return SignatureToResponse(sig), nil
+}
