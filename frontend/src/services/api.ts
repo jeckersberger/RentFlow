@@ -778,16 +778,49 @@ export const auditApi = {
 }
 
 // Admin endpoints
+const SERVICE_HEALTH_ENDPOINTS: Record<string, string> = {
+  'auth': '/api/health/auth',
+  'inventory': '/api/health/inventory',
+  'project': '/api/health/project',
+  'scanner': '/api/health/scanner',
+  'warehouse': '/api/health/warehouse',
+  'invoice': '/api/health/invoice',
+  'document': '/api/health/document',
+  'crew': '/api/health/crew',
+  'federation': '/api/health/federation',
+  'maintenance': '/api/health/maintenance',
+  'transport': '/api/health/transport',
+  'insurance': '/api/health/insurance',
+  'workflow': '/api/health/workflow',
+  'ai': '/api/health/ai',
+  'notification': '/api/health/notification',
+  'reporting': '/api/health/reporting',
+  'audit': '/api/health/audit',
+  'expense': '/api/health/expense',
+}
+
 export const adminApi = {
-  health: () =>
-    MOCK_MODE
-      ? mockDelay({ status: 'operational', services: [] })
-      : api.get('/api/v1/admin/health').then(res => res.data),
+  health: async () => {
+    if (MOCK_MODE) return mockDelay({ status: 'operational', services: [] })
+    const results = await Promise.allSettled(
+      Object.entries(SERVICE_HEALTH_ENDPOINTS).map(async ([name, url]) => {
+        try {
+          const res = await api.get(url, { timeout: 3000 })
+          return { name, status: 'healthy', data: res.data }
+        } catch {
+          return { name, status: 'unhealthy', data: null }
+        }
+      })
+    )
+    const services = results.map(r => r.status === 'fulfilled' ? r.value : { name: 'unknown', status: 'error', data: null })
+    const allHealthy = services.every(s => s.status === 'healthy')
+    return { status: allHealthy ? 'operational' : 'degraded', services }
+  },
 
   settings: () =>
     MOCK_MODE
       ? mockDelay({ company_name: 'RentFlow GmbH', timezone: 'Europe/Berlin', language: 'de-DE' })
-      : api.get('/api/v1/admin/settings').then(res => res.data),
+      : api.get('/api/v1/admin/settings').then(res => res.data).catch(() => ({ company_name: '', timezone: 'Europe/Berlin', language: 'de-DE' })),
 
   updateSettings: (data: any) =>
     MOCK_MODE
