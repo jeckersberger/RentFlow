@@ -228,6 +228,21 @@ export const equipmentApi = {
       : api.post(`/api/v1/equipment/${equipmentId}/check-in`).then(res => res.data),
 }
 
+// Tenant API endpoints
+export const tenantApi = {
+  getById: (id: string) =>
+    api.get(`/api/v1/tenants/${id}`).then(res => res.data),
+
+  update: (id: string, data: object) =>
+    api.put(`/api/v1/tenants/${id}`, data).then(res => res.data),
+}
+
+// User API endpoints (auth-service)
+export const userApi = {
+  list: () =>
+    api.get('/api/v1/users').then(res => res.data),
+}
+
 // Category API endpoints
 export const categoryApi = {
   list: () =>

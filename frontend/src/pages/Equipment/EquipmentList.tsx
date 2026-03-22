@@ -130,6 +130,12 @@ function EquipmentListPage() {
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
           <button
             className="btn btn--secondary"
+            onClick={() => navigate('/equipment/labels')}
+          >
+            Labels drucken
+          </button>
+          <button
+            className="btn btn--secondary"
             onClick={() => fileInputRef.current?.click()}
             disabled={isImporting}
           >

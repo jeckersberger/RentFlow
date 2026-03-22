@@ -17,6 +17,7 @@ import DashboardPage from './pages/Dashboard'
 import EquipmentListPage from './pages/Equipment/EquipmentList'
 import EquipmentDetailPage from './pages/Equipment/EquipmentDetail'
 import EquipmentFormPage from './pages/Equipment/EquipmentForm'
+import EquipmentLabelsPage from './pages/Equipment/EquipmentLabels'
 
 // Project Pages
 import ProjectListPage from './pages/Projects/ProjectList'
@@ -156,6 +157,7 @@ function App() {
 
             {/* Equipment Routes */}
             <Route path="equipment" element={<EquipmentListPage />} />
+            <Route path="equipment/labels" element={<EquipmentLabelsPage />} />
             <Route path="equipment/new" element={<EquipmentFormPage />} />
             <Route path="equipment/:id" element={<EquipmentDetailPage />} />
             <Route path="equipment/:id/edit" element={<EquipmentFormPage />} />
