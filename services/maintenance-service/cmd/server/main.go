@@ -51,7 +51,8 @@ func main() {
 	recordSvc := application.NewMaintenanceRecordService(recordRepo, log)
 	scheduleSvc := application.NewMaintenanceScheduleService(scheduleRepo, recordRepo, log)
 	planSvc := application.NewMaintenancePlanService(planRepo, taskRepo, log)
-	taskSvc := application.NewMaintenanceTaskService(taskRepo, planRepo, log)
+	equipmentLocker := repositories.NewNoopEquipmentLocker(log)
+	taskSvc := application.NewMaintenanceTaskService(taskRepo, planRepo, equipmentLocker, log)
 	checklistSvc := application.NewChecklistService(checklistRepo, log)
 	testSvc := application.NewElectricalTestService(testRepo, log)
 

@@ -64,3 +64,10 @@ type ElectricalTestRepository interface {
 	Update(ctx context.Context, test *domain.ElectricalTest) error
 	Delete(ctx context.Context, tenantID, id string) error
 }
+
+// EquipmentLocker manages equipment availability during maintenance
+type EquipmentLocker interface {
+	LockForMaintenance(ctx context.Context, tenantID, equipmentID, taskID string) error
+	UnlockFromMaintenance(ctx context.Context, tenantID, equipmentID, taskID string) error
+	IsLockedForMaintenance(ctx context.Context, tenantID, equipmentID string) (bool, error)
+}

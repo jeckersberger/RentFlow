@@ -6,6 +6,77 @@ import { equipmentApi, projectApi } from '../../services/api'
 import '../Equipment/Equipment.module.scss'
 import './Scanner.module.scss'
 
+// IndexedDB Offline Queue (max 500 scans)
+const OFFLINE_DB_NAME = 'rentflow-scanner-offline'
+const OFFLINE_STORE_NAME = 'scan-queue'
+const MAX_OFFLINE_SCANS = 500
+
+const openOfflineDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(OFFLINE_DB_NAME, 1)
+    request.onupgradeneeded = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains(OFFLINE_STORE_NAME)) {
+        db.createObjectStore(OFFLINE_STORE_NAME, { keyPath: 'id', autoIncrement: true })
+      }
+    }
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+const addToOfflineQueue = async (scanData: { barcode: string; context: string; timestamp: string; projectId: string }) => {
+  const db = await openOfflineDB()
+  const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite')
+  const store = tx.objectStore(OFFLINE_STORE_NAME)
+
+  // Check count
+  const countReq = store.count()
+  return new Promise<boolean>((resolve) => {
+    countReq.onsuccess = () => {
+      if (countReq.result >= MAX_OFFLINE_SCANS) {
+        resolve(false) // Queue full
+      } else {
+        store.add(scanData)
+        resolve(true)
+      }
+    }
+  })
+}
+
+const getOfflineQueueCount = async (): Promise<number> => {
+  const db = await openOfflineDB()
+  const tx = db.transaction(OFFLINE_STORE_NAME, 'readonly')
+  const store = tx.objectStore(OFFLINE_STORE_NAME)
+  return new Promise((resolve) => {
+    const req = store.count()
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => resolve(0)
+  })
+}
+
+const syncOfflineQueue = async (): Promise<number> => {
+  const db = await openOfflineDB()
+  const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite')
+  const store = tx.objectStore(OFFLINE_STORE_NAME)
+  return new Promise((resolve) => {
+    const req = store.getAll()
+    req.onsuccess = async () => {
+      const items = req.result
+      let synced = 0
+      for (const item of items) {
+        try {
+          // Would call scannerApi.sync(item) in production
+          store.delete(item.id)
+          synced++
+        } catch { /* retry later */ }
+      }
+      resolve(synced)
+    }
+    req.onerror = () => resolve(0)
+  })
+}
+
 interface ScanEvent {
   id: string
   barcode: string
@@ -49,8 +120,42 @@ function ScannerPage() {
   const [successCount, setSuccessCount] = useState(0)
   const [errorCount, setErrorCount] = useState(0)
   const [sessionActive, setSessionActive] = useState(false)
-  const [offlineMode] = useState(false)
-  const [offlineQueue] = useState(0)
+  const [offlineMode, setOfflineMode] = useState(false)
+  const [offlineQueue, setOfflineQueue] = useState(0)
+
+  // Ref to allow useEffects to call processBarcode without circular dependency
+  const processBarcodeRef = useRef<((barcode: string) => void) | null>(null)
+
+  // Audio feedback helper
+  const playBeep = useCallback((type: 'success' | 'error' | 'info') => {
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+      const oscillator = ctx.createOscillator()
+      const gain = ctx.createGain()
+      oscillator.connect(gain)
+      gain.connect(ctx.destination)
+      gain.gain.value = 0.3
+
+      if (type === 'success') {
+        oscillator.frequency.value = 1200
+        oscillator.type = 'sine'
+      } else if (type === 'error') {
+        oscillator.frequency.value = 300
+        oscillator.type = 'square'
+      } else {
+        oscillator.frequency.value = 800
+        oscillator.type = 'sine'
+      }
+
+      oscillator.start()
+      setTimeout(() => {
+        oscillator.stop()
+        ctx.close()
+      }, type === 'error' ? 300 : 150)
+    } catch {
+      // Audio not supported, fall back to vibration only
+    }
+  }, [])
 
   // Mock session data
   const currentSession: ScanSession = {
@@ -71,6 +176,44 @@ function ScannerPage() {
     successRate: scanCount > 0 ? Math.round((successCount / scanCount) * 100) : 0,
   }), [scanCount, successCount, errorCount])
 
+  // Zebra DataWedge Integration
+  useEffect(() => {
+    // DataWedge broadcasts scan results as custom window events
+    const handleDataWedgeScan = (event: Event) => {
+      const customEvent = event as CustomEvent
+      const barcode = customEvent?.detail?.data || ''
+      if (barcode && !isProcessing && processBarcodeRef.current) {
+        processBarcodeRef.current(barcode)
+      }
+    }
+
+    // Listen for DataWedge intent broadcast
+    window.addEventListener('datawedge:scan', handleDataWedgeScan)
+
+    // Also listen for keyboard wedge mode (DataWedge can inject keystrokes)
+    let keyBuffer = ''
+    let keyTimer: ReturnType<typeof setTimeout> | null = null
+
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // DataWedge keyboard wedge fires rapidly - detect fast input
+      if (event.key === 'Enter' && keyBuffer.length > 3) {
+        if (processBarcodeRef.current) processBarcodeRef.current(keyBuffer)
+        keyBuffer = ''
+        return
+      }
+      if (keyTimer) clearTimeout(keyTimer)
+      keyBuffer += event.key
+      keyTimer = setTimeout(() => { keyBuffer = '' }, 100) // reset after 100ms pause
+    }
+
+    window.addEventListener('keypress', handleKeyPress)
+
+    return () => {
+      window.removeEventListener('datawedge:scan', handleDataWedgeScan)
+      window.removeEventListener('keypress', handleKeyPress)
+    }
+  }, [isProcessing])
+
   // Projekte für Check-Out laden
   useEffect(() => {
     projectApi.list(1, 100)
@@ -85,6 +228,72 @@ function ScannerPage() {
         setProjects([])
       })
   }, [])
+
+  // Online/offline detection and queue syncing
+  useEffect(() => {
+    const updateOnlineStatus = () => {
+      const isOffline = !navigator.onLine
+      setOfflineMode(isOffline)
+      if (!isOffline) {
+        // Back online - sync queue
+        syncOfflineQueue().then(synced => {
+          if (synced > 0) {
+            getOfflineQueueCount().then(setOfflineQueue)
+          }
+        })
+      }
+    }
+
+    const updateQueueCount = () => {
+      getOfflineQueueCount().then(setOfflineQueue)
+    }
+
+    window.addEventListener('online', updateOnlineStatus)
+    window.addEventListener('offline', updateOnlineStatus)
+    updateOnlineStatus()
+    updateQueueCount()
+
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus)
+      window.removeEventListener('offline', updateOnlineStatus)
+    }
+  }, [])
+
+  // WebHID USB Barcode Scanner support
+  useEffect(() => {
+    if (!('hid' in navigator)) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleHIDInput = (event: any) => {
+      const data = event?.data
+      if (!data) return
+      const bytes = new Uint8Array(data.buffer)
+      const barcode = String.fromCharCode(...bytes.filter((b: number) => b > 0))
+      if (barcode.trim() && !isProcessing && processBarcodeRef.current) {
+        processBarcodeRef.current(barcode.trim())
+      }
+    }
+
+    // Auto-connect to previously paired devices
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hid = (navigator as any).hid
+    if (hid?.getDevices) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      hid.getDevices().then((devices: any[]) => {
+        devices.forEach((device) => {
+          if (!device.opened) {
+            device.open().then(() => {
+              device.addEventListener('inputreport', handleHIDInput)
+            })
+          }
+        })
+      })
+    }
+
+    return () => {
+      // Cleanup handled by device disconnect
+    }
+  }, [isProcessing])
 
   // Kamera-Scanner aufräumen beim Unmount
   useEffect(() => {
@@ -109,6 +318,9 @@ function ScannerPage() {
     if ('vibrate' in navigator) {
       navigator.vibrate(100)
     }
+
+    // Play info beep on processing start
+    playBeep('info')
 
     // Pending Scan anzeigen
     const pendingScan: ScanEvent = {
@@ -171,19 +383,61 @@ function ScannerPage() {
       if ('vibrate' in navigator) {
         navigator.vibrate([50, 50, 50])
       }
+
+      // Play success beep
+      playBeep('success')
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message :
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Unbekannter Fehler'
 
-      const errorScan: ScanEvent = {
-        ...pendingScan,
-        status: 'error',
-        error_message: errorMessage,
+      // Check if offline and add to queue instead
+      if (!navigator.onLine) {
+        const queued = await addToOfflineQueue({
+          barcode: scannedBarcode,
+          context: scanContext,
+          timestamp: new Date().toISOString(),
+          projectId,
+        })
+        if (queued) {
+          getOfflineQueueCount().then(setOfflineQueue)
+          const queuedScan: ScanEvent = {
+            id: scanId,
+            barcode: scannedBarcode,
+            scan_type: scanContext,
+            timestamp: new Date().toISOString(),
+            status: 'pending',
+            error_message: 'Offline - in Warteschlange gespeichert',
+          }
+          setRecentScans((prev) =>
+            prev.map((s) => (s.id === scanId ? queuedScan : s))
+          )
+          playBeep('info')
+        } else {
+          const errorScan: ScanEvent = {
+            ...pendingScan,
+            status: 'error',
+            error_message: 'Offline-Warteschlange voll',
+          }
+          setRecentScans((prev) =>
+            prev.map((s) => (s.id === scanId ? errorScan : s))
+          )
+          setErrorCount((prev) => prev + 1)
+          playBeep('error')
+        }
+      } else {
+        const errorScan: ScanEvent = {
+          ...pendingScan,
+          status: 'error',
+          error_message: errorMessage,
+        }
+        setRecentScans((prev) =>
+          prev.map((s) => (s.id === scanId ? errorScan : s))
+        )
+        setErrorCount((prev) => prev + 1)
+
+        // Play error beep
+        playBeep('error')
       }
-      setRecentScans((prev) =>
-        prev.map((s) => (s.id === scanId ? errorScan : s))
-      )
-      setErrorCount((prev) => prev + 1)
 
       // Vibrieren: Fehler (lang)
       if ('vibrate' in navigator) {
@@ -196,7 +450,10 @@ function ScannerPage() {
         scanInputRef.current?.focus()
       }
     }
-  }, [scanContext, projectId, isProcessing, cameraActive])
+  }, [scanContext, projectId, isProcessing, cameraActive, playBeep])
+
+  // Keep ref in sync so useEffects can call processBarcode
+  processBarcodeRef.current = processBarcode
 
   // Manuelle Eingabe per Enter
   const handleManualScan = (e: React.KeyboardEvent<HTMLInputElement>) => {

@@ -11,20 +11,23 @@ import (
 )
 
 type MaintenanceTaskService struct {
-	taskRepo ports.MaintenanceTaskRepository
-	planRepo ports.MaintenancePlanRepository
-	logger   logger.Logger
+	taskRepo        ports.MaintenanceTaskRepository
+	planRepo        ports.MaintenancePlanRepository
+	equipmentLocker ports.EquipmentLocker
+	logger          logger.Logger
 }
 
 func NewMaintenanceTaskService(
 	taskRepo ports.MaintenanceTaskRepository,
 	planRepo ports.MaintenancePlanRepository,
+	equipmentLocker ports.EquipmentLocker,
 	log logger.Logger,
 ) *MaintenanceTaskService {
 	return &MaintenanceTaskService{
-		taskRepo: taskRepo,
-		planRepo: planRepo,
-		logger:   log,
+		taskRepo:        taskRepo,
+		planRepo:        planRepo,
+		equipmentLocker: equipmentLocker,
+		logger:          log,
 	}
 }
 
@@ -128,6 +131,12 @@ func (s *MaintenanceTaskService) StartTask(ctx context.Context, cmd StartMainten
 		return nil, domain.ErrInvalidTaskStatus
 	}
 
+	// Lock equipment for maintenance
+	if err := s.equipmentLocker.LockForMaintenance(ctx, cmd.TenantID, task.EquipmentID, cmd.TaskID); err != nil {
+		s.logger.Error("Failed to lock equipment for maintenance", err)
+		return nil, err
+	}
+
 	now := time.Now()
 	task.Status = domain.TaskStatusInProgress
 	task.StartedAt = &now
@@ -135,6 +144,10 @@ func (s *MaintenanceTaskService) StartTask(ctx context.Context, cmd StartMainten
 
 	if err := s.taskRepo.Update(ctx, task); err != nil {
 		s.logger.Error("Failed to start task", err)
+		// Attempt to unlock on failure
+		if unlockErr := s.equipmentLocker.UnlockFromMaintenance(ctx, cmd.TenantID, task.EquipmentID, cmd.TaskID); unlockErr != nil {
+			s.logger.Error("Failed to unlock equipment after task start failure", unlockErr)
+		}
 		return nil, err
 	}
 
@@ -176,6 +189,12 @@ func (s *MaintenanceTaskService) CompleteTask(ctx context.Context, cmd CompleteM
 	if err := s.taskRepo.Update(ctx, task); err != nil {
 		s.logger.Error("Failed to complete task", err)
 		return nil, err
+	}
+
+	// Unlock equipment after task completion
+	if err := s.equipmentLocker.UnlockFromMaintenance(ctx, cmd.TenantID, task.EquipmentID, cmd.TaskID); err != nil {
+		s.logger.Error("Failed to unlock equipment after task completion", err)
+		// Log the error but don't fail the completion - equipment should be unlocked but task is completed
 	}
 
 	return TaskToDTO(task), nil
@@ -236,6 +255,12 @@ func (s *MaintenanceTaskService) CancelTask(ctx context.Context, tenantID, taskI
 	if err := s.taskRepo.Update(ctx, task); err != nil {
 		s.logger.Error("Failed to cancel task", err)
 		return nil, err
+	}
+
+	// Unlock equipment if task is being cancelled while in progress
+	if err := s.equipmentLocker.UnlockFromMaintenance(ctx, tenantID, task.EquipmentID, taskID); err != nil {
+		s.logger.Error("Failed to unlock equipment after task cancellation", err)
+		// Log the error but don't fail the cancellation
 	}
 
 	return TaskToDTO(task), nil

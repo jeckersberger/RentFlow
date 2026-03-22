@@ -44,20 +44,23 @@ type Vehicle struct {
 }
 
 type Tour struct {
-	ID          string     `json:"id"`
-	TenantID    string     `json:"tenant_id"`
-	ProjectID   string     `json:"project_id"`
-	VehicleID   string     `json:"vehicle_id"`
-	DriverID    string     `json:"driver_id"`
-	Status      TourStatus `json:"status"`
-	DepartureAt *time.Time `json:"departure_at"`
-	ArrivalAt   *time.Time `json:"arrival_at"`
-	KmStart     *float64   `json:"km_start"`
-	KmEnd       *float64   `json:"km_end"`
-	TotalCost   *float64   `json:"total_cost"`
-	Notes       *string    `json:"notes"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID                      string     `json:"id"`
+	TenantID                string     `json:"tenant_id"`
+	ProjectID               string     `json:"project_id"`
+	VehicleID               string     `json:"vehicle_id"`
+	DriverID                string     `json:"driver_id"`
+	Status                  TourStatus `json:"status"`
+	DepartureAt             *time.Time `json:"departure_at"`
+	ArrivalAt               *time.Time `json:"arrival_at"`
+	KmStart                 *float64   `json:"km_start"`
+	KmEnd                   *float64   `json:"km_end"`
+	TotalCost               *float64   `json:"total_cost"`
+	FuelCost                *float64   `json:"fuel_cost"`
+	DeliveryNoteNumber      *string    `json:"delivery_note_number"`
+	DeliveryNoteGeneratedAt *time.Time `json:"delivery_note_generated_at"`
+	Notes                   *string    `json:"notes"`
+	CreatedAt               time.Time  `json:"created_at"`
+	UpdatedAt               time.Time  `json:"updated_at"`
 }
 
 type TourEquipment struct {
@@ -73,14 +76,18 @@ type TourEquipment struct {
 }
 
 type DriverLog struct {
-	ID            string    `json:"id"`
-	TourID        string    `json:"tour_id"`
-	DriverID      string    `json:"driver_id"`
-	StartTime     time.Time `json:"start_time"`
-	EndTime       *time.Time `json:"end_time"`
-	BreakMinutes  int       `json:"break_minutes"`
-	KmDriven      *float64   `json:"km_driven"`
-	Notes         *string    `json:"notes"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID               string     `json:"id"`
+	TourID           string     `json:"tour_id"`
+	DriverID         string     `json:"driver_id"`
+	StartTime        time.Time  `json:"start_time"`
+	EndTime          *time.Time `json:"end_time"`
+	BreakMinutes     int        `json:"break_minutes"`
+	KmDriven         *float64   `json:"km_driven"`
+	ActivityType     string     `json:"activity_type"`     // driving, rest, availability, other_work
+	RestMinutes      int        `json:"rest_minutes"`
+	LocationStart    *string    `json:"location_start"`
+	LocationEnd      *string    `json:"location_end"`
+	Notes            *string    `json:"notes"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 }

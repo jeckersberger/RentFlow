@@ -21,19 +21,22 @@ type VehicleDTO struct {
 }
 
 type TourDTO struct {
-	ID          string     `json:"id"`
-	ProjectID   string     `json:"project_id"`
-	VehicleID   string     `json:"vehicle_id"`
-	DriverID    string     `json:"driver_id"`
-	Status      string     `json:"status"`
-	DepartureAt *time.Time `json:"departure_at"`
-	ArrivalAt   *time.Time `json:"arrival_at"`
-	KmStart     *float64   `json:"km_start"`
-	KmEnd       *float64   `json:"km_end"`
-	TotalCost   *float64   `json:"total_cost"`
-	Notes       *string    `json:"notes"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID                      string     `json:"id"`
+	ProjectID               string     `json:"project_id"`
+	VehicleID               string     `json:"vehicle_id"`
+	DriverID                string     `json:"driver_id"`
+	Status                  string     `json:"status"`
+	DepartureAt             *time.Time `json:"departure_at"`
+	ArrivalAt               *time.Time `json:"arrival_at"`
+	KmStart                 *float64   `json:"km_start"`
+	KmEnd                   *float64   `json:"km_end"`
+	TotalCost               *float64   `json:"total_cost"`
+	FuelCost                *float64   `json:"fuel_cost"`
+	DeliveryNoteNumber      *string    `json:"delivery_note_number"`
+	DeliveryNoteGeneratedAt *time.Time `json:"delivery_note_generated_at"`
+	Notes                   *string    `json:"notes"`
+	CreatedAt               time.Time  `json:"created_at"`
+	UpdatedAt               time.Time  `json:"updated_at"`
 }
 
 type TourEquipmentDTO struct {
@@ -49,16 +52,20 @@ type TourEquipmentDTO struct {
 }
 
 type DriverLogDTO struct {
-	ID           string     `json:"id"`
-	TourID       string     `json:"tour_id"`
-	DriverID     string     `json:"driver_id"`
-	StartTime    time.Time  `json:"start_time"`
-	EndTime      *time.Time `json:"end_time"`
-	BreakMinutes int        `json:"break_minutes"`
-	KmDriven     *float64   `json:"km_driven"`
-	Notes        *string    `json:"notes"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
+	ID               string     `json:"id"`
+	TourID           string     `json:"tour_id"`
+	DriverID         string     `json:"driver_id"`
+	StartTime        time.Time  `json:"start_time"`
+	EndTime          *time.Time `json:"end_time"`
+	BreakMinutes     int        `json:"break_minutes"`
+	KmDriven         *float64   `json:"km_driven"`
+	ActivityType     string     `json:"activity_type"`
+	RestMinutes      int        `json:"rest_minutes"`
+	LocationStart    *string    `json:"location_start"`
+	LocationEnd      *string    `json:"location_end"`
+	Notes            *string    `json:"notes"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 }
 
 type TourCapacityDTO struct {
@@ -90,19 +97,22 @@ func VehicleToDTO(v *domain.Vehicle) *VehicleDTO {
 
 func TourToDTO(t *domain.Tour) *TourDTO {
 	return &TourDTO{
-		ID:          t.ID,
-		ProjectID:   t.ProjectID,
-		VehicleID:   t.VehicleID,
-		DriverID:    t.DriverID,
-		Status:      string(t.Status),
-		DepartureAt: t.DepartureAt,
-		ArrivalAt:   t.ArrivalAt,
-		KmStart:     t.KmStart,
-		KmEnd:       t.KmEnd,
-		TotalCost:   t.TotalCost,
-		Notes:       t.Notes,
-		CreatedAt:   t.CreatedAt,
-		UpdatedAt:   t.UpdatedAt,
+		ID:                      t.ID,
+		ProjectID:               t.ProjectID,
+		VehicleID:               t.VehicleID,
+		DriverID:                t.DriverID,
+		Status:                  string(t.Status),
+		DepartureAt:             t.DepartureAt,
+		ArrivalAt:               t.ArrivalAt,
+		KmStart:                 t.KmStart,
+		KmEnd:                   t.KmEnd,
+		TotalCost:               t.TotalCost,
+		FuelCost:                t.FuelCost,
+		DeliveryNoteNumber:      t.DeliveryNoteNumber,
+		DeliveryNoteGeneratedAt: t.DeliveryNoteGeneratedAt,
+		Notes:                   t.Notes,
+		CreatedAt:               t.CreatedAt,
+		UpdatedAt:               t.UpdatedAt,
 	}
 }
 
@@ -122,15 +132,19 @@ func TourEquipmentToDTO(te *domain.TourEquipment) *TourEquipmentDTO {
 
 func DriverLogToDTO(dl *domain.DriverLog) *DriverLogDTO {
 	return &DriverLogDTO{
-		ID:           dl.ID,
-		TourID:       dl.TourID,
-		DriverID:     dl.DriverID,
-		StartTime:    dl.StartTime,
-		EndTime:      dl.EndTime,
-		BreakMinutes: dl.BreakMinutes,
-		KmDriven:     dl.KmDriven,
-		Notes:        dl.Notes,
-		CreatedAt:    dl.CreatedAt,
-		UpdatedAt:    dl.UpdatedAt,
+		ID:               dl.ID,
+		TourID:           dl.TourID,
+		DriverID:         dl.DriverID,
+		StartTime:        dl.StartTime,
+		EndTime:          dl.EndTime,
+		BreakMinutes:     dl.BreakMinutes,
+		KmDriven:         dl.KmDriven,
+		ActivityType:     dl.ActivityType,
+		RestMinutes:      dl.RestMinutes,
+		LocationStart:    dl.LocationStart,
+		LocationEnd:      dl.LocationEnd,
+		Notes:            dl.Notes,
+		CreatedAt:        dl.CreatedAt,
+		UpdatedAt:        dl.UpdatedAt,
 	}
 }
