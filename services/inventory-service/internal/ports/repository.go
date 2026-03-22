@@ -11,6 +11,7 @@ type EquipmentRepository interface {
 	Update(ctx context.Context, equipment *domain.Equipment) error
 	GetByID(ctx context.Context, tenantID, equipmentID string) (*domain.Equipment, error)
 	GetByBarcode(ctx context.Context, tenantID, barcode string) (*domain.Equipment, error)
+	GetByRfidTag(ctx context.Context, tenantID, rfidTag string) (*domain.Equipment, error)
 	List(ctx context.Context, query *EquipmentListQuery) (*EquipmentListResult, error)
 	Delete(ctx context.Context, tenantID, equipmentID string) error
 	Search(ctx context.Context, tenantID, term string, limit, offset int) (*EquipmentListResult, error)

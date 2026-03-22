@@ -184,6 +184,54 @@ func (h *Handler) GetEquipmentByBarcode(w http.ResponseWriter, r *http.Request) 
 	h.respondJSON(w, http.StatusOK, dto)
 }
 
+func (h *Handler) GetEquipmentByRfid(w http.ResponseWriter, r *http.Request) {
+	tag := r.PathValue("tag")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dto, err := h.equipmentSvc.GetByRfidTag(r.Context(), tenantID, tag)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) AssignRfidTag(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		RfidTag string `json:"rfid_tag"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.RfidTag == "" {
+		h.respondError(w, http.StatusBadRequest, "rfid_tag is required")
+		return
+	}
+
+	dto, err := h.equipmentSvc.AssignRfidTag(r.Context(), tenantID, id, payload.RfidTag)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
 func (h *Handler) UpdateEquipment(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	tenantID := r.Header.Get("X-Tenant-ID")
@@ -633,7 +681,7 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 			h.respondError(w, http.StatusBadRequest, domainErr.Message)
 		case "UNAUTHORIZED":
 			h.respondError(w, http.StatusUnauthorized, domainErr.Message)
-		case "BARCODE_EXISTS", "INVALID_PARENT", "EQUIPMENT_NOT_FOUND":
+		case "BARCODE_EXISTS", "RFID_TAG_EXISTS", "INVALID_PARENT", "EQUIPMENT_NOT_FOUND":
 			h.respondError(w, http.StatusConflict, domainErr.Message)
 		default:
 			h.logger.Error("unhandled domain error", fmt.Errorf("%s: %s", domainErr.Code, domainErr.Message), "code", domainErr.Code)

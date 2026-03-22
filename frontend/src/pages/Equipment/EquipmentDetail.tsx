@@ -26,6 +26,8 @@ function EquipmentDetailPage() {
   const { addNotification } = useNotificationStore()
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [newStatus, setNewStatus] = useState<EquipmentStatus | ''>('')
+  const [showRfidModal, setShowRfidModal] = useState(false)
+  const [rfidTagInput, setRfidTagInput] = useState('')
   const [priceCalcDays, setPriceCalcDays] = useState('1')
   const [priceCalcDiscount, setPriceCalcDiscount] = useState('0')
   const [calculatedPrice, setCalculatedPrice] = useState<PriceResult | null>(null)
@@ -94,6 +96,27 @@ function EquipmentDetailPage() {
     },
   })
 
+  const { mutate: assignRfid, isPending: isAssigningRfid } = useMutation({
+    mutationFn: async () => {
+      return equipmentApi.assignRfidTag(id!, rfidTagInput)
+    },
+    onSuccess: () => {
+      setShowRfidModal(false)
+      setRfidTagInput('')
+      addNotification('RFID Tag erfolgreich zugeordnet', 'success', {
+        title: 'Erfolg',
+        duration: 3000,
+      })
+      queryClient.invalidateQueries({ queryKey: ['equipment', id] })
+    },
+    onError: () => {
+      addNotification('Fehler beim Zuordnen des RFID Tags', 'error', {
+        title: 'Fehler',
+        duration: 5000,
+      })
+    },
+  })
+
   const handleDownloadQRCode = async () => {
     try {
       const blob = await equipmentApi.getQRCode(id!)
@@ -132,6 +155,15 @@ function EquipmentDetailPage() {
             onClick={handleDownloadQRCode}
           >
             QR-Code
+          </button>
+          <button
+            className="btn btn--secondary"
+            onClick={() => {
+              setRfidTagInput(equipment?.rfid_tag || '')
+              setShowRfidModal(true)
+            }}
+          >
+            RFID Tag zuordnen
           </button>
           <button
             className="btn btn--secondary"
@@ -180,6 +212,13 @@ function EquipmentDetailPage() {
               <span className="detail-card__row-label">Barcode</span>
               <span className="detail-card__row-value">
                 {equipment.barcode || '—'}
+              </span>
+            </div>
+
+            <div className="detail-card__row">
+              <span className="detail-card__row-label">RFID Tag</span>
+              <span className="detail-card__row-value" style={{ fontFamily: equipment.rfid_tag ? 'monospace' : 'inherit' }}>
+                {equipment.rfid_tag || '—'}
               </span>
             </div>
 
@@ -346,6 +385,44 @@ function EquipmentDetailPage() {
           onChange={(e) => setNewStatus(e.target.value as EquipmentStatus | '')}
           placeholder="Status auswählen"
         />
+      </Modal>
+
+      <Modal
+        isOpen={showRfidModal}
+        onClose={() => setShowRfidModal(false)}
+        title="RFID Tag zuordnen"
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => setShowRfidModal(false)}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={() => {
+                if (rfidTagInput.trim()) {
+                  assignRfid()
+                }
+              }}
+              disabled={!rfidTagInput.trim() || isAssigningRfid}
+            >
+              {isAssigningRfid ? 'Wird zugeordnet...' : 'Zuordnen'}
+            </button>
+          </div>
+        }
+      >
+        <Input
+          label="RFID Tag (Hex)"
+          value={rfidTagInput}
+          onChange={(e) => setRfidTagInput(e.target.value)}
+          placeholder="z.B. E28011606000020..."
+        />
+        <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+          Scannen Sie den RFID-Tag mit dem CF-H906 UHF PDA oder geben Sie die Tag-ID manuell ein.
+        </p>
       </Modal>
     </div>
   )

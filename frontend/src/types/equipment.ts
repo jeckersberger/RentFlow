@@ -31,6 +31,7 @@ export interface Equipment {
   created_at: string
   updated_at: string
   created_by_user_id?: string
+  rfid_tag?: string
 }
 
 export interface CreateEquipmentDTO {
@@ -53,6 +54,7 @@ export interface CreateEquipmentDTO {
   }
   tags?: string[]
   custom_fields?: Record<string, string>
+  rfid_tag?: string
 }
 
 export interface UpdateEquipmentDTO extends Partial<CreateEquipmentDTO> {}

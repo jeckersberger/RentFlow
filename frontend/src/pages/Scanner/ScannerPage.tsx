@@ -83,6 +83,7 @@ interface EquipmentDetail {
   status: string
   category_id?: string
   barcode?: string
+  rfid_tag?: string
   rental_price_day?: number
   rental_price_week?: number
   condition?: string
@@ -378,14 +379,19 @@ function ScannerPage() {
     setScanCount((prev) => prev + 1)
 
     try {
-      // Schritt 1: Equipment per Barcode/UUID suchen
+      // Schritt 1: Equipment per Barcode/UUID/RFID suchen
       let equipment: EquipmentDetail | null = null
 
       // QR-Code-Format prüfen: "rentflow://equipment/{uuid}"
       const qrMatch = scannedBarcode.match(/^rentflow:\/\/equipment\/(.+)$/)
+      // RFID-Tag-Format: hex string 24+ chars, typically starting with E2, 30, etc.
+      const isRfidTag = /^[0-9A-Fa-f]{24,}$/.test(scannedBarcode)
       if (qrMatch) {
         const equipmentId = qrMatch[1]
         equipment = await equipmentApi.getById(equipmentId)
+      } else if (isRfidTag) {
+        // Als RFID-Tag interpretieren
+        equipment = await equipmentApi.getByRfidTag(scannedBarcode)
       } else {
         // Als Barcode interpretieren
         equipment = await equipmentApi.getByBarcode(scannedBarcode)
@@ -972,6 +978,12 @@ function ScannerPage() {
                     <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Barcode</span>
                     <div style={{ fontFamily: 'monospace', fontWeight: 'var(--font-weight-semibold)' }}>{scannedEquipment.barcode || '—'}</div>
                   </div>
+                  {scannedEquipment.rfid_tag && (
+                    <div>
+                      <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>RFID Tag</span>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-xs)' }}>{scannedEquipment.rfid_tag}</div>
+                    </div>
+                  )}
                   <div>
                     <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Mietpreis</span>
                     <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>

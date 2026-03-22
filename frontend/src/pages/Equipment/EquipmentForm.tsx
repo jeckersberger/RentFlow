@@ -79,6 +79,7 @@ function EquipmentFormPage() {
         weight: equipment.weight || 0,
         serial_number: equipment.serial_number || '',
         tags: equipment.tags || [],
+        rfid_tag: equipment.rfid_tag || '',
       })
     }
   }, [equipment, isEditing])
@@ -173,6 +174,12 @@ function EquipmentFormPage() {
             value={formData.serial_number || ''}
             onChange={(e) => handleInputChange('serial_number', e.target.value)}
             placeholder="Optional"
+          />
+          <Input
+            label="RFID Tag"
+            value={formData.rfid_tag || ''}
+            onChange={(e) => handleInputChange('rfid_tag', e.target.value)}
+            placeholder="Optional (z.B. E28011606000020...)"
           />
           <Select
             label="Kategorie"

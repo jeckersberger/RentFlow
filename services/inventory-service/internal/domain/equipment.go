@@ -31,6 +31,7 @@ type Equipment struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	CreatedByUserID string
+	RfidTag         string
 }
 
 type EquipmentStatus string

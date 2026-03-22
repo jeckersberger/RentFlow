@@ -324,6 +324,52 @@ func (s *EquipmentService) GetByBarcode(ctx context.Context, tenantID, barcode s
 	return EquipmentToDTO(eq), nil
 }
 
+func (s *EquipmentService) GetByRfidTag(ctx context.Context, tenantID, rfidTag string) (*EquipmentDTO, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if rfidTag == "" {
+		return nil, domain.NewDomainError("INVALID_INPUT", "RFID tag is required", nil)
+	}
+
+	eq, err := s.equipRepo.GetByRfidTag(ctx, tenantID, rfidTag)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "equipment not found", err)
+	}
+
+	return EquipmentToDTO(eq), nil
+}
+
+func (s *EquipmentService) AssignRfidTag(ctx context.Context, tenantID, equipmentID, rfidTag string) (*EquipmentDTO, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if rfidTag == "" {
+		return nil, domain.NewDomainError("INVALID_INPUT", "RFID tag is required", nil)
+	}
+
+	eq, err := s.equipRepo.GetByID(ctx, tenantID, equipmentID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "equipment not found", err)
+	}
+
+	// Check if RFID tag is already assigned to another equipment
+	existing, _ := s.equipRepo.GetByRfidTag(ctx, tenantID, rfidTag)
+	if existing != nil && existing.ID != equipmentID {
+		return nil, domain.NewDomainError("RFID_TAG_EXISTS", "RFID tag already assigned to another equipment", nil)
+	}
+
+	eq.RfidTag = rfidTag
+	eq.UpdatedAt = time.Now()
+
+	if err := s.equipRepo.Update(ctx, eq); err != nil {
+		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to assign RFID tag", err)
+	}
+
+	s.logger.Info("RFID tag assigned", "id", equipmentID, "rfid_tag", rfidTag)
+	return EquipmentToDTO(eq), nil
+}
+
 func (s *EquipmentService) DeleteEquipment(ctx context.Context, tenantID, equipmentID string) error {
 	if tenantID == "" {
 		return domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)

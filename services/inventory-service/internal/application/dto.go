@@ -30,6 +30,7 @@ type EquipmentDTO struct {
 	CreatedAt       time.Time         `json:"created_at"`
 	UpdatedAt       time.Time         `json:"updated_at"`
 	CreatedByUserID string            `json:"created_by_user_id"`
+	RfidTag         string            `json:"rfid_tag,omitempty"`
 }
 
 type DimensionsDTO struct {
@@ -102,6 +103,7 @@ func EquipmentToDTO(eq *domain.Equipment) *EquipmentDTO {
 		CreatedAt:       eq.CreatedAt,
 		UpdatedAt:       eq.UpdatedAt,
 		CreatedByUserID: eq.CreatedByUserID,
+		RfidTag:         eq.RfidTag,
 	}
 }
 

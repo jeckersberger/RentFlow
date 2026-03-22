@@ -218,6 +218,14 @@ export const equipmentApi = {
       ? mockDelay(mockEquipment.find(e => e.barcode === barcode))
       : api.get(`/api/v1/equipment/lookup/barcode/${barcode}`).then(res => res.data),
 
+  // Equipment per RFID-Tag suchen (für UHF PDA Scanner)
+  getByRfidTag: (tag: string) =>
+    api.get(`/api/v1/equipment/lookup/rfid/${tag}`).then(res => res.data),
+
+  // RFID-Tag einem Equipment zuordnen
+  assignRfidTag: (equipmentId: string, rfidTag: string) =>
+    api.patch(`/api/v1/equipment/${equipmentId}/rfid`, { rfid_tag: rfidTag }).then(res => res.data),
+
   // Equipment per Suchbegriff finden
   search: (query: string, limit = 20, offset = 0) =>
     MOCK_MODE

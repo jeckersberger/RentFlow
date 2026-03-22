@@ -27,10 +27,10 @@ func (r *EquipmentPostgres) Create(ctx context.Context, eq *domain.Equipment) er
 			barcode, status, condition, purchase_date, purchase_price,
 			rental_price_day, rental_price_week, weight, dim_length, dim_width,
 			dim_height, dim_unit, location_id, image_refs, tags, custom_fields,
-			created_at, updated_at, created_by_user_id
+			created_at, updated_at, created_by_user_id, rfid_tag
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26
+			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
 		)
 	`
 
@@ -46,13 +46,18 @@ func (r *EquipmentPostgres) Create(ctx context.Context, eq *domain.Equipment) er
 
 	customFields := toJSONB(eq.CustomFields)
 
+	var rfidTag sql.NullString
+	if eq.RfidTag != "" {
+		rfidTag = sql.NullString{String: eq.RfidTag, Valid: true}
+	}
+
 	_, err := r.db.Exec(ctx, query,
 		eq.ID, eq.TenantID, eq.Name, eq.Description, eq.CategoryID, eq.SKU,
 		eq.SerialNumber, eq.Barcode, string(eq.Status), string(eq.Condition),
 		eq.PurchaseDate, eq.PurchasePrice, eq.RentalPriceDay, eq.RentalPriceWeek,
 		eq.Weight, eq.Dimensions.Length, eq.Dimensions.Width, eq.Dimensions.Height,
 		eq.Dimensions.Unit, eq.LocationID, imageRefs, tags, customFields,
-		eq.CreatedAt, eq.UpdatedAt, eq.CreatedByUserID,
+		eq.CreatedAt, eq.UpdatedAt, eq.CreatedByUserID, rfidTag,
 	)
 
 	if err != nil {
@@ -70,7 +75,7 @@ func (r *EquipmentPostgres) Update(ctx context.Context, eq *domain.Equipment) er
 			purchase_date = $11, purchase_price = $12, rental_price_day = $13,
 			rental_price_week = $14, weight = $15, dim_length = $16, dim_width = $17,
 			dim_height = $18, dim_unit = $19, location_id = $20, image_refs = $21,
-			tags = $22, custom_fields = $23, updated_at = $24
+			tags = $22, custom_fields = $23, updated_at = $24, rfid_tag = $25
 		WHERE id = $1 AND tenant_id = $2
 	`
 
@@ -86,13 +91,18 @@ func (r *EquipmentPostgres) Update(ctx context.Context, eq *domain.Equipment) er
 
 	customFields := toJSONB(eq.CustomFields)
 
+	var rfidTag sql.NullString
+	if eq.RfidTag != "" {
+		rfidTag = sql.NullString{String: eq.RfidTag, Valid: true}
+	}
+
 	result, err := r.db.Exec(ctx, query,
 		eq.ID, eq.TenantID, eq.Name, eq.Description, eq.CategoryID, eq.SKU,
 		eq.SerialNumber, eq.Barcode, string(eq.Status), string(eq.Condition),
 		eq.PurchaseDate, eq.PurchasePrice, eq.RentalPriceDay, eq.RentalPriceWeek,
 		eq.Weight, eq.Dimensions.Length, eq.Dimensions.Width, eq.Dimensions.Height,
 		eq.Dimensions.Unit, eq.LocationID, imageRefs, tags, customFields,
-		eq.UpdatedAt,
+		eq.UpdatedAt, rfidTag,
 	)
 
 	if err != nil {
@@ -117,7 +127,7 @@ func (r *EquipmentPostgres) GetByID(ctx context.Context, tenantID, equipmentID s
 		       barcode, status, condition, purchase_date, purchase_price,
 		       rental_price_day, rental_price_week, weight, dim_length, dim_width,
 		       dim_height, dim_unit, location_id, image_refs, tags, custom_fields,
-		       created_at, updated_at, created_by_user_id
+		       created_at, updated_at, created_by_user_id, rfid_tag
 		FROM inventory.equipment
 		WHERE id = $1 AND tenant_id = $2
 	`
@@ -132,12 +142,27 @@ func (r *EquipmentPostgres) GetByBarcode(ctx context.Context, tenantID, barcode 
 		       barcode, status, condition, purchase_date, purchase_price,
 		       rental_price_day, rental_price_week, weight, dim_length, dim_width,
 		       dim_height, dim_unit, location_id, image_refs, tags, custom_fields,
-		       created_at, updated_at, created_by_user_id
+		       created_at, updated_at, created_by_user_id, rfid_tag
 		FROM inventory.equipment
 		WHERE barcode = $1 AND tenant_id = $2
 	`
 
 	row := r.db.QueryRow(ctx, query, barcode, tenantID)
+	return r.scanEquipment(row)
+}
+
+func (r *EquipmentPostgres) GetByRfidTag(ctx context.Context, tenantID, rfidTag string) (*domain.Equipment, error) {
+	query := `
+		SELECT id, tenant_id, name, description, category_id, sku, serial_number,
+		       barcode, status, condition, purchase_date, purchase_price,
+		       rental_price_day, rental_price_week, weight, dim_length, dim_width,
+		       dim_height, dim_unit, location_id, image_refs, tags, custom_fields,
+		       created_at, updated_at, created_by_user_id, rfid_tag
+		FROM inventory.equipment
+		WHERE rfid_tag = $1 AND tenant_id = $2
+	`
+
+	row := r.db.QueryRow(ctx, query, rfidTag, tenantID)
 	return r.scanEquipment(row)
 }
 
@@ -184,7 +209,7 @@ func (r *EquipmentPostgres) List(ctx context.Context, query *ports.EquipmentList
 		       barcode, status, condition, purchase_date, purchase_price,
 		       rental_price_day, rental_price_week, weight, dim_length, dim_width,
 		       dim_height, dim_unit, location_id, image_refs, tags, custom_fields,
-		       created_at, updated_at, created_by_user_id
+		       created_at, updated_at, created_by_user_id, rfid_tag
 		FROM inventory.equipment
 		WHERE %s
 		ORDER BY created_at DESC
@@ -237,7 +262,7 @@ func (r *EquipmentPostgres) Search(ctx context.Context, tenantID, term string, l
 		       barcode, status, condition, purchase_date, purchase_price,
 		       rental_price_day, rental_price_week, weight, dim_length, dim_width,
 		       dim_height, dim_unit, location_id, image_refs, tags, custom_fields,
-		       created_at, updated_at, created_by_user_id
+		       created_at, updated_at, created_by_user_id, rfid_tag
 		FROM inventory.equipment
 		WHERE tenant_id = $1 AND (
 			name ILIKE $2 OR description ILIKE $2 OR sku ILIKE $2 OR serial_number ILIKE $2 OR barcode ILIKE $2
@@ -289,7 +314,7 @@ func (r *EquipmentPostgres) scanEquipmentFields(scanner interface {
 	var customFieldsJSON []byte
 
 	// Use sql.Null* types for nullable columns
-	var description, sku, serialNumber, locationID, dimUnit sql.NullString
+	var description, sku, serialNumber, locationID, dimUnit, rfidTag sql.NullString
 	var purchasePrice, rentalPriceDay, rentalPriceWeek, weight sql.NullFloat64
 	var dimLength, dimWidth, dimHeight sql.NullFloat64
 	var status, condition sql.NullString
@@ -300,7 +325,7 @@ func (r *EquipmentPostgres) scanEquipmentFields(scanner interface {
 		&eq.PurchaseDate, &purchasePrice, &rentalPriceDay, &rentalPriceWeek,
 		&weight, &dimLength, &dimWidth, &dimHeight,
 		&dimUnit, &locationID, &imageRefs, &tags, &customFieldsJSON,
-		&eq.CreatedAt, &eq.UpdatedAt, &eq.CreatedByUserID,
+		&eq.CreatedAt, &eq.UpdatedAt, &eq.CreatedByUserID, &rfidTag,
 	)
 
 	if err != nil {
@@ -333,6 +358,7 @@ func (r *EquipmentPostgres) scanEquipmentFields(scanner interface {
 	eq.ImageRefs = []string(imageRefs)
 	eq.Tags = []string(tags)
 	eq.CustomFields = fromJSONB(customFieldsJSON)
+	eq.RfidTag = rfidTag.String
 
 	return eq, nil
 }
