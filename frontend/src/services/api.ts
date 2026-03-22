@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:80'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 // Create axios instance
 export const api: AxiosInstance = axios.create({
@@ -17,6 +17,10 @@ api.interceptors.request.use(
     const token = useAuthStore.getState().token
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    const tenantId = useAuthStore.getState().tenantId
+    if (tenantId) {
+      config.headers['X-Tenant-ID'] = tenantId
     }
     return config
   },
@@ -38,14 +42,14 @@ api.interceptors.response.use(
 // ============================================================================
 // MOCK MODE - enables frontend without backend
 // ============================================================================
-const MOCK_MODE = !import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_MOCK === 'true'
+const MOCK_MODE = import.meta.env.VITE_MOCK === 'true'
 
 const mockDelay = <T>(data: T, ms = 300): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(data), ms))
 
 // Auth API endpoints
 export const authApi = {
-  login: (email: string, password: string) => {
+  login: async (email: string, password: string) => {
     if (MOCK_MODE) {
       if (email === 'admin@example.com' && password === 'password') {
         return mockDelay({
@@ -55,7 +59,12 @@ export const authApi = {
       }
       return Promise.reject({ response: { status: 401 } })
     }
-    return api.post('/api/v1/auth/login', { email, password }).then(res => res.data)
+    const res = await api.post('/api/v1/auth/login', { email, password })
+    const accessToken = res.data?.data?.access_token || res.data?.token || res.data?.access_token
+    return {
+      token: accessToken,
+      user: { email, name: email.split('@')[0] }
+    }
   },
 
   register: (email: string, password: string, name: string) =>
@@ -195,7 +204,7 @@ export const equipmentApi = {
   getByBarcode: (barcode: string) =>
     MOCK_MODE
       ? mockDelay(mockEquipment.find(e => e.barcode === barcode))
-      : api.get(`/api/v1/equipment/barcode/${barcode}`).then(res => res.data),
+      : api.get(`/api/v1/equipment/lookup/barcode/${barcode}`).then(res => res.data),
 
   // Equipment per Suchbegriff finden
   search: (query: string, limit = 20) =>
@@ -274,7 +283,7 @@ export const invoiceApi = {
     api.get(`/api/v1/invoices/${id}/pdf`, { responseType: 'blob' }).then(res => res.data),
 
   createFromProject: (projectId: string) =>
-    api.post(`/api/v1/invoices/from-project/${projectId}`, {}).then(res => res.data),
+    api.post(`/api/v1/invoices/actions/from-project/${projectId}`, {}).then(res => res.data),
 
   getQuotePDF: (quoteId: string) =>
     api.get(`/api/v1/invoices/${quoteId}/quote-pdf`, { responseType: 'blob' }).then(res => res.data),
@@ -578,12 +587,12 @@ export const scannerApi = {
   startSession: (deviceId?: string) =>
     MOCK_MODE
       ? mockDelay({ session_id: String(Date.now()), device_id: deviceId, started_at: new Date().toISOString(), scans: [] })
-      : api.post('/api/v1/scanner/session/start', { device_id: deviceId }).then(res => res.data),
+      : api.post('/api/v1/scanner/sessions/start', { device_id: deviceId }).then(res => res.data),
 
   endSession: (sessionId: string) =>
     MOCK_MODE
       ? mockDelay({ session_id: sessionId, ended_at: new Date().toISOString(), total_scans: 5 })
-      : api.post(`/api/v1/scanner/session/${sessionId}/end`, {}).then(res => res.data),
+      : api.put(`/api/v1/scanner/sessions/${sessionId}/end`, {}).then(res => res.data),
 
   // Scans
   processScan: (sessionId: string, barcode: string, quantity?: number) =>
@@ -596,7 +605,7 @@ export const scannerApi = {
           quantity: quantity || 1,
           timestamp: new Date().toISOString(),
         })
-      : api.post(`/api/v1/scanner/session/${sessionId}/scan`, { barcode, quantity }).then(res => res.data),
+      : api.post(`/api/v1/scanner/sessions/${sessionId}/scan`, { barcode, quantity }).then(res => res.data),
 
   processBatchScan: (sessionId: string, barcodes: Array<{ barcode: string; quantity?: number }>) =>
     MOCK_MODE
@@ -607,13 +616,13 @@ export const scannerApi = {
           errors: [],
           timestamp: new Date().toISOString(),
         })
-      : api.post(`/api/v1/scanner/session/${sessionId}/batch-scan`, { barcodes }).then(res => res.data),
+      : api.post(`/api/v1/scanner/sessions/${sessionId}/batch-scan`, { barcodes }).then(res => res.data),
 
   // Offline Sync
   syncOfflineScans: (sessionId: string, offlineData: object) =>
     MOCK_MODE
       ? mockDelay({ session_id: sessionId, synced_items: 10, conflicts: 0 })
-      : api.post(`/api/v1/scanner/session/${sessionId}/sync-offline`, offlineData).then(res => res.data),
+      : api.post(`/api/v1/scanner/sessions/${sessionId}/sync-offline`, offlineData).then(res => res.data),
 
   // Protocol
   getSessionProtocol: (sessionId: string) =>
@@ -629,7 +638,7 @@ export const scannerApi = {
             { barcode: 'RF-MIC-001', equipment_name: 'Shure SM58', quantity: 10, timestamp: '2026-03-22T10:10:00Z' },
           ],
         })
-      : api.get(`/api/v1/scanner/session/${sessionId}/protocol`).then(res => res.data),
+      : api.get(`/api/v1/scanner/sessions/${sessionId}/protocol`).then(res => res.data),
 }
 
 // ============================================================================

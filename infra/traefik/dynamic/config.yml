@@ -1,6 +1,7 @@
 ################################################################################
 # Traefik Dynamic Configuration
-# Middleware definitions, default routes, and security headers
+# Middleware definitions and infrastructure routes
+# Service routing is handled by Docker labels in docker-compose.yml
 ################################################################################
 
 http:
@@ -29,8 +30,16 @@ http:
           - PATCH
           - OPTIONS
         accessControlAllowOriginList:
-          - "https://rentflow.example.com"
-          - "https://app.rentflow.example.com"
+          - "http://localhost:3000"
+          - "http://localhost:80"
+          - "http://localhost"
+        accessControlAllowHeaders:
+          - Authorization
+          - Content-Type
+          - X-Tenant-ID
+          - X-Request-ID
+          - Accept
+        accessControlAllowCredentials: true
         accessControlMaxAge: 100
         addVaryHeader: true
 
@@ -44,174 +53,20 @@ http:
       compress:
         minResponseBodyBytes: 1000
 
-    apiAuth:
-      headers:
-        customRequestHeaders:
-          X-Dashboard: "true"
-
-    metricsAuth:
-      headers:
-        customRequestHeaders:
-          X-Metrics: "true"
-
-  # Default redirects and root paths
   routers:
     dashboard:
       rule: "Path(`/dashboard`) || Path(`/api/rawdata`)"
       service: api@internal
       middlewares:
-        - apiAuth
         - securityHeaders
 
     prometheus:
       rule: "PathPrefix(`/prometheus`)"
       service: prometheus
       middlewares:
-        - metricsAuth
         - securityHeaders
-
-    api:
-      rule: "PathPrefix(`/api`)"
-      service: api-router
-      middlewares:
-        - corsHeaders
-        - rateLimit
-        - gzip
-        - securityHeaders
-      priority: 10
 
   services:
-    api-router:
-      weighted:
-        services:
-          - name: auth
-            weight: 1
-          - name: inventory
-            weight: 1
-          - name: project
-            weight: 1
-          - name: scanner
-            weight: 1
-          - name: warehouse
-            weight: 1
-          - name: invoice
-            weight: 1
-          - name: document
-            weight: 1
-          - name: crew
-            weight: 1
-          - name: federation
-            weight: 1
-          - name: maintenance
-            weight: 1
-          - name: transport
-            weight: 1
-          - name: insurance
-            weight: 1
-          - name: workflow
-            weight: 1
-          - name: ai
-            weight: 1
-          - name: notification
-            weight: 1
-          - name: reporting
-            weight: 1
-          - name: audit
-            weight: 1
-          - name: expense
-            weight: 1
-
-    # Individual service definitions for routing
-    auth:
-      loadBalancer:
-        servers:
-          - url: "http://auth-service:8001"
-
-    inventory:
-      loadBalancer:
-        servers:
-          - url: "http://inventory-service:8002"
-
-    project:
-      loadBalancer:
-        servers:
-          - url: "http://project-service:8003"
-
-    scanner:
-      loadBalancer:
-        servers:
-          - url: "http://scanner-service:8004"
-
-    warehouse:
-      loadBalancer:
-        servers:
-          - url: "http://warehouse-service:8005"
-
-    invoice:
-      loadBalancer:
-        servers:
-          - url: "http://invoice-service:8006"
-
-    document:
-      loadBalancer:
-        servers:
-          - url: "http://document-service:8007"
-
-    crew:
-      loadBalancer:
-        servers:
-          - url: "http://crew-service:8008"
-
-    federation:
-      loadBalancer:
-        servers:
-          - url: "http://federation-service:8009"
-
-    maintenance:
-      loadBalancer:
-        servers:
-          - url: "http://maintenance-service:8010"
-
-    transport:
-      loadBalancer:
-        servers:
-          - url: "http://transport-service:8011"
-
-    insurance:
-      loadBalancer:
-        servers:
-          - url: "http://insurance-service:8012"
-
-    workflow:
-      loadBalancer:
-        servers:
-          - url: "http://workflow-service:8013"
-
-    ai:
-      loadBalancer:
-        servers:
-          - url: "http://ai-service:8014"
-
-    notification:
-      loadBalancer:
-        servers:
-          - url: "http://notification-service:8015"
-
-    reporting:
-      loadBalancer:
-        servers:
-          - url: "http://reporting-service:8016"
-
-    audit:
-      loadBalancer:
-        servers:
-          - url: "http://audit-service:8017"
-
-    expense:
-      loadBalancer:
-        servers:
-          - url: "http://expense-service:8018"
-
     prometheus:
       loadBalancer:
         servers:

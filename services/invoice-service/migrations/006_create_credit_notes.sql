@@ -1,9 +1,9 @@
 -- Credit Notes table for GoBD-compliant credit note documents
-CREATE TABLE IF NOT EXISTS invoices.credit_notes (
+CREATE TABLE IF NOT EXISTS invoice.credit_notes (
     id VARCHAR(255) PRIMARY KEY,
     tenant_id VARCHAR(255) NOT NULL,
     credit_note_number VARCHAR(50) NOT NULL,
-    original_invoice_id VARCHAR(255) NOT NULL REFERENCES invoices.invoices(id),
+    original_invoice_id VARCHAR(255) NOT NULL REFERENCES invoice.invoices(id),
     original_invoice_number VARCHAR(50) NOT NULL,
     client_name VARCHAR(255) NOT NULL,
     client_email VARCHAR(255) DEFAULT '',
@@ -21,5 +21,5 @@ CREATE TABLE IF NOT EXISTS invoices.credit_notes (
     UNIQUE(tenant_id, credit_note_number)
 );
 
-CREATE INDEX IF NOT EXISTS idx_credit_notes_tenant ON invoices.credit_notes(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_credit_notes_invoice ON invoices.credit_notes(original_invoice_id);
+CREATE INDEX IF NOT EXISTS idx_credit_notes_tenant ON invoice.credit_notes(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_credit_notes_invoice ON invoice.credit_notes(original_invoice_id);

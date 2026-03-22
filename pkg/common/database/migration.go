@@ -59,7 +59,7 @@ func (m *Migrator) Up(ctx context.Context) error {
 		if file.IsDir() {
 			continue
 		}
-		if strings.HasSuffix(file.Name(), ".sql") && strings.HasPrefix(file.Name(), "up_") {
+		if strings.HasSuffix(file.Name(), ".sql") && !strings.HasSuffix(file.Name(), ".down.sql") {
 			migrationFiles = append(migrationFiles, file.Name())
 		}
 	}
@@ -216,7 +216,7 @@ func (m *Migrator) Status(ctx context.Context) ([]Migration, error) {
 		if file.IsDir() {
 			continue
 		}
-		if strings.HasSuffix(file.Name(), ".sql") && strings.HasPrefix(file.Name(), "up_") {
+		if strings.HasSuffix(file.Name(), ".sql") && !strings.HasSuffix(file.Name(), ".down.sql") {
 			migrationFiles = append(migrationFiles, file.Name())
 		}
 	}

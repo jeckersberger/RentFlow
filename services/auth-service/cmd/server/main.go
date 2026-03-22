@@ -18,6 +18,7 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/cache"
 	"github.com/jeckersberger/rentflow/pkg/common/config"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	commonmw "github.com/jeckersberger/rentflow/pkg/common/middleware"
 	authhttp "github.com/jeckersberger/rentflow/services/auth-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/application"
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/domain"
@@ -128,7 +129,7 @@ func main() {
 	// Create HTTP server
 	srv := &nethttp.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
-		Handler:      handlerWithSetupGuard,
+		Handler:      commonmw.SimpleCORSMiddleware()(handlerWithSetupGuard),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { Theme } from '@radix-ui/themes'
 import '@radix-ui/themes/styles.css'
 import { useAuthStore } from './stores/authStore'
 import { useThemeStore, initializeTheme } from './stores/themeStore'
+import { setupApi } from './services/api'
 import MainLayout from './components/Layout/MainLayout'
 import { ToastContainer } from './components/Toast/Toast'
 import { CommandPalette } from './components/CommandPalette/CommandPalette'
@@ -73,6 +74,32 @@ const queryClient = new QueryClient({
   },
 })
 
+function SetupCheck({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    if (location.pathname === '/setup') {
+      setChecked(true)
+      return
+    }
+    setupApi.getStatus()
+      .then((status) => {
+        if (!status.is_completed) {
+          navigate('/setup', { replace: true })
+        }
+        setChecked(true)
+      })
+      .catch(() => {
+        setChecked(true)
+      })
+  }, [navigate, location.pathname])
+
+  if (!checked) return null
+  return <>{children}</>
+}
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
@@ -94,6 +121,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Theme appearance={isDarkMode ? 'dark' : 'light'} accentColor="cyan" grayColor="slate" panelBackground="translucent">
         <BrowserRouter>
+          <SetupCheck>
           <Routes>
           <Route path="/setup" element={<SetupWizard />} />
           <Route path="/login" element={<LoginPage />} />
@@ -176,6 +204,7 @@ function App() {
             <Route path="admin" element={<AdminPage />} />
           </Route>
         </Routes>
+          </SetupCheck>
         <ToastContainer />
         <CommandPalette />
       </BrowserRouter>

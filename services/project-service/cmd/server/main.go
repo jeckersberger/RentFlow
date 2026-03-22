@@ -12,6 +12,7 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/config"
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	"github.com/jeckersberger/rentflow/pkg/common/middleware"
 	httpAdapter "github.com/jeckersberger/rentflow/services/project-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/project-service/internal/application"
 	"github.com/jeckersberger/rentflow/services/project-service/internal/infrastructure/repositories"
@@ -74,7 +75,7 @@ func main() {
 	// Create HTTP server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
-		Handler:      router,
+		Handler:      middleware.SimpleCORSMiddleware()(router),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

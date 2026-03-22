@@ -59,6 +59,20 @@ function LoginPage() {
       const response = await authApi.login(email, password)
       login(response.token, response.user)
 
+      // Try to fetch full user profile (non-blocking)
+      try {
+        const profile = await authApi.getCurrentUser()
+        if (profile) {
+          useAuthStore.getState().setUser({
+            id: profile.id || profile.data?.id,
+            email: profile.email || profile.data?.email || email,
+            name: profile.name || profile.data?.name || email.split('@')[0],
+          })
+        }
+      } catch {
+        // Ignore - basic user info from login is sufficient
+      }
+
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', email)
       } else {
