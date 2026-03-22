@@ -84,7 +84,7 @@ function AdminPage() {
   })
 
   // Try fetching system health from the admin API
-  const { data: healthData, isLoading: isLoadingHealth } = useQuery({
+  const { data: healthData } = useQuery({
     queryKey: ['system-health'],
     queryFn: () => adminApi.health(),
     staleTime: 1000 * 60,

@@ -86,7 +86,7 @@
 
   &__header {
     display: grid;
-    grid-template-columns: 1fr 1.5fr 1fr 1.5fr 80px;
+    grid-template-columns: 1fr 1.5fr 1fr 1.5fr;
     gap: var(--spacing-3);
     padding: var(--padding-md);
     background-color: var(--color-bg-secondary);
@@ -110,7 +110,7 @@
 
   &__row {
     display: grid;
-    grid-template-columns: 1fr 1.5fr 1fr 1.5fr 80px;
+    grid-template-columns: 1fr 1.5fr 1fr 1.5fr;
     gap: var(--spacing-3);
     padding: var(--padding-md);
     border-bottom: var(--card-border-width) solid var(--color-border);
