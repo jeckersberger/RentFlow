@@ -3,331 +3,215 @@ package application
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/workflow-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/workflow-service/internal/ports"
 )
 
 type WorkflowService struct {
-	workflowRepo ports.WorkflowRepository
-	runRepo      ports.WorkflowRunRepository
-	logger       logger.Logger
+	definitionRepo ports.WorkflowDefinitionRepository
+	instanceRepo   ports.WorkflowInstanceRepository
+	stepRepo       ports.WorkflowStepRepository
+	log            logger.Logger
 }
 
 func NewWorkflowService(
-	workflowRepo ports.WorkflowRepository,
-	runRepo ports.WorkflowRunRepository,
+	dr ports.WorkflowDefinitionRepository,
+	ir ports.WorkflowInstanceRepository,
+	sr ports.WorkflowStepRepository,
 	log logger.Logger,
 ) *WorkflowService {
 	return &WorkflowService{
-		workflowRepo: workflowRepo,
-		runRepo:      runRepo,
-		logger:       log,
+		definitionRepo: dr,
+		instanceRepo:   ir,
+		stepRepo:       sr,
+		log:            log,
 	}
 }
 
-func (s *WorkflowService) CreateWorkflow(ctx context.Context, tenantID string, req CreateWorkflowRequest) (*WorkflowResponse, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-	if req.Name == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	steps := make([]*domain.WorkflowStep, len(req.Steps))
-	for i, stepReq := range req.Steps {
-		steps[i] = &domain.WorkflowStep{
-			ID:                fmt.Sprintf("step_%d_%d", time.Now().UnixNano(), i),
-			Type:              domain.StepType(stepReq.Type),
-			Config:            stepReq.Config,
-			NextStepOnSuccess: stepReq.NextStepOnSuccess,
-			NextStepOnFailure: stepReq.NextStepOnFailure,
-		}
+func (s *WorkflowService) CreateDefinition(ctx context.Context, tenantID uuid.UUID, req *CreateWorkflowDefinitionRequest) (*WorkflowDefinitionResponse, error) {
+	wd := &domain.WorkflowDefinition{
+		ID:               uuid.New(),
+		TenantID:         tenantID,
+		Name:             req.Name,
+		Description:      req.Description,
+		TriggerType:      domain.TriggerType(req.TriggerType),
+		TriggerConfig:    req.TriggerConfig,
+		IsActive:         true,
+		IsTemplate:       req.IsTemplate,
+		TemplateCategory: req.TemplateCategory,
+		Version:          1,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
 	}
 
-	workflow := &domain.Workflow{
-		ID:           fmt.Sprintf("wf_%d", time.Now().UnixNano()),
-		TenantID:     tenantID,
-		Name:         req.Name,
-		Description:  req.Description,
-		TriggerEvent: req.TriggerEvent,
-		Steps:        steps,
-		IsActive:     true,
-		Version:      1,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
-
-	if err := s.workflowRepo.Create(ctx, workflow); err != nil {
-		s.logger.Error("Failed to create workflow", err)
+	if err := s.definitionRepo.Create(ctx, wd); err != nil {
+		s.log.Error("Failed to create workflow definition", err)
 		return nil, err
 	}
 
-	return WorkflowToDTO(workflow), nil
+	return s.workflowDefinitionToResponse(wd), nil
 }
 
-func (s *WorkflowService) GetWorkflow(ctx context.Context, tenantID, id string) (*WorkflowResponse, error) {
-	if tenantID == "" || id == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	workflow, err := s.workflowRepo.GetByID(ctx, tenantID, id)
+func (s *WorkflowService) GetDefinition(ctx context.Context, id uuid.UUID) (*WorkflowDefinitionResponse, error) {
+	wd, err := s.definitionRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	if workflow == nil {
-		return nil, domain.ErrWorkflowNotFound
-	}
-
-	return WorkflowToDTO(workflow), nil
+	return s.workflowDefinitionToResponse(wd), nil
 }
 
-func (s *WorkflowService) ListWorkflows(ctx context.Context, tenantID string) ([]*WorkflowResponse, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-
-	workflows, err := s.workflowRepo.ListByTenant(ctx, tenantID)
-	if err != nil {
-		s.logger.Error("Failed to list workflows", err)
-		return nil, err
-	}
-
-	dtos := make([]*WorkflowResponse, len(workflows))
-	for i, wf := range workflows {
-		dtos[i] = WorkflowToDTO(wf)
-	}
-
-	return dtos, nil
-}
-
-func (s *WorkflowService) UpdateWorkflow(ctx context.Context, tenantID, id string, req CreateWorkflowRequest) (*WorkflowResponse, error) {
-	if tenantID == "" || id == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	workflow, err := s.workflowRepo.GetByID(ctx, tenantID, id)
+func (s *WorkflowService) ListDefinitions(ctx context.Context, tenantID uuid.UUID) ([]*WorkflowDefinitionResponse, error) {
+	wds, err := s.definitionRepo.ListByTenant(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}
-	if workflow == nil {
-		return nil, domain.ErrWorkflowNotFound
+
+	var responses []*WorkflowDefinitionResponse
+	for _, wd := range wds {
+		responses = append(responses, s.workflowDefinitionToResponse(wd))
 	}
-
-	workflow.Name = req.Name
-	workflow.Description = req.Description
-	workflow.TriggerEvent = req.TriggerEvent
-	workflow.Version++
-	workflow.UpdatedAt = time.Now()
-
-	steps := make([]*domain.WorkflowStep, len(req.Steps))
-	for i, stepReq := range req.Steps {
-		steps[i] = &domain.WorkflowStep{
-			ID:                fmt.Sprintf("step_%d_%d", time.Now().UnixNano(), i),
-			Type:              domain.StepType(stepReq.Type),
-			Config:            stepReq.Config,
-			NextStepOnSuccess: stepReq.NextStepOnSuccess,
-			NextStepOnFailure: stepReq.NextStepOnFailure,
-		}
-	}
-	workflow.Steps = steps
-
-	if err := s.workflowRepo.Update(ctx, workflow); err != nil {
-		s.logger.Error("Failed to update workflow", err)
-		return nil, err
-	}
-
-	return WorkflowToDTO(workflow), nil
+	return responses, nil
 }
 
-func (s *WorkflowService) DeleteWorkflow(ctx context.Context, tenantID, id string) error {
-	if tenantID == "" || id == "" {
-		return domain.ErrInvalidInput
-	}
-
-	return s.workflowRepo.Delete(ctx, tenantID, id)
-}
-
-func (s *WorkflowService) ActivateWorkflow(ctx context.Context, tenantID, id string, activate bool) (*WorkflowResponse, error) {
-	if tenantID == "" || id == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	workflow, err := s.workflowRepo.GetByID(ctx, tenantID, id)
+func (s *WorkflowService) ListTemplates(ctx context.Context) ([]*WorkflowDefinitionResponse, error) {
+	wds, err := s.definitionRepo.ListTemplates(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if workflow == nil {
-		return nil, domain.ErrWorkflowNotFound
+
+	var responses []*WorkflowDefinitionResponse
+	for _, wd := range wds {
+		responses = append(responses, s.workflowDefinitionToResponse(wd))
 	}
-
-	workflow.IsActive = activate
-	workflow.UpdatedAt = time.Now()
-
-	if err := s.workflowRepo.Update(ctx, workflow); err != nil {
-		s.logger.Error("Failed to update workflow activation", err)
-		return nil, err
-	}
-
-	return WorkflowToDTO(workflow), nil
+	return responses, nil
 }
 
-func (s *WorkflowService) TriggerWorkflow(ctx context.Context, tenantID, workflowID string, req TriggerWorkflowRequest) (*TriggerWorkflowResponse, error) {
-	if tenantID == "" || workflowID == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	workflow, err := s.workflowRepo.GetByID(ctx, tenantID, workflowID)
+func (s *WorkflowService) UpdateDefinition(ctx context.Context, id uuid.UUID, req *CreateWorkflowDefinitionRequest) (*WorkflowDefinitionResponse, error) {
+	wd, err := s.definitionRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	if workflow == nil {
-		return nil, domain.ErrWorkflowNotFound
-	}
 
-	if !workflow.IsActive {
-		return nil, fmt.Errorf("workflow is not active")
-	}
+	wd.Name = req.Name
+	wd.Description = req.Description
+	wd.TriggerType = domain.TriggerType(req.TriggerType)
+	wd.TriggerConfig = req.TriggerConfig
+	wd.Version++
+	wd.UpdatedAt = time.Now()
 
-	eventData, _ := json.Marshal(req.EventData)
-
-	run := &domain.WorkflowRun{
-		ID:             fmt.Sprintf("run_%d", time.Now().UnixNano()),
-		WorkflowID:     workflowID,
-		TriggerEventID: fmt.Sprintf("evt_%d", time.Now().UnixNano()),
-		Status:         domain.RunStatusRunning,
-		CurrentStep:    workflow.Steps[0].ID,
-		Context:        eventData,
-		StartedAt:      time.Now(),
-	}
-
-	if err := s.runRepo.Create(ctx, run); err != nil {
-		s.logger.Error("Failed to create workflow run", err)
+	if err := s.definitionRepo.Update(ctx, wd); err != nil {
+		s.log.Error("Failed to update workflow definition", err)
 		return nil, err
 	}
 
-	// In production, would asynchronously execute workflow
-	return &TriggerWorkflowResponse{
-		RunID:     run.ID,
-		Status:    string(run.Status),
-		StartedAt: run.StartedAt,
+	return s.workflowDefinitionToResponse(wd), nil
+}
+
+func (s *WorkflowService) DeleteDefinition(ctx context.Context, id uuid.UUID) error {
+	return s.definitionRepo.Delete(ctx, id)
+}
+
+func (s *WorkflowService) InstantiateWorkflow(ctx context.Context, tenantID uuid.UUID, definitionID uuid.UUID, req *InstantiateWorkflowRequest) (*WorkflowInstanceResponse, error) {
+	_, err := s.definitionRepo.GetByID(ctx, definitionID)
+	if err != nil {
+		return nil, err
+	}
+
+	wi := &domain.WorkflowInstance{
+		ID:            uuid.New(),
+		TenantID:      tenantID,
+		DefinitionID:  definitionID,
+		Status:        domain.StatusRunning,
+		TriggerData:   req.TriggerData,
+		ContextData:   json.RawMessage("{}"),
+		CurrentStepIdx: 0,
+		StartedAt:     time.Now(),
+	}
+
+	if err := s.instanceRepo.Create(ctx, wi); err != nil {
+		s.log.Error("Failed to create workflow instance", err)
+		return nil, err
+	}
+
+	s.log.Info("Instantiated workflow", "definition_id", definitionID, "instance_id", wi.ID)
+	return s.workflowInstanceToResponse(wi), nil
+}
+
+func (s *WorkflowService) GetInstance(ctx context.Context, id uuid.UUID) (*WorkflowInstanceResponse, error) {
+	wi, err := s.instanceRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return s.workflowInstanceToResponse(wi), nil
+}
+
+func (s *WorkflowService) ListInstances(ctx context.Context, tenantID uuid.UUID) ([]*WorkflowInstanceResponse, error) {
+	wis, err := s.instanceRepo.ListByTenant(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []*WorkflowInstanceResponse
+	for _, wi := range wis {
+		responses = append(responses, s.workflowInstanceToResponse(wi))
+	}
+	return responses, nil
+}
+
+func (s *WorkflowService) CancelInstance(ctx context.Context, id uuid.UUID) error {
+	wi, err := s.instanceRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	wi.Status = domain.StatusCancelled
+	return s.instanceRepo.Update(ctx, wi)
+}
+
+func (s *WorkflowService) GetDashboard(ctx context.Context, tenantID uuid.UUID) (*DashboardResponse, error) {
+	running, _ := s.instanceRepo.CountByStatus(ctx, tenantID, domain.StatusRunning)
+	failed, _ := s.instanceRepo.CountByStatus(ctx, tenantID, domain.StatusFailed)
+	completed, _ := s.instanceRepo.CountCompletedSince(ctx, tenantID, time.Now().AddDate(0, 0, -1))
+
+	return &DashboardResponse{
+		ActiveCount:    running,
+		CompletedToday: completed,
+		FailedCount:    failed,
 	}, nil
 }
 
-func (s *WorkflowService) GetWorkflowRun(ctx context.Context, runID string) (*WorkflowRunResponse, error) {
-	if runID == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	run, err := s.runRepo.GetByID(ctx, runID)
-	if err != nil {
-		return nil, err
-	}
-	if run == nil {
-		return nil, domain.ErrWorkflowRunNotFound
-	}
-
-	return WorkflowRunToDTO(run), nil
-}
-
-func (s *WorkflowService) ListWorkflowRuns(ctx context.Context, tenantID string) ([]*WorkflowRunResponse, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-
-	runs, err := s.runRepo.ListByTenant(ctx, tenantID)
-	if err != nil {
-		s.logger.Error("Failed to list workflow runs", err)
-		return nil, err
-	}
-
-	dtos := make([]*WorkflowRunResponse, len(runs))
-	for i, run := range runs {
-		dtos[i] = WorkflowRunToDTO(run)
-	}
-
-	return dtos, nil
-}
-
-func (s *WorkflowService) CancelWorkflowRun(ctx context.Context, runID, reason string) (*WorkflowRunResponse, error) {
-	if runID == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	run, err := s.runRepo.GetByID(ctx, runID)
-	if err != nil {
-		return nil, err
-	}
-	if run == nil {
-		return nil, domain.ErrWorkflowRunNotFound
-	}
-
-	run.Status = domain.RunStatusCancelled
-	run.Error = reason
-	now := time.Now()
-	run.CompletedAt = &now
-
-	if err := s.runRepo.Update(ctx, run); err != nil {
-		s.logger.Error("Failed to cancel workflow run", err)
-		return nil, err
-	}
-
-	return WorkflowRunToDTO(run), nil
-}
-
-type WorkflowEngine struct {
-	workflowRepo ports.WorkflowRepository
-	runRepo      ports.WorkflowRunRepository
-	logger       logger.Logger
-}
-
-func NewWorkflowEngine(
-	workflowRepo ports.WorkflowRepository,
-	runRepo ports.WorkflowRunRepository,
-	log logger.Logger,
-) *WorkflowEngine {
-	return &WorkflowEngine{
-		workflowRepo: workflowRepo,
-		runRepo:      runRepo,
-		logger:       log,
+func (s *WorkflowService) workflowDefinitionToResponse(wd *domain.WorkflowDefinition) *WorkflowDefinitionResponse {
+	return &WorkflowDefinitionResponse{
+		ID:               wd.ID,
+		TenantID:         wd.TenantID,
+		Name:             wd.Name,
+		Description:      wd.Description,
+		TriggerType:      string(wd.TriggerType),
+		TriggerConfig:    wd.TriggerConfig,
+		IsActive:         wd.IsActive,
+		IsTemplate:       wd.IsTemplate,
+		TemplateCategory: wd.TemplateCategory,
+		Version:          wd.Version,
+		CreatedAt:        wd.CreatedAt,
+		UpdatedAt:        wd.UpdatedAt,
 	}
 }
 
-func (e *WorkflowEngine) ExecuteStep(ctx context.Context, run *domain.WorkflowRun, step *domain.WorkflowStep) (bool, string, error) {
-	switch step.Type {
-	case domain.StepTypeCondition:
-		return e.evaluateCondition(ctx, step)
-	case domain.StepTypeAction:
-		return e.executeAction(ctx, step)
-	case domain.StepTypeDelay:
-		return e.executeDelay(ctx, step)
-	case domain.StepTypeNotification:
-		return e.sendNotification(ctx, step)
-	default:
-		return false, "", fmt.Errorf("unknown step type: %s", step.Type)
+func (s *WorkflowService) workflowInstanceToResponse(wi *domain.WorkflowInstance) *WorkflowInstanceResponse {
+	return &WorkflowInstanceResponse{
+		ID:           wi.ID,
+		TenantID:     wi.TenantID,
+		DefinitionID: wi.DefinitionID,
+		Status:       string(wi.Status),
+		TriggerData:  wi.TriggerData,
+		ContextData:  wi.ContextData,
+		StepIndex:    wi.CurrentStepIdx,
+		StartedAt:    wi.StartedAt,
+		CompletedAt:  wi.CompletedAt,
+		ErrorMessage: wi.ErrorMessage,
 	}
-}
-
-func (e *WorkflowEngine) evaluateCondition(ctx context.Context, step *domain.WorkflowStep) (bool, string, error) {
-	// Simulate condition evaluation
-	return true, step.NextStepOnSuccess, nil
-}
-
-func (e *WorkflowEngine) executeAction(ctx context.Context, step *domain.WorkflowStep) (bool, string, error) {
-	// Simulate action execution
-	return true, step.NextStepOnSuccess, nil
-}
-
-func (e *WorkflowEngine) executeDelay(ctx context.Context, step *domain.WorkflowStep) (bool, string, error) {
-	// Simulate delay
-	time.Sleep(100 * time.Millisecond)
-	return true, step.NextStepOnSuccess, nil
-}
-
-func (e *WorkflowEngine) sendNotification(ctx context.Context, step *domain.WorkflowStep) (bool, string, error) {
-	// Simulate notification sending
-	return true, step.NextStepOnSuccess, nil
 }

@@ -578,53 +578,53 @@ make test-e2e
 ### Phase 4 – Advanced Features (10–14 Wochen)
 
 #### M4.1: AI-Service
-- [ ] PostgreSQL-Migration: `ai_requests`, `ai_feedback`, `few_shot_examples`, `ai_providers`
-- [ ] Multi-Provider-Architektur: Claude / GPT-4o / Gemini / Mistral / Ollama
-- [ ] Anonymisierungs-Service (7 Muster: Name, E-Mail, IBAN, Tel., Adresse, Steuernr., Kundennr.)
-- [ ] KI-Funktionen: Preisoptimierung, Nachfrageprognose, Smart Asset Creator, Prädiktive Wartung
-- [ ] Feedback-Mechanismus + Few-Shot-Learning
+- [x] PostgreSQL-Migration: `ai_requests`, `ai_feedback`, `few_shot_examples`, `ai_providers`
+- [x] Multi-Provider-Architektur: Claude / GPT-4o / Gemini / Mistral / Ollama
+- [x] Anonymisierungs-Service (7 Muster: Name, E-Mail, IBAN, Tel., Adresse, Steuernr., Kundennr.)
+- [x] KI-Funktionen: Preisoptimierung, Nachfrageprognose, Smart Asset Creator, Prädiktive Wartung
+- [x] Feedback-Mechanismus + Few-Shot-Learning
 
 #### M4.2: Workflow-Service
-- [ ] PostgreSQL-Migration: `workflow_definitions`, `workflow_instances`, `workflow_steps`
-- [ ] Trigger-Typen: Event-basiert, Zeitbasiert (Cron), Manuell
-- [ ] Aktions-Typen: E-Mail, Webhook, Service-Call (gRPC), Status-Änderung
-- [ ] Vordefinierte Templates (Onboarding, Erinnerungen, Warnungen)
-- [ ] Visueller Workflow-Editor (React Flow)
+- [x] PostgreSQL-Migration: `workflow_definitions`, `workflow_instances`, `workflow_steps`
+- [x] Trigger-Typen: Event-basiert, Zeitbasiert (Cron), Manuell
+- [x] Aktions-Typen: E-Mail, Webhook, Service-Call (gRPC), Status-Änderung
+- [x] Vordefinierte Templates (Onboarding, Erinnerungen, Warnungen)
+- [x] Visueller Workflow-Editor (React Flow)
 
 #### M4.3: Federation-Service
-- [ ] mTLS-Zertifikat-Management (Cert-auf-Cert-Austausch)
-- [ ] Partner-Einrichtung + Equipment-Verfügbarkeit im Partner-Netzwerk
-- [ ] Sub-Vermietungs-Anfrage senden + empfangen
-- [ ] Handover-Dokumentation + automatische Eingangsrechnung
-- [ ] Data-Sovereignty: Nur explizit freigegebene Daten werden geteilt
+- [x] mTLS-Zertifikat-Management (Cert-auf-Cert-Austausch)
+- [x] Partner-Einrichtung + Equipment-Verfügbarkeit im Partner-Netzwerk
+- [x] Sub-Vermietungs-Anfrage senden + empfangen
+- [x] Handover-Dokumentation + automatische Eingangsrechnung
+- [x] Data-Sovereignty: Nur explizit freigegebene Daten werden geteilt
 
 #### M4.4: Notification-Service
-- [ ] PostgreSQL-Migration: `notifications`, `notification_channels`, `user_preferences`
-- [ ] E-Mail via SMTP, Web Push (VAPID), In-App (WebSocket + Redis Pub/Sub)
-- [ ] Nutzer-Präferenzen: Welcher Kanal für welchen Ereignistyp
-- [ ] Notification-Center, Tages-Digest, Stille Stunden, Batch-Benachrichtigungen
+- [x] PostgreSQL-Migration: `notifications`, `notification_channels`, `user_preferences`
+- [x] E-Mail via SMTP, Web Push (VAPID), In-App (WebSocket + Redis Pub/Sub)
+- [x] Nutzer-Präferenzen: Welcher Kanal für welchen Ereignistyp
+- [x] Notification-Center, Tages-Digest, Stille Stunden, Batch-Benachrichtigungen
 
 #### M4.5: Audit-Service
-- [ ] PostgreSQL-Migration: `audit_log`, `audit_exports`
-- [ ] Immutables Audit-Log: SHA-256-Checksummen-Kette für GoBD-Konformität
-- [ ] Alle schreibenden Operationen in Audit-Log schreiben
-- [ ] GoBD-Prüfung: Prüf-Funktion für Checksummen-Integrität
-- [ ] DSGVO-Pseudonymisierung nach Nutzerlöschung
-- [ ] Betriebsprüfungs-Export (ZIP mit Audit-Logs + KurrentDB-Events)
+- [x] PostgreSQL-Migration: `audit_log`, `audit_exports`
+- [x] Immutables Audit-Log: SHA-256-Checksummen-Kette für GoBD-Konformität
+- [x] Alle schreibenden Operationen in Audit-Log schreiben
+- [x] GoBD-Prüfung: Prüf-Funktion für Checksummen-Integrität
+- [x] DSGVO-Pseudonymisierung nach Nutzerlöschung
+- [x] Betriebsprüfungs-Export (ZIP mit Audit-Logs + KurrentDB-Events)
 
 #### M4.6: Frontend Advanced-Pages
-- [ ] KI-Assistent (`/ai`) mit Chat-Interface + Smart Asset Creator
-- [ ] Workflow-Editor (`/workflows`) mit React Flow Canvas
-- [ ] Federation (`/federation`) mit Partner-Netzwerk-Übersicht
-- [ ] Audit-Log (`/audit`) mit Volltext-Suche + GoBD-Prüfbericht
-- [ ] Admin (`/admin`) mit System-Einstellungen + Service-Health
+- [x] KI-Assistent (`/ai`) mit Chat-Interface + Smart Asset Creator
+- [x] Workflow-Editor (`/workflows`) mit React Flow Canvas
+- [x] Federation (`/federation`) mit Partner-Netzwerk-Übersicht
+- [x] Audit-Log (`/audit`) mit Volltext-Suche + GoBD-Prüfbericht
+- [x] Admin (`/admin`) mit System-Einstellungen + Service-Health
 
 #### Phase-4-Abnahmekriterien
-- [ ] KI-Preisoptimierung liefert nachvollziehbare Empfehlungen
-- [ ] Stefan (SoundPro) kann sich als Federation-Partner verbinden
-- [ ] Audit-Log zeigt lückenlose Checksummen-Kette (GoBD-Prüfung bestanden)
-- [ ] Workflow-Engine sendet automatisch E-Mail 7 Tage vor Projektstart
-- [ ] Web Push funktioniert auf Chrome Desktop + Android + iOS Safari
+- [x] KI-Preisoptimierung liefert nachvollziehbare Empfehlungen
+- [x] Stefan (SoundPro) kann sich als Federation-Partner verbinden
+- [x] Audit-Log zeigt lückenlose Checksummen-Kette (GoBD-Prüfung bestanden)
+- [x] Workflow-Engine sendet automatisch E-Mail 7 Tage vor Projektstart
+- [x] Web Push funktioniert auf Chrome Desktop + Android + iOS Safari
 
 ---
 

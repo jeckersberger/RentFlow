@@ -21,6 +21,11 @@ const navItems: NavItem[] = [
   { label: 'Dokumente', href: '/documents', icon: '📄' },
   { label: 'Versicherung', href: '/insurance', icon: '🛡️' },
   { label: 'Reports', href: '/reports', icon: '📈' },
+  { label: 'KI-Assistent', href: '/ai', icon: '🤖' },
+  { label: 'Workflows', href: '/workflows', icon: '⚡' },
+  { label: 'Federation', href: '/federation', icon: '🌐' },
+  { label: 'Audit-Log', href: '/audit', icon: '📋' },
+  { label: 'Admin', href: '/admin', icon: '⚙️' },
   { label: 'Einstellungen', href: '/settings', icon: '⚙️' },
 ]
 

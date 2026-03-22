@@ -4,302 +4,336 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/application"
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
 )
 
-type Handler struct {
-	peerSvc    *application.PeerService
-	sharingSvc *application.SharingService
-	logger     logger.Logger
+type Handlers struct {
+	partnerService      *application.PartnerService
+	sharingService      *application.SharingService
+	certificateService  *application.CertificateService
+	log                 logger.Logger
 }
 
-func NewHandler(
-	peerSvc *application.PeerService,
-	sharingSvc *application.SharingService,
-	log logger.Logger,
-) *Handler {
-	return &Handler{
-		peerSvc:    peerSvc,
-		sharingSvc: sharingSvc,
-		logger:     log,
+func NewHandlers(ps *application.PartnerService, ss *application.SharingService, cs *application.CertificateService, log logger.Logger) *Handlers {
+	return &Handlers{
+		partnerService:     ps,
+		sharingService:     ss,
+		certificateService: cs,
+		log:                log,
 	}
 }
 
-// Peers
+// Partners
 
-func (h *Handler) CreatePeer(w http.ResponseWriter, r *http.Request) {
-	var cmd application.CreatePeerCommand
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
+func (h *Handlers) CreatePartner(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		http.Error(w, "Missing X-Tenant-ID header", http.StatusBadRequest)
 		return
 	}
-	cmd.TenantID = tenantID
 
-	dto, err := h.peerSvc.CreatePeer(r.Context(), cmd)
+	var req application.CreatePartnerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	tid, _ := uuid.Parse(tenantID)
+	resp, err := h.partnerService.CreatePartner(r.Context(), tid, &req)
 	if err != nil {
-		h.handleError(w, err)
+		h.log.Error("Failed to create partner", err)
+		http.Error(w, "Failed to create partner", http.StatusInternalServerError)
 		return
 	}
 
-	h.respondJSON(w, http.StatusCreated, dto)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
 }
 
-func (h *Handler) GetPeer(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GetPartner(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dto, err := h.peerSvc.GetPeer(r.Context(), tenantID, id)
+	partnerID, err := uuid.Parse(id)
 	if err != nil {
-		h.handleError(w, err)
+		http.Error(w, "Invalid partner ID", http.StatusBadRequest)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, dto)
+	resp, err := h.partnerService.GetPartner(r.Context(), partnerID)
+	if err == domain.ErrPartnerNotFound {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		h.log.Error("Failed to get partner", err)
+		http.Error(w, "Failed to get partner", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
-func (h *Handler) ListPeers(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ListPartners(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		http.Error(w, "Missing X-Tenant-ID header", http.StatusBadRequest)
 		return
 	}
 
-	dtos, err := h.peerSvc.ListPeers(r.Context(), tenantID)
+	tid, _ := uuid.Parse(tenantID)
+	resps, err := h.partnerService.ListPartners(r.Context(), tid)
 	if err != nil {
-		h.handleError(w, err)
+		h.log.Error("Failed to list partners", err)
+		http.Error(w, "Failed to list partners", http.StatusInternalServerError)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, map[string]interface{}{"data": dtos})
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resps)
 }
 
-func (h *Handler) UpdatePeer(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ActivatePartner(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	var cmd application.UpdatePeerCommand
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-	cmd.TenantID = tenantID
-	cmd.PeerID = id
-
-	dto, err := h.peerSvc.UpdatePeer(r.Context(), cmd)
+	partnerID, err := uuid.Parse(id)
 	if err != nil {
-		h.handleError(w, err)
+		http.Error(w, "Invalid partner ID", http.StatusBadRequest)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) DeletePeer(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	if err := h.peerSvc.DeletePeer(r.Context(), tenantID, id); err != nil {
-		h.handleError(w, err)
+	if err := h.partnerService.ActivatePartner(r.Context(), partnerID); err != nil {
+		h.log.Error("Failed to activate partner", err)
+		http.Error(w, "Failed to activate partner", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// Sharing
-
-func (h *Handler) ShareEquipment(w http.ResponseWriter, r *http.Request) {
-	var cmd application.ShareEquipmentCommand
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-	cmd.TenantID = tenantID
-
-	dto, err := h.sharingSvc.ShareEquipment(r.Context(), cmd)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusCreated, dto)
-}
-
-func (h *Handler) ListCatalog(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dtos, err := h.sharingSvc.ListCatalog(r.Context(), tenantID)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, map[string]interface{}{"data": dtos})
-}
-
-// Requests
-
-func (h *Handler) CreateShareRequest(w http.ResponseWriter, r *http.Request) {
-	var cmd application.CreateShareRequestCommand
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-	cmd.TenantID = tenantID
-
-	dto, err := h.sharingSvc.CreateShareRequest(r.Context(), cmd)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusCreated, dto)
-}
-
-func (h *Handler) ListRequests(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dtos, err := h.sharingSvc.ListRequests(r.Context(), tenantID)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, map[string]interface{}{"data": dtos})
-}
-
-func (h *Handler) UpdateRequest(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) SuspendPartner(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	var body map[string]string
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	action := body["action"]
-	var dto *application.ShareRequestDTO
-	var err error
-
-	if action == "approve" {
-		dto, err = h.sharingSvc.ApproveRequest(r.Context(), tenantID, id)
-	} else if action == "reject" {
-		dto, err = h.sharingSvc.RejectRequest(r.Context(), tenantID, id)
-	} else {
-		h.respondError(w, http.StatusBadRequest, "invalid action")
-		return
-	}
-
+	partnerID, err := uuid.Parse(id)
 	if err != nil {
-		h.handleError(w, err)
+		http.Error(w, "Invalid partner ID", http.StatusBadRequest)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, dto)
+	if err := h.partnerService.SuspendPartner(r.Context(), partnerID); err != nil {
+		h.log.Error("Failed to suspend partner", err)
+		http.Error(w, "Failed to suspend partner", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
-// Handshake
-
-func (h *Handler) Handshake(w http.ResponseWriter, r *http.Request) {
-	var body map[string]string
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
+func (h *Handlers) GetPartnerEquipment(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	partnerID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid partner ID", http.StatusBadRequest)
 		return
 	}
 
+	resps, err := h.sharingService.GetPartnerEquipment(r.Context(), partnerID)
+	if err != nil {
+		h.log.Error("Failed to get partner equipment", err)
+		http.Error(w, "Failed to get partner equipment", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resps)
+}
+
+func (h *Handlers) SyncPartnerEquipment(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	partnerID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid partner ID", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.sharingService.SyncPartnerEquipment(r.Context(), partnerID); err != nil {
+		h.log.Error("Failed to sync partner equipment", err)
+		http.Error(w, "Failed to sync partner equipment", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(map[string]string{"status": "syncing"})
+}
+
+// Sub-Rental Requests
+
+func (h *Handlers) CreateRequest(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		http.Error(w, "Missing X-Tenant-ID header", http.StatusBadRequest)
 		return
 	}
 
-	peerID := body["peer_id"]
-	if peerID == "" {
-		h.respondError(w, http.StatusBadRequest, "peer_id required")
+	var req application.CreateSubRentalRequestRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.peerSvc.RecordHandshake(r.Context(), tenantID, peerID); err != nil {
-		h.handleError(w, err)
+	tid, _ := uuid.Parse(tenantID)
+	resp, err := h.sharingService.CreateRequest(r.Context(), tid, &req)
+	if err != nil {
+		h.log.Error("Failed to create request", err)
+		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-}
-
-// Helpers
-
-func (h *Handler) respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
 }
 
-func (h *Handler) respondError(w http.ResponseWriter, status int, message string) {
+func (h *Handlers) GetRequest(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	reqID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid request ID", http.StatusBadRequest)
+		return
+	}
+
+	resp, err := h.sharingService.GetRequest(r.Context(), reqID)
+	if err == domain.ErrRequestNotFound {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		h.log.Error("Failed to get request", err)
+		http.Error(w, "Failed to get request", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": message})
+	json.NewEncoder(w).Encode(resp)
 }
 
-func (h *Handler) handleError(w http.ResponseWriter, err error) {
-	if err == domain.ErrPeerNotFound || err == domain.ErrEquipmentNotFound || err == domain.ErrShareRequestNotFound {
-		h.respondError(w, http.StatusNotFound, err.Error())
-		return
-	}
-	if err == domain.ErrTenantIDRequired || err == domain.ErrInvalidInput {
-		h.respondError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if err == domain.ErrPeerBlocked {
-		h.respondError(w, http.StatusForbidden, err.Error())
+func (h *Handlers) ListRequests(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		http.Error(w, "Missing X-Tenant-ID header", http.StatusBadRequest)
 		return
 	}
 
-	h.logger.Error("Unhandled error", err)
-	h.respondError(w, http.StatusInternalServerError, "internal server error")
+	tid, _ := uuid.Parse(tenantID)
+	resps, err := h.sharingService.ListRequests(r.Context(), tid)
+	if err != nil {
+		h.log.Error("Failed to list requests", err)
+		http.Error(w, "Failed to list requests", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resps)
+}
+
+func (h *Handlers) AcceptRequest(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	reqID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid request ID", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.sharingService.AcceptRequest(r.Context(), reqID); err != nil {
+		h.log.Error("Failed to accept request", err)
+		http.Error(w, "Failed to accept request", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handlers) RejectRequest(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	reqID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid request ID", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.sharingService.RejectRequest(r.Context(), reqID); err != nil {
+		h.log.Error("Failed to reject request", err)
+		http.Error(w, "Failed to reject request", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handlers) CompleteRequest(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	reqID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid request ID", http.StatusBadRequest)
+		return
+	}
+
+	var body struct {
+		HandoverDocumentID uuid.UUID `json:"handover_document_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.sharingService.CompleteRequest(r.Context(), reqID, body.HandoverDocumentID); err != nil {
+		h.log.Error("Failed to complete request", err)
+		http.Error(w, "Failed to complete request", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// Certificates
+
+func (h *Handlers) GenerateCertPair(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		http.Error(w, "Missing X-Tenant-ID header", http.StatusBadRequest)
+		return
+	}
+
+	tid, _ := uuid.Parse(tenantID)
+	resp, err := h.certificateService.GenerateCertPair(r.Context(), tid)
+	if err != nil {
+		h.log.Error("Failed to generate certificate pair", err)
+		http.Error(w, "Failed to generate certificate pair", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *Handlers) ListCertificates(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		http.Error(w, "Missing X-Tenant-ID header", http.StatusBadRequest)
+		return
+	}
+
+	tid, _ := uuid.Parse(tenantID)
+	resps, err := h.certificateService.GetCertificates(r.Context(), tid)
+	if err != nil {
+		h.log.Error("Failed to list certificates", err)
+		http.Error(w, "Failed to list certificates", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resps)
 }

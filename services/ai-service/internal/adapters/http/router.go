@@ -7,38 +7,39 @@ import (
 	"github.com/jeckersberger/rentflow/services/ai-service/internal/application"
 )
 
-func NewRouter(aiSvc *application.AIService, log logger.Logger) *http.ServeMux {
-	router := http.NewServeMux()
-	handler := NewHandler(aiSvc, log)
+// SetupRoutes sets up all HTTP routes
+func SetupRoutes(
+	mux *http.ServeMux,
+	aiSvc *application.AIService,
+	log logger.Logger,
+) {
+	handlers := NewHandlers(aiSvc, log)
 
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	// AI request routes
+	mux.HandleFunc("POST /api/v1/ai/complete", handlers.CreateAIRequest)
+	mux.HandleFunc("GET /api/v1/ai/requests", handlers.ListAIRequests)
+	mux.HandleFunc("GET /api/v1/ai/requests/{id}", handlers.GetAIRequest)
 
-	// AI endpoints
-	router.HandleFunc("POST /api/v1/ai/predict", handler.Predict)
-	router.HandleFunc("POST /api/v1/ai/classify", handler.Classify)
-	router.HandleFunc("POST /api/v1/ai/anonymize", handler.Anonymize)
-	router.HandleFunc("POST /api/v1/ai/deanonymize", handler.Deanonymize)
-	router.HandleFunc("POST /api/v1/ai/suggest", handler.Suggest)
-	router.HandleFunc("GET /api/v1/ai/providers", handler.GetProviders)
-	router.HandleFunc("GET /api/v1/ai/usage", handler.GetUsage)
+	// Feedback routes
+	mux.HandleFunc("POST /api/v1/ai/feedback", handlers.SubmitFeedback)
 
-	// Anonymization rules
-	router.HandleFunc("GET /api/v1/ai/anonymization-rules", handler.GetAnonymizationRules)
-	router.HandleFunc("POST /api/v1/ai/anonymization-rules", handler.CreateAnonymizationRule)
-	router.HandleFunc("DELETE /api/v1/ai/anonymization-rules/{id}", handler.DeleteAnonymizationRule)
+	// Anonymization route
+	mux.HandleFunc("POST /api/v1/ai/anonymize", handlers.Anonymize)
 
-	return router
-}
+	// Prediction routes
+	mux.HandleFunc("POST /api/v1/ai/price-optimize", handlers.PriceOptimization)
+	mux.HandleFunc("POST /api/v1/ai/demand-forecast", handlers.DemandForecast)
+	mux.HandleFunc("POST /api/v1/ai/asset-create", handlers.SmartAssetCreator)
+	mux.HandleFunc("POST /api/v1/ai/predict-maintenance", handlers.PredictiveMaintenance)
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"healthy","service":"ai-service"}`))
-}
+	// Few-shot example routes
+	mux.HandleFunc("GET /api/v1/ai/few-shots", handlers.ListFewShots)
+	mux.HandleFunc("POST /api/v1/ai/few-shots", handlers.CreateFewShot)
 
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ready","service":"ai-service"}`))
+	// Provider routes
+	mux.HandleFunc("GET /api/v1/ai/providers", handlers.ListProviders)
+	mux.HandleFunc("POST /api/v1/ai/providers", handlers.RegisterProvider)
+
+	// Dashboard route
+	mux.HandleFunc("GET /api/v1/ai/dashboard", handlers.GetDashboard)
 }

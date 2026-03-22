@@ -3,237 +3,324 @@ package http
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/ai-service/internal/application"
-	"github.com/jeckersberger/rentflow/services/ai-service/internal/domain"
 )
 
-type Handler struct {
-	aiSvc  *application.AIService
-	logger logger.Logger
+// Handlers handles HTTP requests
+type Handlers struct {
+	aiService *application.AIService
+	log       logger.Logger
 }
 
-func NewHandler(aiSvc *application.AIService, log logger.Logger) *Handler {
-	return &Handler{
-		aiSvc:  aiSvc,
-		logger: log,
+// NewHandlers creates a new handlers instance
+func NewHandlers(aiService *application.AIService, log logger.Logger) *Handlers {
+	return &Handlers{
+		aiService: aiService,
+		log:       log,
 	}
 }
 
-func (h *Handler) Predict(w http.ResponseWriter, r *http.Request) {
-	var req application.PredictRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
+// CreateAIRequest handles POST /api/v1/ai/complete
+func (h *Handlers) CreateAIRequest(w http.ResponseWriter, r *http.Request) {
+	var cmd application.CreateAIRequestCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	resp, err := h.aiSvc.Predict(r.Context(), tenantID, req)
+	dto, err := h.aiService.CreateAIRequest(r.Context(), cmd)
 	if err != nil {
-		h.handleError(w, err)
+		h.log.Error("failed to create AI request", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, resp)
-}
-
-func (h *Handler) Classify(w http.ResponseWriter, r *http.Request) {
-	var req application.ClassifyRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	resp, err := h.aiSvc.Classify(r.Context(), tenantID, req)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, resp)
-}
-
-func (h *Handler) Anonymize(w http.ResponseWriter, r *http.Request) {
-	var req application.AnonymizeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	resp, err := h.aiSvc.Anonymize(r.Context(), tenantID, req.Text)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, resp)
-}
-
-func (h *Handler) Deanonymize(w http.ResponseWriter, r *http.Request) {
-	var req application.DeanonymizeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	resp, err := h.aiSvc.Deanonymize(r.Context(), tenantID, req.Text, req.MappingID)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, resp)
-}
-
-func (h *Handler) Suggest(w http.ResponseWriter, r *http.Request) {
-	var req application.SuggestRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	resp, err := h.aiSvc.Suggest(r.Context(), tenantID, req)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, resp)
-}
-
-func (h *Handler) GetProviders(w http.ResponseWriter, r *http.Request) {
-	providers, err := h.aiSvc.GetProviders(r.Context())
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, map[string]interface{}{"providers": providers})
-}
-
-func (h *Handler) GetUsage(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	stats, err := h.aiSvc.GetUsageStats(r.Context(), tenantID)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, stats)
-}
-
-func (h *Handler) GetAnonymizationRules(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	rules, err := h.aiSvc.GetAnonymizationRules(r.Context(), tenantID)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, map[string]interface{}{"rules": rules})
-}
-
-func (h *Handler) CreateAnonymizationRule(w http.ResponseWriter, r *http.Request) {
-	var req application.AnonymizationRuleRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	resp, err := h.aiSvc.CreateAnonymizationRule(r.Context(), tenantID, req)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusCreated, resp)
-}
-
-func (h *Handler) DeleteAnonymizationRule(w http.ResponseWriter, r *http.Request) {
-	ruleID := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	err := h.aiSvc.DeleteAnonymizationRule(r.Context(), tenantID, ruleID)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Handler) respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	json.NewEncoder(w).Encode(dto)
 }
 
-func (h *Handler) respondError(w http.ResponseWriter, status int, message string) {
+// GetAIRequest handles GET /api/v1/ai/requests/{id}
+func (h *Handlers) GetAIRequest(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "ID required", http.StatusBadRequest)
+		return
+	}
+
+	dto, err := h.aiService.GetAIRequest(r.Context(), id)
+	if err != nil {
+		h.log.Error("failed to get AI request", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if dto == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": message})
+	json.NewEncoder(w).Encode(dto)
 }
 
-func (h *Handler) handleError(w http.ResponseWriter, err error) {
-	if err == domain.ErrAIRequestNotFound || err == domain.ErrAnonymizationRuleNotFound {
-		h.respondError(w, http.StatusNotFound, err.Error())
-		return
+// ListAIRequests handles GET /api/v1/ai/requests
+func (h *Handlers) ListAIRequests(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	page := 1
+	perPage := 20
+
+	if p := r.URL.Query().Get("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil {
+			page = v
+		}
 	}
-	if err == domain.ErrInvalidInput || err == domain.ErrTenantIDRequired {
-		h.respondError(w, http.StatusBadRequest, err.Error())
+	if pp := r.URL.Query().Get("per_page"); pp != "" {
+		if v, err := strconv.Atoi(pp); err == nil {
+			perPage = v
+		}
+	}
+
+	dtos, total, err := h.aiService.ListAIRequests(r.Context(), tenantID, page, perPage)
+	if err != nil {
+		h.log.Error("failed to list AI requests", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Error("Unhandled error", err)
-	h.respondError(w, http.StatusInternalServerError, "internal server error")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"requests": dtos,
+		"total":    total,
+		"page":     page,
+		"per_page": perPage,
+	})
+}
+
+// SubmitFeedback handles POST /api/v1/ai/feedback
+func (h *Handlers) SubmitFeedback(w http.ResponseWriter, r *http.Request) {
+	var cmd application.SubmitFeedbackCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	dto, err := h.aiService.SubmitFeedback(r.Context(), cmd)
+	if err != nil {
+		h.log.Error("failed to submit feedback", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(dto)
+}
+
+// Anonymize handles POST /api/v1/ai/anonymize
+func (h *Handlers) Anonymize(w http.ResponseWriter, r *http.Request) {
+	var cmd application.AnonymizeCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	anonymized := h.aiService.Anonymize(cmd.Text)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"original":    cmd.Text,
+		"anonymized": anonymized,
+	})
+}
+
+// PriceOptimization handles POST /api/v1/ai/price-optimize
+func (h *Handlers) PriceOptimization(w http.ResponseWriter, r *http.Request) {
+	var cmd application.PriceOptimizationCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	result, err := h.aiService.OptimizePrice(r.Context(), cmd.EquipmentType, cmd.RentalDays, cmd.Season)
+	if err != nil {
+		h.log.Error("failed to optimize price", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"recommendation": result,
+	})
+}
+
+// DemandForecast handles POST /api/v1/ai/demand-forecast
+func (h *Handlers) DemandForecast(w http.ResponseWriter, r *http.Request) {
+	var cmd application.DemandForecastCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	result, err := h.aiService.ForecastDemand(r.Context(), cmd.Category, cmd.Period)
+	if err != nil {
+		h.log.Error("failed to forecast demand", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"forecast": result,
+	})
+}
+
+// SmartAssetCreator handles POST /api/v1/ai/asset-create
+func (h *Handlers) SmartAssetCreator(w http.ResponseWriter, r *http.Request) {
+	var cmd application.SmartAssetCreatorCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	result, err := h.aiService.CreateAsset(r.Context(), cmd.Description)
+	if err != nil {
+		h.log.Error("failed to create asset", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"metadata": result,
+	})
+}
+
+// PredictiveMaintenance handles POST /api/v1/ai/predict-maintenance
+func (h *Handlers) PredictiveMaintenance(w http.ResponseWriter, r *http.Request) {
+	var cmd application.PredictiveMaintenanceCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var lastMaint *time.Time
+	if cmd.LastMaintenanceAt != nil {
+		t, err := time.Parse(time.RFC3339, *cmd.LastMaintenanceAt)
+		if err == nil {
+			lastMaint = &t
+		}
+	}
+
+	result, err := h.aiService.PredictMaintenance(r.Context(), cmd.EquipmentID, cmd.UsageHours, lastMaint)
+	if err != nil {
+		h.log.Error("failed to predict maintenance", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"recommendation": result,
+	})
+}
+
+// ListFewShots handles GET /api/v1/ai/few-shots
+func (h *Handlers) ListFewShots(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	page := 1
+	perPage := 20
+
+	if p := r.URL.Query().Get("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil {
+			page = v
+		}
+	}
+
+	dtos, total, err := h.aiService.ListFewShotExamples(r.Context(), tenantID, page, perPage)
+	if err != nil {
+		h.log.Error("failed to list few-shot examples", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"examples": dtos,
+		"total":    total,
+		"page":     page,
+	})
+}
+
+// CreateFewShot handles POST /api/v1/ai/few-shots
+func (h *Handlers) CreateFewShot(w http.ResponseWriter, r *http.Request) {
+	var cmd application.CreateFewShotExampleCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	dto, err := h.aiService.CreateFewShotExample(r.Context(), cmd)
+	if err != nil {
+		h.log.Error("failed to create few-shot example", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(dto)
+}
+
+// ListProviders handles GET /api/v1/ai/providers
+func (h *Handlers) ListProviders(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	dtos, err := h.aiService.ListAIProviders(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("failed to list providers", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"providers": dtos,
+	})
+}
+
+// RegisterProvider handles POST /api/v1/ai/providers
+func (h *Handlers) RegisterProvider(w http.ResponseWriter, r *http.Request) {
+	var cmd application.CreateAIProviderCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	dto, err := h.aiService.RegisterAIProvider(r.Context(), cmd)
+	if err != nil {
+		h.log.Error("failed to register provider", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(dto)
+}
+
+// GetDashboard handles GET /api/v1/ai/dashboard
+func (h *Handlers) GetDashboard(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	dashboard, err := h.aiService.GetDashboard(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("failed to get dashboard", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(dashboard)
 }

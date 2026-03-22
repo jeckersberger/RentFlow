@@ -1,71 +1,92 @@
 package application
 
 import (
+	"encoding/json"
 	"time"
 
-	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
+	"github.com/google/uuid"
 )
 
-type PeerDTO struct {
-	ID        string     `json:"id"`
-	Name      string     `json:"name"`
-	URL       string     `json:"url"`
-	PublicKey string     `json:"public_key"`
-	Status    string     `json:"status"`
-	LastSeen  *time.Time `json:"last_seen,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
+type CreatePartnerRequest struct {
+	PartnerName     string   `json:"partner_name"`
+	PartnerEndpoint string   `json:"partner_endpoint"`
+	SharedCategories []string `json:"shared_categories"`
+	DataPolicy      json.RawMessage `json:"data_policy"`
 }
 
-type SharedEquipmentDTO struct {
-	ID           string  `json:"id"`
-	EquipmentID  string  `json:"equipment_id"`
-	PeerID       string  `json:"peer_id"`
-	Availability string  `json:"availability"`
-	PricePerDay  float64 `json:"price_per_day"`
+type PartnerResponse struct {
+	ID              uuid.UUID   `json:"id"`
+	TenantID        uuid.UUID   `json:"tenant_id"`
+	PartnerName     string      `json:"partner_name"`
+	PartnerEndpoint string      `json:"partner_endpoint"`
+	Status          string      `json:"status"`
+	TrustLevel      string      `json:"trust_level"`
+	CertFingerprint string      `json:"cert_fingerprint"`
+	CertExpiresAt   *time.Time  `json:"cert_expires_at"`
+	SharedCategories []string   `json:"shared_categories"`
+	CreatedAt       time.Time   `json:"created_at"`
 }
 
-type ShareRequestDTO struct {
-	ID          string    `json:"id"`
-	FromPeerID  string    `json:"from_peer_id"`
-	ToPeerID    string    `json:"to_peer_id"`
-	EquipmentID string    `json:"equipment_id"`
-	StartDate   time.Time `json:"start_date"`
-	EndDate     time.Time `json:"end_date"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
+type CreateSubRentalRequestRequest struct {
+	PartnerID            uuid.UUID `json:"partner_id"`
+	Direction            string    `json:"direction"`
+	EquipmentCategory    string    `json:"equipment_category"`
+	EquipmentDescription string    `json:"equipment_description"`
+	Quantity             int       `json:"quantity"`
+	StartDate            time.Time `json:"start_date"`
+	EndDate              time.Time `json:"end_date"`
+	DailyRate            float64   `json:"daily_rate"`
+	Notes                string    `json:"notes"`
 }
 
-func PeerToDTO(p *domain.Peer) *PeerDTO {
-	return &PeerDTO{
-		ID:        p.ID,
-		Name:      p.Name,
-		URL:       p.URL,
-		PublicKey: p.PublicKey,
-		Status:    string(p.Status),
-		LastSeen:  p.LastSeen,
-		CreatedAt: p.CreatedAt,
-	}
+type SubRentalRequestResponse struct {
+	ID                   uuid.UUID  `json:"id"`
+	TenantID             uuid.UUID  `json:"tenant_id"`
+	PartnerID            uuid.UUID  `json:"partner_id"`
+	Direction            string     `json:"direction"`
+	Status               string     `json:"status"`
+	EquipmentCategory    string     `json:"equipment_category"`
+	EquipmentDescription string     `json:"equipment_description"`
+	Quantity             int        `json:"quantity"`
+	StartDate            time.Time  `json:"start_date"`
+	EndDate              time.Time  `json:"end_date"`
+	DailyRate            float64    `json:"daily_rate"`
+	TotalAmount          float64    `json:"total_amount"`
+	HandoverDocumentID   *uuid.UUID `json:"handover_document_id"`
+	InvoiceID            *uuid.UUID `json:"invoice_id"`
+	CreatedAt            time.Time  `json:"created_at"`
 }
 
-func SharedEquipmentToDTO(se *domain.SharedEquipment) *SharedEquipmentDTO {
-	return &SharedEquipmentDTO{
-		ID:           se.ID,
-		EquipmentID:  se.EquipmentID,
-		PeerID:       se.PeerID,
-		Availability: se.Availability,
-		PricePerDay:  se.PricePerDay,
-	}
+type EquipmentCacheResponse struct {
+	ID               uuid.UUID `json:"id"`
+	PartnerID        uuid.UUID `json:"partner_id"`
+	Category         string    `json:"category"`
+	ItemName         string    `json:"item_name"`
+	QuantityAvailable int      `json:"quantity_available"`
+	DailyRate        float64   `json:"daily_rate"`
+	LastSyncedAt     time.Time `json:"last_synced_at"`
 }
 
-func ShareRequestToDTO(sr *domain.ShareRequest) *ShareRequestDTO {
-	return &ShareRequestDTO{
-		ID:          sr.ID,
-		FromPeerID:  sr.FromPeerID,
-		ToPeerID:    sr.ToPeerID,
-		EquipmentID: sr.EquipmentID,
-		StartDate:   sr.StartDate,
-		EndDate:     sr.EndDate,
-		Status:      string(sr.Status),
-		CreatedAt:   sr.CreatedAt,
-	}
+type CertificateResponse struct {
+	ID          uuid.UUID  `json:"id"`
+	TenantID    uuid.UUID  `json:"tenant_id"`
+	PartnerID   *uuid.UUID `json:"partner_id"`
+	CertType    string     `json:"cert_type"`
+	Fingerprint string     `json:"fingerprint"`
+	IssuedAt    time.Time  `json:"issued_at"`
+	ExpiresAt   time.Time  `json:"expires_at"`
+	IsActive    bool       `json:"is_active"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+type GenerateCertPairResponse struct {
+	ClientCertPem string `json:"client_cert_pem"`
+	ServerCertPem string `json:"server_cert_pem"`
+	Fingerprint   string `json:"fingerprint"`
+}
+
+type DashboardResponse struct {
+	PartnerCount    int     `json:"partner_count"`
+	ActiveRentals   int     `json:"active_rentals"`
+	TotalRevenue    float64 `json:"total_revenue"`
 }

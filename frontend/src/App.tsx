@@ -56,6 +56,13 @@ import InsuranceDetail from './pages/Insurance/InsuranceDetail'
 // Reports Pages
 import ReportsPage from './pages/Reports/ReportsPage'
 
+// Phase 4 Pages
+import AIPage from './pages/AI/AIPage'
+import WorkflowsPage from './pages/Workflows/WorkflowsPage'
+import FederationPage from './pages/Federation/FederationPage'
+import AuditPage from './pages/Audit/AuditPage'
+import AdminPage from './pages/Admin/AdminPage'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -158,6 +165,13 @@ function App() {
 
             {/* Settings */}
             <Route path="settings" element={<SettingsPage />} />
+
+            {/* Phase 4 Routes */}
+            <Route path="ai" element={<AIPage />} />
+            <Route path="workflows" element={<WorkflowsPage />} />
+            <Route path="federation" element={<FederationPage />} />
+            <Route path="audit" element={<AuditPage />} />
+            <Route path="admin" element={<AdminPage />} />
           </Route>
         </Routes>
         <ToastContainer />

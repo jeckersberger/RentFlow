@@ -1,26 +1,91 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type AuditEntry struct {
-	ID            string                 `json:"id"`
-	TenantID      string                 `json:"tenant_id"`
-	Timestamp     time.Time              `json:"timestamp"`
-	UserID        string                 `json:"user_id"`
-	Action        string                 `json:"action"`
-	EntityType    string                 `json:"entity_type"`
-	EntityID      string                 `json:"entity_id"`
-	PreviousState map[string]interface{} `json:"previous_state,omitempty"`
-	NewState      map[string]interface{} `json:"new_state,omitempty"`
-	IPAddress     string                 `json:"ip_address"`
-	UserAgent     string                 `json:"user_agent"`
-	Hash          string                 `json:"hash"`
-	PreviousHash  string                 `json:"previous_hash"`
+	ID                uuid.UUID
+	TenantID          uuid.UUID
+	SequenceNumber    int64
+	Timestamp         time.Time
+	ServiceName       string
+	Operation         string
+	EntityType        string
+	EntityID          *uuid.UUID
+	UserID            *uuid.UUID
+	UserName          *string
+	OldValues         map[string]interface{}
+	NewValues         map[string]interface{}
+	IPAddress         *string
+	UserAgent         *string
+	Checksum          string
+	PreviousChecksum  *string
+	IsPseudonymized   bool
+	CreatedAt         time.Time
 }
 
-type IntegrityCheck struct {
-	LastVerified   time.Time `json:"last_verified"`
-	Status         string    `json:"status"` // valid, invalid
-	EntriesChecked int       `json:"entries_checked"`
-	ErrorsFound    int       `json:"errors_found"`
+type AuditExport struct {
+	ID             uuid.UUID
+	TenantID       uuid.UUID
+	ExportType     string
+	DateFrom       time.Time
+	DateTo         time.Time
+	Status         string
+	FilePath       *string
+	FileSizeBytes  *int64
+	Checksum       *string
+	RequestedBy    *uuid.UUID
+	CompletedAt    *time.Time
+	CreatedAt      time.Time
+}
+
+type VerificationResult struct {
+	IsValid       bool
+	EntriesCount  int
+	FirstMismatch *MismatchDetail
+}
+
+type MismatchDetail struct {
+	EntryID          uuid.UUID
+	SequenceNumber   int64
+	ComputedChecksum string
+	StoredChecksum   string
+}
+
+type WriteAuditEntryCmd struct {
+	TenantID     uuid.UUID
+	ServiceName  string
+	Operation    string
+	EntityType   string
+	EntityID     *uuid.UUID
+	UserID       *uuid.UUID
+	UserName     *string
+	OldValues    map[string]interface{}
+	NewValues    map[string]interface{}
+	IPAddress    *string
+	UserAgent    *string
+}
+
+type PseudonymizeUserCmd struct {
+	TenantID uuid.UUID
+	UserID   uuid.UUID
+}
+
+type CreateExportCmd struct {
+	TenantID   uuid.UUID
+	ExportType string
+	DateFrom   time.Time
+	DateTo     time.Time
+	RequestedBy *uuid.UUID
+}
+
+type GetDashboardStatsResponse struct {
+	EntriesAdded      int
+	ChainStatus       string
+	LastVerification  *time.Time
+	TotalEntries      int
+	PseudonymizedUsers int
 }

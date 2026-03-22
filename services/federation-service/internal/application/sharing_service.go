@@ -2,200 +2,171 @@ package application
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/federation-service/internal/ports"
 )
 
 type SharingService struct {
-	equipmentShareRepo ports.EquipmentShareRepository
-	shareRequestRepo   ports.ShareRequestRepository
-	peerRepo           ports.PeerRepository
-	logger             logger.Logger
+	requestRepo ports.SubRentalRequestRepository
+	cacheRepo   ports.EquipmentCacheRepository
+	partnerRepo ports.PartnerRepository
+	log         logger.Logger
 }
 
 func NewSharingService(
-	eqRepo ports.EquipmentShareRepository,
-	reqRepo ports.ShareRequestRepository,
-	peerRepo ports.PeerRepository,
+	rr ports.SubRentalRequestRepository,
+	cr ports.EquipmentCacheRepository,
+	pr ports.PartnerRepository,
 	log logger.Logger,
 ) *SharingService {
 	return &SharingService{
-		equipmentShareRepo: eqRepo,
-		shareRequestRepo:   reqRepo,
-		peerRepo:           peerRepo,
-		logger:             log,
+		requestRepo: rr,
+		cacheRepo:   cr,
+		partnerRepo: pr,
+		log:         log,
 	}
 }
 
-func (s *SharingService) ShareEquipment(ctx context.Context, cmd ShareEquipmentCommand) (*SharedEquipmentDTO, error) {
-	if cmd.TenantID == "" || cmd.EquipmentID == "" || cmd.PeerID == "" {
-		return nil, domain.ErrInvalidInput
+func (s *SharingService) CreateRequest(ctx context.Context, tenantID uuid.UUID, req *CreateSubRentalRequestRequest) (*SubRentalRequestResponse, error) {
+	srr := &domain.SubRentalRequest{
+		ID:                   uuid.New(),
+		TenantID:             tenantID,
+		PartnerID:            req.PartnerID,
+		Direction:            domain.RequestDirection(req.Direction),
+		Status:               domain.RequestStatusPending,
+		EquipmentCategory:    req.EquipmentCategory,
+		EquipmentDescription: req.EquipmentDescription,
+		Quantity:             req.Quantity,
+		StartDate:            req.StartDate,
+		EndDate:              req.EndDate,
+		DailyRate:            req.DailyRate,
+		TotalAmount:          req.DailyRate * float64(req.Quantity) * float64(req.EndDate.Sub(req.StartDate).Hours()/24),
+		Notes:                req.Notes,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
 	}
 
-	peer, err := s.peerRepo.GetByID(ctx, cmd.TenantID, cmd.PeerID)
+	if err := s.requestRepo.Create(ctx, srr); err != nil {
+		s.log.Error("Failed to create sub-rental request", err)
+		return nil, err
+	}
+
+	s.log.Info("Created sub-rental request", "request_id", srr.ID, "partner_id", srr.PartnerID)
+	return s.requestToResponse(srr), nil
+}
+
+func (s *SharingService) GetRequest(ctx context.Context, id uuid.UUID) (*SubRentalRequestResponse, error) {
+	srr, err := s.requestRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	if peer == nil {
-		return nil, domain.ErrPeerNotFound
-	}
-
-	if peer.Status == domain.PeerStatusBlocked {
-		return nil, domain.ErrPeerBlocked
-	}
-
-	share := &domain.SharedEquipment{
-		ID:           fmt.Sprintf("share_%d", time.Now().UnixNano()),
-		TenantID:     cmd.TenantID,
-		EquipmentID:  cmd.EquipmentID,
-		PeerID:       cmd.PeerID,
-		Availability: cmd.Availability,
-		PricePerDay:  cmd.PricePerDay,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
-
-	if err := s.equipmentShareRepo.Create(ctx, share); err != nil {
-		s.logger.Error("Failed to create equipment share", err)
-		return nil, err
-	}
-
-	return SharedEquipmentToDTO(share), nil
+	return s.requestToResponse(srr), nil
 }
 
-func (s *SharingService) GetSharedEquipment(ctx context.Context, tenantID, id string) (*SharedEquipmentDTO, error) {
-	if tenantID == "" || id == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	share, err := s.equipmentShareRepo.GetByID(ctx, tenantID, id)
+func (s *SharingService) ListRequests(ctx context.Context, tenantID uuid.UUID) ([]*SubRentalRequestResponse, error) {
+	srrs, err := s.requestRepo.ListByTenant(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}
-	if share == nil {
-		return nil, domain.ErrEquipmentNotFound
-	}
 
-	return SharedEquipmentToDTO(share), nil
+	var responses []*SubRentalRequestResponse
+	for _, srr := range srrs {
+		responses = append(responses, s.requestToResponse(srr))
+	}
+	return responses, nil
 }
 
-func (s *SharingService) ListCatalog(ctx context.Context, tenantID string) ([]*SharedEquipmentDTO, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
+func (s *SharingService) AcceptRequest(ctx context.Context, id uuid.UUID) error {
+	srr, err := s.requestRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
 	}
 
-	// In a real implementation, this would query across peers
-	return make([]*SharedEquipmentDTO, 0), nil
+	srr.Status = domain.RequestStatusAccepted
+	srr.UpdatedAt = time.Now()
+	return s.requestRepo.Update(ctx, srr)
 }
 
-func (s *SharingService) CreateShareRequest(ctx context.Context, cmd CreateShareRequestCommand) (*ShareRequestDTO, error) {
-	if cmd.TenantID == "" || cmd.FromPeerID == "" || cmd.ToPeerID == "" || cmd.EquipmentID == "" {
-		return nil, domain.ErrInvalidInput
+func (s *SharingService) RejectRequest(ctx context.Context, id uuid.UUID) error {
+	srr, err := s.requestRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
 	}
 
-	req := &domain.ShareRequest{
-		ID:          fmt.Sprintf("shareReq_%d", time.Now().UnixNano()),
-		TenantID:    cmd.TenantID,
-		FromPeerID:  cmd.FromPeerID,
-		ToPeerID:    cmd.ToPeerID,
-		EquipmentID: cmd.EquipmentID,
-		StartDate:   cmd.StartDate,
-		EndDate:     cmd.EndDate,
-		Status:      domain.ShareRequestStatusPending,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-
-	if err := s.shareRequestRepo.Create(ctx, req); err != nil {
-		s.logger.Error("Failed to create share request", err)
-		return nil, err
-	}
-
-	return ShareRequestToDTO(req), nil
+	srr.Status = domain.RequestStatusRejected
+	srr.UpdatedAt = time.Now()
+	return s.requestRepo.Update(ctx, srr)
 }
 
-func (s *SharingService) GetShareRequest(ctx context.Context, tenantID, id string) (*ShareRequestDTO, error) {
-	if tenantID == "" || id == "" {
-		return nil, domain.ErrInvalidInput
+func (s *SharingService) CompleteRequest(ctx context.Context, id uuid.UUID, handoverDocID uuid.UUID) error {
+	srr, err := s.requestRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
 	}
 
-	req, err := s.shareRequestRepo.GetByID(ctx, tenantID, id)
+	srr.Status = domain.RequestStatusCompleted
+	srr.HandoverDocumentID = &handoverDocID
+	srr.UpdatedAt = time.Now()
+	return s.requestRepo.Update(ctx, srr)
+}
+
+func (s *SharingService) SyncPartnerEquipment(ctx context.Context, partnerID uuid.UUID) error {
+	s.log.Info("Syncing partner equipment cache", "partner_id", partnerID)
+
+	// Clear existing cache
+	if err := s.cacheRepo.DeleteByPartner(ctx, partnerID); err != nil {
+		return err
+	}
+
+	// In a real implementation, would fetch from partner service
+	return nil
+}
+
+func (s *SharingService) GetPartnerEquipment(ctx context.Context, partnerID uuid.UUID) ([]*EquipmentCacheResponse, error) {
+	caches, err := s.cacheRepo.ListByPartner(ctx, partnerID)
 	if err != nil {
 		return nil, err
 	}
-	if req == nil {
-		return nil, domain.ErrShareRequestNotFound
-	}
 
-	return ShareRequestToDTO(req), nil
+	var responses []*EquipmentCacheResponse
+	for _, c := range caches {
+		responses = append(responses, s.cacheToResponse(c))
+	}
+	return responses, nil
 }
 
-func (s *SharingService) ListRequests(ctx context.Context, tenantID string) ([]*ShareRequestDTO, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
+func (s *SharingService) requestToResponse(srr *domain.SubRentalRequest) *SubRentalRequestResponse {
+	return &SubRentalRequestResponse{
+		ID:                   srr.ID,
+		TenantID:             srr.TenantID,
+		PartnerID:            srr.PartnerID,
+		Direction:            string(srr.Direction),
+		Status:               string(srr.Status),
+		EquipmentCategory:    srr.EquipmentCategory,
+		EquipmentDescription: srr.EquipmentDescription,
+		Quantity:             srr.Quantity,
+		StartDate:            srr.StartDate,
+		EndDate:              srr.EndDate,
+		DailyRate:            srr.DailyRate,
+		TotalAmount:          srr.TotalAmount,
+		HandoverDocumentID:   srr.HandoverDocumentID,
+		InvoiceID:            srr.InvoiceID,
+		CreatedAt:            srr.CreatedAt,
 	}
-
-	reqs, err := s.shareRequestRepo.ListByTenant(ctx, tenantID)
-	if err != nil {
-		s.logger.Error("Failed to list share requests", err)
-		return nil, err
-	}
-
-	dtos := make([]*ShareRequestDTO, len(reqs))
-	for i, r := range reqs {
-		dtos[i] = ShareRequestToDTO(r)
-	}
-	return dtos, nil
 }
 
-func (s *SharingService) ApproveRequest(ctx context.Context, tenantID, requestID string) (*ShareRequestDTO, error) {
-	if tenantID == "" || requestID == "" {
-		return nil, domain.ErrInvalidInput
+func (s *SharingService) cacheToResponse(c *domain.PartnerEquipmentCache) *EquipmentCacheResponse {
+	return &EquipmentCacheResponse{
+		ID:               c.ID,
+		PartnerID:        c.PartnerID,
+		Category:         c.Category,
+		ItemName:         c.ItemName,
+		QuantityAvailable: c.QuantityAvailable,
+		DailyRate:        c.DailyRate,
+		LastSyncedAt:     c.LastSyncedAt,
 	}
-
-	req, err := s.shareRequestRepo.GetByID(ctx, tenantID, requestID)
-	if err != nil {
-		return nil, err
-	}
-	if req == nil {
-		return nil, domain.ErrShareRequestNotFound
-	}
-
-	req.Status = domain.ShareRequestStatusApproved
-	req.UpdatedAt = time.Now()
-
-	if err := s.shareRequestRepo.Update(ctx, req); err != nil {
-		s.logger.Error("Failed to approve share request", err)
-		return nil, err
-	}
-
-	return ShareRequestToDTO(req), nil
-}
-
-func (s *SharingService) RejectRequest(ctx context.Context, tenantID, requestID string) (*ShareRequestDTO, error) {
-	if tenantID == "" || requestID == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	req, err := s.shareRequestRepo.GetByID(ctx, tenantID, requestID)
-	if err != nil {
-		return nil, err
-	}
-	if req == nil {
-		return nil, domain.ErrShareRequestNotFound
-	}
-
-	req.Status = domain.ShareRequestStatusRejected
-	req.UpdatedAt = time.Now()
-
-	if err := s.shareRequestRepo.Update(ctx, req); err != nil {
-		s.logger.Error("Failed to reject share request", err)
-		return nil, err
-	}
-
-	return ShareRequestToDTO(req), nil
 }

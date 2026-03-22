@@ -1,45 +1,38 @@
 package http
 
 import (
-	"net/http"
+	nethttp "net/http"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/workflow-service/internal/application"
 )
 
-func NewRouter(workflowSvc *application.WorkflowService, log logger.Logger) *http.ServeMux {
-	router := http.NewServeMux()
-	handler := NewHandler(workflowSvc, log)
+func SetupRoutes(
+	router *nethttp.ServeMux,
+	workflowService *application.WorkflowService,
+	triggerService *application.TriggerService,
+	actionExecutor *application.ActionExecutor,
+	log logger.Logger,
+) {
+	h := NewHandlers(workflowService, triggerService, actionExecutor, log)
 
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	// Workflow Definitions
+	router.HandleFunc("POST /api/v1/workflows/definitions", h.CreateDefinition)
+	router.HandleFunc("GET /api/v1/workflows/definitions", h.ListDefinitions)
+	router.HandleFunc("GET /api/v1/workflows/definitions/{id}", h.GetDefinition)
+	router.HandleFunc("PUT /api/v1/workflows/definitions/{id}", h.UpdateDefinition)
+	router.HandleFunc("DELETE /api/v1/workflows/definitions/{id}", h.DeleteDefinition)
 
-	// Workflows
-	router.HandleFunc("GET /api/v1/workflows", handler.ListWorkflows)
-	router.HandleFunc("POST /api/v1/workflows", handler.CreateWorkflow)
-	router.HandleFunc("GET /api/v1/workflows/{id}", handler.GetWorkflow)
-	router.HandleFunc("PUT /api/v1/workflows/{id}", handler.UpdateWorkflow)
-	router.HandleFunc("DELETE /api/v1/workflows/{id}", handler.DeleteWorkflow)
-	router.HandleFunc("POST /api/v1/workflows/{id}/activate", handler.ActivateWorkflow)
-	router.HandleFunc("POST /api/v1/workflows/{id}/deactivate", handler.DeactivateWorkflow)
-	router.HandleFunc("POST /api/v1/workflows/{id}/trigger", handler.TriggerWorkflow)
+	// Templates
+	router.HandleFunc("GET /api/v1/workflows/templates", h.ListTemplates)
 
-	// Workflow Runs
-	router.HandleFunc("GET /api/v1/workflow-runs", handler.ListWorkflowRuns)
-	router.HandleFunc("GET /api/v1/workflow-runs/{id}", handler.GetWorkflowRun)
-	router.HandleFunc("POST /api/v1/workflow-runs/{id}/cancel", handler.CancelWorkflowRun)
+	// Workflow Instances
+	router.HandleFunc("POST /api/v1/workflows/definitions/{id}/instantiate", h.InstantiateWorkflow)
+	router.HandleFunc("GET /api/v1/workflows/instances", h.ListInstances)
+	router.HandleFunc("GET /api/v1/workflows/instances/{id}", h.GetInstance)
+	router.HandleFunc("POST /api/v1/workflows/instances/{id}/cancel", h.CancelInstance)
 
-	return router
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"healthy","service":"workflow-service"}`))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ready","service":"workflow-service"}`))
+	// Trigger & Dashboard
+	router.HandleFunc("POST /api/v1/workflows/trigger", h.TriggerWorkflow)
+	router.HandleFunc("GET /api/v1/workflows/dashboard", h.GetDashboard)
 }

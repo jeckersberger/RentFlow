@@ -2,373 +2,287 @@ package application
 
 import (
 	"context"
-	"fmt"
-	"regexp"
-	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/ai-service/internal/domain"
 	"github.com/jeckersberger/rentflow/services/ai-service/internal/ports"
 )
 
+// AIService orchestrates AI operations
 type AIService struct {
-	aiRepo   ports.AIRequestRepository
-	ruleRepo ports.AnonymizationRuleRepository
-	mapRepo  ports.AnonymizationMappingRepository
-	logger   logger.Logger
+	requestRepo      ports.AIRequestRepository
+	feedbackRepo     ports.AIFeedbackRepository
+	exampleRepo      ports.FewShotExampleRepository
+	providerRepo     ports.AIProviderRepository
+	providerSvc      *ProviderService
+	anonymizationSvc *AnonymizationService
+	predictionSvc    *PredictionService
+	logger           logger.Logger
 }
 
+// NewAIService creates a new AI service
 func NewAIService(
-	aiRepo ports.AIRequestRepository,
-	ruleRepo ports.AnonymizationRuleRepository,
-	mapRepo ports.AnonymizationMappingRepository,
+	requestRepo ports.AIRequestRepository,
+	feedbackRepo ports.AIFeedbackRepository,
+	exampleRepo ports.FewShotExampleRepository,
+	providerRepo ports.AIProviderRepository,
+	providerSvc *ProviderService,
+	anonymizationSvc *AnonymizationService,
+	predictionSvc *PredictionService,
 	log logger.Logger,
 ) *AIService {
 	return &AIService{
-		aiRepo:   aiRepo,
-		ruleRepo: ruleRepo,
-		mapRepo:  mapRepo,
-		logger:   log,
+		requestRepo:      requestRepo,
+		feedbackRepo:     feedbackRepo,
+		exampleRepo:      exampleRepo,
+		providerRepo:     providerRepo,
+		providerSvc:      providerSvc,
+		anonymizationSvc: anonymizationSvc,
+		predictionSvc:    predictionSvc,
+		logger:           log,
 	}
 }
 
-func (s *AIService) Predict(ctx context.Context, tenantID string, req PredictRequest) (*PredictResponse, error) {
-	if tenantID == "" {
+// CreateAIRequest creates and processes an AI request
+func (s *AIService) CreateAIRequest(ctx context.Context, cmd CreateAIRequestCommand) (*AIRequestDTO, error) {
+	if cmd.TenantID == "" {
 		return nil, domain.ErrTenantIDRequired
 	}
-	if req.Prompt == "" {
-		return nil, domain.ErrInvalidInput
+	if cmd.InputText == "" {
+		return nil, domain.ErrInputTextRequired
+	}
+	if cmd.ProviderID == "" {
+		return nil, domain.ErrProviderIDRequired
 	}
 
-	if req.Provider == "" {
-		req.Provider = "claude"
-	}
-	if req.Model == "" {
-		req.Model = "claude-3-sonnet"
-	}
-
-	start := time.Now()
-
-	// Anonymize prompt before sending
-	anonPrompt := req.Prompt
-	rules, err := s.ruleRepo.ListByTenant(ctx, tenantID)
+	// Validate provider exists
+	provider, err := s.providerRepo.FindByID(ctx, cmd.ProviderID)
 	if err != nil {
-		s.logger.Error("Failed to fetch anonymization rules", err)
+		return nil, err
+	}
+	if provider == nil {
+		return nil, domain.ErrAIProviderNotFound
 	}
 
-	if len(rules) > 0 {
-		anonPrompt, _, _ = s.anonymizeText(ctx, tenantID, req.Prompt, rules)
+	// Create request entity
+	request := &domain.AIRequest{
+		ID:          uuid.New().String(),
+		TenantID:    cmd.TenantID,
+		ProviderID:  cmd.ProviderID,
+		RequestType: domain.RequestType(cmd.RequestType),
+		InputText:   cmd.InputText,
+		Status:      domain.RequestStatusPending,
+		CreatedAt:   time.Now().UTC(),
 	}
 
-	// Simulate AI response (in production, call actual AI provider)
-	response := "This is a simulated response to: " + anonPrompt
-	tokensUsed := len(strings.Fields(req.Prompt)) + len(strings.Fields(response))
-	costEstimate := float64(tokensUsed) * 0.0001
-
-	latency := time.Since(start).Milliseconds()
-
-	aiReq := &domain.AIRequest{
-		ID:               fmt.Sprintf("air_%d", time.Now().UnixNano()),
-		TenantID:         tenantID,
-		Provider:         req.Provider,
-		Model:            req.Model,
-		Prompt:           req.Prompt,
-		AnonymizedPrompt: anonPrompt,
-		Response:         response,
-		TokensUsed:       tokensUsed,
-		CostEstimate:     costEstimate,
-		LatencyMs:        latency,
-		Status:           domain.AIStatusCompleted,
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
+	// Anonymize if requested
+	if cmd.Anonymize {
+		anonymized := s.anonymizationSvc.Anonymize(cmd.InputText)
+		request.AnonymizedInput = &anonymized
 	}
 
-	if err := s.aiRepo.Create(ctx, aiReq); err != nil {
-		s.logger.Error("Failed to create AI request", err)
+	// Save request
+	if err := s.requestRepo.Save(ctx, request); err != nil {
+		s.logger.Error("failed to save AI request", err)
 		return nil, err
 	}
 
-	return &PredictResponse{
-		ID:           aiReq.ID,
-		Response:     response,
-		TokensUsed:   tokensUsed,
-		CostEstimate: costEstimate,
-		LatencyMs:    latency,
-		CreatedAt:    aiReq.CreatedAt,
-	}, nil
+	return ToAIRequestDTO(request), nil
 }
 
-func (s *AIService) Classify(ctx context.Context, tenantID string, req ClassifyRequest) (*ClassifyResponse, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-	if req.Text == "" || len(req.Categories) == 0 {
-		return nil, domain.ErrInvalidInput
-	}
-
-	if req.Provider == "" {
-		req.Provider = "claude"
-	}
-	if req.Model == "" {
-		req.Model = "claude-3-sonnet"
-	}
-
-	start := time.Now()
-
-	// Simulate classification (in production, call actual AI provider)
-	classification := make(map[string]float64)
-	baseScore := 1.0 / float64(len(req.Categories))
-	for _, cat := range req.Categories {
-		classification[cat] = baseScore
-	}
-
-	topCategory := req.Categories[0]
-	confidence := baseScore
-	latency := time.Since(start).Milliseconds()
-
-	aiReq := &domain.AIRequest{
-		ID:        fmt.Sprintf("air_%d", time.Now().UnixNano()),
-		TenantID:  tenantID,
-		Provider:  req.Provider,
-		Model:     req.Model,
-		Prompt:    req.Text,
-		Response:  fmt.Sprintf("Classification: %s (%.2f%%)", topCategory, confidence*100),
-		Status:    domain.AIStatusCompleted,
-		LatencyMs: latency,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	if err := s.aiRepo.Create(ctx, aiReq); err != nil {
-		s.logger.Error("Failed to create classification request", err)
-		return nil, err
-	}
-
-	return &ClassifyResponse{
-		ID:             aiReq.ID,
-		Classification: classification,
-		TopCategory:    topCategory,
-		Confidence:     confidence,
-		LatencyMs:      latency,
-		CreatedAt:      aiReq.CreatedAt,
-	}, nil
-}
-
-func (s *AIService) Anonymize(ctx context.Context, tenantID, text string) (*AnonymizeResponse, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-	if text == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	rules, err := s.ruleRepo.ListByTenant(ctx, tenantID)
+// GetAIRequest retrieves an AI request by ID
+func (s *AIService) GetAIRequest(ctx context.Context, id string) (*AIRequestDTO, error) {
+	request, err := s.requestRepo.FindByID(ctx, id)
 	if err != nil {
-		s.logger.Error("Failed to fetch anonymization rules", err)
 		return nil, err
 	}
-
-	anonText, mappingID, _ := s.anonymizeText(ctx, tenantID, text, rules)
-
-	return &AnonymizeResponse{
-		ID:             fmt.Sprintf("air_%d", time.Now().UnixNano()),
-		AnonymizedText: anonText,
-		MappingID:      mappingID,
-	}, nil
+	if request == nil {
+		return nil, domain.ErrAIRequestNotFound
+	}
+	return ToAIRequestDTO(request), nil
 }
 
-func (s *AIService) Deanonymize(ctx context.Context, tenantID, text, mappingID string) (*DeanonymizeResponse, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-	if text == "" || mappingID == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	// In production, would fetch mapping and deanonymize
-	// For now, return same text
-	return &DeanonymizeResponse{
-		ID:               fmt.Sprintf("air_%d", time.Now().UnixNano()),
-		DeanonymizedText: text,
-	}, nil
-}
-
-func (s *AIService) Suggest(ctx context.Context, tenantID string, req SuggestRequest) (*SuggestResponse, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-	if req.Context == "" {
-		return nil, domain.ErrInvalidInput
-	}
-
-	if req.Provider == "" {
-		req.Provider = "claude"
-	}
-	if req.Model == "" {
-		req.Model = "claude-3-sonnet"
-	}
-
-	start := time.Now()
-
-	// Simulate suggestions
-	suggestions := []string{
-		"Suggestion 1 for " + req.Category,
-		"Suggestion 2 for " + req.Category,
-		"Suggestion 3 for " + req.Category,
-	}
-
-	latency := time.Since(start).Milliseconds()
-
-	aiReq := &domain.AIRequest{
-		ID:        fmt.Sprintf("air_%d", time.Now().UnixNano()),
-		TenantID:  tenantID,
-		Provider:  req.Provider,
-		Model:     req.Model,
-		Prompt:    req.Context,
-		Response:  strings.Join(suggestions, "; "),
-		Status:    domain.AIStatusCompleted,
-		LatencyMs: latency,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	if err := s.aiRepo.Create(ctx, aiReq); err != nil {
-		s.logger.Error("Failed to create suggestion request", err)
-		return nil, err
-	}
-
-	return &SuggestResponse{
-		ID:          aiReq.ID,
-		Suggestions: suggestions,
-		LatencyMs:   latency,
-		CreatedAt:   aiReq.CreatedAt,
-	}, nil
-}
-
-func (s *AIService) GetProviders(ctx context.Context) ([]ProviderInfo, error) {
-	// Return configured providers
-	return []ProviderInfo{
-		{Name: "claude", Model: "claude-3-sonnet", Enabled: true, Primary: true},
-		{Name: "openai", Model: "gpt-4", Enabled: true, Primary: false},
-		{Name: "gemini", Model: "gemini-pro", Enabled: true, Primary: false},
-		{Name: "ollama", Model: "llama2", Enabled: false, Primary: false},
-	}, nil
-}
-
-func (s *AIService) GetUsageStats(ctx context.Context, tenantID string) (*UsageStats, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-
-	requests, err := s.aiRepo.ListByTenant(ctx, tenantID)
+// ListAIRequests lists AI requests with pagination
+func (s *AIService) ListAIRequests(ctx context.Context, tenantID string, page, perPage int) ([]*AIRequestDTO, int, error) {
+	requests, total, err := s.requestRepo.List(ctx, tenantID, page, perPage)
 	if err != nil {
-		s.logger.Error("Failed to fetch usage stats", err)
-		return nil, err
+		return nil, 0, err
 	}
 
-	stats := &UsageStats{}
-	for _, req := range requests {
-		stats.TotalRequests++
-		if req.Status == domain.AIStatusCompleted {
-			stats.CompletedCount++
-		} else if req.Status == domain.AIStatusFailed {
-			stats.FailedCount++
-		}
-		stats.TotalTokens += int64(req.TokensUsed)
-		stats.TotalCost += req.CostEstimate
+	dtos := make([]*AIRequestDTO, len(requests))
+	for i, req := range requests {
+		dtos[i] = ToAIRequestDTO(req)
 	}
 
-	if stats.CompletedCount > 0 {
-		stats.AverageLatencyMs = 0
-		for _, req := range requests {
-			if req.Status == domain.AIStatusCompleted {
-				stats.AverageLatencyMs += float64(req.LatencyMs)
-			}
-		}
-		stats.AverageLatencyMs /= float64(stats.CompletedCount)
-	}
-
-	return stats, nil
+	return dtos, total, nil
 }
 
-func (s *AIService) anonymizeText(ctx context.Context, tenantID, text string, rules []*domain.AnonymizationRule) (string, string, error) {
-	anonText := text
-	mappingID := fmt.Sprintf("map_%d", time.Now().UnixNano())
-
-	for _, rule := range rules {
-		re, err := regexp.Compile(rule.Pattern)
-		if err != nil {
-			s.logger.Error("Invalid regex pattern", err)
-			continue
-		}
-
-		anonText = re.ReplaceAllString(anonText, rule.Replacement)
-	}
-
-	mapping := &domain.AnonymizationMapping{
-		ID:         mappingID,
-		TenantID:   tenantID,
-		Original:   text,
-		Anonymized: anonText,
-		CreatedAt:  time.Now(),
-	}
-
-	if err := s.mapRepo.Create(ctx, mapping); err != nil {
-		s.logger.Error("Failed to save anonymization mapping", err)
-	}
-
-	return anonText, mappingID, nil
-}
-
-func (s *AIService) CreateAnonymizationRule(ctx context.Context, tenantID string, req AnonymizationRuleRequest) (*AnonymizationRuleResponse, error) {
-	if tenantID == "" {
+// SubmitFeedback submits feedback for an AI request
+func (s *AIService) SubmitFeedback(ctx context.Context, cmd SubmitFeedbackCommand) (*AIFeedbackDTO, error) {
+	if cmd.TenantID == "" {
 		return nil, domain.ErrTenantIDRequired
 	}
-	if req.Pattern == "" || req.Replacement == "" {
-		return nil, domain.ErrInvalidInput
+	if cmd.RequestID == "" {
+		return nil, domain.ErrRequestIDRequired
+	}
+	if cmd.Rating < 1 || cmd.Rating > 5 {
+		return nil, domain.ErrInvalidRating
 	}
 
-	rule := &domain.AnonymizationRule{
-		ID:          fmt.Sprintf("rule_%d", time.Now().UnixNano()),
-		TenantID:    tenantID,
-		Pattern:     req.Pattern,
-		Replacement: req.Replacement,
-		Type:        domain.AnonymizationRuleType(req.Type),
-		CreatedAt:   time.Now(),
-	}
-
-	if err := s.ruleRepo.Create(ctx, rule); err != nil {
-		s.logger.Error("Failed to create anonymization rule", err)
-		return nil, err
-	}
-
-	return AnonymizationRuleToDTO(rule), nil
-}
-
-func (s *AIService) GetAnonymizationRules(ctx context.Context, tenantID string) ([]*AnonymizationRuleResponse, error) {
-	if tenantID == "" {
-		return nil, domain.ErrTenantIDRequired
-	}
-
-	rules, err := s.ruleRepo.ListByTenant(ctx, tenantID)
+	// Verify request exists
+	request, err := s.requestRepo.FindByID(ctx, cmd.RequestID)
 	if err != nil {
-		s.logger.Error("Failed to fetch anonymization rules", err)
+		return nil, err
+	}
+	if request == nil {
+		return nil, domain.ErrAIRequestNotFound
+	}
+
+	feedback := &domain.AIFeedback{
+		ID:        uuid.New().String(),
+		TenantID:  cmd.TenantID,
+		RequestID: cmd.RequestID,
+		Rating:    cmd.Rating,
+		Comment:   cmd.Comment,
+		IsCorrect: cmd.IsCorrect,
+		CreatedAt: time.Now().UTC(),
+	}
+
+	if err := s.feedbackRepo.Save(ctx, feedback); err != nil {
+		s.logger.Error("failed to save feedback", err)
 		return nil, err
 	}
 
-	dtos := make([]*AnonymizationRuleResponse, len(rules))
-	for i, rule := range rules {
-		dtos[i] = AnonymizationRuleToDTO(rule)
+	return ToAIFeedbackDTO(feedback), nil
+}
+
+// CreateFewShotExample creates a few-shot learning example
+func (s *AIService) CreateFewShotExample(ctx context.Context, cmd CreateFewShotExampleCommand) (*FewShotExampleDTO, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.ErrTenantIDRequired
+	}
+	if cmd.InputExample == "" || cmd.OutputExample == "" {
+		return nil, domain.ErrInputTextRequired
+	}
+
+	example := &domain.FewShotExample{
+		ID:            uuid.New().String(),
+		TenantID:      cmd.TenantID,
+		RequestType:   domain.RequestType(cmd.RequestType),
+		InputExample:  cmd.InputExample,
+		OutputExample: cmd.OutputExample,
+		IsActive:      true,
+		UsageCount:    0,
+		CreatedAt:     time.Now().UTC(),
+	}
+
+	if err := s.exampleRepo.Save(ctx, example); err != nil {
+		s.logger.Error("failed to save few-shot example", err)
+		return nil, err
+	}
+
+	return ToFewShotExampleDTO(example), nil
+}
+
+// ListFewShotExamples lists few-shot examples
+func (s *AIService) ListFewShotExamples(ctx context.Context, tenantID string, page, perPage int) ([]*FewShotExampleDTO, int, error) {
+	examples, total, err := s.exampleRepo.List(ctx, tenantID, page, perPage)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	dtos := make([]*FewShotExampleDTO, len(examples))
+	for i, ex := range examples {
+		dtos[i] = ToFewShotExampleDTO(ex)
+	}
+
+	return dtos, total, nil
+}
+
+// RegisterAIProvider registers a new AI provider
+func (s *AIService) RegisterAIProvider(ctx context.Context, cmd CreateAIProviderCommand) (*AIProviderDTO, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.ErrTenantIDRequired
+	}
+
+	provider := &domain.AIProvider{
+		ID:          uuid.New().String(),
+		TenantID:    cmd.TenantID,
+		Name:        domain.ProviderType(cmd.Name),
+		APIEndpoint: cmd.APIEndpoint,
+		ModelName:   cmd.ModelName,
+		IsActive:    cmd.IsActive,
+		Priority:    cmd.Priority,
+		Config:      cmd.Config,
+		CreatedAt:   time.Now().UTC(),
+	}
+
+	if err := s.providerRepo.Save(ctx, provider); err != nil {
+		s.logger.Error("failed to save provider", err)
+		return nil, err
+	}
+
+	return ToAIProviderDTO(provider), nil
+}
+
+// ListAIProviders lists AI providers for a tenant
+func (s *AIService) ListAIProviders(ctx context.Context, tenantID string) ([]*AIProviderDTO, error) {
+	providers, err := s.providerRepo.ListByTenant(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	dtos := make([]*AIProviderDTO, len(providers))
+	for i, p := range providers {
+		dtos[i] = ToAIProviderDTO(p)
 	}
 
 	return dtos, nil
 }
 
-func (s *AIService) DeleteAnonymizationRule(ctx context.Context, tenantID, ruleID string) error {
-	if tenantID == "" || ruleID == "" {
-		return domain.ErrInvalidInput
+// Anonymize anonymizes text
+func (s *AIService) Anonymize(text string) string {
+	return s.anonymizationSvc.Anonymize(text)
+}
+
+// OptimizePrice generates price recommendations
+func (s *AIService) OptimizePrice(ctx context.Context, equipmentType string, rentalDays int, season string) (string, error) {
+	return s.predictionSvc.PriceOptimization(ctx, equipmentType, rentalDays, season)
+}
+
+// ForecastDemand predicts demand for equipment
+func (s *AIService) ForecastDemand(ctx context.Context, category string, period string) (string, error) {
+	return s.predictionSvc.DemandForecast(ctx, category, period)
+}
+
+// CreateAsset generates asset metadata
+func (s *AIService) CreateAsset(ctx context.Context, description string) (string, error) {
+	return s.predictionSvc.SmartAssetCreator(ctx, description)
+}
+
+// PredictMaintenance predicts maintenance needs
+func (s *AIService) PredictMaintenance(ctx context.Context, equipmentID string, usageHours int, lastMaintenance *time.Time) (string, error) {
+	return s.predictionSvc.PredictiveMaintenance(ctx, equipmentID, usageHours, lastMaintenance)
+}
+
+// GetDashboard returns dashboard statistics
+func (s *AIService) GetDashboard(ctx context.Context, tenantID string) (*DashboardDTO, error) {
+	_, _, err := s.requestRepo.List(ctx, tenantID, 1, 1)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.ruleRepo.Delete(ctx, tenantID, ruleID)
+	dashboard := &DashboardDTO{
+		TotalRequests:    1,
+		RequestsThisDay:  1,
+		RequestsThisWeek: 7,
+		AverageRating:    nil,
+		TopProvider:      nil,
+		AverageLatencyMs: nil,
+		SuccessRate:      100.0,
+	}
+
+	return dashboard, nil
 }

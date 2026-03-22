@@ -1,11 +1,11 @@
 package domain
 
-import "fmt"
+import "errors"
 
 var (
-	ErrNotificationNotFound = fmt.Errorf("notification not found")
-	ErrPreferenceNotFound   = fmt.Errorf("preference not found")
-	ErrTenantIDRequired     = fmt.Errorf("tenant ID is required")
-	ErrInvalidInput         = fmt.Errorf("invalid input")
-	ErrUnauthorized         = fmt.Errorf("unauthorized")
+	ErrNotificationNotFound = errors.New("notification not found")
+	ErrChannelNotFound      = errors.New("channel not found")
+	ErrPreferenceNotFound   = errors.New("preference not found")
+	ErrInvalidInput         = errors.New("invalid input")
+	ErrDatabaseError        = errors.New("database error")
 )

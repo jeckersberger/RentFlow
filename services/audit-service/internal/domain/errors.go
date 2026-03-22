@@ -1,10 +1,12 @@
 package domain
 
-import "fmt"
+import "errors"
 
 var (
-	ErrAuditEntryNotFound = fmt.Errorf("audit entry not found")
-	ErrIntegrityViolation = fmt.Errorf("integrity violation detected")
-	ErrTenantIDRequired   = fmt.Errorf("tenant ID is required")
-	ErrInvalidInput       = fmt.Errorf("invalid input")
+	ErrAuditEntryNotFound = errors.New("audit entry not found")
+	ErrExportNotFound     = errors.New("export not found")
+	ErrInvalidInput       = errors.New("invalid input")
+	ErrDatabaseError      = errors.New("database error")
+	ErrChecksumMismatch   = errors.New("checksum mismatch detected")
+	ErrInvalidExportType  = errors.New("invalid export type")
 )

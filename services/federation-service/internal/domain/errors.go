@@ -1,35 +1,19 @@
 package domain
 
-import "fmt"
+import "errors"
 
 var (
-	ErrPeerNotFound         = fmt.Errorf("peer not found")
-	ErrEquipmentNotFound    = fmt.Errorf("equipment not found")
-	ErrShareRequestNotFound = fmt.Errorf("share request not found")
-	ErrInvalidPeerStatus    = fmt.Errorf("invalid peer status")
-	ErrTenantIDRequired     = fmt.Errorf("tenant ID is required")
-	ErrInvalidInput         = fmt.Errorf("invalid input")
-	ErrUnauthorized         = fmt.Errorf("unauthorized")
-	ErrPeerBlocked          = fmt.Errorf("peer is blocked")
+	ErrPartnerNotFound         = errors.New("federation partner not found")
+	ErrRequestNotFound         = errors.New("sub-rental request not found")
+	ErrCertificateNotFound     = errors.New("certificate not found")
+	ErrPartnerAlreadyExists    = errors.New("partner already exists")
+	ErrInvalidPartnerStatus    = errors.New("invalid partner status")
+	ErrInvalidTrustLevel       = errors.New("invalid trust level")
+	ErrInvalidRequestStatus    = errors.New("invalid request status")
+	ErrPartnerSuspended        = errors.New("partner is suspended")
+	ErrPartnerRevoked          = errors.New("partner has been revoked")
+	ErrInvalidCertificate      = errors.New("invalid certificate")
+	ErrCertificateExpired      = errors.New("certificate expired")
+	ErrDataSovereigntyViolated = errors.New("data sovereignty policy violated")
+	ErrUnauthorizedAccess      = errors.New("unauthorized access to partner data")
 )
-
-type DomainError struct {
-	Code    string
-	Message string
-	Err     error
-}
-
-func (e *DomainError) Error() string {
-	if e.Err != nil {
-		return fmt.Sprintf("[%s] %s: %v", e.Code, e.Message, e.Err)
-	}
-	return fmt.Sprintf("[%s] %s", e.Code, e.Message)
-}
-
-func NewDomainError(code, message string, err error) *DomainError {
-	return &DomainError{
-		Code:    code,
-		Message: message,
-		Err:     err,
-	}
-}
