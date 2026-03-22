@@ -761,4 +761,32 @@ export const adminApi = {
       : api.put('/api/v1/admin/settings', data).then(res => res.data),
 }
 
-export default api
+
+// ============================================================================
+// Setup Service
+// ============================================================================
+export interface SetupRequest {
+  company_name: string
+  company_address: string
+  company_slug: string
+  currency: string
+  tax_rate: number
+  invoice_prefix: string
+  admin_email: string
+  admin_password: string
+  admin_name: string
+  language: string
+  setup_token: string
+}
+
+export const setupApi = {
+  getStatus: () =>
+    MOCK_MODE
+      ? mockDelay({ is_completed: false, has_setup_token: true })
+      : api.get('/api/v1/setup/status').then(res => res.data),
+
+  complete: (data: SetupRequest) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, message: 'Setup completed successfully' })
+      : api.post('/api/v1/setup/complete', data).then(res => res.data),
+}

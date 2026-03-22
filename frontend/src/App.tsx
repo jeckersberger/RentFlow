@@ -9,6 +9,7 @@ import MainLayout from './components/Layout/MainLayout'
 import { ToastContainer } from './components/Toast/Toast'
 import { CommandPalette } from './components/CommandPalette/CommandPalette'
 import LoginPage from './pages/Login'
+import SetupWizard from './pages/Setup/SetupWizard'
 import DashboardPage from './pages/Dashboard'
 
 // Equipment Pages
@@ -94,6 +95,7 @@ function App() {
       <Theme appearance={isDarkMode ? 'dark' : 'light'} accentColor="cyan" grayColor="slate" panelBackground="translucent">
         <BrowserRouter>
           <Routes>
+          <Route path="/setup" element={<SetupWizard />} />
           <Route path="/login" element={<LoginPage />} />
 
           <Route

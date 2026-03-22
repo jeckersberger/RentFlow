@@ -87,6 +87,15 @@ func main() {
 	// Create services
 	userService := application.NewUserService(userRepo, tenantRepo, tokenMgr, log)
 	tenantService := application.NewTenantService(tenantRepo, log)
+	setupService := application.NewSetupService(db, userService, tenantService, log)
+
+	// Initialize setup state and log setup token
+	setupToken, err := setupService.InitializeSetupState(context.Background())
+	if err != nil {
+		log.Error("failed to initialize setup state", err)
+	} else if setupToken != "" {
+		log.Info("Setup wizard token (use this to complete initial setup)", "token", setupToken)
+	}
 
 	// Seed superadmin if configured
 	seedSuperadmin(db, userRepo, tenantRepo, userService, log)
@@ -102,12 +111,16 @@ func main() {
 	router.HandleFunc("GET /api/v1/auth/.well-known/jwks", jwksHandler(tokenMgr, log))
 
 	// Setup API routes
-	authhttp.SetupRoutes(router, userService, tenantService, tokenMgr, sessionMgr, log)
+	authhttp.SetupRoutes(router, userService, tenantService, setupService, tokenMgr, sessionMgr, log)
+
+	// Wrap router with setup guard middleware
+	setupGuardMiddleware := authhttp.SetupGuardMiddleware(setupService, log)
+	handlerWithSetupGuard := setupGuardMiddleware(router)
 
 	// Create HTTP server
 	srv := &nethttp.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
-		Handler:      router,
+		Handler:      handlerWithSetupGuard,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

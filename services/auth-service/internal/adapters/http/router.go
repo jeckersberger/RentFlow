@@ -23,15 +23,20 @@ func SetupRoutes(
 	mux *http.ServeMux,
 	userService *application.UserService,
 	tenantService *application.TenantService,
+	setupService *application.SetupService,
 	tokenMgr *application.TokenManager,
 	sessionMgr *application.SessionManager,
 	log logger.Logger,
 ) {
-	handlers := NewHandlers(userService, tenantService, log)
+	handlers := NewHandlers(userService, tenantService, setupService, log)
 	handlers.sessionMgr = sessionMgr
 
 	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login
 	loginRateLimiter := NewRateLimiter(10, 1*time.Minute, log)
+
+	// Setup routes (no authentication required, always accessible)
+	mux.HandleFunc("GET /api/v1/setup/status", handlers.GetSetupStatus)
+	mux.HandleFunc("POST /api/v1/setup/complete", handlers.CompleteSetup)
 
 	// Auth routes (no authentication required)
 	// Login mit Rate-Limiting und Brute-Force-Schutz

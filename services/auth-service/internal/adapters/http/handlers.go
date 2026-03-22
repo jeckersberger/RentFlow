@@ -17,6 +17,7 @@ import (
 type Handlers struct {
 	userService   *application.UserService
 	tenantService *application.TenantService
+	setupService  *application.SetupService
 	sessionMgr    *application.SessionManager
 	logger        logger.Logger
 }
@@ -25,11 +26,13 @@ type Handlers struct {
 func NewHandlers(
 	userService *application.UserService,
 	tenantService *application.TenantService,
+	setupService *application.SetupService,
 	log logger.Logger,
 ) *Handlers {
 	return &Handlers{
 		userService:   userService,
 		tenantService: tenantService,
+		setupService:  setupService,
 		logger:        log,
 	}
 }
@@ -595,4 +598,63 @@ func extractIPFromRequest(r *http.Request) string {
 		return parts[0]
 	}
 	return r.RemoteAddr
+}
+
+// GetSetupStatus returns the current setup status
+func (h *Handlers) GetSetupStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	status, err := h.setupService.GetStatus(r.Context())
+	if err != nil {
+		h.logger.Error("failed to get setup status", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    status,
+		"message": "Setup status retrieved successfully",
+	})
+}
+
+// CompleteSetup completes the one-time setup wizard
+func (h *Handlers) CompleteSetup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	var req application.SetupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	// Validate required fields
+	if req.CompanyName == "" || req.CompanySlug == "" || req.AdminEmail == "" || req.AdminPassword == "" || req.SetupToken == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_REQUIRED_FIELDS", "Missing required fields")
+		return
+	}
+
+	if err := h.setupService.CompleteSetup(r.Context(), req); err != nil {
+		switch err {
+		case application.ErrSetupAlreadyCompleted:
+			writeError(w, http.StatusForbidden, "SETUP_ALREADY_COMPLETED", "Setup is already completed")
+		case application.ErrInvalidSetupToken:
+			writeError(w, http.StatusUnauthorized, "INVALID_SETUP_TOKEN", "Invalid setup token")
+		case domain.ErrWeakPassword:
+			writeError(w, http.StatusBadRequest, "WEAK_PASSWORD", "Password does not meet requirements")
+		default:
+			h.logger.Error("setup error", err)
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Setup completed successfully",
+	})
 }

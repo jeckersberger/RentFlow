@@ -293,3 +293,15 @@ func (u *User) ShouldAutoUnlock() bool {
 func (u *User) Apply(event events.EventData) {
 	u.Changes = append(u.Changes, event)
 }
+
+// RolesToString converts a slice of roles to a comma-separated string for storage
+func RolesToString(roles []string) string {
+	result := ""
+	for i, role := range roles {
+		if i > 0 {
+			result += ","
+		}
+		result += role
+	}
+	return result
+}
