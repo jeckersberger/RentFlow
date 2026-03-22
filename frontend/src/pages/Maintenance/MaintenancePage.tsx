@@ -86,8 +86,9 @@ function MaintenancePage() {
   const isLoading = tasksLoading || eChecksLoading || plansLoading
 
   const now = new Date()
-  const overdueTasks = tasks.filter(t => new Date(t.due_date) < now && t.status === 'pending')
+  const overdueTasks = tasks.filter(t => t.due_date && new Date(t.due_date) < now && (t.status === 'pending' || t.status === 'overdue'))
   const dueTasks = tasks.filter(t => {
+    if (!t.due_date) return false
     const dueDate = new Date(t.due_date)
     return dueDate >= now && dueDate <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) && t.status === 'pending'
   })
@@ -108,9 +109,10 @@ function MaintenancePage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A'
     const date = new Date(dateString)
-    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
   }
 
   if (isLoading) {
@@ -331,9 +333,10 @@ function MaintenancePage() {
           ) : (
             <div className="calendar-list">
               {activePlans
-                .sort((a, b) => new Date(a.next_maintenance).getTime() - new Date(b.next_maintenance).getTime())
+                .filter(p => p.next_maintenance)
+                .sort((a, b) => new Date(a.next_maintenance!).getTime() - new Date(b.next_maintenance!).getTime())
                 .map(plan => {
-                  const nextDate = new Date(plan.next_maintenance)
+                  const nextDate = new Date(plan.next_maintenance!)
                   const daysUntil = Math.ceil((nextDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
                   return (

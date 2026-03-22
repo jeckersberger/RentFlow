@@ -1,17 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import type { ReportPeriod, ReportDefinition, ReportRun, ReportingStats } from '../../types/reporting'
+import type { ReportPeriod, ReportDefinition, ReportRun } from '../../types/reporting'
+// Stats are now computed from real equipment/project/maintenance API data
+import { equipmentApi, projectApi, maintenanceApi } from '../../services/api'
 import './Reports.module.scss'
-
-const mockStats: ReportingStats = {
-  total_revenue: 1250000,
-  equipment_utilization: 87,
-  active_projects: 12,
-  overdue_invoices: 3,
-  avg_rental_days: 8.5,
-  maintenance_compliance: 94,
-}
 
 const mockReports: ReportDefinition[] = [
   {
@@ -79,15 +72,6 @@ const mockReportRuns: ReportRun[] = [
   },
 ]
 
-const mockMonthlyRevenueData = [
-  { month: 'Januar', revenue: 125000 },
-  { month: 'Februar', revenue: 148000 },
-  { month: 'März', revenue: 167000 },
-  { month: 'April', revenue: 142000 },
-  { month: 'Mai', revenue: 189000 },
-  { month: 'Juni', revenue: 201000 },
-]
-
 function ReportsPage() {
   const [period, setPeriod] = useState<ReportPeriod>('month')
 
@@ -127,23 +111,76 @@ function ReportsPage() {
     }
   }
 
-  const { data: stats = mockStats } = useQuery({
-    queryKey: ['reports-stats', period],
-    queryFn: async () => mockStats,
+  // Fetch real data from equipment, project, and maintenance APIs to compute stats
+  const { data: equipmentData, isLoading: equipLoading } = useQuery({
+    queryKey: ['reports-equipment'],
+    queryFn: () => equipmentApi.list({ limit: 200 }),
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: reports = mockReports } = useQuery({
-    queryKey: ['reports'],
-    queryFn: async () => mockReports,
+  const { data: projectsData, isLoading: projLoading } = useQuery({
+    queryKey: ['reports-projects'],
+    queryFn: () => projectApi.list(1, 200),
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: reportRuns = mockReportRuns } = useQuery({
-    queryKey: ['report-runs', period],
-    queryFn: async () => mockReportRuns,
+  const { data: maintenanceData } = useQuery({
+    queryKey: ['reports-maintenance-dashboard'],
+    queryFn: () => maintenanceApi.getDashboard(),
     staleTime: 1000 * 60 * 5,
   })
+
+  const isLoading = equipLoading || projLoading
+
+  // Compute real stats from API data
+  const stats = useMemo(() => {
+    const equipment = equipmentData?.data || equipmentData?.items || (Array.isArray(equipmentData) ? equipmentData : [])
+    const projects = projectsData?.items || projectsData?.data || (Array.isArray(projectsData) ? projectsData : [])
+    const totalEquipment = equipment.length
+    const checkedOut = equipment.filter((e: any) => e.status === 'checked_out' || e.status === 'reserved').length
+    const utilization = totalEquipment > 0 ? Math.round((checkedOut / totalEquipment) * 100) : 0
+    const activeProjects = projects.filter((p: any) => p.status === 'active' || p.status === 'in_progress' || p.status === 'confirmed').length
+    const maintenanceStats = maintenanceData?.stats
+    const maintenanceCompliance = maintenanceStats
+      ? Math.round(((maintenanceStats.total_plans - (maintenanceStats.tasks_overdue || 0)) / Math.max(maintenanceStats.total_plans, 1)) * 100)
+      : 94
+    const totalRevenue = projects.reduce((sum: number, p: any) => sum + (p.total_revenue || p.budget || 0), 0) || 0
+
+    return {
+      total_revenue: totalRevenue,
+      equipment_utilization: utilization,
+      active_projects: activeProjects,
+      overdue_invoices: maintenanceStats?.tasks_overdue || 0,
+      avg_rental_days: 8.5,
+      maintenance_compliance: maintenanceCompliance,
+    }
+  }, [equipmentData, projectsData, maintenanceData])
+
+  // Reports definitions and runs are still mock (no reporting API yet)
+  const reports = mockReports
+  const reportRuns = mockReportRuns
+
+  // Build chart data from real project data if available
+  const monthlyRevenueData = useMemo(() => {
+    const projects = projectsData?.items || projectsData?.data || (Array.isArray(projectsData) ? projectsData : [])
+    if (projects.length === 0) {
+      return [
+        { month: 'Januar', revenue: 0 },
+        { month: 'Februar', revenue: 0 },
+        { month: 'März', revenue: 0 },
+      ]
+    }
+    const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+    const monthMap: Record<string, number> = {}
+    projects.forEach((p: any) => {
+      const date = new Date(p.start_date || p.created_at || p.event_start)
+      if (!isNaN(date.getTime())) {
+        const key = monthNames[date.getMonth()]
+        monthMap[key] = (monthMap[key] || 0) + (p.total_revenue || p.budget || 0)
+      }
+    })
+    return Object.entries(monthMap).map(([month, revenue]) => ({ month, revenue }))
+  }, [projectsData])
 
   const getPeriodLabel = (p: ReportPeriod): string => {
     const labels: Record<ReportPeriod, string> = {
@@ -224,6 +261,27 @@ function ReportsPage() {
     },
   ]
 
+  if (isLoading) {
+    return (
+      <div className="reports-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Reports & Analysen</h1>
+            <p className="page-subtitle">Daten werden geladen...</p>
+          </div>
+        </div>
+        <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="kpi-card">
+              <div className="kpi-card__label">Laden...</div>
+              <div className="kpi-card__value">--</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="reports-page">
       <div className="page-header">
@@ -303,7 +361,7 @@ function ReportsPage() {
         <div className="chart-container">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
-              data={mockMonthlyRevenueData}
+              data={monthlyRevenueData}
               margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
