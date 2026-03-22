@@ -174,13 +174,9 @@ function LoginPage() {
 
         <div className="login-card__footer">
           <div className="login-card__credentials">
-            <p className="login-card__credentials-title">Demo-Anmeldedaten:</p>
+            <p className="login-card__credentials-title">Melden Sie sich mit Ihrem Admin-Konto an.</p>
             <p className="login-card__credentials-text">
-              <strong>E-Mail:</strong> admin@example.com
-            </p>
-            <p className="login-card__credentials-text">
-              <strong>Passwort:</strong> password
-            </p>
+              Erstellt im Setup-Wizard beim ersten Start.</p>
           </div>
         </div>
       </div>

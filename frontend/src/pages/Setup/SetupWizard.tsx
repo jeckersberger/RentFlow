@@ -127,8 +127,8 @@ function SetupWizard() {
 
     if (!formData.admin_password?.trim()) {
       errors.admin_password = 'Passwort ist erforderlich'
-    } else if (formData.admin_password.length < 8) {
-      errors.admin_password = 'Passwort muss mindestens 8 Zeichen lang sein'
+    } else if (formData.admin_password.length < 12) {
+      errors.admin_password = 'Passwort muss mindestens 12 Zeichen lang sein'
     }
 
     if (!formData.confirmPassword?.trim()) {
@@ -428,7 +428,7 @@ function SetupWizard() {
                     setFieldErrors({ ...fieldErrors, admin_password: '' })
                   }
                 }}
-                placeholder="Mindestens 8 Zeichen"
+                placeholder="Mindestens 12 Zeichen"
                 autoComplete="new-password"
               />
               {fieldErrors.admin_password && (

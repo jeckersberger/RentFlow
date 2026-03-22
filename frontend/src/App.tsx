@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { Theme } from '@radix-ui/themes'
 import '@radix-ui/themes/styles.css'
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary'
 import { useAuthStore } from './stores/authStore'
 import { useThemeStore, initializeTheme } from './stores/themeStore'
 import { setupApi } from './services/api'
@@ -135,6 +136,7 @@ function App() {
   }, [])
 
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <Theme appearance={isDarkMode ? 'dark' : 'light'} accentColor="cyan" grayColor="slate" panelBackground="translucent">
         <BrowserRouter>
@@ -228,6 +230,7 @@ function App() {
       </BrowserRouter>
       </Theme>
     </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 

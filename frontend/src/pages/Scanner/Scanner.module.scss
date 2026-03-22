@@ -378,12 +378,68 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .scanner-sidebar {
-    grid-column: 1 / -1;
-    flex-direction: row;
+  .context-card {
+    padding: var(--spacing-5);
+    min-height: 80px;
+
+    &__icon {
+      font-size: 2rem;
+    }
+
+    &__label {
+      font-size: var(--font-size-base);
+    }
+  }
+
+  .scanner-panel {
+    padding: var(--spacing-4);
+
+    &__title {
+      font-size: var(--font-size-base);
+    }
+  }
+
+  .scanner-actions {
+    flex-direction: column;
 
     > * {
-      flex: 1;
+      min-height: 48px;
+      font-size: var(--font-size-base);
+    }
+  }
+
+  .scanner-batch-toggle {
+    min-height: 48px;
+    font-size: var(--font-size-base);
+
+    input {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  .scan-item {
+    padding: var(--spacing-4);
+
+    &__name {
+      font-size: var(--font-size-base);
+    }
+
+    &__meta {
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  .scanner-sidebar {
+    grid-column: 1 / -1;
+    flex-direction: column;
+  }
+
+  .stat-box {
+    padding: var(--spacing-4);
+
+    &__value {
+      font-size: var(--font-size-3xl);
     }
   }
 }

@@ -115,9 +115,14 @@
     padding: var(--padding-md);
     border-bottom: var(--card-border-width) solid var(--color-border);
     align-items: center;
+    transition: background-color var(--transition-fast);
 
     &:last-child {
       border-bottom: none;
+    }
+
+    &:hover {
+      background-color: var(--color-bg-hover);
     }
 
     @media (max-width: 768px) {
