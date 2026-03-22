@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
+import { maintenanceApi } from '../../services/api'
 import './Maintenance.module.scss'
 
 interface MaintenanceTask {
@@ -10,172 +11,79 @@ interface MaintenanceTask {
   equipment_name: string
   plan_id: string
   plan_name: string
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'pending' | 'planned' | 'overdue' | 'in_progress' | 'completed' | 'cancelled'
   priority: 'low' | 'medium' | 'high' | 'critical'
-  due_date: string
+  due_date?: string
+  scheduled_at?: string
   completed_date?: string
+  completed_at?: string
 }
 
 interface ECheckResult {
   id: string
   equipment_id: string
   equipment_name: string
-  result_date: string
-  status: 'pass' | 'warning' | 'fail'
-  measurements: Array<{ name: string; value: string; status: 'ok' | 'warning' | 'fail' }>
+  result_date?: string
+  test_date?: string
+  status?: 'pass' | 'warning' | 'fail'
+  result?: 'passed' | 'conditional' | 'failed'
+  measurements?: Array<{ name: string; value: string; status: 'ok' | 'warning' | 'fail' }>
+  insulation_resistance_mohm?: number
+  protective_conductor_resistance_ohm?: number
+  leakage_current_ma?: number
+  certificate_number?: string
 }
 
 interface MaintenancePlan {
   id: string
   equipment_id: string
   equipment_name: string
-  frequency: string
-  next_maintenance: string
-  status: 'active' | 'completed' | 'paused'
+  frequency?: string
+  plan_type?: string
+  interval_days?: number | null
+  interval_hours?: number | null
+  name?: string
+  next_maintenance?: string
+  next_due_at?: string
+  status?: 'active' | 'completed' | 'paused'
+  is_active?: boolean
 }
-
-// Mock data
-const mockTasks: MaintenanceTask[] = [
-  {
-    id: '1',
-    equipment_id: '1',
-    equipment_name: 'JBL VTX A12',
-    plan_id: '1',
-    plan_name: 'Vierteljährliche Kontrolle',
-    status: 'pending',
-    priority: 'critical',
-    due_date: '2026-03-15',
-  },
-  {
-    id: '2',
-    equipment_id: '3',
-    equipment_name: 'MA Lighting grandMA3',
-    plan_id: '2',
-    plan_name: 'Monatliche Kontrolle',
-    status: 'pending',
-    priority: 'high',
-    due_date: '2026-03-20',
-  },
-  {
-    id: '3',
-    equipment_id: '7',
-    equipment_name: 'Yamaha CL5',
-    plan_id: '3',
-    plan_name: 'Nach-Einsatz-Kontrolle',
-    status: 'in_progress',
-    priority: 'high',
-    due_date: '2026-03-25',
-  },
-  {
-    id: '4',
-    equipment_id: '2',
-    equipment_name: 'Shure SM58',
-    plan_id: '4',
-    plan_name: 'Halbjährliche Überprüfung',
-    status: 'completed',
-    priority: 'medium',
-    due_date: '2026-03-10',
-    completed_date: '2026-03-10',
-  },
-  {
-    id: '5',
-    equipment_id: '5',
-    equipment_name: 'Blackmagic ATEM Mini Extreme',
-    plan_id: '5',
-    plan_name: 'Vierteljährliche Kontrolle',
-    status: 'pending',
-    priority: 'medium',
-    due_date: '2026-04-05',
-  },
-]
-
-const mockEChecks: ECheckResult[] = [
-  {
-    id: '1',
-    equipment_id: '2',
-    equipment_name: 'Shure SM58',
-    result_date: '2026-03-10T10:30:00Z',
-    status: 'pass',
-    measurements: [
-      { name: 'Impedanz', value: '300 Ω', status: 'ok' },
-      { name: 'Ausgangspegel', value: '-35 dBV', status: 'ok' },
-      { name: 'Frequenzgang', value: '50-15000 Hz', status: 'ok' },
-    ],
-  },
-  {
-    id: '2',
-    equipment_id: '10',
-    equipment_name: 'Robe MegaPointe',
-    result_date: '2026-03-08T14:15:00Z',
-    status: 'warning',
-    measurements: [
-      { name: 'Lampenlebensdauer', value: '87%', status: 'warning' },
-      { name: 'Lüfter', value: 'Normal', status: 'ok' },
-      { name: 'Bewegung Pan/Tilt', value: 'Leichte Verzögerung', status: 'warning' },
-    ],
-  },
-  {
-    id: '3',
-    equipment_id: '6',
-    equipment_name: 'Prolyte X30V Truss 3m',
-    result_date: '2026-03-05T09:00:00Z',
-    status: 'pass',
-    measurements: [
-      { name: 'Inspektionszeichen', value: 'Gültig bis 2027', status: 'ok' },
-      { name: 'Verschleiß', value: 'Minimal', status: 'ok' },
-      { name: 'Struktur', value: 'Intact', status: 'ok' },
-    ],
-  },
-]
-
-const mockPlans: MaintenancePlan[] = [
-  {
-    id: '1',
-    equipment_id: '1',
-    equipment_name: 'JBL VTX A12',
-    frequency: 'Vierteljährlich',
-    next_maintenance: '2026-03-15',
-    status: 'active',
-  },
-  {
-    id: '2',
-    equipment_id: '3',
-    equipment_name: 'MA Lighting grandMA3',
-    frequency: 'Monatlich',
-    next_maintenance: '2026-03-20',
-    status: 'active',
-  },
-  {
-    id: '3',
-    equipment_id: '7',
-    equipment_name: 'Yamaha CL5',
-    frequency: 'Nach Einsatz',
-    next_maintenance: '2026-03-25',
-    status: 'active',
-  },
-]
 
 function MaintenancePage() {
   const navigate = useNavigate()
   const [expandedTask, setExpandedTask] = useState<string | null>(null)
 
-  const { data: tasks = mockTasks } = useQuery({
+  const { data: tasksData, isLoading: tasksLoading, error: tasksError } = useQuery({
     queryKey: ['maintenance-tasks'],
-    queryFn: async () => mockTasks,
+    queryFn: () => maintenanceApi.listTasks(),
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: eChecks = mockEChecks } = useQuery({
+  const { data: eChecksData, isLoading: eChecksLoading } = useQuery({
     queryKey: ['echeck-results'],
-    queryFn: async () => mockEChecks,
+    queryFn: () => maintenanceApi.listElectricalTests(),
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: plans = mockPlans } = useQuery({
+  const { data: plansData, isLoading: plansLoading } = useQuery({
     queryKey: ['maintenance-plans'],
-    queryFn: async () => mockPlans,
+    queryFn: () => maintenanceApi.listPlans(),
     staleTime: 1000 * 60 * 5,
   })
+
+  const tasks: MaintenanceTask[] = (tasksData?.items || tasksData?.data || (Array.isArray(tasksData) ? tasksData : [])).map((t: any) => ({
+    ...t,
+    due_date: t.due_date || t.scheduled_at,
+    status: t.status === 'planned' ? 'pending' : t.status,
+  }))
+  const eChecks: ECheckResult[] = eChecksData?.items || eChecksData?.data || (Array.isArray(eChecksData) ? eChecksData : [])
+  const plans: MaintenancePlan[] = (plansData?.items || plansData?.data || (Array.isArray(plansData) ? plansData : [])).map((p: any) => ({
+    ...p,
+    next_maintenance: p.next_maintenance || p.next_due_at,
+    status: p.status || (p.is_active ? 'active' : 'paused'),
+    frequency: p.frequency || (p.interval_days ? `Alle ${p.interval_days} Tage` : p.interval_hours ? `Alle ${p.interval_hours}h` : p.plan_type || ''),
+  }))
+  const isLoading = tasksLoading || eChecksLoading || plansLoading
 
   const now = new Date()
   const overdueTasks = tasks.filter(t => new Date(t.due_date) < now && t.status === 'pending')
@@ -203,6 +111,45 @@ function MaintenancePage() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="maintenance-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Wartung & Inspektion</h1>
+            <p className="page-subtitle">Daten werden geladen...</p>
+          </div>
+        </div>
+        <div className="stats-grid">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="stat-card">
+              <div className="stat-card__label">Laden...</div>
+              <div className="stat-card__value">--</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (tasksError) {
+    return (
+      <div className="maintenance-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Wartung & Inspektion</h1>
+            <p className="page-subtitle">Fehler beim Laden der Daten</p>
+          </div>
+        </div>
+        <div className="empty-state">
+          <div className="empty-state__icon">&#x26A0;</div>
+          <h3 className="empty-state__title">Daten konnten nicht geladen werden</h3>
+          <p className="empty-state__description">{String(tasksError)}</p>
+        </div>
+      </div>
+    )
   }
 
   return (

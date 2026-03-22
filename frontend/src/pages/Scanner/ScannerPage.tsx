@@ -77,6 +77,23 @@ const syncOfflineQueue = async (): Promise<number> => {
   })
 }
 
+interface EquipmentDetail {
+  id: string
+  name: string
+  status: string
+  category_id?: string
+  barcode?: string
+  rental_price_day?: number
+  rental_price_week?: number
+  condition?: string
+}
+
+interface FeedbackMessage {
+  type: 'success' | 'error'
+  text: string
+  timestamp: number
+}
+
 interface ScanEvent {
   id: string
   barcode: string
@@ -122,6 +139,10 @@ function ScannerPage() {
   const [sessionActive, setSessionActive] = useState(false)
   const [offlineMode, setOfflineMode] = useState(false)
   const [offlineQueue, setOfflineQueue] = useState(0)
+  const [scannedEquipment, setScannedEquipment] = useState<EquipmentDetail | null>(null)
+  const [feedbackMessage, setFeedbackMessage] = useState<FeedbackMessage | null>(null)
+  const [checkOutCount, setCheckOutCount] = useState(0)
+  const [checkInCount, setCheckInCount] = useState(0)
 
   // Ref to allow useEffects to call processBarcode without circular dependency
   const processBarcodeRef = useRef<((barcode: string) => void) | null>(null)
@@ -295,6 +316,23 @@ function ScannerPage() {
     }
   }, [isProcessing])
 
+  // Auto-focus manual input on page load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scanInputRef.current?.focus()
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Auto-clear feedback message after 3 seconds
+  useEffect(() => {
+    if (!feedbackMessage) return
+    const timer = setTimeout(() => {
+      setFeedbackMessage(null)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [feedbackMessage])
+
   // Kamera-Scanner aufräumen beim Unmount
   useEffect(() => {
     return () => {
@@ -335,7 +373,7 @@ function ScannerPage() {
 
     try {
       // Schritt 1: Equipment per Barcode/UUID suchen
-      let equipment: { id: string; name: string } | null = null
+      let equipment: EquipmentDetail | null = null
 
       // QR-Code-Format prüfen: "rentflow://equipment/{uuid}"
       const qrMatch = scannedBarcode.match(/^rentflow:\/\/equipment\/(.+)$/)
@@ -350,6 +388,9 @@ function ScannerPage() {
       if (!equipment) {
         throw new Error('Ausrüstung nicht gefunden')
       }
+
+      // Store scanned equipment details for display
+      setScannedEquipment(equipment)
 
       // Schritt 2: Aktion basierend auf Scan-Kontext ausführen
       if (scanContext === 'check-out') {
@@ -378,6 +419,17 @@ function ScannerPage() {
         prev.map((s) => (s.id === scanId ? successScan : s))
       )
       setSuccessCount((prev) => prev + 1)
+
+      // Track check-in/check-out counts and show feedback
+      if (scanContext === 'check-out') {
+        setCheckOutCount((prev) => prev + 1)
+        setFeedbackMessage({ type: 'success', text: `${equipment.name} erfolgreich ausgecheckt`, timestamp: Date.now() })
+      } else if (scanContext === 'check-in') {
+        setCheckInCount((prev) => prev + 1)
+        setFeedbackMessage({ type: 'success', text: `${equipment.name} erfolgreich eingecheckt`, timestamp: Date.now() })
+      } else {
+        setFeedbackMessage({ type: 'success', text: `${equipment.name} erfolgreich gescannt`, timestamp: Date.now() })
+      }
 
       // Vibrieren: Erfolg (kurz-kurz)
       if ('vibrate' in navigator) {
@@ -435,6 +487,8 @@ function ScannerPage() {
           prev.map((s) => (s.id === scanId ? errorScan : s))
         )
         setErrorCount((prev) => prev + 1)
+        setScannedEquipment(null)
+        setFeedbackMessage({ type: 'error', text: errorMessage, timestamp: Date.now() })
 
         // Play error beep
         playBeep('error')
@@ -463,6 +517,47 @@ function ScannerPage() {
     if (scannedBarcode) {
       processBarcode(scannedBarcode)
     }
+  }
+
+  // Manuelle Eingabe per Button
+  const handleManualScanButton = () => {
+    const scannedBarcode = barcode.trim()
+    if (scannedBarcode) {
+      processBarcode(scannedBarcode)
+    }
+  }
+
+  // Status label/color helpers
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      available: 'Verfügbar',
+      checked_out: 'Ausgecheckt',
+      in_maintenance: 'In Wartung',
+      reserved: 'Reserviert',
+      damaged: 'Beschädigt',
+    }
+    return map[status] || status
+  }
+
+  const getStatusColor = (status: string) => {
+    const map: Record<string, string> = {
+      available: '#16a34a',
+      checked_out: '#dc2626',
+      in_maintenance: '#d97706',
+      reserved: '#2563eb',
+      damaged: '#991b1b',
+    }
+    return map[status] || '#6b7280'
+  }
+
+  const getCategoryLabel = (categoryId?: string) => {
+    const map: Record<string, string> = {
+      'cat-audio': 'Audio',
+      'cat-lighting': 'Licht',
+      'cat-video': 'Video',
+      'cat-stage': 'Bühne',
+    }
+    return categoryId ? (map[categoryId] || categoryId) : '—'
   }
 
   // Kamera starten/stoppen
@@ -553,6 +648,49 @@ function ScannerPage() {
         <div className="offline-banner">
           <span>📡 Offline-Modus aktiv</span>
           <span className="offline-queue">Queue: {offlineQueue} Scans</span>
+        </div>
+      )}
+
+      {/* Stats Bar */}
+      {sessionActive && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 'var(--spacing-4)',
+            padding: 'var(--spacing-3) var(--spacing-4)',
+            backgroundColor: 'var(--color-bg-secondary)',
+            borderRadius: 'var(--radius-card)',
+            marginBottom: 'var(--spacing-4)',
+            fontWeight: 'var(--font-weight-semibold)',
+            fontSize: 'var(--font-size-base)',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <span>Heute:</span>
+          <span style={{ color: '#dc2626' }}>{checkOutCount} Check-Outs</span>
+          <span style={{ color: '#16a34a' }}>{checkInCount} Check-Ins</span>
+          <span style={{ color: errorCount > 0 ? '#dc2626' : 'var(--color-text-secondary)' }}>{errorCount} Fehler</span>
+        </div>
+      )}
+
+      {/* Feedback Toast */}
+      {feedbackMessage && (
+        <div
+          style={{
+            padding: 'var(--spacing-3) var(--spacing-4)',
+            borderRadius: 'var(--radius-card)',
+            marginBottom: 'var(--spacing-4)',
+            fontWeight: 'var(--font-weight-semibold)',
+            fontSize: 'var(--font-size-base)',
+            backgroundColor: feedbackMessage.type === 'success' ? '#dcfce7' : '#fef2f2',
+            color: feedbackMessage.type === 'success' ? '#166534' : '#991b1b',
+            border: `2px solid ${feedbackMessage.type === 'success' ? '#16a34a' : '#dc2626'}`,
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
+          {feedbackMessage.type === 'success' ? '✓ ' : '✗ '}
+          {feedbackMessage.text}
         </div>
       )}
 
@@ -667,18 +805,55 @@ function ScannerPage() {
                 </div>
               )}
 
-              {/* Manuelle Eingabe */}
-              <Input
-                ref={scanInputRef}
-                type="text"
-                label="Barcode / QR-Code manuell eingeben"
-                placeholder="Code eingeben und Enter drücken..."
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                onKeyPress={handleManualScan}
-                autoFocus={!cameraActive}
-                disabled={isProcessing}
-              />
+              {/* Manuelle Eingabe - prominent */}
+              <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <Input
+                    ref={scanInputRef}
+                    type="text"
+                    label="Barcode / QR-Code manuell eingeben"
+                    placeholder="Code eingeben und Enter drücken..."
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    onKeyPress={handleManualScan}
+                    autoFocus
+                    disabled={isProcessing}
+                    style={{ fontSize: '1.25rem', padding: 'var(--spacing-3) var(--spacing-4)', height: '3.25rem' }}
+                  />
+                </div>
+                <button
+                  className="btn btn--primary"
+                  onClick={handleManualScanButton}
+                  disabled={isProcessing || !barcode.trim()}
+                  style={{
+                    height: '3.25rem',
+                    padding: '0 var(--spacing-6)',
+                    fontSize: '1rem',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Scannen
+                </button>
+              </div>
+
+              {/* Project warning for check-out */}
+              {scanContext === 'check-out' && !projectId && (
+                <div
+                  style={{
+                    marginTop: 'var(--spacing-2)',
+                    padding: 'var(--spacing-2) var(--spacing-3)',
+                    backgroundColor: '#fffbeb',
+                    color: '#92400e',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    border: '1px solid #d97706',
+                  }}
+                >
+                  ⚠ Bitte zuerst ein Projekt auswählen, bevor Sie Equipment auschecken.
+                </div>
+              )}
             </div>
 
             <div className="scanner-actions">
@@ -713,16 +888,105 @@ function ScannerPage() {
                 Verarbeite Scan...
               </div>
             )}
+
+            {/* Scanned Equipment Details */}
+            {scannedEquipment && !isProcessing && (
+              <div
+                style={{
+                  marginTop: 'var(--spacing-4)',
+                  padding: 'var(--spacing-5)',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderRadius: 'var(--radius-card)',
+                  border: '2px solid var(--color-primary)',
+                }}
+              >
+                <h3 style={{ margin: '0 0 var(--spacing-3) 0', fontSize: '1.5rem', color: 'var(--color-text-primary)' }}>
+                  {scannedEquipment.name}
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-4)' }}>
+                  <div>
+                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Status</span>
+                    <div>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          padding: 'var(--spacing-1) var(--spacing-3)',
+                          borderRadius: 'var(--radius-base)',
+                          backgroundColor: getStatusColor(scannedEquipment.status) + '20',
+                          color: getStatusColor(scannedEquipment.status),
+                          fontWeight: 'var(--font-weight-semibold)',
+                          fontSize: 'var(--font-size-sm)',
+                        }}
+                      >
+                        {getStatusLabel(scannedEquipment.status)}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Kategorie</span>
+                    <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{getCategoryLabel(scannedEquipment.category_id)}</div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Barcode</span>
+                    <div style={{ fontFamily: 'monospace', fontWeight: 'var(--font-weight-semibold)' }}>{scannedEquipment.barcode || '—'}</div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Mietpreis</span>
+                    <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
+                      {scannedEquipment.rental_price_day != null ? `${scannedEquipment.rental_price_day} €/Tag` : '—'}
+                      {scannedEquipment.rental_price_week != null && ` · ${scannedEquipment.rental_price_week} €/Woche`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action button based on context */}
+                {scanContext === 'check-out' && scannedEquipment.status === 'available' && (
+                  <button
+                    className="btn btn--primary"
+                    style={{ width: '100%', padding: 'var(--spacing-3)', fontSize: '1.1rem', fontWeight: 'var(--font-weight-semibold)' }}
+                    onClick={() => {
+                      if (projectId) {
+                        equipmentApi.checkOut(scannedEquipment.id, projectId).then(() => {
+                          setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} ausgecheckt`, timestamp: Date.now() })
+                          setScannedEquipment({ ...scannedEquipment, status: 'checked_out' })
+                        }).catch(() => {
+                          setFeedbackMessage({ type: 'error', text: 'Check-Out fehlgeschlagen', timestamp: Date.now() })
+                        })
+                      }
+                    }}
+                    disabled={!projectId}
+                  >
+                    📤 Check-Out: {scannedEquipment.name}
+                  </button>
+                )}
+                {scanContext === 'check-in' && scannedEquipment.status === 'checked_out' && (
+                  <button
+                    className="btn btn--primary"
+                    style={{ width: '100%', padding: 'var(--spacing-3)', fontSize: '1.1rem', fontWeight: 'var(--font-weight-semibold)', backgroundColor: '#16a34a', borderColor: '#16a34a' }}
+                    onClick={() => {
+                      equipmentApi.checkIn(scannedEquipment.id).then(() => {
+                        setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} eingecheckt`, timestamp: Date.now() })
+                        setScannedEquipment({ ...scannedEquipment, status: 'available' })
+                      }).catch(() => {
+                        setFeedbackMessage({ type: 'error', text: 'Check-In fehlgeschlagen', timestamp: Date.now() })
+                      })
+                    }}
+                  >
+                    📥 Check-In: {scannedEquipment.name}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Scan-Verlauf */}
           {recentScans.length > 0 && (
             <div className="scanner-history">
               <h2 className="scanner-history__title">
-                Scan-Verlauf ({recentScans.length})
+                Scan-Verlauf (letzte {Math.min(recentScans.length, 20)})
               </h2>
               <div className="scanner-history__list">
-                {recentScans.map((scan, index) => (
+                {recentScans.slice(0, 20).map((scan, index) => (
                   <div
                     key={scan.id}
                     style={{
@@ -761,19 +1025,23 @@ function ScannerPage() {
                         ? '📤'
                         : '📊'}
                     </div>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <p
                         style={{
                           margin: '0 0 var(--spacing-1) 0',
                           fontWeight: 'var(--font-weight-semibold)',
                           color: 'var(--color-text-primary)',
+                          fontSize: scan.equipment_name ? 'var(--font-size-base)' : 'var(--font-size-sm)',
                         }}
                       >
                         {scan.equipment_name || `Code: ${scan.barcode}`}
                       </p>
-                      <p
+                      <div
                         style={{
-                          margin: 0,
+                          display: 'flex',
+                          gap: 'var(--spacing-2)',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
                           fontSize: 'var(--font-size-sm)',
                           color:
                             scan.status === 'error'
@@ -782,19 +1050,28 @@ function ScannerPage() {
                         }}
                       >
                         {scan.status === 'error'
-                          ? scan.error_message
+                          ? <span>{scan.error_message}</span>
                           : scan.status === 'pending'
-                          ? 'Wird verarbeitet...'
+                          ? <span>Wird verarbeitet...</span>
                           : (
                             <>
-                              {scan.scan_type === 'check-in' && 'Eingecheckt'}
-                              {scan.scan_type === 'check-out' && 'Ausgecheckt'}
-                              {scan.scan_type === 'inventory' && 'Inventur'}
-                              {' • '}
-                              {new Date(scan.timestamp).toLocaleTimeString('de-DE')}
+                              <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>
+                                {scan.scan_type === 'check-in' && 'Check-In'}
+                                {scan.scan_type === 'check-out' && 'Check-Out'}
+                                {scan.scan_type === 'warehouse-store' && 'Lagerort'}
+                                {scan.scan_type === 'inventory' && 'Inventur'}
+                              </span>
+                              <span>•</span>
+                              <span>{new Date(scan.timestamp).toLocaleTimeString('de-DE')}</span>
+                              {scan.barcode && (
+                                <>
+                                  <span>•</span>
+                                  <span style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}>{scan.barcode}</span>
+                                </>
+                              )}
                             </>
                           )}
-                      </p>
+                      </div>
                     </div>
                     <span
                       style={{

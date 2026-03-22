@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
+import { transportApi } from '../../services/api'
 import './Transport.module.scss'
 
 interface Vehicle {
@@ -11,115 +12,106 @@ interface Vehicle {
   status: 'available' | 'in_use' | 'maintenance'
   capacity_kg: number
   capacity_m3: number
+  vehicle_type?: string
 }
 
 interface Tour {
   id: string
   vehicle_id: string
   project_id: string
-  project_name: string
-  driver: string
+  project_name?: string
+  driver?: string
+  driver_id?: string
   status: 'planned' | 'loading' | 'in_transit' | 'delivered' | 'completed'
-  start_date: string
-  end_date: string
-  weight_kg: number
-  volume_m3: number
-  vehicle_capacity_kg: number
-  vehicle_capacity_m3: number
+  start_date?: string
+  end_date?: string
+  departure_at?: string
+  arrival_at?: string
+  weight_kg?: number
+  volume_m3?: number
+  vehicle_capacity_kg?: number
+  vehicle_capacity_m3?: number
+  notes?: string
+  km_start?: number
+  km_end?: number
 }
-
-// Mock data
-const mockVehicles: Vehicle[] = [
-  { id: '1', name: 'VW Crafter L3H3', license_plate: 'MUC-TR-001', status: 'available', capacity_kg: 1500, capacity_m3: 12 },
-  { id: '2', name: 'Mercedes Sprinter', license_plate: 'MUC-TR-002', status: 'in_use', capacity_kg: 1800, capacity_m3: 14 },
-  { id: '3', name: 'VW Transporter T5', license_plate: 'MUC-TR-003', status: 'available', capacity_kg: 1200, capacity_m3: 10 },
-  { id: '4', name: 'MAN TGX 18 Sattelzug', license_plate: 'MUC-TR-004', status: 'in_use', capacity_kg: 8000, capacity_m3: 85 },
-]
-
-const mockTours: Tour[] = [
-  {
-    id: '1',
-    vehicle_id: '1',
-    project_id: '1',
-    project_name: 'Stadtfest München 2026',
-    driver: 'Thomas Müller',
-    status: 'in_transit',
-    start_date: '2026-03-22T08:00:00Z',
-    end_date: '2026-03-22T14:00:00Z',
-    weight_kg: 1200,
-    volume_m3: 9,
-    vehicle_capacity_kg: 1500,
-    vehicle_capacity_m3: 12,
-  },
-  {
-    id: '2',
-    vehicle_id: '4',
-    project_id: '3',
-    project_name: 'Open Air Festival Bodensee',
-    driver: 'Maria Schmidt',
-    status: 'loading',
-    start_date: '2026-03-23T06:00:00Z',
-    end_date: '2026-03-23T18:00:00Z',
-    weight_kg: 6500,
-    volume_m3: 72,
-    vehicle_capacity_kg: 8000,
-    vehicle_capacity_m3: 85,
-  },
-  {
-    id: '3',
-    vehicle_id: '2',
-    project_id: '2',
-    project_name: 'Firmen-Gala TechCorp',
-    driver: 'Peter Weber',
-    status: 'planned',
-    start_date: '2026-04-10T14:00:00Z',
-    end_date: '2026-04-10T20:00:00Z',
-    weight_kg: 800,
-    volume_m3: 6,
-    vehicle_capacity_kg: 1800,
-    vehicle_capacity_m3: 14,
-  },
-  {
-    id: '4',
-    vehicle_id: '3',
-    project_id: '1',
-    project_name: 'Stadtfest München 2026',
-    driver: 'Anna Fischer',
-    status: 'completed',
-    start_date: '2026-03-21T10:00:00Z',
-    end_date: '2026-03-21T16:00:00Z',
-    weight_kg: 950,
-    volume_m3: 8,
-    vehicle_capacity_kg: 1200,
-    vehicle_capacity_m3: 10,
-  },
-]
 
 function TransportPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'tours' | 'vehicles'>('tours')
 
-  const { data: vehicles = mockVehicles } = useQuery({
+  const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: async () => mockVehicles,
+    queryFn: () => transportApi.listVehicles(),
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: tours = mockTours } = useQuery({
+  const { data: toursData, isLoading: toursLoading, error: toursError } = useQuery({
     queryKey: ['tours'],
-    queryFn: async () => mockTours,
+    queryFn: () => transportApi.listTours(),
     staleTime: 1000 * 60 * 5,
   })
+
+  const vehicles: Vehicle[] = vehiclesData?.items || vehiclesData?.data || (Array.isArray(vehiclesData) ? vehiclesData : [])
+  const tours: Tour[] = toursData?.items || toursData?.data || (Array.isArray(toursData) ? toursData : [])
+  const isLoading = vehiclesLoading || toursLoading
+  const hasError = vehiclesError || toursError
 
   const activeTours = tours.filter(t => ['planned', 'loading', 'in_transit'].includes(t.status))
   const availableVehicles = vehicles.filter(v => v.status === 'available')
-  const totalKmThisMonth = 450 // Mock data
+  const completedTours = tours.filter(t => t.status === 'completed')
+  const totalKmThisMonth = completedTours.reduce((sum, t) => {
+    const km = (t.km_end || 0) - (t.km_start || 0)
+    return sum + (km > 0 ? km : 0)
+  }, 0)
 
   const getCapacityStatus = (used: number, capacity: number) => {
+    if (!capacity) return 'ok'
     const percentage = (used / capacity) * 100
     if (percentage <= 70) return 'ok'
     if (percentage <= 90) return 'warning'
     return 'danger'
+  }
+
+  if (isLoading) {
+    return (
+      <div className="transport-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Transport & Logistik</h1>
+            <p className="page-subtitle">Daten werden geladen...</p>
+          </div>
+        </div>
+        <div className="stats-grid">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="stat-card">
+              <div className="stat-card__label">Laden...</div>
+              <div className="stat-card__value">--</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (hasError) {
+    return (
+      <div className="transport-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Transport & Logistik</h1>
+            <p className="page-subtitle">Fehler beim Laden der Daten. Bitte versuchen Sie es erneut.</p>
+          </div>
+        </div>
+        <div className="empty-state">
+          <div className="empty-state__icon">&#x26A0;</div>
+          <h3 className="empty-state__title">Daten konnten nicht geladen werden</h3>
+          <p className="empty-state__description">
+            {vehiclesError ? String(vehiclesError) : toursError ? String(toursError) : 'Unbekannter Fehler'}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -195,10 +187,17 @@ function TransportPage() {
           ) : (
             <div className="tour-grid">
               {tours.map((tour) => {
-                const weightPercentage = (tour.weight_kg / tour.vehicle_capacity_kg) * 100
-                const volumePercentage = (tour.volume_m3 / tour.vehicle_capacity_m3) * 100
-                const weightStatus = getCapacityStatus(tour.weight_kg, tour.vehicle_capacity_kg)
-                const volumeStatus = getCapacityStatus(tour.volume_m3, tour.vehicle_capacity_m3)
+                const vehicle = vehicles.find(v => v.id === tour.vehicle_id)
+                const vCapKg = tour.vehicle_capacity_kg || vehicle?.capacity_kg || 0
+                const vCapM3 = tour.vehicle_capacity_m3 || vehicle?.capacity_m3 || 0
+                const weightKg = tour.weight_kg || 0
+                const volM3 = tour.volume_m3 || 0
+                const weightPercentage = vCapKg ? (weightKg / vCapKg) * 100 : 0
+                const volumePercentage = vCapM3 ? (volM3 / vCapM3) * 100 : 0
+                const weightStatus = getCapacityStatus(weightKg, vCapKg)
+                const volumeStatus = getCapacityStatus(volM3, vCapM3)
+                const startDate = tour.start_date || tour.departure_at
+                const tourLabel = tour.project_name || tour.notes || `Tour #${tour.id}`
 
                 return (
                   <div
@@ -207,56 +206,66 @@ function TransportPage() {
                     onClick={() => navigate(`/transport/tours/${tour.id}`)}
                   >
                     <div className="tour-card__header">
-                      <h3 className="tour-card__title">{tour.project_name}</h3>
+                      <h3 className="tour-card__title">{tourLabel}</h3>
                       <StatusBadge status={tour.status} />
                     </div>
 
                     <div className="tour-card__meta">
+                      {(tour.driver || tour.driver_id) && (
+                        <p>
+                          <strong>Fahrer:</strong> {tour.driver || tour.driver_id}
+                        </p>
+                      )}
                       <p>
-                        <strong>Fahrer:</strong> {tour.driver}
+                        <strong>Fahrzeug:</strong> {vehicle?.name || 'N/A'}
                       </p>
-                      <p>
-                        <strong>Fahrzeug:</strong> {vehicles.find(v => v.id === tour.vehicle_id)?.name || 'N/A'}
-                      </p>
-                      <p>
-                        <strong>Start:</strong> {new Date(tour.start_date).toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
-                      </p>
+                      {startDate && (
+                        <p>
+                          <strong>Start:</strong> {new Date(startDate).toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
+                        </p>
+                      )}
                       <p>
                         <strong>Status:</strong> {tour.status.replace(/_/g, ' ')}
                       </p>
                     </div>
 
-                    <div className="tour-card__progress">
-                      <div className="capacity-bar">
-                        <div className="capacity-bar__label">
-                          <span>Gewicht</span>
-                          <span>
-                            {tour.weight_kg}/{tour.vehicle_capacity_kg} kg
-                          </span>
-                        </div>
-                        <div className="capacity-bar__track">
-                          <div
-                            className={`capacity-bar__fill capacity-bar__fill--${weightStatus}`}
-                            style={{ width: `${Math.min(weightPercentage, 100)}%` }}
-                          />
-                        </div>
-                      </div>
+                    {(vCapKg > 0 || vCapM3 > 0) && (
+                      <div className="tour-card__progress">
+                        {vCapKg > 0 && (
+                          <div className="capacity-bar">
+                            <div className="capacity-bar__label">
+                              <span>Gewicht</span>
+                              <span>
+                                {weightKg}/{vCapKg} kg
+                              </span>
+                            </div>
+                            <div className="capacity-bar__track">
+                              <div
+                                className={`capacity-bar__fill capacity-bar__fill--${weightStatus}`}
+                                style={{ width: `${Math.min(weightPercentage, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
 
-                      <div className="capacity-bar">
-                        <div className="capacity-bar__label">
-                          <span>Volumen</span>
-                          <span>
-                            {tour.volume_m3}/{tour.vehicle_capacity_m3} m³
-                          </span>
-                        </div>
-                        <div className="capacity-bar__track">
-                          <div
-                            className={`capacity-bar__fill capacity-bar__fill--${volumeStatus}`}
-                            style={{ width: `${Math.min(volumePercentage, 100)}%` }}
-                          />
-                        </div>
+                        {vCapM3 > 0 && (
+                          <div className="capacity-bar">
+                            <div className="capacity-bar__label">
+                              <span>Volumen</span>
+                              <span>
+                                {volM3}/{vCapM3} m3
+                              </span>
+                            </div>
+                            <div className="capacity-bar__track">
+                              <div
+                                className={`capacity-bar__fill capacity-bar__fill--${volumeStatus}`}
+                                style={{ width: `${Math.min(volumePercentage, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 )
               })}
@@ -291,11 +300,16 @@ function TransportPage() {
                     <p>
                       <strong>Kennzeichen:</strong> {vehicle.license_plate}
                     </p>
+                    {vehicle.vehicle_type && (
+                      <p>
+                        <strong>Typ:</strong> {vehicle.vehicle_type}
+                      </p>
+                    )}
                     <p>
-                      <strong>Max. Gewicht:</strong> {vehicle.capacity_kg} kg
+                      <strong>Max. Gewicht:</strong> {vehicle.capacity_kg?.toLocaleString('de-DE')} kg
                     </p>
                     <p>
-                      <strong>Max. Volumen:</strong> {vehicle.capacity_m3} m³
+                      <strong>Max. Volumen:</strong> {vehicle.capacity_m3} m3
                     </p>
                   </div>
 
