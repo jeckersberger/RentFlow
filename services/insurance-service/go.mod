@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/jeckersberger/rentflow/pkg/common v0.0.0-00010101000000-000000000000
 	github.com/lib/pq v1.12.0
 	github.com/rs/zerolog v1.34.0
 )

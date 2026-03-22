@@ -24,6 +24,8 @@
 
     &__main {
       padding: var(--spacing-4);
+      // Extra bottom padding for mobile bottom nav
+      padding-bottom: calc(var(--spacing-4) + 4.5rem);
     }
   }
 }

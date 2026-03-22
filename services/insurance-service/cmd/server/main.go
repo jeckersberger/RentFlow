@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/jeckersberger/rentflow/pkg/common/middleware"
 	"github.com/rs/zerolog"
 
 	"github.com/jeckersberger/rentflow/services/insurance-service/internal/adapters/database"
@@ -64,10 +65,11 @@ func main() {
 	adaptorshttp.RegisterRoutes(mux, handler)
 
 	// Create HTTP server
-	port := ":8011"
+	port := getEnvOrDefault("SERVICE_PORT", "8012")
+	addr := ":" + port
 	server := &http.Server{
-		Addr:         port,
-		Handler:      mux,
+		Addr:         addr,
+		Handler:      middleware.SimpleCORSMiddleware()(mux),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -75,7 +77,7 @@ func main() {
 
 	// Start server in a goroutine
 	go func() {
-		logger.Info().Str("port", port).Msg("insurance-service starting")
+		logger.Info().Str("port", addr).Msg("insurance-service starting")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatal().Err(err).Msg("server error")
 		}

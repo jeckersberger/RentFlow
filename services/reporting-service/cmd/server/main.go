@@ -59,10 +59,10 @@ func main() {
 	// Start the scheduled reports processor in the background
 	go scheduleReportsProcessor(ctx, reportService, logger)
 
-	port := 8012
-	addr := fmt.Sprintf(":%d", port)
+	portStr := getEnvOrDefault("SERVICE_PORT", "8016")
+	addr := ":" + portStr
 
-	logger.Info().Int("port", port).Msg("Starting reporting-service")
+	logger.Info().Str("port", portStr).Msg("Starting reporting-service")
 
 	srv := &http.Server{
 		Addr:    addr,
