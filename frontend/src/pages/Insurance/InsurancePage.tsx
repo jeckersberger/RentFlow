@@ -129,17 +129,27 @@ function InsurancePage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'policies' | 'open_claims' | 'settled'>('policies')
 
-  const { data: policies = mockPolicies } = useQuery({
+  // TODO: Replace with insuranceApi when backend endpoint is available
+  const { data: policies = [], isLoading: policiesLoading, error: policiesError } = useQuery({
     queryKey: ['insurance-policies'],
-    queryFn: async () => mockPolicies,
+    queryFn: async () => {
+      // No insurance API endpoint available yet - using mock data
+      return mockPolicies
+    },
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: claims = mockClaims } = useQuery({
+  // TODO: Replace with insuranceApi when backend endpoint is available
+  const { data: claims = [], isLoading: claimsLoading } = useQuery({
     queryKey: ['insurance-claims'],
-    queryFn: async () => mockClaims,
+    queryFn: async () => {
+      // No insurance API endpoint available yet - using mock data
+      return mockClaims
+    },
     staleTime: 1000 * 60 * 5,
   })
+
+  const isLoading = policiesLoading || claimsLoading
 
   const openClaims = claims.filter(c => ['reported', 'documented', 'submitted', 'approved'].includes(c.status))
   const settledClaims = claims.filter(c => ['settled', 'rejected'].includes(c.status))
@@ -165,6 +175,45 @@ function InsurancePage() {
       rejected: 'Abgelehnt',
     }
     return labels[status] || status
+  }
+
+  if (isLoading) {
+    return (
+      <div className="insurance-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Versicherung</h1>
+            <p className="page-subtitle">Daten werden geladen...</p>
+          </div>
+        </div>
+        <div className="stats-grid">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="stat-card">
+              <div className="stat-card__label">Laden...</div>
+              <div className="stat-card__value">--</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (policiesError) {
+    return (
+      <div className="insurance-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Versicherung</h1>
+            <p className="page-subtitle">Fehler beim Laden der Daten</p>
+          </div>
+        </div>
+        <div className="empty-state">
+          <div className="empty-state__icon">&#x26A0;</div>
+          <h3 className="empty-state__title">Daten konnten nicht geladen werden</h3>
+          <p className="empty-state__description">{String(policiesError)}</p>
+        </div>
+      </div>
+    )
   }
 
   return (

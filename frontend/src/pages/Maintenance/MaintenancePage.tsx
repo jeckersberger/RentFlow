@@ -91,7 +91,7 @@ function MaintenancePage() {
     const dueDate = new Date(t.due_date)
     return dueDate >= now && dueDate <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) && t.status === 'pending'
   })
-  const activePlans = plans.filter(p => p.status === 'active')
+  const activePlans = plans.filter(p => p.status === 'active' || p.is_active)
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -266,34 +266,54 @@ function MaintenancePage() {
               <p className="empty-state__description">Führen Sie einen E-Check durch, um die Ergebnisse hier zu sehen.</p>
             </div>
           ) : (
-            eChecks.slice(0, 3).map(eCheck => (
-              <div key={eCheck.id} style={{ paddingBottom: 'var(--spacing-3)', borderBottom: 'var(--card-border-width) solid var(--color-border)', marginBottom: 'var(--spacing-3)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
-                      {eCheck.equipment_name}
-                    </p>
-                    <p style={{ margin: '0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                      {new Date(eCheck.result_date).toLocaleString('de-DE')}
-                    </p>
-                  </div>
-                  <StatusBadge status={eCheck.status} />
-                </div>
-                <div className="echeck-results">
-                  {eCheck.measurements.map((measurement, idx) => (
-                    <div key={idx} className="echeck-item">
-                      <div className="echeck-item__label">{measurement.name}</div>
-                      <div className="echeck-item__value">
-                        <div className="echeck-item__measurement">{measurement.value}</div>
-                        <div className={`echeck-item__status echeck-item__status--${measurement.status}`}>
-                          {measurement.status === 'ok' ? '✓ OK' : measurement.status === 'warning' ? '⚠ Warnung' : '✗ Fehler'}
-                        </div>
-                      </div>
+            eChecks.slice(0, 3).map(eCheck => {
+              const displayDate = eCheck.result_date || eCheck.test_date || ''
+              const displayStatus = eCheck.status || (eCheck.result === 'passed' ? 'pass' : eCheck.result === 'conditional' ? 'warning' : eCheck.result === 'failed' ? 'fail' : 'pass')
+              // Build measurements from API fields if not present
+              const measurements = eCheck.measurements || [
+                ...(eCheck.insulation_resistance_mohm != null ? [{ name: 'Isolationswiderstand', value: `${eCheck.insulation_resistance_mohm} MOhm`, status: (eCheck.insulation_resistance_mohm >= 1 ? 'ok' : 'warning') as 'ok' | 'warning' | 'fail' }] : []),
+                ...(eCheck.protective_conductor_resistance_ohm != null ? [{ name: 'Schutzleiterwiderstand', value: `${eCheck.protective_conductor_resistance_ohm} Ohm`, status: (eCheck.protective_conductor_resistance_ohm <= 0.3 ? 'ok' : 'warning') as 'ok' | 'warning' | 'fail' }] : []),
+                ...(eCheck.leakage_current_ma != null ? [{ name: 'Ableitstrom', value: `${eCheck.leakage_current_ma} mA`, status: (eCheck.leakage_current_ma <= 3.5 ? 'ok' : 'fail') as 'ok' | 'warning' | 'fail' }] : []),
+              ]
+
+              return (
+                <div key={eCheck.id} style={{ paddingBottom: 'var(--spacing-3)', borderBottom: 'var(--card-border-width) solid var(--color-border)', marginBottom: 'var(--spacing-3)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
+                        {eCheck.equipment_name}
+                      </p>
+                      {displayDate && (
+                        <p style={{ margin: '0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                          {new Date(displayDate).toLocaleString('de-DE')}
+                        </p>
+                      )}
+                      {eCheck.certificate_number && (
+                        <p style={{ margin: '0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                          Zertifikat: {eCheck.certificate_number}
+                        </p>
+                      )}
                     </div>
-                  ))}
+                    <StatusBadge status={displayStatus} />
+                  </div>
+                  {measurements.length > 0 && (
+                    <div className="echeck-results">
+                      {measurements.map((measurement, idx) => (
+                        <div key={idx} className="echeck-item">
+                          <div className="echeck-item__label">{measurement.name}</div>
+                          <div className="echeck-item__value">
+                            <div className="echeck-item__measurement">{measurement.value}</div>
+                            <div className={`echeck-item__status echeck-item__status--${measurement.status}`}>
+                              {measurement.status === 'ok' ? '✓ OK' : measurement.status === 'warning' ? '⚠ Warnung' : '✗ Fehler'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>
@@ -330,10 +350,10 @@ function MaintenancePage() {
                       </div>
                       <div className="calendar-item__content">
                         <p className="calendar-item__title" style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
-                          {plan.equipment_name}
+                          {plan.equipment_name || plan.name}
                         </p>
                         <p className="calendar-item__equipment" style={{ margin: '0 0 var(--spacing-1) 0' }}>
-                          {plan.frequency}
+                          {plan.frequency}{plan.name && plan.equipment_name ? ` - ${plan.name}` : ''}
                         </p>
                         <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: daysUntil <= 3 ? 'var(--color-danger)' : 'var(--color-text-secondary)' }}>
                           {daysUntil <= 0 ? 'Heute fällig' : daysUntil === 1 ? 'Morgen' : `In ${daysUntil} Tagen`}

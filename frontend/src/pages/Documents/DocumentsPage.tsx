@@ -138,9 +138,13 @@ function DocumentsPage() {
   const [filterType, setFilterType] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
-  const { data: documents = mockDocuments } = useQuery({
+  // TODO: Replace with documentsApi when backend endpoint is available
+  const { data: documents = [], isLoading, error } = useQuery({
     queryKey: ['documents'],
-    queryFn: async () => mockDocuments,
+    queryFn: async () => {
+      // No documents API endpoint available yet - using mock data
+      return mockDocuments
+    },
     staleTime: 1000 * 60 * 5,
   })
 
@@ -177,6 +181,45 @@ function DocumentsPage() {
       other: 'Sonstige',
     }
     return labels[type] || type
+  }
+
+  if (isLoading) {
+    return (
+      <div className="documents-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Dokumente</h1>
+            <p className="page-subtitle">Daten werden geladen...</p>
+          </div>
+        </div>
+        <div className="stats-grid">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="stat-card">
+              <div className="stat-card__label">Laden...</div>
+              <div className="stat-card__value">--</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="documents-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Dokumente</h1>
+            <p className="page-subtitle">Fehler beim Laden der Daten</p>
+          </div>
+        </div>
+        <div className="empty-state">
+          <div className="empty-state__icon">&#x26A0;</div>
+          <h3 className="empty-state__title">Daten konnten nicht geladen werden</h3>
+          <p className="empty-state__description">{String(error)}</p>
+        </div>
+      </div>
+    )
   }
 
   return (

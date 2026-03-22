@@ -22,6 +22,15 @@ api.interceptors.request.use(
     if (tenantId) {
       config.headers['X-Tenant-ID'] = tenantId
     }
+    // Extract user ID from JWT for service-to-service auth
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        if (payload.sub) {
+          config.headers['X-User-ID'] = payload.sub
+        }
+      } catch { /* ignore decode errors */ }
+    }
     return config
   },
   (error) => Promise.reject(error)

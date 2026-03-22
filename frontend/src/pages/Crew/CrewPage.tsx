@@ -100,9 +100,13 @@ function CrewPage() {
   const [filterRole, setFilterRole] = useState<string>('all')
   const [filterAvailability, setFilterAvailability] = useState<string>('all')
 
-  const { data: crewMembers = mockCrewMembers } = useQuery({
+  // TODO: Replace with crewApi when backend endpoint is available
+  const { data: crewMembers = [], isLoading, error } = useQuery({
     queryKey: ['crew'],
-    queryFn: async () => mockCrewMembers,
+    queryFn: async () => {
+      // No crew API endpoint available yet - using mock data
+      return mockCrewMembers
+    },
     staleTime: 1000 * 60 * 5,
   })
 
@@ -134,6 +138,45 @@ function CrewPage() {
       on_leave: 'Urlaub',
     }
     return labels[status] || status
+  }
+
+  if (isLoading) {
+    return (
+      <div className="crew-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Crew Management</h1>
+            <p className="page-subtitle">Daten werden geladen...</p>
+          </div>
+        </div>
+        <div className="stats-grid">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="stat-card">
+              <div className="stat-card__label">Laden...</div>
+              <div className="stat-card__value">--</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="crew-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Crew Management</h1>
+            <p className="page-subtitle">Fehler beim Laden der Daten</p>
+          </div>
+        </div>
+        <div className="empty-state">
+          <div className="empty-state__icon">&#x26A0;</div>
+          <h3 className="empty-state__title">Daten konnten nicht geladen werden</h3>
+          <p className="empty-state__description">{String(error)}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
