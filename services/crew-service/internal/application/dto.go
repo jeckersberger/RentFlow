@@ -6,111 +6,211 @@ import (
 	"github.com/jeckersberger/rentflow/services/crew-service/internal/domain"
 )
 
+// CrewMemberDTO represents a crew member in responses
 type CrewMemberDTO struct {
-	ID                   string    `json:"id"`
-	TenantID             string    `json:"tenant_id"`
-	UserID               string    `json:"user_id"`
-	FirstName            string    `json:"first_name"`
-	LastName             string    `json:"last_name"`
-	Email                string    `json:"email"`
-	Phone                string    `json:"phone"`
-	Type                 string    `json:"type"`
-	Skills               []string  `json:"skills"`
-	HourlyRate           float64   `json:"hourly_rate"`
-	DailyRate            float64   `json:"daily_rate"`
-	Status               string    `json:"status"`
-	AvailabilityCalendar string    `json:"availability_calendar"`
-	CreatedAt            time.Time `json:"created_at"`
-	UpdatedAt            time.Time `json:"updated_at"`
+	ID                 string   `json:"id"`
+	TenantID           string   `json:"tenant_id"`
+	FirstName          string   `json:"first_name"`
+	LastName           string   `json:"last_name"`
+	Email              string   `json:"email"`
+	Phone              string   `json:"phone"`
+	Role               string   `json:"role"`
+	Status             string   `json:"status"`
+	HourlyRate         *float64 `json:"hourly_rate,omitempty"`
+	DailyRate          *float64 `json:"daily_rate,omitempty"`
+	PreferredVehicleID *string  `json:"preferred_vehicle_id,omitempty"`
+	EmergencyContact   string   `json:"emergency_contact"`
+	Notes              string   `json:"notes"`
+	CreatedAt          string   `json:"created_at"`
+	UpdatedAt          string   `json:"updated_at"`
 }
 
-type TimeEntryDTO struct {
-	ID           string    `json:"id"`
-	TenantID     string    `json:"tenant_id"`
-	CrewMemberID string    `json:"crew_member_id"`
-	ProjectID    string    `json:"project_id"`
-	Date         time.Time `json:"date"`
-	StartTime    time.Time `json:"start_time"`
-	EndTime      time.Time `json:"end_time"`
-	BreakMinutes int       `json:"break_minutes"`
-	TotalHours   float64   `json:"total_hours"`
-	Type         string    `json:"type"`
-	Notes        string    `json:"notes"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+// QualificationDTO represents a qualification in responses
+type QualificationDTO struct {
+	ID                string `json:"id"`
+	CrewMemberID      string `json:"crew_member_id"`
+	QualificationType string `json:"qualification_type"`
+	IssuedAt          string `json:"issued_at"`
+	ExpiresAt         *string `json:"expires_at,omitempty"`
+	CertificateNumber string `json:"certificate_number"`
+	IssuingAuthority  string `json:"issuing_authority"`
+	Status            string `json:"status"`
+	CreatedAt         string `json:"created_at"`
+	UpdatedAt         string `json:"updated_at"`
 }
 
-type AssignmentDTO struct {
-	ID           string    `json:"id"`
-	TenantID     string    `json:"tenant_id"`
-	CrewMemberID string    `json:"crew_member_id"`
-	ProjectID    string    `json:"project_id"`
-	Role         string    `json:"role"`
-	StartDate    time.Time `json:"start_date"`
-	EndDate      time.Time `json:"end_date"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+// CrewAssignmentDTO represents a crew assignment in responses
+type CrewAssignmentDTO struct {
+	ID           string `json:"id"`
+	TenantID     string `json:"tenant_id"`
+	CrewMemberID string `json:"crew_member_id"`
+	ProjectID    *string `json:"project_id,omitempty"`
+	TourID       *string `json:"tour_id,omitempty"`
+	Role         string `json:"role"`
+	StartDate    string `json:"start_date"`
+	EndDate      string `json:"end_date"`
+	Status       string `json:"status"`
+	Notes        string `json:"notes"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
 }
 
-type TimeEntrySummary struct {
-	CrewMemberID  string  `json:"crew_member_id"`
-	TotalHours    float64 `json:"total_hours"`
-	Entries       int     `json:"entries"`
-	ApprovedHours float64 `json:"approved_hours"`
+// TimeRecordDTO represents a time record in responses
+type TimeRecordDTO struct {
+	ID              string `json:"id"`
+	TenantID        string `json:"tenant_id"`
+	CrewMemberID    string `json:"crew_member_id"`
+	AssignmentID    *string `json:"assignment_id,omitempty"`
+	Date            string `json:"date"`
+	StartTime       string `json:"start_time"`
+	EndTime         *string `json:"end_time,omitempty"`
+	BreakMinutes    int `json:"break_minutes"`
+	OvertimeMinutes int `json:"overtime_minutes"`
+	Status          string `json:"status"`
+	Notes           string `json:"notes"`
+	Hours           float64 `json:"hours,omitempty"`
+	CreatedAt       string `json:"created_at"`
+	UpdatedAt       string `json:"updated_at"`
 }
 
-func CrewMemberToDTO(cm *domain.CrewMember) *CrewMemberDTO {
+// AvailabilityDTO represents crew member availability
+type AvailabilityDTO struct {
+	CrewMemberID string `json:"crew_member_id"`
+	StartDate    string `json:"start_date"`
+	EndDate      string `json:"end_date"`
+	IsAvailable  bool `json:"is_available"`
+}
+
+// ConflictDTO represents an assignment conflict
+type ConflictDTO struct {
+	CrewMemberID     string `json:"crew_member_id"`
+	CrewMemberName   string `json:"crew_member_name"`
+	ConflictingDates string `json:"conflicting_dates"`
+	ExistingAssignment *CrewAssignmentDTO `json:"existing_assignment,omitempty"`
+}
+
+// DashboardDTO represents freelancer dashboard summary
+type DashboardDTO struct {
+	CrewMemberID      string `json:"crew_member_id"`
+	Name              string `json:"name"`
+	Role              string `json:"role"`
+	Status            string `json:"status"`
+	TotalHoursThisWeek float64 `json:"total_hours_this_week"`
+	TotalEarningsThisWeek float64 `json:"total_earnings_this_week"`
+	UpcomingAssignments int `json:"upcoming_assignments"`
+	ValidQualifications int `json:"valid_qualifications"`
+}
+
+// PaginatedResult represents a paginated response
+type PaginatedResult struct {
+	Data       interface{} `json:"data"`
+	Page       int         `json:"page"`
+	PerPage    int         `json:"per_page"`
+	Total      int         `json:"total"`
+	TotalPages int         `json:"total_pages"`
+}
+
+// ErrorResponse represents an error response
+type ErrorResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// Convert functions
+
+// ToCrewMemberDTO converts a domain CrewMember to DTO
+func ToCrewMemberDTO(m *domain.CrewMember) *CrewMemberDTO {
+	if m == nil {
+		return nil
+	}
 	return &CrewMemberDTO{
-		ID:                   cm.ID,
-		TenantID:             cm.TenantID,
-		UserID:               cm.UserID,
-		FirstName:            cm.FirstName,
-		LastName:             cm.LastName,
-		Email:                cm.Email,
-		Phone:                cm.Phone,
-		Type:                 string(cm.Type),
-		Skills:               cm.Skills,
-		HourlyRate:           cm.HourlyRate,
-		DailyRate:            cm.DailyRate,
-		Status:               string(cm.Status),
-		AvailabilityCalendar: cm.AvailabilityCalendar,
-		CreatedAt:            cm.CreatedAt,
-		UpdatedAt:            cm.UpdatedAt,
+		ID:                 m.ID,
+		TenantID:           m.TenantID,
+		FirstName:          m.FirstName,
+		LastName:           m.LastName,
+		Email:              m.Email,
+		Phone:              m.Phone,
+		Role:               string(m.Role),
+		Status:             string(m.Status),
+		HourlyRate:         m.HourlyRate,
+		DailyRate:          m.DailyRate,
+		PreferredVehicleID: m.PreferredVehicleID,
+		EmergencyContact:   m.EmergencyContact,
+		Notes:              m.Notes,
+		CreatedAt:          m.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:          m.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
-func TimeEntryToDTO(te *domain.TimeEntry) *TimeEntryDTO {
-	return &TimeEntryDTO{
-		ID:           te.ID,
-		TenantID:     te.TenantID,
-		CrewMemberID: te.CrewMemberID,
-		ProjectID:    te.ProjectID,
-		Date:         te.Date,
-		StartTime:    te.StartTime,
-		EndTime:      te.EndTime,
-		BreakMinutes: te.BreakMinutes,
-		TotalHours:   te.TotalHours,
-		Type:         string(te.Type),
-		Notes:        te.Notes,
-		Status:       string(te.Status),
-		CreatedAt:    te.CreatedAt,
-		UpdatedAt:    te.UpdatedAt,
+// ToQualificationDTO converts a domain Qualification to DTO
+func ToQualificationDTO(q *domain.Qualification) *QualificationDTO {
+	if q == nil {
+		return nil
+	}
+	expiresAt := (*string)(nil)
+	if q.ExpiresAt != nil {
+		expiresAtStr := q.ExpiresAt.Format(time.RFC3339)
+		expiresAt = &expiresAtStr
+	}
+	return &QualificationDTO{
+		ID:                q.ID,
+		CrewMemberID:      q.CrewMemberID,
+		QualificationType: string(q.QualificationType),
+		IssuedAt:          q.IssuedAt.Format(time.RFC3339),
+		ExpiresAt:         expiresAt,
+		CertificateNumber: q.CertificateNumber,
+		IssuingAuthority:  q.IssuingAuthority,
+		Status:            string(q.Status),
+		CreatedAt:         q.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:         q.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
-func AssignmentToDTO(a *domain.Assignment) *AssignmentDTO {
-	return &AssignmentDTO{
+// ToCrewAssignmentDTO converts a domain CrewAssignment to DTO
+func ToCrewAssignmentDTO(a *domain.CrewAssignment) *CrewAssignmentDTO {
+	if a == nil {
+		return nil
+	}
+	return &CrewAssignmentDTO{
 		ID:           a.ID,
 		TenantID:     a.TenantID,
 		CrewMemberID: a.CrewMemberID,
 		ProjectID:    a.ProjectID,
+		TourID:       a.TourID,
 		Role:         a.Role,
-		StartDate:    a.StartDate,
-		EndDate:      a.EndDate,
+		StartDate:    a.StartDate.Format(time.RFC3339),
+		EndDate:      a.EndDate.Format(time.RFC3339),
 		Status:       string(a.Status),
-		CreatedAt:    a.CreatedAt,
-		UpdatedAt:    a.UpdatedAt,
+		Notes:        a.Notes,
+		CreatedAt:    a.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:    a.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+// ToTimeRecordDTO converts a domain TimeRecord to DTO
+func ToTimeRecordDTO(t *domain.TimeRecord) *TimeRecordDTO {
+	if t == nil {
+		return nil
+	}
+	endTime := (*string)(nil)
+	if t.EndTime != nil {
+		endTimeStr := t.EndTime.Format(time.RFC3339)
+		endTime = &endTimeStr
+	}
+	return &TimeRecordDTO{
+		ID:              t.ID,
+		TenantID:        t.TenantID,
+		CrewMemberID:    t.CrewMemberID,
+		AssignmentID:    t.AssignmentID,
+		Date:            t.Date.Format("2006-01-02"),
+		StartTime:       t.StartTime.Format(time.RFC3339),
+		EndTime:         endTime,
+		BreakMinutes:    t.BreakMinutes,
+		OvertimeMinutes: t.OvertimeMinutes,
+		Status:          string(t.Status),
+		Notes:           t.Notes,
+		Hours:           t.CalculateHours(),
+		CreatedAt:       t.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:       t.UpdatedAt.Format(time.RFC3339),
 	}
 }

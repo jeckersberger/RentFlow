@@ -2,83 +2,93 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/jeckersberger/rentflow/pkg/common/config"
-	"github.com/jeckersberger/rentflow/pkg/common/database"
-	"github.com/jeckersberger/rentflow/pkg/common/logger"
-	httpAdapter "github.com/jeckersberger/rentflow/services/insurance-service/internal/adapters/http"
-	"github.com/jeckersberger/rentflow/services/insurance-service/internal/application"
-	"github.com/jeckersberger/rentflow/services/insurance-service/internal/infrastructure/repositories"
-)
+	_ "github.com/lib/pq"
+	"github.com/rs/zerolog"
 
-const (
-	serviceName = "insurance-service"
-	servicePort = 8012
+	"github.com/jeckersberger/rentflow/services/insurance-service/internal/adapters/database"
+	adaptorshttp "github.com/jeckersberger/rentflow/services/insurance-service/internal/adapters/http"
+	"github.com/jeckersberger/rentflow/services/insurance-service/internal/application"
 )
 
 func main() {
-	cfg := config.Load(serviceName)
-	if cfg.ServicePort == 8080 {
-		cfg.ServicePort = servicePort
+	logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
+
+	// Database connection
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "host=localhost port=5432 user=postgres password=postgres dbname=rentflow sslmode=disable"
 	}
-	log := logger.New(cfg.LogLevel, serviceName)
 
-	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
-
-	dbPool, err := database.NewPostgresPool(cfg.ConnectionString())
+	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		log.Fatal("Failed to connect to database", err)
+		logger.Fatal().Err(err).Msg("failed to connect to database")
 	}
-	defer dbPool.Close()
+	defer db.Close()
 
-	log.Info("Connected to database")
+	// Test database connection
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		logger.Fatal().Err(err).Msg("database ping failed")
+	}
 
-	policyRepo := repositories.NewPolicyPostgres(dbPool)
-	claimRepo := repositories.NewClaimPostgres(dbPool)
-	riskRepo := repositories.NewRiskAssessmentPostgres(dbPool)
+	logger.Info().Msg("connected to database")
 
-	log.Info("Repositories initialized")
+	// Initialize repositories
+	policyRepo := database.NewPolicyRepository(db)
+	claimRepo := database.NewClaimRepository(db)
+	claimItemRepo := database.NewClaimItemRepository(db)
 
-	policySvc := application.NewPolicyService(policyRepo, log)
-	claimSvc := application.NewClaimService(claimRepo, policyRepo, log)
-	riskSvc := application.NewRiskService(riskRepo, log)
+	// Initialize services
+	policyService := application.NewPolicyService(policyRepo, logger)
+	claimService := application.NewClaimService(claimRepo, policyRepo, claimItemRepo, logger)
 
-	log.Info("Services initialized")
+	// Initialize HTTP handler
+	handler := adaptorshttp.NewHandler(policyService, claimService, logger)
 
-	router := httpAdapter.NewRouter(policySvc, claimSvc, riskSvc, log)
+	// Setup routes
+	mux := http.NewServeMux()
+	adaptorshttp.RegisterRoutes(mux, handler)
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
-		Handler:      router,
+	// Create HTTP server
+	port := ":8011"
+	server := &http.Server{
+		Addr:         port,
+		Handler:      mux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
+	// Start server in a goroutine
 	go func() {
-		log.Info("Listening", "addr", srv.Addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("Server error", err)
+		logger.Info().Str("port", port).Msg("insurance-service starting")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal().Err(err).Msg("server error")
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	// Wait for interrupt signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
 
-	log.Info("Shutting down gracefully...")
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	logger.Info().Msg("shutdown signal received")
 
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Error("Server shutdown error", err)
+	// Graceful shutdown
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Error().Err(err).Msg("server shutdown error")
 	}
 
-	log.Info("Server stopped")
+	logger.Info().Msg("insurance-service stopped")
 }

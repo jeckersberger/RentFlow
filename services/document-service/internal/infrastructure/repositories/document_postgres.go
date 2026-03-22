@@ -3,7 +3,8 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"encoding/json"
+	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/database"
 	"github.com/jeckersberger/rentflow/services/document-service/internal/domain"
@@ -18,150 +19,224 @@ func NewDocumentPostgres(db *database.PostgresPool) *DocumentPostgres {
 }
 
 func (r *DocumentPostgres) Create(ctx context.Context, doc *domain.Document) error {
-	query := `
-		INSERT INTO documents.documents (
-			id, tenant_id, name, type, entity_type, entity_id, file_ref, mime_type,
-			size, checksum, created_by, created_at, updated_at
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-		)
-	`
-
-	_, err := r.db.Exec(ctx, query,
-		doc.ID, doc.TenantID, doc.Name, string(doc.Type), doc.EntityType, doc.EntityID,
-		doc.FileRef, doc.MimeType, doc.Size, doc.Checksum, doc.CreatedBy, doc.CreatedAt, doc.UpdatedAt,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to create document: %w", err)
+	metadataJSON := []byte("{}")
+	if doc.Metadata != nil {
+		data, err := json.Marshal(doc.Metadata)
+		if err != nil {
+			return err
+		}
+		metadataJSON = data
 	}
 
-	return nil
+	query := `
+		INSERT INTO documents
+		(id, tenant_id, document_type, reference_id, document_number, title, status,
+		 current_version, template_id, metadata, checksum_sha256, previous_checksum,
+		 created_by, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+	`
+	_, err := r.db.Exec(ctx, query,
+		doc.ID, doc.TenantID, string(doc.DocumentType), doc.ReferenceID,
+		doc.DocumentNumber, doc.Title, string(doc.Status), doc.CurrentVersion,
+		doc.TemplateID, metadataJSON, doc.ChecksumSHA256, doc.PreviousChecksum,
+		doc.CreatedBy, doc.CreatedAt, doc.UpdatedAt,
+	)
+	return err
 }
 
-func (r *DocumentPostgres) GetByID(ctx context.Context, tenantID, documentID string) (*domain.Document, error) {
+func (r *DocumentPostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.Document, error) {
 	query := `
-		SELECT id, tenant_id, name, type, entity_type, entity_id, file_ref, mime_type,
-		       size, checksum, created_by, created_at, updated_at
-		FROM documents.documents
+		SELECT id, tenant_id, document_type, reference_id, document_number, title, status,
+		       current_version, template_id, metadata, checksum_sha256, previous_checksum,
+		       created_by, created_at, updated_at
+		FROM documents
 		WHERE id = $1 AND tenant_id = $2
 	`
-
 	var doc domain.Document
-	err := r.db.QueryRow(ctx, query, documentID, tenantID).Scan(
-		&doc.ID, &doc.TenantID, &doc.Name, (*string)(&doc.Type), &doc.EntityType, &doc.EntityID,
-		&doc.FileRef, &doc.MimeType, &doc.Size, &doc.Checksum, &doc.CreatedBy, &doc.CreatedAt, &doc.UpdatedAt,
-	)
+	var metadataJSON []byte
 
+	err := r.db.QueryRow(ctx, query, id, tenantID).Scan(
+		&doc.ID, &doc.TenantID, &doc.DocumentType, &doc.ReferenceID,
+		&doc.DocumentNumber, &doc.Title, &doc.Status, &doc.CurrentVersion,
+		&doc.TemplateID, &metadataJSON, &doc.ChecksumSHA256, &doc.PreviousChecksum,
+		&doc.CreatedBy, &doc.CreatedAt, &doc.UpdatedAt,
+	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("document not found")
+		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get document: %w", err)
+		return nil, err
+	}
+
+	doc.Metadata = make(map[string]interface{})
+	if err := json.Unmarshal(metadataJSON, &doc.Metadata); err != nil {
+		return nil, err
 	}
 
 	return &doc, nil
 }
 
-func (r *DocumentPostgres) List(ctx context.Context, tenantID string, limit, offset int) ([]*domain.Document, int64, error) {
-	countQuery := `SELECT COUNT(*) FROM documents.documents WHERE tenant_id = $1`
-	var total int64
-	if err := r.db.QueryRow(ctx, countQuery, tenantID).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("failed to count documents: %w", err)
-	}
-
+func (r *DocumentPostgres) ListByTenant(ctx context.Context, tenantID string) ([]*domain.Document, error) {
 	query := `
-		SELECT id, tenant_id, name, type, entity_type, entity_id, file_ref, mime_type,
-		       size, checksum, created_by, created_at, updated_at
-		FROM documents.documents
+		SELECT id, tenant_id, document_type, reference_id, document_number, title, status,
+		       current_version, template_id, metadata, checksum_sha256, previous_checksum,
+		       created_by, created_at, updated_at
+		FROM documents
 		WHERE tenant_id = $1
 		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3
 	`
-
-	rows, err := r.db.Query(ctx, query, tenantID, limit, offset)
+	rows, err := r.db.Query(ctx, query, tenantID)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to list documents: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
 	var docs []*domain.Document
 	for rows.Next() {
 		var doc domain.Document
-		err := rows.Scan(
-			&doc.ID, &doc.TenantID, &doc.Name, (*string)(&doc.Type), &doc.EntityType, &doc.EntityID,
-			&doc.FileRef, &doc.MimeType, &doc.Size, &doc.Checksum, &doc.CreatedBy, &doc.CreatedAt, &doc.UpdatedAt,
-		)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to scan document: %w", err)
+		var metadataJSON []byte
+
+		if err := rows.Scan(
+			&doc.ID, &doc.TenantID, &doc.DocumentType, &doc.ReferenceID,
+			&doc.DocumentNumber, &doc.Title, &doc.Status, &doc.CurrentVersion,
+			&doc.TemplateID, &metadataJSON, &doc.ChecksumSHA256, &doc.PreviousChecksum,
+			&doc.CreatedBy, &doc.CreatedAt, &doc.UpdatedAt,
+		); err != nil {
+			return nil, err
 		}
+
+		doc.Metadata = make(map[string]interface{})
+		if err := json.Unmarshal(metadataJSON, &doc.Metadata); err != nil {
+			return nil, err
+		}
+
 		docs = append(docs, &doc)
 	}
-
-	if err = rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("rows error: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
-	return docs, total, nil
+	return docs, nil
 }
 
-func (r *DocumentPostgres) ListByEntity(ctx context.Context, tenantID, entityType, entityID string, limit, offset int) ([]*domain.Document, int64, error) {
-	countQuery := `SELECT COUNT(*) FROM documents.documents WHERE tenant_id = $1 AND entity_type = $2 AND entity_id = $3`
-	var total int64
-	if err := r.db.QueryRow(ctx, countQuery, tenantID, entityType, entityID).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("failed to count documents: %w", err)
+func (r *DocumentPostgres) ListByType(ctx context.Context, tenantID string, docType domain.DocumentType) ([]*domain.Document, error) {
+	query := `
+		SELECT id, tenant_id, document_type, reference_id, document_number, title, status,
+		       current_version, template_id, metadata, checksum_sha256, previous_checksum,
+		       created_by, created_at, updated_at
+		FROM documents
+		WHERE tenant_id = $1 AND document_type = $2
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.Query(ctx, query, tenantID, string(docType))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var docs []*domain.Document
+	for rows.Next() {
+		var doc domain.Document
+		var metadataJSON []byte
+
+		if err := rows.Scan(
+			&doc.ID, &doc.TenantID, &doc.DocumentType, &doc.ReferenceID,
+			&doc.DocumentNumber, &doc.Title, &doc.Status, &doc.CurrentVersion,
+			&doc.TemplateID, &metadataJSON, &doc.ChecksumSHA256, &doc.PreviousChecksum,
+			&doc.CreatedBy, &doc.CreatedAt, &doc.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		doc.Metadata = make(map[string]interface{})
+		if err := json.Unmarshal(metadataJSON, &doc.Metadata); err != nil {
+			return nil, err
+		}
+
+		docs = append(docs, &doc)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return docs, nil
+}
+
+func (r *DocumentPostgres) Update(ctx context.Context, doc *domain.Document) error {
+	metadataJSON := []byte("{}")
+	if doc.Metadata != nil {
+		data, err := json.Marshal(doc.Metadata)
+		if err != nil {
+			return err
+		}
+		metadataJSON = data
 	}
 
 	query := `
-		SELECT id, tenant_id, name, type, entity_type, entity_id, file_ref, mime_type,
-		       size, checksum, created_by, created_at, updated_at
-		FROM documents.documents
-		WHERE tenant_id = $1 AND entity_type = $2 AND entity_id = $3
-		ORDER BY created_at DESC
-		LIMIT $4 OFFSET $5
+		UPDATE documents
+		SET status = $1, current_version = $2, checksum_sha256 = $3,
+		    previous_checksum = $4, metadata = $5, updated_at = $6
+		WHERE id = $7 AND tenant_id = $8
 	`
+	_, err := r.db.Exec(ctx, query,
+		string(doc.Status), doc.CurrentVersion, doc.ChecksumSHA256,
+		doc.PreviousChecksum, metadataJSON, doc.UpdatedAt,
+		doc.ID, doc.TenantID,
+	)
+	return err
+}
 
-	rows, err := r.db.Query(ctx, query, tenantID, entityType, entityID, limit, offset)
+func (r *DocumentPostgres) Archive(ctx context.Context, tenantID, docID string) error {
+	query := `
+		UPDATE documents
+		SET status = $1, updated_at = $2
+		WHERE id = $3 AND tenant_id = $4
+	`
+	_, err := r.db.Exec(ctx, query,
+		string(domain.DocumentStatusArchived), time.Now(), docID, tenantID,
+	)
+	return err
+}
+
+func (r *DocumentPostgres) ListAllForChecksumChain(ctx context.Context, tenantID string) ([]*domain.Document, error) {
+	query := `
+		SELECT id, tenant_id, document_type, reference_id, document_number, title, status,
+		       current_version, template_id, metadata, checksum_sha256, previous_checksum,
+		       created_by, created_at, updated_at
+		FROM documents
+		WHERE tenant_id = $1
+		ORDER BY created_at ASC
+	`
+	rows, err := r.db.Query(ctx, query, tenantID)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to list documents: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
 	var docs []*domain.Document
 	for rows.Next() {
 		var doc domain.Document
-		err := rows.Scan(
-			&doc.ID, &doc.TenantID, &doc.Name, (*string)(&doc.Type), &doc.EntityType, &doc.EntityID,
-			&doc.FileRef, &doc.MimeType, &doc.Size, &doc.Checksum, &doc.CreatedBy, &doc.CreatedAt, &doc.UpdatedAt,
-		)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to scan document: %w", err)
+		var metadataJSON []byte
+
+		if err := rows.Scan(
+			&doc.ID, &doc.TenantID, &doc.DocumentType, &doc.ReferenceID,
+			&doc.DocumentNumber, &doc.Title, &doc.Status, &doc.CurrentVersion,
+			&doc.TemplateID, &metadataJSON, &doc.ChecksumSHA256, &doc.PreviousChecksum,
+			&doc.CreatedBy, &doc.CreatedAt, &doc.UpdatedAt,
+		); err != nil {
+			return nil, err
 		}
+
+		doc.Metadata = make(map[string]interface{})
+		if err := json.Unmarshal(metadataJSON, &doc.Metadata); err != nil {
+			return nil, err
+		}
+
 		docs = append(docs, &doc)
 	}
-
-	if err = rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("rows error: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
-	return docs, total, nil
-}
-
-func (r *DocumentPostgres) Delete(ctx context.Context, tenantID, documentID string) error {
-	query := `DELETE FROM documents.documents WHERE id = $1 AND tenant_id = $2`
-
-	result, err := r.db.Exec(ctx, query, documentID, tenantID)
-	if err != nil {
-		return fmt.Errorf("failed to delete document: %w", err)
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-	if rows == 0 {
-		return fmt.Errorf("document not found")
-	}
-
-	return nil
+	return docs, nil
 }

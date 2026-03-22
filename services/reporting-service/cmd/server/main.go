@@ -1,69 +1,53 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"github.com/jeckersberger/rentflow/pkg/common/config"
-	"github.com/jeckersberger/rentflow/pkg/common/database"
-	"github.com/jeckersberger/rentflow/pkg/common/logger"
-	httpAdapter "github.com/jeckersberger/rentflow/services/reporting-service/internal/adapters/http"
+	_ "github.com/lib/pq"
+	"github.com/rs/zerolog"
 	"github.com/jeckersberger/rentflow/services/reporting-service/internal/application"
-	"github.com/jeckersberger/rentflow/services/reporting-service/internal/infrastructure/repositories"
-)
-
-const (
-	serviceName = "reporting-service"
-	servicePort = 8016
+	httphandlers "github.com/jeckersberger/rentflow/services/reporting-service/internal/infrastructure/http"
+	"github.com/jeckersberger/rentflow/services/reporting-service/internal/infrastructure/persistence"
 )
 
 func main() {
-	cfg := config.Load(serviceName)
-	if cfg.ServicePort == 8080 {
-		cfg.ServicePort = servicePort
+	logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
+
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "postgres://localhost/rentflow?sslmode=disable"
 	}
-	log := logger.New(cfg.LogLevel, serviceName)
 
-	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
-
-	dbPool, err := database.NewPostgresPool(cfg.ConnectionString())
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatal("Failed to connect to database", err)
+		logger.Fatal().Err(err).Msg("Failed to connect to database")
 	}
-	defer dbPool.Close()
+	defer db.Close()
 
-	reportRepo := repositories.NewReportPostgres(dbPool)
-	reportSvc := application.NewReportService(reportRepo, log)
-
-	router := httpAdapter.NewRouter(reportSvc, log)
-
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+	if err := db.Ping(); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to ping database")
 	}
 
-	go func() {
-		log.Info("Listening", "addr", srv.Addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("Server error", err)
-		}
-	}()
+	logger.Info().Msg("Connected to database")
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	reportRepo := persistence.NewPostgresReportRepository(db)
+	kpiRepo := persistence.NewPostgresKPIRepository(db)
 
-	log.Info("Shutting down gracefully...")
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	srv.Shutdown(ctx)
-	log.Info("Server stopped")
+	reportService := application.NewReportService(reportRepo)
+	kpiService := application.NewKPIService(kpiRepo)
+
+	mux := http.NewServeMux()
+	httphandlers.SetupRoutes(mux, reportService, kpiService, logger)
+
+	port := 8012
+	addr := fmt.Sprintf(":%d", port)
+
+	logger.Info().Int("port", port).Msg("Starting reporting-service")
+
+	if err := http.ListenAndServe(addr, mux); err != nil && err != http.ErrServerClosed {
+		logger.Fatal().Err(err).Msg("Server error")
+	}
 }

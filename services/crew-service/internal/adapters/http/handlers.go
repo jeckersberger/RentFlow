@@ -11,456 +11,456 @@ import (
 	"github.com/jeckersberger/rentflow/services/crew-service/internal/domain"
 )
 
-type Handler struct {
-	crewSvc       *application.CrewService
-	timeEntrySvc  *application.TimeEntryService
-	assignmentSvc *application.AssignmentService
-	logger        logger.Logger
+// Handlers contains all HTTP handlers
+type Handlers struct {
+	crewService       *application.CrewService
+	qualificationSvc  *application.QualificationService
+	assignmentSvc     *application.AssignmentService
+	timeRecordSvc     *application.TimeRecordService
+	logger            logger.Logger
 }
 
-func NewHandler(
+// NewHandlers creates a new handlers instance
+func NewHandlers(
 	crewSvc *application.CrewService,
-	timeEntrySvc *application.TimeEntryService,
+	qualSvc *application.QualificationService,
 	assignmentSvc *application.AssignmentService,
-	logger logger.Logger,
-) *Handler {
-	return &Handler{
-		crewSvc:       crewSvc,
-		timeEntrySvc:  timeEntrySvc,
-		assignmentSvc: assignmentSvc,
-		logger:        logger,
+	timeRecordSvc *application.TimeRecordService,
+	log logger.Logger,
+) *Handlers {
+	return &Handlers{
+		crewService:      crewSvc,
+		qualificationSvc: qualSvc,
+		assignmentSvc:    assignmentSvc,
+		timeRecordSvc:    timeRecordSvc,
+		logger:           log,
 	}
 }
 
-// Crew Member Handlers
+// ---- Crew Member Handlers ----
 
-func (h *Handler) CreateCrewMember(w http.ResponseWriter, r *http.Request) {
+// ListCrewMembers lists crew members
+func (h *Handlers) ListCrewMembers(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
+
+	page := 1
+	perPage := 20
+	if p := r.URL.Query().Get("page"); p != "" {
+		if pageNum, err := strconv.Atoi(p); err == nil && pageNum > 0 {
+			page = pageNum
+		}
+	}
+	if pp := r.URL.Query().Get("per_page"); pp != "" {
+		if ppNum, err := strconv.Atoi(pp); err == nil && ppNum > 0 && ppNum <= 100 {
+			perPage = ppNum
+		}
+	}
+
+	result, err := h.crewService.ListCrewMembers(r.Context(), tenantID, page, perPage)
+	if err != nil {
+		h.logger.Error("failed to list crew members", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to list crew members")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// CreateCrewMember creates a new crew member
+func (h *Handlers) CreateCrewMember(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
+
 	var cmd application.CreateCrewMemberCommand
 	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, http.StatusBadRequest, "invalid_json", "invalid request body")
 		return
 	}
 
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
 	cmd.TenantID = tenantID
 
-	dto, err := h.crewSvc.CreateCrewMember(r.Context(), cmd)
+	dto, err := h.crewService.CreateCrewMember(r.Context(), cmd)
 	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusCreated, dto)
-}
-
-func (h *Handler) GetCrewMember(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dto, err := h.crewSvc.GetCrewMember(r.Context(), tenantID, id)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) ListCrewMembers(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	limit := 20
-	offset := 0
-
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
-			limit = parsed
+		switch err {
+		case domain.ErrDuplicateEmail:
+			writeError(w, http.StatusConflict, "duplicate_email", "email already exists")
+		case domain.ErrTenantIDRequired:
+			writeError(w, http.StatusBadRequest, "missing_tenant_id", "tenant ID is required")
+		default:
+			h.logger.Error("failed to create crew member", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to create crew member")
 		}
-	}
-
-	if o := r.URL.Query().Get("offset"); o != "" {
-		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
-			offset = parsed
-		}
-	}
-
-	dtos, total, err := h.crewSvc.ListCrewMembers(r.Context(), tenantID, limit, offset)
-	if err != nil {
-		h.handleError(w, err)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, map[string]interface{}{
-		"items":  dtos,
-		"total":  total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	writeJSON(w, http.StatusCreated, dto)
 }
 
-func (h *Handler) UpdateCrewMember(w http.ResponseWriter, r *http.Request) {
+// GetCrewMember retrieves a crew member
+func (h *Handlers) GetCrewMember(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "crew member ID is required")
+		return
+	}
+
+	dto, err := h.crewService.GetCrewMember(r.Context(), id)
+	if err != nil {
+		if err == domain.ErrCrewMemberNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "crew member not found")
+		} else {
+			h.logger.Error("failed to get crew member", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to get crew member")
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto)
+}
+
+// UpdateCrewMember updates a crew member
+func (h *Handlers) UpdateCrewMember(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
+
+	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "crew member ID is required")
 		return
 	}
 
 	var cmd application.UpdateCrewMemberCommand
 	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, http.StatusBadRequest, "invalid_json", "invalid request body")
 		return
 	}
 
 	cmd.ID = id
 	cmd.TenantID = tenantID
 
-	dto, err := h.crewSvc.UpdateCrewMember(r.Context(), cmd)
+	dto, err := h.crewService.UpdateCrewMember(r.Context(), cmd)
 	if err != nil {
-		h.handleError(w, err)
+		if err == domain.ErrCrewMemberNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "crew member not found")
+		} else {
+			h.logger.Error("failed to update crew member", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to update crew member")
+		}
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, dto)
+	writeJSON(w, http.StatusOK, dto)
 }
 
-func (h *Handler) DeleteCrewMember(w http.ResponseWriter, r *http.Request) {
+// DeleteCrewMember deletes a crew member
+func (h *Handlers) DeleteCrewMember(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "crew member ID is required")
 		return
 	}
 
-	if err := h.crewSvc.DeleteCrewMember(r.Context(), tenantID, id); err != nil {
-		h.handleError(w, err)
+	err := h.crewService.DeleteCrewMember(r.Context(), id)
+	if err != nil {
+		if err == domain.ErrCrewMemberNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "crew member not found")
+		} else {
+			h.logger.Error("failed to delete crew member", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to delete crew member")
+		}
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// Time Entry Handlers
+// ---- Qualification Handlers ----
 
-func (h *Handler) CreateTimeEntry(w http.ResponseWriter, r *http.Request) {
-	var cmd application.CreateTimeEntryCommand
+// GetQualifications lists qualifications for a crew member
+func (h *Handlers) GetQualifications(w http.ResponseWriter, r *http.Request) {
+	crewMemberID := r.PathValue("id")
+	if crewMemberID == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "crew member ID is required")
+		return
+	}
+
+	dtos, err := h.qualificationSvc.ListQualificationsForCrewMember(r.Context(), crewMemberID)
+	if err != nil {
+		h.logger.Error("failed to list qualifications", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to list qualifications")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dtos)
+}
+
+// CreateQualification creates a new qualification
+func (h *Handlers) CreateQualification(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
+
+	crewMemberID := r.PathValue("id")
+	if crewMemberID == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "crew member ID is required")
+		return
+	}
+
+	var cmd application.CreateQualificationCommand
 	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, http.StatusBadRequest, "invalid_json", "invalid request body")
 		return
 	}
 
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
 	cmd.TenantID = tenantID
+	cmd.CrewMemberID = crewMemberID
 
-	dto, err := h.timeEntrySvc.CreateTimeEntry(r.Context(), cmd)
+	dto, err := h.qualificationSvc.CreateQualification(r.Context(), cmd)
 	if err != nil {
-		h.handleError(w, err)
+		if err == domain.ErrCrewMemberNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "crew member not found")
+		} else {
+			h.logger.Error("failed to create qualification", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to create qualification")
+		}
 		return
 	}
 
-	h.respondJSON(w, http.StatusCreated, dto)
+	writeJSON(w, http.StatusCreated, dto)
 }
 
-func (h *Handler) GetTimeEntry(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+// ---- Assignment Handlers ----
+
+// ListAssignments lists crew assignments
+func (h *Handlers) ListAssignments(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
 		return
 	}
 
-	dto, err := h.timeEntrySvc.GetTimeEntry(r.Context(), tenantID, id)
-	if err != nil {
-		h.handleError(w, err)
-		return
+	page := 1
+	perPage := 20
+	if p := r.URL.Query().Get("page"); p != "" {
+		if pageNum, err := strconv.Atoi(p); err == nil && pageNum > 0 {
+			page = pageNum
+		}
 	}
-
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) ListTimeEntries(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	limit := 20
-	offset := 0
-
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
-			limit = parsed
+	if pp := r.URL.Query().Get("per_page"); pp != "" {
+		if ppNum, err := strconv.Atoi(pp); err == nil && ppNum > 0 && ppNum <= 100 {
+			perPage = ppNum
 		}
 	}
 
-	if o := r.URL.Query().Get("offset"); o != "" {
-		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
-			offset = parsed
-		}
-	}
-
-	dtos, total, err := h.timeEntrySvc.ListTimeEntries(r.Context(), tenantID, limit, offset)
+	result, err := h.assignmentSvc.ListAssignments(r.Context(), tenantID, page, perPage)
 	if err != nil {
-		h.handleError(w, err)
+		h.logger.Error("failed to list assignments", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to list assignments")
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, map[string]interface{}{
-		"items":  dtos,
-		"total":  total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	writeJSON(w, http.StatusOK, result)
 }
 
-func (h *Handler) UpdateTimeEntry(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+// CreateAssignment creates a new crew assignment
+func (h *Handlers) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
 		return
 	}
 
-	var cmd application.UpdateTimeEntryCommand
+	var cmd application.CreateCrewAssignmentCommand
 	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, http.StatusBadRequest, "invalid_json", "invalid request body")
 		return
 	}
 
-	cmd.ID = id
-	cmd.TenantID = tenantID
-
-	dto, err := h.timeEntrySvc.UpdateTimeEntry(r.Context(), cmd)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) ApproveTimeEntry(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dto, err := h.timeEntrySvc.ApproveTimeEntry(r.Context(), tenantID, id)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) RejectTimeEntry(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dto, err := h.timeEntrySvc.RejectTimeEntry(r.Context(), tenantID, id)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) GetTimeEntrySummary(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	crewID := r.URL.Query().Get("crew_id")
-	fromStr := r.URL.Query().Get("from")
-	toStr := r.URL.Query().Get("to")
-
-	if crewID == "" || fromStr == "" || toStr == "" {
-		h.respondError(w, http.StatusBadRequest, "crew_id, from, and to required")
-		return
-	}
-
-	from, err := time.Parse("2006-01-02", fromStr)
-	if err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid from date format")
-		return
-	}
-
-	to, err := time.Parse("2006-01-02", toStr)
-	if err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid to date format")
-		return
-	}
-
-	summary, err := h.timeEntrySvc.GetSummary(r.Context(), tenantID, crewID, from, to)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, summary)
-}
-
-// Assignment Handlers
-
-func (h *Handler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
-	var cmd application.CreateAssignmentCommand
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
 	cmd.TenantID = tenantID
 
 	dto, err := h.assignmentSvc.CreateAssignment(r.Context(), cmd)
 	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusCreated, dto)
-}
-
-func (h *Handler) GetAssignment(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dto, err := h.assignmentSvc.GetAssignment(r.Context(), tenantID, id)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) ListAssignments(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	limit := 20
-	offset := 0
-
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
-			limit = parsed
+		switch err {
+		case domain.ErrConflictDetected:
+			writeError(w, http.StatusConflict, "conflict_detected", "assignment conflicts with existing assignment")
+		case domain.ErrCrewMemberNotFound:
+			writeError(w, http.StatusNotFound, "not_found", "crew member not found")
+		case domain.ErrInvalidDateRange:
+			writeError(w, http.StatusBadRequest, "invalid_date", "invalid date range")
+		default:
+			h.logger.Error("failed to create assignment", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to create assignment")
 		}
-	}
-
-	if o := r.URL.Query().Get("offset"); o != "" {
-		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
-			offset = parsed
-		}
-	}
-
-	dtos, total, err := h.assignmentSvc.ListAssignments(r.Context(), tenantID, limit, offset)
-	if err != nil {
-		h.handleError(w, err)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, map[string]interface{}{
-		"items":  dtos,
-		"total":  total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	writeJSON(w, http.StatusCreated, dto)
 }
 
-func (h *Handler) GetAssignmentsByProject(w http.ResponseWriter, r *http.Request) {
-	projectID := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dtos, err := h.assignmentSvc.GetByProject(r.Context(), tenantID, projectID)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, dtos)
-}
-
-func (h *Handler) DeleteAssignment(w http.ResponseWriter, r *http.Request) {
+// GetAssignment retrieves an assignment
+func (h *Handlers) GetAssignment(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "assignment ID is required")
 		return
 	}
 
-	if err := h.assignmentSvc.DeleteAssignment(r.Context(), tenantID, id); err != nil {
-		h.handleError(w, err)
+	dto, err := h.assignmentSvc.GetAssignment(r.Context(), id)
+	if err != nil {
+		if err == domain.ErrAssignmentNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "assignment not found")
+		} else {
+			h.logger.Error("failed to get assignment", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to get assignment")
+		}
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	writeJSON(w, http.StatusOK, dto)
 }
 
-// Helper methods
+// UpdateAssignment updates an assignment
+func (h *Handlers) UpdateAssignment(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
 
-func (h *Handler) respondJSON(w http.ResponseWriter, status int, data interface{}) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "assignment ID is required")
+		return
+	}
+
+	var cmd application.UpdateCrewAssignmentCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_json", "invalid request body")
+		return
+	}
+
+	cmd.ID = id
+	cmd.TenantID = tenantID
+
+	dto, err := h.assignmentSvc.UpdateAssignment(r.Context(), cmd)
+	if err != nil {
+		if err == domain.ErrAssignmentNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "assignment not found")
+		} else {
+			h.logger.Error("failed to update assignment", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to update assignment")
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto)
+}
+
+// DetectConflicts detects assignment conflicts
+func (h *Handlers) DetectConflicts(w http.ResponseWriter, r *http.Request) {
+	crewMemberID := r.URL.Query().Get("member_id")
+	if crewMemberID == "" {
+		writeError(w, http.StatusBadRequest, "missing_param", "member_id query parameter is required")
+		return
+	}
+
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+	if startStr == "" || endStr == "" {
+		writeError(w, http.StatusBadRequest, "missing_param", "start and end query parameters are required")
+		return
+	}
+
+	startDate, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_date", "invalid start date format")
+		return
+	}
+
+	endDate, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_date", "invalid end date format")
+		return
+	}
+
+	conflicts, err := h.assignmentSvc.DetectConflicts(r.Context(), crewMemberID, startDate, endDate)
+	if err != nil {
+		h.logger.Error("failed to detect conflicts", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to detect conflicts")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, conflicts)
+}
+
+// ---- Availability Handlers ----
+
+// CheckAvailability checks crew member availability
+func (h *Handlers) CheckAvailability(w http.ResponseWriter, r *http.Request) {
+	crewMemberID := r.PathValue("id")
+	if crewMemberID == "" {
+		writeError(w, http.StatusBadRequest, "missing_id", "crew member ID is required")
+		return
+	}
+
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+	if startStr == "" || endStr == "" {
+		writeError(w, http.StatusBadRequest, "missing_param", "start and end query parameters are required")
+		return
+	}
+
+	startDate, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_date", "invalid start date format")
+		return
+	}
+
+	endDate, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_date", "invalid end date format")
+		return
+	}
+
+	availability, err := h.crewService.CheckAvailability(r.Context(), crewMemberID, startDate, endDate)
+	if err != nil {
+		if err == domain.ErrCrewMemberNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "crew member not found")
+		} else {
+			h.logger.Error("failed to check availability", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to check availability")
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, availability)
+}
+
+// ---- Helper functions ----
+
+func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
+	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(data)
 }
 
-func (h *Handler) respondError(w http.ResponseWriter, status int, message string) {
-	h.respondJSON(w, status, map[string]string{"error": message})
-}
-
-func (h *Handler) handleError(w http.ResponseWriter, err error) {
-	if domErr, ok := err.(*domain.DomainError); ok {
-		switch domErr.Code {
-		case "NOT_FOUND":
-			h.respondError(w, http.StatusNotFound, domErr.Message)
-		case "VALIDATION_ERROR":
-			h.respondError(w, http.StatusBadRequest, domErr.Message)
-		default:
-			h.respondError(w, http.StatusInternalServerError, domErr.Message)
-		}
-	} else {
-		h.respondError(w, http.StatusInternalServerError, "internal server error")
-	}
+func writeError(w http.ResponseWriter, statusCode int, code, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(application.ErrorResponse{
+		Code:    code,
+		Message: message,
+	})
 }

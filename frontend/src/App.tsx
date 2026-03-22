@@ -41,6 +41,20 @@ import TransportDetailPage from './pages/Transport/TransportDetail'
 import MaintenancePage from './pages/Maintenance/MaintenancePage'
 import MaintenanceDetailPage from './pages/Maintenance/MaintenanceDetail'
 
+// Crew Pages
+import CrewPage from './pages/Crew/CrewPage'
+import CrewDetail from './pages/Crew/CrewDetail'
+
+// Documents Pages
+import DocumentsPage from './pages/Documents/DocumentsPage'
+
+// Insurance Pages
+import InsurancePage from './pages/Insurance/InsurancePage'
+import InsuranceDetail from './pages/Insurance/InsuranceDetail'
+
+// Reports Pages
+import ReportsPage from './pages/Reports/ReportsPage'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -117,6 +131,24 @@ function App() {
             <Route path="maintenance/new-task" element={<div>Neue Aufgabe - Formular</div>} />
             <Route path="maintenance/new-echeck" element={<div>E-Check durchführen - Formular</div>} />
             <Route path="maintenance/plans/:id" element={<div>Wartungsplan Details</div>} />
+
+            {/* Crew Routes */}
+            <Route path="crew" element={<CrewPage />} />
+            <Route path="crew/:id" element={<CrewDetail />} />
+            <Route path="crew/new" element={<div>Neuer Mitarbeiter - Formular</div>} />
+
+            {/* Documents Routes */}
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="documents/:id" element={<div>Dokumentdetails</div>} />
+            <Route path="documents/new" element={<div>Neues Dokument - Formular</div>} />
+
+            {/* Insurance Routes */}
+            <Route path="insurance" element={<InsurancePage />} />
+            <Route path="insurance/claims/:id" element={<InsuranceDetail />} />
+            <Route path="insurance/new-claim" element={<div>Neuer Schadensfall - Formular</div>} />
+
+            {/* Reports Routes */}
+            <Route path="reports" element={<ReportsPage />} />
 
             {/* Scanner & Warehouse */}
             <Route path="scanner" element={<ScannerPage />} />

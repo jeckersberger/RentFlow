@@ -1,55 +1,34 @@
 package http
 
-import (
-	"net/http"
+import "net/http"
 
-	"github.com/jeckersberger/rentflow/pkg/common/logger"
-	"github.com/jeckersberger/rentflow/services/insurance-service/internal/application"
-)
+// RegisterRoutes registers all HTTP routes
+func RegisterRoutes(mux *http.ServeMux, handler *Handler) {
+	// Policy routes
+	mux.HandleFunc("POST /api/v1/insurance/policies", handler.CreatePolicy)
+	mux.HandleFunc("GET /api/v1/insurance/policies", handler.GetTenantPolicies)
+	mux.HandleFunc("GET /api/v1/insurance/policies/active", handler.GetActivePolicies)
+	mux.HandleFunc("GET /api/v1/insurance/policies/{id}", handler.GetPolicy)
+	mux.HandleFunc("PUT /api/v1/insurance/policies/{id}", handler.UpdatePolicy)
 
-func NewRouter(
-	policySvc *application.PolicyService,
-	claimSvc *application.ClaimService,
-	riskSvc *application.RiskService,
-	log logger.Logger,
-) *http.ServeMux {
-	router := http.NewServeMux()
-	handler := NewHandler(policySvc, claimSvc, riskSvc, log)
+	// Claim routes
+	mux.HandleFunc("POST /api/v1/insurance/claims", handler.CreateClaim)
+	mux.HandleFunc("GET /api/v1/insurance/claims", handler.GetTenantClaims)
+	mux.HandleFunc("GET /api/v1/insurance/claims/{id}", handler.GetClaim)
+	mux.HandleFunc("PUT /api/v1/insurance/claims/{id}", handler.UpdateClaim)
+	mux.HandleFunc("POST /api/v1/insurance/claims/{id}/submit", handler.SubmitClaim)
+	mux.HandleFunc("POST /api/v1/insurance/claims/{id}/approve", handler.ApproveClaim)
+	mux.HandleFunc("POST /api/v1/insurance/claims/{id}/reject", handler.RejectClaim)
+	mux.HandleFunc("POST /api/v1/insurance/claims/{id}/settle", handler.SettleClaim)
 
-	router.HandleFunc("GET /health", healthHandler)
-	router.HandleFunc("GET /ready", readyHandler)
+	// Claim items routes
+	mux.HandleFunc("GET /api/v1/insurance/claims/{id}/items", handler.GetClaimItems)
+	mux.HandleFunc("POST /api/v1/insurance/claims/{id}/items", handler.CreateClaimItem)
 
-	// Policies
-	router.HandleFunc("GET /api/v1/policies", handler.ListPolicies)
-	router.HandleFunc("POST /api/v1/policies", handler.CreatePolicy)
-	router.HandleFunc("GET /api/v1/policies/{id}", handler.GetPolicy)
-	router.HandleFunc("PUT /api/v1/policies/{id}", handler.UpdatePolicy)
-	router.HandleFunc("DELETE /api/v1/policies/{id}", handler.DeletePolicy)
-	router.HandleFunc("GET /api/v1/policies/expiring", handler.ListExpiringPolicies)
+	// Dashboard routes
+	mux.HandleFunc("GET /api/v1/insurance/dashboard", handler.GetDashboard)
 
-	// Claims
-	router.HandleFunc("POST /api/v1/claims", handler.FileClaim)
-	router.HandleFunc("GET /api/v1/claims", handler.ListClaims)
-	router.HandleFunc("GET /api/v1/claims/{id}", handler.GetClaim)
-	router.HandleFunc("PUT /api/v1/claims/{id}", handler.UpdateClaim)
-	router.HandleFunc("POST /api/v1/claims/{id}/approve", handler.ApproveClaim)
-	router.HandleFunc("POST /api/v1/claims/{id}/reject", handler.RejectClaim)
-
-	// Risk assessments
-	router.HandleFunc("GET /api/v1/risk-analysis/equipment/{id}", handler.GetRiskAssessment)
-	router.HandleFunc("POST /api/v1/risk-analysis/assess", handler.AssessRisk)
-
-	return router
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"healthy","service":"insurance-service"}`))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ready","service":"insurance-service"}`))
+	// Health routes
+	mux.HandleFunc("GET /health", handler.Health)
+	mux.HandleFunc("GET /ready", handler.Ready)
 }

@@ -1,28 +1,22 @@
 package domain
 
-import "fmt"
+import "errors"
 
-type DomainError struct {
-	Code    string
-	Message string
-	Err     error
-}
-
-func NewDomainError(code, message string, err error) *DomainError {
-	return &DomainError{
-		Code:    code,
-		Message: message,
-		Err:     err,
-	}
-}
-
-func (e *DomainError) Error() string {
-	if e.Err != nil {
-		return fmt.Sprintf("[%s] %s: %v", e.Code, e.Message, e.Err)
-	}
-	return fmt.Sprintf("[%s] %s", e.Code, e.Message)
-}
-
-func (e *DomainError) Unwrap() error {
-	return e.Err
-}
+// Domain errors
+var (
+	ErrCrewMemberNotFound      = errors.New("crew member not found")
+	ErrCrewMemberAlreadyExists = errors.New("crew member already exists")
+	ErrQualificationNotFound   = errors.New("qualification not found")
+	ErrAssignmentNotFound      = errors.New("assignment not found")
+	ErrConflictDetected        = errors.New("assignment conflict detected")
+	ErrQualificationExpired    = errors.New("qualification is expired")
+	ErrInvalidStatus           = errors.New("invalid status")
+	ErrInvalidRole             = errors.New("invalid role")
+	ErrTenantIDRequired        = errors.New("tenant ID is required")
+	ErrCrewMemberIDRequired    = errors.New("crew member ID is required")
+	ErrTimeRecordNotFound      = errors.New("time record not found")
+	ErrTimeRecordAlreadyRunning = errors.New("time record is already running")
+	ErrInvalidDateRange        = errors.New("invalid date range")
+	ErrEmptyEmail              = errors.New("email is required")
+	ErrDuplicateEmail          = errors.New("email already exists for this tenant")
+)

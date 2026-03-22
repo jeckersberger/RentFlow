@@ -521,57 +521,57 @@ make test-e2e
 ### Phase 3 – Business (8–10 Wochen)
 
 #### M3.1: Crew-Service
-- [ ] PostgreSQL-Migration: `crew_members`, `qualifications`, `crew_assignments`, `time_records`
-- [ ] Qualifikations-System (IPAF, Rigger, Tonmeister, etc.)
-- [ ] Verfügbarkeits-Matrix für Crew-Mitglieder
-- [ ] Konflikt-Erkennung: Doppel-Buchung eines Crew-Mitglieds
-- [ ] CalDAV-Feed für Crew-Kalender (Thunderbird/iOS)
-- [ ] Freelancer-Portal: Eigene Einsätze und Aufgaben sehen
-- [ ] Zeiterfassung pro Einsatz (Start/Stop-Timer)
-- [ ] Fahrerliste: Wer fährt wann mit welchem Fahrzeug
+- [x] PostgreSQL-Migration: `crew_members`, `qualifications`, `crew_assignments`, `time_records`
+- [x] Qualifikations-System (IPAF, Rigger, Tonmeister, etc.)
+- [x] Verfügbarkeits-Matrix für Crew-Mitglieder
+- [x] Konflikt-Erkennung: Doppel-Buchung eines Crew-Mitglieds
+- [x] CalDAV-Feed für Crew-Kalender (Thunderbird/iOS)
+- [x] Freelancer-Portal: Eigene Einsätze und Aufgaben sehen
+- [x] Zeiterfassung pro Einsatz (Start/Stop-Timer)
+- [x] Fahrerliste: Wer fährt wann mit welchem Fahrzeug
 
 #### M3.2: Document-Service
-- [ ] PostgreSQL-Migration: `documents`, `document_versions`, `signatures`
-- [ ] Dokument-Typen: Angebot, AB, Lieferschein, Abholschein, Rechnung, Mietvertrag, Schadensbericht
-- [ ] Go-Template-basierte PDF-Generierung (chromedp)
-- [ ] Lieferschein-Generierung aus Packliste
-- [ ] Digitale Unterschriften (Canvas-Signature-Pad)
-- [ ] GoBD-konformes Archiv: SHA-256-Checksummen-Kette
-- [ ] Versionierung: `v1`, `v2` ... bei Änderungen
-- [ ] Scan-to-Document: Scan-Upload + OCR (tesseract)
-- [ ] Kunden-Portal: Dokument zum Unterschreiben per Link
+- [x] PostgreSQL-Migration: `documents`, `document_versions`, `signatures`
+- [x] Dokument-Typen: Angebot, AB, Lieferschein, Abholschein, Rechnung, Mietvertrag, Schadensbericht
+- [x] Go-Template-basierte PDF-Generierung (go-pdf/fpdf)
+- [x] Lieferschein-Generierung aus Packliste
+- [x] Digitale Unterschriften (Canvas-Signature-Pad)
+- [x] GoBD-konformes Archiv: SHA-256-Checksummen-Kette
+- [x] Versionierung: `v1`, `v2` ... bei Änderungen
+- [x] Scan-to-Document: Scan-Upload + OCR (tesseract)
+- [x] Kunden-Portal: Dokument zum Unterschreiben per Link
 
 #### M3.3: Insurance-Service
-- [ ] PostgreSQL-Migration: `policies`, `claims`, `claim_items`
-- [ ] Versicherungspolice-Verwaltung (Betriebshaftpflicht, Kasko, Transport, Mieter)
-- [ ] Equipment automatisch versicherungsrelevant markieren (ab Wiederbeschaffungswert)
-- [ ] Schadensfall-Workflow: Erfassung → Dokumentation → Einreichung → Abschluss
-- [ ] Schadensformular mit Foto-Upload
-- [ ] Forderungs-Tracking: Wieviel erstattet, wieviel offen
-- [ ] Jahres-Auswertung: Schäden pro Jahr, Prämienentwicklung
+- [x] PostgreSQL-Migration: `policies`, `claims`, `claim_items`
+- [x] Versicherungspolice-Verwaltung (Betriebshaftpflicht, Kasko, Transport, Mieter)
+- [x] Equipment automatisch versicherungsrelevant markieren (ab Wiederbeschaffungswert)
+- [x] Schadensfall-Workflow: Erfassung → Dokumentation → Einreichung → Abschluss
+- [x] Schadensformular mit Foto-Upload
+- [x] Forderungs-Tracking: Wieviel erstattet, wieviel offen
+- [x] Jahres-Auswertung: Schäden pro Jahr, Prämienentwicklung
 
 #### M3.4: Reporting-Service
-- [ ] PostgreSQL-Migration: `report_definitions`, `report_runs`, `kpi_snapshots`
-- [ ] Rollen-spezifische KPI-Dashboards (GF, Lager, Buchhaltung)
-- [ ] Report-Typen: Umsatzbericht, Auslastung, Mahnstatistik, Equipment-Inventur
-- [ ] Zeitraumauswahl: Woche, Monat, Quartal, Jahr, Custom
-- [ ] CSV + PDF-Export für jeden Report
-- [ ] Geplante E-Mail-Reports (wöchentlicher Umsatz-Report)
-- [ ] Recharts/Victory-basierte Diagramme im Frontend
+- [x] PostgreSQL-Migration: `report_definitions`, `report_runs`, `kpi_snapshots`
+- [x] Rollen-spezifische KPI-Dashboards (GF, Lager, Buchhaltung)
+- [x] Report-Typen: Umsatzbericht, Auslastung, Mahnstatistik, Equipment-Inventur
+- [x] Zeitraumauswahl: Woche, Monat, Quartal, Jahr, Custom
+- [x] CSV + PDF-Export für jeden Report
+- [x] Geplante E-Mail-Reports (wöchentlicher Umsatz-Report)
+- [x] Recharts/Victory-basierte Diagramme im Frontend
 
 #### M3.5: Frontend Business-Pages
-- [ ] Crew-Management (`/crew`) mit Qualifikations-Badges + Verfügbarkeitskalender
-- [ ] Freelancer-Ansicht (`/my-assignments`) mobiloptimiert
-- [ ] Dokumente (`/documents`) mit Archiv + Unterschriften-Status
-- [ ] Versicherung (`/insurance`) mit Policen-Übersicht + Schadensmeldung
-- [ ] Reports (`/reports`) mit KPI-Dashboard + Diagramme + Export
+- [x] Crew-Management (`/crew`) mit Qualifikations-Badges + Verfügbarkeitskalender
+- [x] Freelancer-Ansicht (`/my-assignments`) mobiloptimiert
+- [x] Dokumente (`/documents`) mit Archiv + Unterschriften-Status
+- [x] Versicherung (`/insurance`) mit Policen-Übersicht + Schadensmeldung
+- [x] Reports (`/reports`) mit KPI-Dashboard + Diagramme + Export
 
 #### Phase-3-Abnahmekriterien
-- [ ] Kevin kann seine Einsätze auf dem iPhone sehen und Zeiten erfassen
-- [ ] Lieferschein wird aus Packliste automatisch generiert und kann digital unterschrieben werden
-- [ ] Thomas kann monatlichen Umsatzbericht als PDF/CSV exportieren
-- [ ] Schadensfall kann dokumentiert und mit Fotos eingereicht werden
-- [ ] GoBD-Archiv speichert Dokumente mit Checksummen-Kette
+- [x] Kevin kann seine Einsätze auf dem iPhone sehen und Zeiten erfassen
+- [x] Lieferschein wird aus Packliste automatisch generiert und kann digital unterschrieben werden
+- [x] Thomas kann monatlichen Umsatzbericht als PDF/CSV exportieren
+- [x] Schadensfall kann dokumentiert und mit Fotos eingereicht werden
+- [x] GoBD-Archiv speichert Dokumente mit Checksummen-Kette
 
 ---
 

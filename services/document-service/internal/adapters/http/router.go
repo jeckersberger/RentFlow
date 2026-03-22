@@ -9,30 +9,37 @@ import (
 
 func NewRouter(
 	docSvc *application.DocumentService,
-	tplSvc *application.TemplateService,
-	logger logger.Logger,
+	sigSvc *application.SignatureService,
+	chkSvc *application.ChecksumService,
+	log logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
-	handler := NewHandler(docSvc, tplSvc, logger)
+	handler := NewHandler(docSvc, sigSvc, chkSvc, log)
 
-	// Health & readiness
 	router.HandleFunc("GET /health", healthHandler)
 	router.HandleFunc("GET /ready", readyHandler)
 
-	// Document routes
+	// Document endpoints
 	router.HandleFunc("POST /api/v1/documents", handler.CreateDocument)
 	router.HandleFunc("GET /api/v1/documents", handler.ListDocuments)
 	router.HandleFunc("GET /api/v1/documents/{id}", handler.GetDocument)
-	router.HandleFunc("DELETE /api/v1/documents/{id}", handler.DeleteDocument)
-	router.HandleFunc("GET /api/v1/documents/entity/{type}/{id}", handler.ListDocumentsByEntity)
+	router.HandleFunc("PUT /api/v1/documents/{id}", handler.UpdateDocument)
+	router.HandleFunc("POST /api/v1/documents/{id}/generate", handler.GenerateDocument)
+	router.HandleFunc("POST /api/v1/documents/{id}/archive", handler.ArchiveDocument)
 
-	// Template routes
-	router.HandleFunc("POST /api/v1/templates", handler.CreateTemplate)
-	router.HandleFunc("GET /api/v1/templates", handler.ListTemplates)
-	router.HandleFunc("GET /api/v1/templates/{id}", handler.GetTemplate)
-	router.HandleFunc("PUT /api/v1/templates/{id}", handler.UpdateTemplate)
-	router.HandleFunc("DELETE /api/v1/templates/{id}", handler.DeleteTemplate)
-	router.HandleFunc("POST /api/v1/templates/{id}/preview", handler.GetTemplatePreview)
+	// Signature endpoints
+	router.HandleFunc("POST /api/v1/documents/{id}/sign", handler.RequestSignature)
+	router.HandleFunc("POST /api/v1/documents/{docId}/signatures/{sigId}", handler.SubmitSignature)
+	router.HandleFunc("GET /api/v1/documents/{id}/signatures", handler.GetSignatures)
+
+	// Version endpoints
+	router.HandleFunc("GET /api/v1/documents/{id}/versions", handler.GetVersions)
+
+	// Delivery note from project
+	router.HandleFunc("POST /api/v1/documents/from-project/{projectId}", handler.GenerateDeliveryNote)
+
+	// GoBD verification
+	router.HandleFunc("GET /api/v1/documents/verify-chain", handler.VerifyChecksumChain)
 
 	return router
 }

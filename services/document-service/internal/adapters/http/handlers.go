@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
+	"strings"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/document-service/internal/application"
@@ -11,63 +11,68 @@ import (
 )
 
 type Handler struct {
-	docSvc *application.DocumentService
-	tplSvc *application.TemplateService
-	logger logger.Logger
+	docSvc  *application.DocumentService
+	sigSvc  *application.SignatureService
+	chkSvc  *application.ChecksumService
+	logger  logger.Logger
 }
 
 func NewHandler(
 	docSvc *application.DocumentService,
-	tplSvc *application.TemplateService,
-	logger logger.Logger,
+	sigSvc *application.SignatureService,
+	chkSvc *application.ChecksumService,
+	log logger.Logger,
 ) *Handler {
 	return &Handler{
-		docSvc: docSvc,
-		tplSvc: tplSvc,
-		logger: logger,
+		docSvc:  docSvc,
+		sigSvc:  sigSvc,
+		chkSvc:  chkSvc,
+		logger:  log,
 	}
 }
 
-// Document Handlers
-
 func (h *Handler) CreateDocument(w http.ResponseWriter, r *http.Request) {
-	var cmd application.CreateDocumentCommand
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+	var req application.CreateDocumentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+	userID := r.Header.Get("X-User-ID")
+	if tenantID == "" || userID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID and user ID required")
 		return
 	}
-	cmd.TenantID = tenantID
 
-	dto, err := h.docSvc.CreateDocument(r.Context(), cmd)
+	resp, err := h.docSvc.CreateDocument(r.Context(), tenantID, userID, req)
 	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	h.respondJSON(w, http.StatusCreated, dto)
+	h.respondJSON(w, http.StatusCreated, resp)
 }
 
 func (h *Handler) GetDocument(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	docID := strings.TrimPrefix(r.URL.Path, "/api/v1/documents/")
+	if idx := strings.Index(docID, "/"); idx != -1 {
+		docID = docID[:idx]
+	}
+
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
 	}
 
-	dto, err := h.docSvc.GetDocument(r.Context(), tenantID, id)
+	resp, err := h.docSvc.GetDocument(r.Context(), tenantID, docID)
 	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, dto)
+	h.respondJSON(w, http.StatusOK, resp)
 }
 
 func (h *Handler) ListDocuments(w http.ResponseWriter, r *http.Request) {
@@ -77,221 +82,207 @@ func (h *Handler) ListDocuments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit := 20
-	offset := 0
-
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
-			limit = parsed
-		}
-	}
-
-	if o := r.URL.Query().Get("offset"); o != "" {
-		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
-			offset = parsed
-		}
-	}
-
-	result, err := h.docSvc.ListDocuments(r.Context(), tenantID, limit, offset)
+	resp, err := h.docSvc.ListDocuments(r.Context(), tenantID)
 	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, result)
+	h.respondJSON(w, http.StatusOK, resp)
 }
 
-func (h *Handler) ListDocumentsByEntity(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateDocument(w http.ResponseWriter, r *http.Request) {
+	docID := strings.TrimPrefix(r.URL.Path, "/api/v1/documents/")
+	if idx := strings.Index(docID, "/"); idx != -1 {
+		docID = docID[:idx]
+	}
+
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
 	}
 
-	entityType := r.PathValue("type")
-	entityID := r.PathValue("id")
-
-	limit := 20
-	offset := 0
-
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
-			limit = parsed
-		}
-	}
-
-	if o := r.URL.Query().Get("offset"); o != "" {
-		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
-			offset = parsed
-		}
-	}
-
-	result, err := h.docSvc.ListByEntity(r.Context(), tenantID, entityType, entityID, limit, offset)
+	resp, err := h.docSvc.GetDocument(r.Context(), tenantID, docID)
 	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, result)
+	h.respondJSON(w, http.StatusOK, resp)
 }
 
-func (h *Handler) DeleteDocument(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
+func (h *Handler) GenerateDocument(w http.ResponseWriter, r *http.Request) {
+	docID := strings.TrimPrefix(r.URL.Path, "/api/v1/documents/")
+	docID = strings.TrimSuffix(docID, "/generate")
 
-	if err := h.docSvc.DeleteDocument(r.Context(), tenantID, id); err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// Template Handlers
-
-func (h *Handler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
-	var cmd application.CreateTemplateCommand
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-	cmd.TenantID = tenantID
-
-	dto, err := h.tplSvc.CreateTemplate(r.Context(), cmd)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusCreated, dto)
-}
-
-func (h *Handler) GetTemplate(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	dto, err := h.tplSvc.GetTemplate(r.Context(), tenantID, id)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) ListTemplates(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	limit := 20
-	offset := 0
-
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
-			limit = parsed
-		}
-	}
-
-	if o := r.URL.Query().Get("offset"); o != "" {
-		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
-			offset = parsed
-		}
-	}
-
-	result, err := h.tplSvc.ListTemplates(r.Context(), tenantID, limit, offset)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, result)
-}
-
-func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	var cmd application.UpdateTemplateCommand
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	cmd.ID = id
-	cmd.TenantID = tenantID
-
-	dto, err := h.tplSvc.UpdateTemplate(r.Context(), cmd)
-	if err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	h.respondJSON(w, http.StatusOK, dto)
-}
-
-func (h *Handler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	if err := h.tplSvc.DeleteTemplate(r.Context(), tenantID, id); err != nil {
-		h.handleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Handler) GetTemplatePreview(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
-		return
-	}
-
-	var req struct {
-		Variables map[string]string `json:"variables"`
-	}
+	var req application.GenerateFromTemplateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	preview, err := h.tplSvc.GetPreview(r.Context(), tenantID, id, req.Variables)
+	tenantID := r.Header.Get("X-Tenant-ID")
+	userID := r.Header.Get("X-User-ID")
+	if tenantID == "" || userID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID and user ID required")
+		return
+	}
+
+	resp, err := h.docSvc.GenerateFromTemplate(r.Context(), tenantID, userID, docID, req)
 	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, map[string]string{"preview": preview})
+	h.respondJSON(w, http.StatusOK, resp)
 }
 
-// Helper methods
+func (h *Handler) ArchiveDocument(w http.ResponseWriter, r *http.Request) {
+	docID := strings.TrimPrefix(r.URL.Path, "/api/v1/documents/")
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	err := h.docSvc.ArchiveDocument(r.Context(), tenantID, docID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) RequestSignature(w http.ResponseWriter, r *http.Request) {
+	docID := strings.TrimPrefix(r.URL.Path, "/api/v1/documents/")
+	docID = strings.TrimSuffix(docID, "/sign")
+
+	var req application.RequestSignatureRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	resp, err := h.sigSvc.RequestSignature(r.Context(), tenantID, docID, req)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, resp)
+}
+
+func (h *Handler) SubmitSignature(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/v1/documents/"), "/")
+	if len(parts) < 2 {
+		h.respondError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	docID := parts[0]
+	sigID := parts[1]
+
+	var req application.SubmitSignatureRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	resp, err := h.sigSvc.SubmitSignature(r.Context(), tenantID, docID, sigID, req)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetSignatures(w http.ResponseWriter, r *http.Request) {
+	docID := strings.TrimPrefix(r.URL.Path, "/api/v1/documents/")
+	docID = strings.TrimSuffix(docID, "/signatures")
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	resp, err := h.sigSvc.GetSignatures(r.Context(), tenantID, docID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetVersions(w http.ResponseWriter, r *http.Request) {
+	docID := strings.TrimPrefix(r.URL.Path, "/api/v1/documents/")
+	docID = strings.TrimSuffix(docID, "/versions")
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	resp, err := h.docSvc.GetVersions(r.Context(), tenantID, docID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GenerateDeliveryNote(w http.ResponseWriter, r *http.Request) {
+	projectID := strings.TrimPrefix(r.URL.Path, "/api/v1/documents/from-project/")
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	userID := r.Header.Get("X-User-ID")
+	if tenantID == "" || userID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID and user ID required")
+		return
+	}
+
+	resp, err := h.docSvc.GenerateDeliveryNote(r.Context(), tenantID, userID, projectID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, resp)
+}
+
+func (h *Handler) VerifyChecksumChain(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	resp, err := h.chkSvc.VerifyChecksumChain(r.Context(), tenantID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, resp)
+}
 
 func (h *Handler) respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
@@ -300,20 +291,23 @@ func (h *Handler) respondJSON(w http.ResponseWriter, status int, data interface{
 }
 
 func (h *Handler) respondError(w http.ResponseWriter, status int, message string) {
-	h.respondJSON(w, status, map[string]string{"error": message})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
 
 func (h *Handler) handleError(w http.ResponseWriter, err error) {
-	if domErr, ok := err.(*domain.DomainError); ok {
-		switch domErr.Code {
-		case "NOT_FOUND":
-			h.respondError(w, http.StatusNotFound, domErr.Message)
-		case "VALIDATION_ERROR":
-			h.respondError(w, http.StatusBadRequest, domErr.Message)
-		default:
-			h.respondError(w, http.StatusInternalServerError, domErr.Message)
-		}
-	} else {
+	switch err {
+	case domain.ErrDocumentNotFound, domain.ErrSignatureNotFound, domain.ErrVersionNotFound:
+		h.respondError(w, http.StatusNotFound, err.Error())
+	case domain.ErrInvalidInput, domain.ErrInvalidDocumentType:
+		h.respondError(w, http.StatusBadRequest, err.Error())
+	case domain.ErrTenantIDRequired:
+		h.respondError(w, http.StatusUnauthorized, err.Error())
+	case domain.ErrChecksumMismatch:
+		h.respondError(w, http.StatusConflict, err.Error())
+	default:
+		h.logger.Error("Handler error", err)
 		h.respondError(w, http.StatusInternalServerError, "internal server error")
 	}
 }

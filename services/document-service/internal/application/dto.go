@@ -6,78 +6,123 @@ import (
 	"github.com/jeckersberger/rentflow/services/document-service/internal/domain"
 )
 
-type DocumentDTO struct {
-	ID         string    `json:"id"`
-	TenantID   string    `json:"tenant_id"`
-	Name       string    `json:"name"`
-	Type       string    `json:"type"`
-	EntityType string    `json:"entity_type"`
-	EntityID   string    `json:"entity_id"`
-	FileRef    string    `json:"file_ref"`
-	MimeType   string    `json:"mime_type"`
-	Size       int64     `json:"size"`
-	Checksum   string    `json:"checksum"`
-	CreatedBy  string    `json:"created_by"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+type CreateDocumentRequest struct {
+	DocumentType DocumentTypeDTO             `json:"document_type"`
+	ReferenceID  string                      `json:"reference_id"`
+	DocumentNumber string                   `json:"document_number"`
+	Title        string                      `json:"title"`
+	TemplateID   string                      `json:"template_id,omitempty"`
+	Metadata     map[string]interface{}      `json:"metadata,omitempty"`
 }
 
-type TemplateDTO struct {
-	ID        string    `json:"id"`
-	TenantID  string    `json:"tenant_id"`
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	Content   string    `json:"content"`
-	Variables []string  `json:"variables"`
-	IsDefault bool      `json:"is_default"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	CreatedBy string    `json:"created_by"`
+type DocumentTypeDTO string
+
+type DocumentResponse struct {
+	ID               string                 `json:"id"`
+	DocumentType     string                 `json:"document_type"`
+	ReferenceID      string                 `json:"reference_id"`
+	DocumentNumber   string                 `json:"document_number"`
+	Title            string                 `json:"title"`
+	Status           string                 `json:"status"`
+	CurrentVersion   int                    `json:"current_version"`
+	TemplateID       string                 `json:"template_id"`
+	Metadata         map[string]interface{} `json:"metadata"`
+	ChecksumSHA256   string                 `json:"checksum_sha256"`
+	CreatedBy        string                 `json:"created_by"`
+	CreatedAt        time.Time              `json:"created_at"`
+	UpdatedAt        time.Time              `json:"updated_at"`
 }
 
-type DocumentListResult struct {
-	Items  []*DocumentDTO `json:"items"`
-	Total  int64          `json:"total"`
-	Limit  int            `json:"limit"`
-	Offset int            `json:"offset"`
+type GenerateFromTemplateRequest struct {
+	TemplateID string                 `json:"template_id"`
+	Data       map[string]interface{} `json:"data"`
 }
 
-type TemplateListResult struct {
-	Items  []*TemplateDTO `json:"items"`
-	Total  int64          `json:"total"`
-	Limit  int            `json:"limit"`
-	Offset int            `json:"offset"`
+type RequestSignatureRequest struct {
+	SignerName  string `json:"signer_name"`
+	SignerEmail string `json:"signer_email"`
+	SignerRole  string `json:"signer_role"`
 }
 
-func DocumentToDTO(doc *domain.Document) *DocumentDTO {
-	return &DocumentDTO{
-		ID:         doc.ID,
-		TenantID:   doc.TenantID,
-		Name:       doc.Name,
-		Type:       string(doc.Type),
-		EntityType: doc.EntityType,
-		EntityID:   doc.EntityID,
-		FileRef:    doc.FileRef,
-		MimeType:   doc.MimeType,
-		Size:       doc.Size,
-		Checksum:   doc.Checksum,
-		CreatedBy:  doc.CreatedBy,
-		CreatedAt:  doc.CreatedAt,
-		UpdatedAt:  doc.UpdatedAt,
+type SubmitSignatureRequest struct {
+	SignatureData string `json:"signature_data"`
+	IPAddress     string `json:"ip_address"`
+	UserAgent     string `json:"user_agent"`
+}
+
+type SignatureResponse struct {
+	ID          string     `json:"id"`
+	DocumentID  string     `json:"document_id"`
+	SignerName  string     `json:"signer_name"`
+	SignerEmail string     `json:"signer_email"`
+	SignerRole  string     `json:"signer_role"`
+	SignedAt    *time.Time `json:"signed_at"`
+	Verified    bool       `json:"verified"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+type DocumentVersionResponse struct {
+	ID                 string    `json:"id"`
+	DocumentID         string    `json:"document_id"`
+	VersionNumber      int       `json:"version_number"`
+	FilePath           string    `json:"file_path"`
+	FileSize           int       `json:"file_size"`
+	MimeType           string    `json:"mime_type"`
+	ChecksumSHA256     string    `json:"checksum_sha256"`
+	ChangesDescription string    `json:"changes_description"`
+	CreatedBy          string    `json:"created_by"`
+	CreatedAt          time.Time `json:"created_at"`
+}
+
+type ChecksumChainVerificationResponse struct {
+	Status         string   `json:"status"`
+	DocumentCount  int      `json:"document_count"`
+	IntegrityValid bool     `json:"integrity_valid"`
+	Errors         []string `json:"errors"`
+}
+
+func DocumentToResponse(doc *domain.Document) *DocumentResponse {
+	return &DocumentResponse{
+		ID:               doc.ID,
+		DocumentType:     string(doc.DocumentType),
+		ReferenceID:      doc.ReferenceID,
+		DocumentNumber:   doc.DocumentNumber,
+		Title:            doc.Title,
+		Status:           string(doc.Status),
+		CurrentVersion:   doc.CurrentVersion,
+		TemplateID:       doc.TemplateID,
+		Metadata:         doc.Metadata,
+		ChecksumSHA256:   doc.ChecksumSHA256,
+		CreatedBy:        doc.CreatedBy,
+		CreatedAt:        doc.CreatedAt,
+		UpdatedAt:        doc.UpdatedAt,
 	}
 }
 
-func TemplateToDTO(tpl *domain.Template) *TemplateDTO {
-	return &TemplateDTO{
-		ID:        tpl.ID,
-		TenantID:  tpl.TenantID,
-		Name:      tpl.Name,
-		Type:      string(tpl.Type),
-		Content:   tpl.Content,
-		Variables: tpl.Variables,
-		IsDefault: tpl.IsDefault,
-		CreatedAt: tpl.CreatedAt,
-		UpdatedAt: tpl.UpdatedAt,
-		CreatedBy: tpl.CreatedBy,
+func DocumentVersionToResponse(ver *domain.DocumentVersion) *DocumentVersionResponse {
+	return &DocumentVersionResponse{
+		ID:                 ver.ID,
+		DocumentID:         ver.DocumentID,
+		VersionNumber:      ver.VersionNumber,
+		FilePath:           ver.FilePath,
+		FileSize:           ver.FileSize,
+		MimeType:           ver.MimeType,
+		ChecksumSHA256:     ver.ChecksumSHA256,
+		ChangesDescription: ver.ChangesDescription,
+		CreatedBy:          ver.CreatedBy,
+		CreatedAt:          ver.CreatedAt,
+	}
+}
+
+func SignatureToResponse(sig *domain.Signature) *SignatureResponse {
+	return &SignatureResponse{
+		ID:          sig.ID,
+		DocumentID:  sig.DocumentID,
+		SignerName:  sig.SignerName,
+		SignerEmail: sig.SignerEmail,
+		SignerRole:  sig.SignerRole,
+		SignedAt:    sig.SignedAt,
+		Verified:    sig.Verified,
+		CreatedAt:   sig.CreatedAt,
 	}
 }

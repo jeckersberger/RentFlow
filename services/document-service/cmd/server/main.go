@@ -19,7 +19,7 @@ import (
 
 const (
 	serviceName = "document-service"
-	servicePort = 8007
+	servicePort = 8010
 )
 
 func main() {
@@ -31,7 +31,6 @@ func main() {
 
 	log.Info("Starting service", "name", serviceName, "port", cfg.ServicePort, "env", cfg.Environment)
 
-	// Initialize database
 	dbPool, err := database.NewPostgresPool(cfg.ConnectionString())
 	if err != nil {
 		log.Fatal("Failed to connect to database", err)
@@ -42,20 +41,21 @@ func main() {
 
 	// Initialize repositories
 	docRepo := repositories.NewDocumentPostgres(dbPool)
-	tplRepo := repositories.NewTemplatePostgres(dbPool)
+	versionRepo := repositories.NewDocumentVersionPostgres(dbPool)
+	sigRepo := repositories.NewSignaturePostgres(dbPool)
 
 	log.Info("Repositories initialized")
 
 	// Initialize services
-	docSvc := application.NewDocumentService(docRepo, log)
-	tplSvc := application.NewTemplateService(tplRepo, log)
+	checksumSvc := application.NewChecksumService(docRepo, log)
+	docSvc := application.NewDocumentService(docRepo, versionRepo, sigRepo, checksumSvc, log)
+	sigSvc := application.NewSignatureService(docRepo, sigRepo, log)
 
 	log.Info("Services initialized")
 
-	// Setup router
-	router := httpAdapter.NewRouter(docSvc, tplSvc, log)
+	// Initialize router
+	router := httpAdapter.NewRouter(docSvc, sigSvc, checksumSvc, log)
 
-	// Create HTTP server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
@@ -64,7 +64,6 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Start server in goroutine
 	go func() {
 		log.Info("Listening", "addr", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -72,7 +71,6 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
