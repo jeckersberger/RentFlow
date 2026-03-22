@@ -784,6 +784,151 @@ export const federationApi = {
       : api.post('/api/v1/federation/sub-rentals', data).then(res => res.data),
 }
 
+// ============================================================================
+// Crew Service (port 8008)
+// ============================================================================
+export const crewApi = {
+  listMembers: (params: { page?: number; per_page?: number } = {}) =>
+    MOCK_MODE
+      ? mockDelay({ data: [], page: 1, per_page: 20, total: 0, total_pages: 0 })
+      : api.get('/api/v1/crew/members', { params }).then(res => res.data),
+
+  getMember: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.get(`/api/v1/crew/members/${id}`).then(res => res.data),
+
+  createMember: (data: {
+    first_name: string
+    last_name: string
+    email: string
+    phone?: string
+    role?: string
+    status?: string
+    hourly_rate?: number
+    daily_rate?: number
+    emergency_contact?: string
+    notes?: string
+  }) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/crew/members', data).then(res => res.data),
+
+  updateMember: (id: string, data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id })
+      : api.put(`/api/v1/crew/members/${id}`, data).then(res => res.data),
+
+  deleteMember: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(undefined)
+      : api.delete(`/api/v1/crew/members/${id}`).then(() => undefined),
+
+  getQualifications: (memberId: string) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get(`/api/v1/crew/members/${memberId}/qualifications`).then(res => res.data),
+
+  createQualification: (memberId: string, data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post(`/api/v1/crew/members/${memberId}/qualifications`, data).then(res => res.data),
+
+  checkAvailability: (memberId: string, start: string, end: string) =>
+    MOCK_MODE
+      ? mockDelay({ crew_member_id: memberId, is_available: true })
+      : api.get(`/api/v1/crew/members/${memberId}/availability`, { params: { start, end } }).then(res => res.data),
+
+  listAssignments: (params: { page?: number; per_page?: number } = {}) =>
+    MOCK_MODE
+      ? mockDelay({ data: [], page: 1, per_page: 20, total: 0, total_pages: 0 })
+      : api.get('/api/v1/crew/assignments', { params }).then(res => res.data),
+
+  getDrivers: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/crew/drivers').then(res => res.data),
+
+  getDashboard: () =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.get('/api/v1/crew/dashboard').then(res => res.data),
+}
+
+// ============================================================================
+// Document Service (port 8007)
+// ============================================================================
+export const documentApi = {
+  list: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/documents').then(res => res.data),
+
+  getById: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.get(`/api/v1/documents/${id}`).then(res => res.data),
+
+  create: (data: {
+    document_type: string
+    reference_id: string
+    document_number: string
+    title: string
+    template_id?: string
+    metadata?: Record<string, any>
+  }) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/documents', data).then(res => res.data),
+
+  update: (id: string, data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id })
+      : api.put(`/api/v1/documents/${id}`, data).then(res => res.data),
+
+  archive: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(undefined)
+      : api.post(`/api/v1/documents/${id}/archive`).then(() => undefined),
+
+  generate: (id: string, data: { template_id: string; data: Record<string, any> }) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.post(`/api/v1/documents/${id}/generate`, data).then(res => res.data),
+
+  requestSignature: (id: string, data: { signer_name: string; signer_email: string; signer_role: string }) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.post(`/api/v1/documents/${id}/sign`, data).then(res => res.data),
+
+  getSignatures: (id: string) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get(`/api/v1/documents/${id}/signatures`).then(res => res.data),
+
+  getVersions: (id: string) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get(`/api/v1/documents/${id}/versions`).then(res => res.data),
+
+  verifyChecksumChain: () =>
+    MOCK_MODE
+      ? mockDelay({ status: 'ok', document_count: 0, integrity_valid: true, errors: [] })
+      : api.get('/api/v1/documents/verify-chain').then(res => res.data),
+
+  generateDeliveryNote: (projectId: string) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.post(`/api/v1/documents/actions/from-project/${projectId}`).then(res => res.data),
+
+  uploadScan: (formData: FormData) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.post('/api/v1/documents/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }).then(res => res.data),
+}
+
 // Audit Service (port 8017)
 export const auditApi = {
   logs: (params?: any) =>

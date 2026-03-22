@@ -2,119 +2,52 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
+import { crewApi } from '../../services/api'
 import type { CrewMember } from '../../types/crew'
 import './Crew.module.scss'
 
-const mockCrewMembers: CrewMember[] = [
-  {
-    id: '1',
-    name: 'Thomas Müller',
-    email: 'thomas.mueller@rentflow.de',
-    phone: '+49 89 123456',
-    role: 'technician',
-    availability: 'available',
-    qualifications: [
-      { id: 'q1', type: 'IPAF', name: 'IPAF 1a/1b/3a/3b', expiry_date: '2026-12-31', is_expired: false },
-      { id: 'q2', type: 'electrical_cert', name: 'Electrical Safety', expiry_date: '2025-06-30', is_expired: false },
-      { id: 'q3', type: 'first_aid', name: 'First Aid', expiry_date: '2025-03-15', is_expired: true },
-    ],
-    hours_this_week: 32,
-    current_assignment: 'Stadtfest München 2026',
-    joined_date: '2020-01-15',
-  },
-  {
-    id: '2',
-    name: 'Maria Schmidt',
-    email: 'maria.schmidt@rentflow.de',
-    phone: '+49 89 234567',
-    role: 'rigger',
-    availability: 'busy',
-    qualifications: [
-      { id: 'q4', type: 'IPAF', name: 'IPAF 1a/1b/3a/3b', expiry_date: '2026-08-20', is_expired: false },
-      { id: 'q5', type: 'rope_access', name: 'Rope Access Level 1', expiry_date: '2027-01-10', is_expired: false },
-    ],
-    hours_this_week: 40,
-    current_assignment: 'Open Air Festival Bodensee',
-    joined_date: '2019-03-22',
-  },
-  {
-    id: '3',
-    name: 'Peter Weber',
-    email: 'peter.weber@rentflow.de',
-    phone: '+49 89 345678',
-    role: 'driver',
-    availability: 'available',
-    qualifications: [
-      { id: 'q6', type: 'forklift', name: 'Forklift Operator', expiry_date: '2026-11-05', is_expired: false },
-    ],
-    hours_this_week: 28,
-    joined_date: '2021-05-10',
-  },
-  {
-    id: '4',
-    name: 'Anna Fischer',
-    email: 'anna.fischer@rentflow.de',
-    phone: '+49 89 456789',
-    role: 'supervisor',
-    availability: 'on_leave',
-    qualifications: [
-      { id: 'q7', type: 'IPAF', name: 'IPAF 1a/1b/3a/3b', expiry_date: '2025-09-14', is_expired: false },
-      { id: 'q8', type: 'electrical_cert', name: 'Electrical Safety', expiry_date: '2026-07-22', is_expired: false },
-      { id: 'q9', type: 'first_aid', name: 'First Aid', expiry_date: '2026-05-30', is_expired: false },
-    ],
+// Map backend CrewMemberDTO to frontend CrewMember type
+function mapBackendCrewMember(dto: any): CrewMember {
+  const statusMap: Record<string, string> = {
+    active: 'available',
+    busy: 'busy',
+    on_leave: 'on_leave',
+    inactive: 'on_leave',
+  }
+  return {
+    id: dto.id,
+    name: `${dto.first_name} ${dto.last_name}`,
+    email: dto.email || '',
+    phone: dto.phone || '',
+    role: dto.role || 'technician',
+    availability: (statusMap[dto.status] || 'available') as CrewMember['availability'],
+    qualifications: [],
     hours_this_week: 0,
-    joined_date: '2018-02-01',
-  },
-  {
-    id: '5',
-    name: 'Klaus Neumann',
-    email: 'klaus.neumann@rentflow.de',
-    phone: '+49 89 567890',
-    role: 'technician',
-    availability: 'available',
-    qualifications: [
-      { id: 'q10', type: 'IPAF', name: 'IPAF 1a/1b/3a/3b', expiry_date: '2025-04-28', is_expired: true },
-      { id: 'q11', type: 'first_aid', name: 'First Aid', expiry_date: '2026-09-10', is_expired: false },
-    ],
-    hours_this_week: 35,
-    current_assignment: 'Firmen-Gala TechCorp',
-    joined_date: '2022-08-15',
-  },
-  {
-    id: '6',
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@rentflow.de',
-    phone: '+49 89 678901',
-    role: 'assistant',
-    availability: 'available',
-    qualifications: [
-      { id: 'q12', type: 'first_aid', name: 'First Aid', expiry_date: '2026-02-14', is_expired: true },
-    ],
-    hours_this_week: 20,
-    joined_date: '2023-06-01',
-  },
-]
+    current_assignment: undefined,
+    joined_date: dto.created_at || '',
+  }
+}
 
 function CrewPage() {
   const navigate = useNavigate()
   const [filterRole, setFilterRole] = useState<string>('all')
   const [filterAvailability, setFilterAvailability] = useState<string>('all')
 
-  // TODO: Replace with crewApi when backend endpoint is available
   const { data: crewMembers = [], isLoading, error } = useQuery({
     queryKey: ['crew'],
     queryFn: async () => {
-      // No crew API endpoint available yet - using mock data
-      return mockCrewMembers
+      const result = await crewApi.listMembers({ page: 1, per_page: 100 })
+      const items = Array.isArray(result) ? result : (result.data || [])
+      return items.map(mapBackendCrewMember)
     },
     staleTime: 1000 * 60 * 5,
   })
 
-  const activeMembers = crewMembers.filter(m => m.availability === 'available')
-  const busyMembers = crewMembers.filter(m => m.availability === 'busy')
-  const totalHoursThisWeek = crewMembers.reduce((sum, m) => sum + m.hours_this_week, 0)
+  const activeMembers = crewMembers.filter((m: any) => m.availability === 'available')
+  const busyMembers = crewMembers.filter((m: any) => m.availability === 'busy')
+  const totalHoursThisWeek = crewMembers.reduce((sum: number, m: any) => sum + m.hours_this_week, 0)
 
-  const filteredMembers = crewMembers.filter(member => {
+  const filteredMembers = crewMembers.filter((member: any) => {
     const roleMatch = filterRole === 'all' || member.role === filterRole
     const availabilityMatch = filterAvailability === 'all' || member.availability === filterAvailability
     return roleMatch && availabilityMatch
@@ -258,10 +191,10 @@ function CrewPage() {
         </div>
       ) : (
         <div className="crew-grid">
-          {filteredMembers.map((member) => {
-            const expiredQualifications = member.qualifications.filter(q => q.is_expired).length
+          {filteredMembers.map((member: any) => {
+            const expiredQualifications = member.qualifications.filter((q: any) => q.is_expired).length
             const expiringQualifications = member.qualifications.filter(
-              q => !q.is_expired && new Date(q.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+              (q: any) => !q.is_expired && new Date(q.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
             ).length
 
             return (

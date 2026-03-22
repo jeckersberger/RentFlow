@@ -2,160 +2,55 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
+import { documentApi } from '../../services/api'
 import type { Document } from '../../types/document'
 import './Documents.module.scss'
 
-const mockDocuments: Document[] = [
-  {
-    id: '1',
-    number: 'ANG-2026-001',
-    type: 'offer',
-    title: 'Angebot: Ausrüstung Stadtfest München',
-    status: 'generated',
-    signature_status: 'pending',
-    created_date: '2026-03-15',
-    sent_date: '2026-03-15',
-    project_id: 'p1',
-    project_name: 'Stadtfest München 2026',
-    recipient: 'München Stadtfest GmbH',
-    generated_by: 'admin',
-  },
-  {
-    id: '2',
-    number: 'REC-2026-145',
-    type: 'invoice',
-    title: 'Rechnung: Bodensee Festival',
-    status: 'signed',
-    signature_status: 'signed',
-    created_date: '2026-03-10',
-    sent_date: '2026-03-10',
-    signed_date: '2026-03-12',
-    project_id: 'p3',
-    project_name: 'Open Air Festival Bodensee',
-    recipient: 'Festival Bodensee AG',
-    generated_by: 'admin',
-  },
-  {
-    id: '3',
-    number: 'LN-2026-087',
-    type: 'delivery_note',
-    title: 'Lieferschein: TechCorp Event',
-    status: 'sent',
-    signature_status: 'pending',
-    created_date: '2026-03-20',
-    sent_date: '2026-03-21',
-    project_id: 'p2',
-    project_name: 'Firmen-Gala TechCorp',
-    recipient: 'TechCorp AG',
-    generated_by: 'user1',
-  },
-  {
-    id: '4',
-    number: 'VER-2026-003',
-    type: 'contract',
-    title: 'Vertrag: Langzeitmietung Ausrüstung',
-    status: 'signed',
-    signature_status: 'signed',
-    created_date: '2026-03-05',
-    sent_date: '2026-03-05',
-    signed_date: '2026-03-08',
-    recipient: 'RentFlow Customer',
-    generated_by: 'admin',
-  },
-  {
-    id: '5',
-    number: 'ANG-2026-002',
-    type: 'offer',
-    title: 'Angebot: Spezialausrüstung',
-    status: 'draft',
-    signature_status: 'pending',
-    created_date: '2026-03-22',
-    recipient: 'Potential Client',
-    generated_by: 'user1',
-  },
-  {
-    id: '6',
-    number: 'REC-2026-146',
-    type: 'invoice',
-    title: 'Rechnung: Wartungsservice',
-    status: 'sent',
-    signature_status: 'pending',
-    created_date: '2026-03-18',
-    sent_date: '2026-03-20',
-    recipient: 'RentFlow Customer',
-    generated_by: 'admin',
-  },
-  {
-    id: '7',
-    number: 'LN-2026-088',
-    type: 'delivery_note',
-    title: 'Lieferschein: Wartung Abschluss',
-    status: 'archived',
-    signature_status: 'signed',
-    created_date: '2026-03-01',
-    signed_date: '2026-03-02',
-    recipient: 'Customer A',
-    generated_by: 'user2',
-  },
-  {
-    id: '8',
-    number: 'ANG-2026-003',
-    type: 'offer',
-    title: 'Angebot: Miete Kran',
-    status: 'sent',
-    signature_status: 'rejected',
-    created_date: '2026-03-19',
-    sent_date: '2026-03-19',
-    recipient: 'Customer B',
-    generated_by: 'admin',
-  },
-  {
-    id: '9',
-    number: 'DOC-2026-001',
-    type: 'other',
-    title: 'Bedingungen und Konditionen',
-    status: 'archived',
-    signature_status: 'signed',
-    created_date: '2026-02-01',
-    recipient: 'Internal',
-    generated_by: 'admin',
-  },
-  {
-    id: '10',
-    number: 'REC-2026-147',
-    type: 'invoice',
-    title: 'Rechnung: Februar 2026',
-    status: 'draft',
-    signature_status: 'pending',
-    created_date: '2026-03-22',
-    recipient: 'Monthly Billing',
-    generated_by: 'accounting',
-  },
-]
+// Map backend DocumentResponse to frontend Document type
+function mapBackendDocument(dto: any): Document {
+  const typeMap: Record<string, string> = {
+    offer: 'offer',
+    invoice: 'invoice',
+    delivery_note: 'delivery_note',
+    contract: 'contract',
+  }
+  return {
+    id: dto.id,
+    number: dto.document_number || '',
+    type: (typeMap[dto.document_type] || 'other') as Document['type'],
+    title: dto.title || '',
+    status: (dto.status || 'draft') as Document['status'],
+    signature_status: 'pending' as Document['signature_status'],
+    created_date: dto.created_at ? new Date(dto.created_at).toISOString().split('T')[0] : '',
+    recipient: dto.metadata?.recipient || '',
+    project_id: dto.reference_id || undefined,
+    generated_by: dto.created_by || '',
+  }
+}
 
 function DocumentsPage() {
   const navigate = useNavigate()
   const [filterType, setFilterType] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
-  // TODO: Replace with documentsApi when backend endpoint is available
   const { data: documents = [], isLoading, error } = useQuery({
     queryKey: ['documents'],
     queryFn: async () => {
-      // No documents API endpoint available yet - using mock data
-      return mockDocuments
+      const result = await documentApi.list()
+      const items = Array.isArray(result) ? result : (result.data || [])
+      return items.map(mapBackendDocument)
     },
     staleTime: 1000 * 60 * 5,
   })
 
-  const pendingSignatures = documents.filter(d => d.signature_status === 'pending')
-  const thisMonthGenerated = documents.filter(d => {
+  const pendingSignatures = documents.filter((d: any) => d.signature_status === 'pending')
+  const thisMonthGenerated = documents.filter((d: any) => {
     const docDate = new Date(d.created_date)
     const now = new Date()
     return docDate.getMonth() === now.getMonth() && docDate.getFullYear() === now.getFullYear()
   })
 
-  const filteredDocuments = documents.filter(doc => {
+  const filteredDocuments = documents.filter((doc: any) => {
     const typeMatch = filterType === 'all' || doc.type === filterType
     const statusMatch = filterStatus === 'all' || doc.status === filterStatus
     return typeMatch && statusMatch
@@ -257,7 +152,7 @@ function DocumentsPage() {
         <div className="stat-card">
           <div className="stat-card__label">Unterschriebene Dokumente</div>
           <div className="stat-card__value" style={{ color: 'var(--color-success)' }}>
-            {documents.filter(d => d.signature_status === 'signed').length}
+            {documents.filter((d: any) => d.signature_status === 'signed').length}
           </div>
         </div>
       </div>
@@ -325,7 +220,7 @@ function DocumentsPage() {
             <div className="table-header__cell table-header__cell--action"></div>
           </div>
           <div className="table-body">
-            {filteredDocuments.map(doc => (
+            {filteredDocuments.map((doc: any) => (
               <div
                 key={doc.id}
                 className="table-row"
