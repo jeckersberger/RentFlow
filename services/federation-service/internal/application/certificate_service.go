@@ -2,10 +2,15 @@ package application
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/hex"
-	"fmt"
+	"encoding/pem"
+	"math/big"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,11 +33,51 @@ func NewCertificateService(cr ports.CertificateRepository, log logger.Logger) *C
 
 // GenerateCertPair creates self-signed X.509 cert + key
 func (s *CertificateService) GenerateCertPair(ctx context.Context, tenantID uuid.UUID) (*GenerateCertPairResponse, error) {
-	// In a real implementation, this would use crypto/x509 to generate actual certificates
-	// For now, generate placeholder cert data
-	clientCert := generatePlaceholderCert("client")
-	serverCert := generatePlaceholderCert("server")
-	fingerprint := generateFingerprint(clientCert)
+	// Generate ECDSA P-256 key pair
+	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		s.log.Error("Failed to generate private key", err)
+		return nil, err
+	}
+
+	// Create certificate template
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			CommonName:   "RentFlow Federation",
+			Organization: []string{tenantID.String()},
+		},
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().AddDate(1, 0, 0), // 365 days validity
+		KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+	}
+
+	// Self-sign the certificate
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privKey.PublicKey, privKey)
+	if err != nil {
+		s.log.Error("Failed to create certificate", err)
+		return nil, err
+	}
+
+	// Encode certificate to PEM
+	clientCert := string(pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: certDER,
+	}))
+
+	// Encode private key to PEM
+	privKeyBytes, err := x509.MarshalECPrivateKey(privKey)
+	if err != nil {
+		s.log.Error("Failed to marshal private key", err)
+		return nil, err
+	}
+	serverCert := string(pem.EncodeToMemory(&pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: privKeyBytes,
+	}))
+
+	// Generate fingerprint from DER-encoded certificate
+	fingerprint := generateFingerprint(certDER)
 
 	cert := &domain.FederationCertificate{
 		ID:          uuid.New(),
@@ -61,7 +106,14 @@ func (s *CertificateService) GenerateCertPair(ctx context.Context, tenantID uuid
 
 // ExchangeCertificates stores partner's cert and returns own cert
 func (s *CertificateService) ExchangeCertificates(ctx context.Context, tenantID uuid.UUID, partnerID uuid.UUID, partnerCertPem string) (*GenerateCertPairResponse, error) {
-	fingerprint := generateFingerprint(partnerCertPem)
+	// Decode PEM to get DER for fingerprinting
+	block, _ := pem.Decode([]byte(partnerCertPem))
+	if block == nil {
+		s.log.Error("Failed to decode partner certificate PEM", nil)
+		return nil, domain.ErrInvalidCertificate
+	}
+
+	fingerprint := generateFingerprint(block.Bytes)
 
 	// Store partner certificate
 	partnerCert := &domain.FederationCertificate{
@@ -110,7 +162,11 @@ func (s *CertificateService) ValidatePartnerCert(ctx context.Context, fingerprin
 
 // GetFingerprint returns SHA-256 of cert DER
 func (s *CertificateService) GetFingerprint(certPem string) string {
-	return generateFingerprint(certPem)
+	block, _ := pem.Decode([]byte(certPem))
+	if block == nil {
+		return ""
+	}
+	return generateFingerprint(block.Bytes)
 }
 
 // GetCertificates lists all active certificates
@@ -127,9 +183,20 @@ func (s *CertificateService) GetCertificates(ctx context.Context, tenantID uuid.
 	return responses, nil
 }
 
-// RevokeCertificate deactivates a certificate
+// RevokeCertificate deactivates a certificate by ID
 func (s *CertificateService) RevokeCertificate(ctx context.Context, id uuid.UUID) error {
-	// Implementation would fetch cert by id, set IsActive to false, and update
+	// Since repository doesn't have GetByID for certs, we mark as deactivated
+	// In a production system, you would query by ID or add a GetByID method to the repository
+	cert := &domain.FederationCertificate{
+		ID:       id,
+		IsActive: false,
+	}
+
+	if err := s.certRepo.Update(ctx, cert); err != nil {
+		s.log.Error("Failed to revoke certificate", err)
+		return err
+	}
+
 	s.log.Info("Certificate revoked", "cert_id", id)
 	return nil
 }
@@ -150,18 +217,8 @@ func (s *CertificateService) certToResponse(cert *domain.FederationCertificate) 
 
 // Helper functions
 
-func generatePlaceholderCert(certType string) string {
-	// In production, this would generate an actual X.509 certificate
-	// For now, return a placeholder
-	randomBytes := make([]byte, 32)
-	rand.Read(randomBytes)
-	return fmt.Sprintf("-----BEGIN CERTIFICATE-----\n%s_%s\n-----END CERTIFICATE-----",
-		hex.EncodeToString(randomBytes), certType)
-}
-
-func generateFingerprint(certPem string) string {
-	// In production, would parse PEM and get DER, then hash
-	// For now, hash the PEM string
-	hash := sha256.Sum256([]byte(certPem))
+func generateFingerprint(certDER []byte) string {
+	// Hash the DER-encoded certificate to produce SHA-256 fingerprint
+	hash := sha256.Sum256(certDER)
 	return hex.EncodeToString(hash[:])
 }

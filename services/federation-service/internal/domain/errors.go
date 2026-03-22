@@ -16,4 +16,5 @@ var (
 	ErrCertificateExpired      = errors.New("certificate expired")
 	ErrDataSovereigntyViolated = errors.New("data sovereignty policy violated")
 	ErrUnauthorizedAccess      = errors.New("unauthorized access to partner data")
+	ErrCategoryNotShared       = errors.New("equipment category not shared by partner")
 )

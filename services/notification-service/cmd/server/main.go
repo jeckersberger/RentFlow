@@ -55,6 +55,34 @@ func main() {
 	preferenceService := application.NewPreferenceService(preferenceRepo, log)
 	digestService := application.NewDigestService(notificationRepo, preferenceRepo, log)
 
+	// Wire digest service into notification service for quiet hours checking
+	notificationService.SetDigestService(digestService)
+
+	// Initialize channel drivers
+	smtpDriver := application.NewSMTPDriver(
+		os.Getenv("SMTP_HOST"),
+		parsePort(os.Getenv("SMTP_PORT"), 587),
+		os.Getenv("SMTP_USER"),
+		os.Getenv("SMTP_PASS"),
+		os.Getenv("SMTP_FROM"),
+		log,
+	)
+
+	vapidDriver := application.NewVAPIDPushDriver(
+		os.Getenv("VAPID_PUBLIC_KEY"),
+		os.Getenv("VAPID_PRIVATE_KEY"),
+		log,
+	)
+
+	inAppDriver := application.NewInAppDriver(log)
+
+	// Log initialized drivers
+	log.Info("Notification drivers initialized",
+		"smtp", smtpDriver.Type(),
+		"webpush", vapidDriver.Type(),
+		"in_app", inAppDriver.Type(),
+	)
+
 	// Setup router
 	router := nethttp.NewServeMux()
 
@@ -150,4 +178,16 @@ func connectPostgres(connectionString string, log logger.Logger) (*sql.DB, error
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	return db, nil
+}
+
+func parsePort(portStr string, defaultPort int) int {
+	if portStr == "" {
+		return defaultPort
+	}
+	var port int
+	_, err := fmt.Sscanf(portStr, "%d", &port)
+	if err != nil || port < 1 || port > 65535 {
+		return defaultPort
+	}
+	return port
 }

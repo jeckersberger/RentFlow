@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
@@ -13,6 +14,7 @@ type NotificationService struct {
 	notificationRepo ports.NotificationRepository
 	channelRepo      ports.ChannelRepository
 	preferenceRepo   ports.PreferenceRepository
+	digestService    *DigestService
 	log              logger.Logger
 }
 
@@ -26,8 +28,13 @@ func NewNotificationService(
 		notificationRepo: notificationRepo,
 		channelRepo:      channelRepo,
 		preferenceRepo:   preferenceRepo,
+		digestService:    nil,
 		log:              log,
 	}
+}
+
+func (s *NotificationService) SetDigestService(ds *DigestService) {
+	s.digestService = ds
 }
 
 func (s *NotificationService) SendNotification(ctx context.Context, cmd domain.SendNotificationCmd) (*domain.Notification, error) {
@@ -40,7 +47,24 @@ func (s *NotificationService) SendNotification(ctx context.Context, cmd domain.S
 		Body:      cmd.Body,
 		Data:      cmd.Data,
 		Status:    "sent",
+		CreatedAt: time.Now(),
 	}
+
+	// Check if user is in quiet hours
+	status := "sent"
+	if s.digestService != nil {
+		quiet, err := s.digestService.IsQuietHours(ctx, cmd.TenantID, cmd.UserID, time.Now())
+		if err != nil {
+			s.log.Error("Failed to check quiet hours", err)
+			// Continue with normal sending if check fails
+		} else if quiet {
+			// Queue notification for later delivery during scheduled processing
+			status = "queued"
+			s.log.Info("Notification queued due to quiet hours", "notificationID", notification.ID, "userID", cmd.UserID)
+		}
+	}
+
+	notification.Status = status
 
 	created, err := s.notificationRepo.Create(ctx, notification)
 	if err != nil {
@@ -48,7 +72,7 @@ func (s *NotificationService) SendNotification(ctx context.Context, cmd domain.S
 		return nil, err
 	}
 
-	s.log.Info("Notification sent", "notificationID", created.ID, "userID", cmd.UserID, "eventType", cmd.EventType)
+	s.log.Info("Notification created", "notificationID", created.ID, "userID", cmd.UserID, "eventType", cmd.EventType, "status", status)
 	return created, nil
 }
 
