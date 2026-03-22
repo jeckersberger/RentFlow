@@ -23,7 +23,12 @@ func main() {
 
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "postgres://localhost/rentflow?sslmode=disable"
+		dbHost := getEnvOrDefault("DB_HOST", "localhost")
+		dbPort := getEnvOrDefault("DB_PORT", "5432")
+		dbName := getEnvOrDefault("DB_NAME", "reporting_service")
+		dbUser := getEnvOrDefault("DB_USER", "rentflow")
+		dbPassword := getEnvOrDefault("DB_PASSWORD", "rentflow_dev")
+		dsn = fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=disable", dbHost, dbPort, dbName, dbUser, dbPassword)
 	}
 
 	db, err := sql.Open("postgres", dsn)
@@ -87,6 +92,13 @@ func main() {
 	}
 
 	logger.Info().Msg("Server stopped")
+}
+
+func getEnvOrDefault(key, defaultVal string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return defaultVal
 }
 
 // scheduleReportsProcessor runs every hour and processes scheduled reports for all tenants

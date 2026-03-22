@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/http"
 	"os"
+	"fmt"
 	"os/signal"
 	"syscall"
 	"time"
@@ -23,7 +24,12 @@ func main() {
 	// Database connection
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "host=localhost port=5432 user=postgres password=postgres dbname=rentflow sslmode=disable"
+		dbHost := getEnvOrDefault("DB_HOST", "localhost")
+		dbPort := getEnvOrDefault("DB_PORT", "5432")
+		dbName := getEnvOrDefault("DB_NAME", "insurance_service")
+		dbUser := getEnvOrDefault("DB_USER", "rentflow")
+		dbPassword := getEnvOrDefault("DB_PASSWORD", "rentflow_dev")
+		dbURL = fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=disable", dbHost, dbPort, dbName, dbUser, dbPassword)
 	}
 
 	db, err := sql.Open("postgres", dbURL)
@@ -91,4 +97,11 @@ func main() {
 	}
 
 	logger.Info().Msg("insurance-service stopped")
+}
+
+func getEnvOrDefault(key, defaultVal string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return defaultVal
 }

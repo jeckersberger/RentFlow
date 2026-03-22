@@ -22,10 +22,11 @@ func NewRouter(
 	router.HandleFunc("GET /health", healthHandler)
 	router.HandleFunc("GET /ready", readyHandler)
 
-	// Invoice routes
+	// Invoice routes - use actions/ prefix for from-project to avoid conflict with {id}
 	router.HandleFunc("POST /api/v1/invoices", handler.CreateInvoice)
 	router.HandleFunc("GET /api/v1/invoices", handler.ListInvoices)
 	router.HandleFunc("GET /api/v1/invoices/open", handler.GetOpenInvoices)
+	router.HandleFunc("POST /api/v1/invoices/actions/from-project/{projectId}", handler.CreateInvoiceFromProject)
 	router.HandleFunc("GET /api/v1/invoices/{id}", handler.GetInvoice)
 	router.HandleFunc("GET /api/v1/invoices/{id}/pdf", handler.GetInvoicePDF)
 	router.HandleFunc("POST /api/v1/invoices/{id}/send", handler.SendInvoice)
@@ -33,7 +34,6 @@ func NewRouter(
 	router.HandleFunc("POST /api/v1/invoices/{id}/record-payment", handler.RecordPayment)
 	router.HandleFunc("POST /api/v1/invoices/{id}/cancel", handler.CancelInvoice)
 	router.HandleFunc("POST /api/v1/invoices/{id}/credit", handler.CreditInvoice)
-	router.HandleFunc("POST /api/v1/invoices/from-project/{projectId}", handler.CreateInvoiceFromProject)
 
 	// Credit Note routes
 	router.HandleFunc("POST /api/v1/invoices/{id}/credit-note", handler.CreateCreditNote)

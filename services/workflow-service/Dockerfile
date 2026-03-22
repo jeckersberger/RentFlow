@@ -1,16 +1,23 @@
+# Build stage
 FROM golang:1.24-alpine AS builder
-
+RUN apk add --no-cache git ca-certificates
 WORKDIR /build
-COPY go.mod go.sum ./
-RUN go mod download
-COPY cmd cmd
-COPY internal internal
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/server
+# Copy workspace and common package
+COPY go.work go.work
+COPY pkg/common/ pkg/common/
+COPY services/workflow-service/ services/workflow-service/
 
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /build/server .
+WORKDIR /build/services/workflow-service
+RUN CGO_ENABLED=0 GOOS=linux GOWORK=off go build -ldflags="-s -w" -o /app ./cmd/server
+
+# Runtime stage
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates tzdata
+WORKDIR /app
+COPY --from=builder /app .
+
 EXPOSE 8014
-CMD ["./server"]
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:8014/health || exit 1
+
+ENTRYPOINT ["/app/app"]

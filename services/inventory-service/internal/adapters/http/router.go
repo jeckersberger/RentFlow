@@ -20,11 +20,13 @@ func NewRouter(
 	router.HandleFunc("GET /health", healthHandler)
 	router.HandleFunc("GET /ready", readyHandler)
 
-	// Equipment routes
+	// Equipment routes - use lookup/ prefix for barcode to avoid conflict with {id} wildcard
 	router.HandleFunc("POST /api/v1/equipment", handler.CreateEquipment)
 	router.HandleFunc("GET /api/v1/equipment", handler.ListEquipment)
 	router.HandleFunc("GET /api/v1/equipment/search", handler.SearchEquipment)
-	router.HandleFunc("GET /api/v1/equipment/barcode/{barcode}", handler.GetEquipmentByBarcode)
+	router.HandleFunc("GET /api/v1/equipment/lookup/barcode/{barcode}", handler.GetEquipmentByBarcode)
+	router.HandleFunc("POST /api/v1/equipment/availability-check", handler.BatchCheckAvailability)
+	router.HandleFunc("POST /api/v1/equipment/import", handler.ImportEquipmentFromCSV)
 	router.HandleFunc("GET /api/v1/equipment/{id}", handler.GetEquipment)
 	router.HandleFunc("PUT /api/v1/equipment/{id}", handler.UpdateEquipment)
 	router.HandleFunc("PATCH /api/v1/equipment/{id}/status", handler.ChangeEquipmentStatus)
@@ -33,15 +35,11 @@ func NewRouter(
 	router.HandleFunc("POST /api/v1/equipment/{id}/check-out", handler.CheckOutEquipment)
 	router.HandleFunc("POST /api/v1/equipment/{id}/check-in", handler.CheckInEquipment)
 	router.HandleFunc("DELETE /api/v1/equipment/{id}", handler.DeleteEquipment)
-
-	// Phase 1 upgrade endpoints
 	router.HandleFunc("GET /api/v1/equipment/{id}/price", handler.GetEquipmentPrice)
 	router.HandleFunc("GET /api/v1/equipment/{id}/availability", handler.CheckEquipmentAvailability)
 	router.HandleFunc("GET /api/v1/equipment/{id}/qr-code", handler.GetEquipmentQRCode)
 	router.HandleFunc("GET /api/v1/equipment/{id}/label", handler.GetEquipmentLabel)
 	router.HandleFunc("GET /api/v1/equipment/{id}/history", handler.GetEquipmentHistory)
-	router.HandleFunc("POST /api/v1/equipment/availability-check", handler.BatchCheckAvailability)
-	router.HandleFunc("POST /api/v1/equipment/import", handler.ImportEquipmentFromCSV)
 
 	// Category routes
 	router.HandleFunc("POST /api/v1/categories", handler.CreateCategory)

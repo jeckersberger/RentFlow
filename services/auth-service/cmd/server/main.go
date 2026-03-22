@@ -71,7 +71,15 @@ func main() {
 	// Connect to Redis (fuer Sessions und Brute-Force-Schutz)
 	redisAddr := os.Getenv("REDIS_URL")
 	if redisAddr == "" {
-		redisAddr = "localhost:6379"
+		redisHost := os.Getenv("REDIS_HOST")
+		redisPort := os.Getenv("REDIS_PORT")
+		if redisHost == "" {
+			redisHost = "localhost"
+		}
+		if redisPort == "" {
+			redisPort = "6379"
+		}
+		redisAddr = redisHost + ":" + redisPort
 	}
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 	redisCache, err := cache.NewRedisCache(redisAddr, redisPassword, 0)

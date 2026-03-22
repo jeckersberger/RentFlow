@@ -1,12 +1,24 @@
+# Build stage
 FROM golang:1.24-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
+RUN apk add --no-cache git ca-certificates
+WORKDIR /build
 
+# Copy workspace and common package
+COPY go.work go.work
+COPY pkg/common/ pkg/common/
+COPY services/ai-service/ services/ai-service/
+
+WORKDIR /build/services/ai-service
+RUN CGO_ENABLED=0 GOOS=linux GOWORK=off go build -ldflags="-s -w" -o /app ./cmd/server
+
+# Runtime stage
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates tzdata
-COPY --from=builder /server /server
+WORKDIR /app
+COPY --from=builder /app .
+COPY --from=builder /build/services/ai-service/migrations ./migrations/
+
 EXPOSE 8013
-CMD ["/server"]
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:8013/health || exit 1
+
+ENTRYPOINT ["/app/app"]

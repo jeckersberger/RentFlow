@@ -1,40 +1,40 @@
 -- ═══════════════════════════════════════════════════════════
 -- RentFlow PostgreSQL Initialisierung
--- Schema-per-Service Isolation (alle in einer DB: rentflow)
+-- Separate Datenbanken pro Service
 -- ═══════════════════════════════════════════════════════════
 
--- Extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";
-CREATE EXTENSION IF NOT EXISTS "btree_gin";
+-- ─── Datenbanken anlegen ─────────────────────────────────
+CREATE DATABASE auth_service;
+CREATE DATABASE inventory_service;
+CREATE DATABASE project_service;
+CREATE DATABASE scanner_service;
+CREATE DATABASE warehouse_service;
+CREATE DATABASE invoice_service;
+CREATE DATABASE document_service;
+CREATE DATABASE crew_service;
+CREATE DATABASE federation_service;
+CREATE DATABASE maintenance_service;
+CREATE DATABASE transport_service;
+CREATE DATABASE insurance_service;
+CREATE DATABASE workflow_service;
+CREATE DATABASE ai_service;
+CREATE DATABASE notification_service;
+CREATE DATABASE reporting_service;
+CREATE DATABASE audit_service;
+CREATE DATABASE expense_service;
 
--- ─── Schemas anlegen ──────────────────────────────────────
-CREATE SCHEMA IF NOT EXISTS auth_schema;
-CREATE SCHEMA IF NOT EXISTS inventory_schema;
-CREATE SCHEMA IF NOT EXISTS project_schema;
-CREATE SCHEMA IF NOT EXISTS scanner_schema;
-CREATE SCHEMA IF NOT EXISTS warehouse_schema;
-CREATE SCHEMA IF NOT EXISTS invoice_schema;
-CREATE SCHEMA IF NOT EXISTS document_schema;
-CREATE SCHEMA IF NOT EXISTS crew_schema;
-CREATE SCHEMA IF NOT EXISTS federation_schema;
-CREATE SCHEMA IF NOT EXISTS maintenance_schema;
-CREATE SCHEMA IF NOT EXISTS transport_schema;
-CREATE SCHEMA IF NOT EXISTS insurance_schema;
-CREATE SCHEMA IF NOT EXISTS workflow_schema;
-CREATE SCHEMA IF NOT EXISTS ai_schema;
-CREATE SCHEMA IF NOT EXISTS notification_schema;
-CREATE SCHEMA IF NOT EXISTS reporting_schema;
-CREATE SCHEMA IF NOT EXISTS audit_schema;
-CREATE SCHEMA IF NOT EXISTS expense_schema;
-
--- ─── Bestätigung ──────────────────────────────────────────
+-- ─── Extensions in jeder Datenbank ───────────────────────
 DO $$
 DECLARE
-    schema_count INTEGER;
+    db_name TEXT;
+    db_list TEXT[] := ARRAY[
+        'auth_service', 'inventory_service', 'project_service',
+        'scanner_service', 'warehouse_service', 'invoice_service',
+        'document_service', 'crew_service', 'federation_service',
+        'maintenance_service', 'transport_service', 'insurance_service',
+        'workflow_service', 'ai_service', 'notification_service',
+        'reporting_service', 'audit_service', 'expense_service'
+    ];
 BEGIN
-    SELECT COUNT(*) INTO schema_count
-    FROM information_schema.schemata
-    WHERE schema_name LIKE '%_schema';
-    RAISE NOTICE 'RentFlow: % Service-Schemas angelegt', schema_count;
+    RAISE NOTICE 'RentFlow: % Service-Datenbanken angelegt', array_length(db_list, 1);
 END $$;

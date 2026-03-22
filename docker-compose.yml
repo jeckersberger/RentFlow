@@ -28,14 +28,14 @@ services:
       - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
 
   kurrentdb:
-    image: ghcr.io/eventstore/eventstore:24.2.0
+    image: eventstore/eventstore:latest
     container_name: rentflow-kurrentdb
     environment:
       EVENTSTORE_CLUSTER_SIZE: 1
       EVENTSTORE_RUN_PROJECTIONS: All
       EVENTSTORE_START_STANDARD_PROJECTIONS: "true"
-      EVENTSTORE_ENABLE_EXTERNAL_TCP: "true"
       EVENTSTORE_INSECURE: "true"
+      EVENTSTORE_ALLOW_UNKNOWN_OPTIONS: "true"
     ports:
       - "1113:1113"
       - "2113:2113"

@@ -19,9 +19,12 @@ func NewRouter(
 	router.HandleFunc("GET /health", healthHandler)
 	router.HandleFunc("GET /ready", readyHandler)
 
-	// Document endpoints
+	// Document endpoints - use actions/ prefix for from-project to avoid conflict with {id}
 	router.HandleFunc("POST /api/v1/documents", handler.CreateDocument)
 	router.HandleFunc("GET /api/v1/documents", handler.ListDocuments)
+	router.HandleFunc("POST /api/v1/documents/actions/from-project/{projectId}", handler.GenerateDeliveryNote)
+	router.HandleFunc("GET /api/v1/documents/verify-chain", handler.VerifyChecksumChain)
+	router.HandleFunc("POST /api/v1/documents/upload", handler.UploadScan)
 	router.HandleFunc("GET /api/v1/documents/{id}", handler.GetDocument)
 	router.HandleFunc("PUT /api/v1/documents/{id}", handler.UpdateDocument)
 	router.HandleFunc("POST /api/v1/documents/{id}/generate", handler.GenerateDocument)
@@ -34,15 +37,6 @@ func NewRouter(
 
 	// Version endpoints
 	router.HandleFunc("GET /api/v1/documents/{id}/versions", handler.GetVersions)
-
-	// Delivery note from project
-	router.HandleFunc("POST /api/v1/documents/from-project/{projectId}", handler.GenerateDeliveryNote)
-
-	// GoBD verification
-	router.HandleFunc("GET /api/v1/documents/verify-chain", handler.VerifyChecksumChain)
-
-	// Scan upload endpoint
-	router.HandleFunc("POST /api/v1/documents/upload", handler.UploadScan)
 
 	// Public signature endpoints (no tenant required)
 	router.HandleFunc("GET /api/v1/public/sign/{token}", handler.GetPublicSignaturePage)

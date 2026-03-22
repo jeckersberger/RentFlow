@@ -1,6 +1,5 @@
 ################################################################################
 # Traefik Static Configuration
-# Production-ready config with HTTPS, Let's Encrypt, and Docker integration
 ################################################################################
 
 global:
@@ -16,47 +15,18 @@ accessLog:
 
 api:
   dashboard: true
-  debug: false
-  insecure: false
+  insecure: true
 
 entryPoints:
   web:
     address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          scheme: https
-          port: 443
-
-  websecure:
-    address: ":443"
-    http:
-      tls:
-        certResolver: letsencrypt
-      middlewares:
-        - securityHeaders@file
 
 providers:
   docker:
     endpoint: unix:///var/run/docker.sock
     exposedByDefault: false
-    network: rentflow
+    network: rentflow_rentflow
 
   file:
-    filename: /etc/traefik/dynamic/config.yml
+    directory: /etc/traefik/dynamic
     watch: true
-
-certificatesResolvers:
-  letsencrypt:
-    acme:
-      email: ${LETSENCRYPT_EMAIL}
-      storage: /certs/acme.json
-      httpChallenge:
-        entryPoint: web
-      certificatesDuration: 2160h
-
-  selfsigned:
-    acme:
-      storage: /certs/self-signed.json
-      httpChallenge:
-        entryPoint: web

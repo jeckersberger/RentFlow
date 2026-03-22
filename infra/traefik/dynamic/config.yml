@@ -45,14 +45,14 @@ http:
         minResponseBodyBytes: 1000
 
     apiAuth:
-      basicAuth:
-        users:
-          - "${DASHBOARD_HTPASSWD}"
+      headers:
+        customRequestHeaders:
+          X-Dashboard: "true"
 
     metricsAuth:
-      basicAuth:
-        users:
-          - "${METRICS_HTPASSWD}"
+      headers:
+        customRequestHeaders:
+          X-Metrics: "true"
 
   # Default redirects and root paths
   routers:

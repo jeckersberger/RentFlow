@@ -1,23 +1,24 @@
+# Build stage
 FROM golang:1.24-alpine AS builder
-
+RUN apk add --no-cache git ca-certificates
 WORKDIR /build
 
-COPY go.mod go.sum ./
-RUN go mod download
+# Copy workspace and common package
+COPY go.work go.work
+COPY pkg/common/ pkg/common/
+COPY services/notification-service/ services/notification-service/
 
-COPY cmd cmd
-COPY internal internal
+WORKDIR /build/services/notification-service
+RUN CGO_ENABLED=0 GOOS=linux GOWORK=off go build -ldflags="-s -w" -o /app ./cmd/server
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/server
-
-FROM alpine:latest
-
-RUN apk --no-cache add ca-certificates
-
-WORKDIR /root/
-
-COPY --from=builder /build/server .
+# Runtime stage
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates tzdata
+WORKDIR /app
+COPY --from=builder /app .
+COPY --from=builder /build/services/notification-service/migrations ./migrations/
 
 EXPOSE 8016
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:8016/health || exit 1
 
-CMD ["./server"]
+ENTRYPOINT ["/app/app"]
