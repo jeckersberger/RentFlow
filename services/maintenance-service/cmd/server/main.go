@@ -14,6 +14,7 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	httpAdapter "github.com/jeckersberger/rentflow/services/maintenance-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/maintenance-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/maintenance-service/internal/infrastructure/clients"
 	"github.com/jeckersberger/rentflow/services/maintenance-service/internal/infrastructure/repositories"
 )
 
@@ -48,10 +49,16 @@ func main() {
 
 	log.Info("Repositories initialized")
 
+	// Initialize equipment locker client
+	equipmentServiceURL := os.Getenv("EQUIPMENT_SERVICE_URL")
+	if equipmentServiceURL == "" {
+		equipmentServiceURL = "http://equipment-service:8002"
+	}
+	equipmentLocker := clients.NewEquipmentHTTPClient(equipmentServiceURL, nil, log)
+
 	recordSvc := application.NewMaintenanceRecordService(recordRepo, log)
 	scheduleSvc := application.NewMaintenanceScheduleService(scheduleRepo, recordRepo, log)
 	planSvc := application.NewMaintenancePlanService(planRepo, taskRepo, log)
-	equipmentLocker := repositories.NewNoopEquipmentLocker(log)
 	taskSvc := application.NewMaintenanceTaskService(taskRepo, planRepo, equipmentLocker, log)
 	checklistSvc := application.NewChecklistService(checklistRepo, log)
 	testSvc := application.NewElectricalTestService(testRepo, log)

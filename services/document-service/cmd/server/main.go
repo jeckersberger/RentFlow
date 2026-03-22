@@ -14,6 +14,7 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	httpAdapter "github.com/jeckersberger/rentflow/services/document-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/document-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/document-service/internal/infrastructure/ocr"
 	"github.com/jeckersberger/rentflow/services/document-service/internal/infrastructure/repositories"
 )
 
@@ -46,11 +47,16 @@ func main() {
 
 	log.Info("Repositories initialized")
 
+	// Initialize OCR processor
+	ocrProcessor := ocr.NewTesseractProcessor(log)
+
 	// Initialize services
 	checksumSvc := application.NewChecksumService(docRepo, log)
 	pdfGen := application.NewPDFGenerator()
 	docSvc := application.NewDocumentService(docRepo, versionRepo, sigRepo, checksumSvc, pdfGen, log)
 	sigSvc := application.NewSignatureService(docRepo, sigRepo, log)
+
+	_ = ocrProcessor // Store for potential future use
 
 	log.Info("Services initialized")
 

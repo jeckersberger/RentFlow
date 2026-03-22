@@ -102,18 +102,20 @@ type TourService struct {
 	vehicleRepo        ports.VehicleRepository
 	equipmentRepo      ports.TourEquipmentRepository
 	driverLogRepo      ports.DriverLogRepository
+	documentClient     ports.DocumentClient
 	logger             logger.Logger
 }
 
 func NewTourService(tourRepo ports.TourRepository, vehicleRepo ports.VehicleRepository,
 	equipmentRepo ports.TourEquipmentRepository, driverLogRepo ports.DriverLogRepository,
-	log logger.Logger) *TourService {
+	documentClient ports.DocumentClient, log logger.Logger) *TourService {
 	return &TourService{
-		tourRepo:      tourRepo,
-		vehicleRepo:   vehicleRepo,
-		equipmentRepo: equipmentRepo,
-		driverLogRepo: driverLogRepo,
-		logger:        log,
+		tourRepo:       tourRepo,
+		vehicleRepo:    vehicleRepo,
+		equipmentRepo:  equipmentRepo,
+		driverLogRepo:  driverLogRepo,
+		documentClient: documentClient,
+		logger:         log,
 	}
 }
 
@@ -393,4 +395,51 @@ func (s *TourService) GetDriverLogs(ctx context.Context, tenantID, tourID string
 		dtos[i] = DriverLogToDTO(l)
 	}
 	return dtos, nil
+}
+
+func (s *TourService) GenerateDeliveryNote(ctx context.Context, tenantID, tourID string) (*TourDTO, error) {
+	tour, err := s.tourRepo.GetByID(ctx, tenantID, tourID)
+	if err != nil {
+		return nil, err
+	}
+	if tour == nil {
+		return nil, domain.ErrTourNotFound
+	}
+
+	// Get all equipment for the tour
+	equipmentList, err := s.equipmentRepo.ListByTour(ctx, tourID)
+	if err != nil {
+		s.logger.Error("Failed to get tour equipment", err, "tourID", tourID)
+		return nil, err
+	}
+
+	// Convert equipment to delivery note items
+	items := make([]ports.DeliveryNoteItem, len(equipmentList))
+	for i, eq := range equipmentList {
+		items[i] = ports.DeliveryNoteItem{
+			EquipmentID: eq.EquipmentID,
+			WeightKg:    eq.WeightKg,
+			VolumeM3:    eq.VolumeM3,
+		}
+	}
+
+	// Call document-service to generate delivery note
+	result, err := s.documentClient.GenerateDeliveryNote(ctx, tenantID, tourID, items)
+	if err != nil {
+		s.logger.Error("Failed to generate delivery note", err, "tourID", tourID)
+		return nil, err
+	}
+
+	// Update tour with delivery note information
+	now := time.Now()
+	tour.DeliveryNoteNumber = &result.DeliveryNoteNumber
+	tour.DeliveryNoteGeneratedAt = &now
+	tour.UpdatedAt = now
+
+	if err := s.tourRepo.Update(ctx, tour); err != nil {
+		s.logger.Error("Failed to update tour with delivery note", err, "tourID", tourID)
+		return nil, err
+	}
+
+	return TourToDTO(tour), nil
 }

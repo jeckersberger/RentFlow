@@ -14,6 +14,7 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	httpAdapter "github.com/jeckersberger/rentflow/services/transport-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/transport-service/internal/infrastructure/clients"
 	"github.com/jeckersberger/rentflow/services/transport-service/internal/infrastructure/repositories"
 )
 
@@ -42,8 +43,11 @@ func main() {
 	equipmentRepo := repositories.NewTourEquipmentPostgres(dbPool)
 	driverLogRepo := repositories.NewDriverLogPostgres(dbPool)
 
+	// Initialize clients (using no-op implementations as fallback)
+	documentClient := clients.NewNoopDocumentClient(log)
+
 	vehicleSvc := application.NewVehicleService(vehicleRepo, log)
-	tourSvc := application.NewTourService(tourRepo, vehicleRepo, equipmentRepo, driverLogRepo, log)
+	tourSvc := application.NewTourService(tourRepo, vehicleRepo, equipmentRepo, driverLogRepo, documentClient, log)
 
 	router := httpAdapter.NewRouter(vehicleSvc, tourSvc, log)
 

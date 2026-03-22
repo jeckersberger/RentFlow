@@ -91,6 +91,42 @@ const mockMonthlyRevenueData = [
 function ReportsPage() {
   const [period, setPeriod] = useState<ReportPeriod>('month')
 
+  const handleExportCSV = async () => {
+    try {
+      const response = await fetch('/api/v1/reports/runs/latest/export/csv')
+      if (!response.ok) throw new Error('Export failed')
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `report-${period}-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('CSV export failed:', err)
+    }
+  }
+
+  const handleExportPDF = async () => {
+    try {
+      const response = await fetch('/api/v1/reports/runs/latest/export/pdf')
+      if (!response.ok) throw new Error('Export failed')
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `report-${period}-${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('PDF export failed:', err)
+    }
+  }
+
   const { data: stats = mockStats } = useQuery({
     queryKey: ['reports-stats', period],
     queryFn: async () => mockStats,
@@ -198,14 +234,14 @@ function ReportsPage() {
         <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
           <button
             className="btn btn--secondary"
-            onClick={() => alert('PDF wird exportiert...')}
+            onClick={handleExportPDF}
             style={{ padding: 'var(--spacing-3) var(--spacing-5)' }}
           >
             📥 PDF Exportieren
           </button>
           <button
             className="btn btn--secondary"
-            onClick={() => alert('CSV wird exportiert...')}
+            onClick={handleExportCSV}
             style={{ padding: 'var(--spacing-3) var(--spacing-5)' }}
           >
             📊 CSV Exportieren

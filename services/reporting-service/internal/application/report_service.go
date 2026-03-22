@@ -198,6 +198,94 @@ func (s *ReportService) ExportCSV(ctx context.Context, tenantID, runID uuid.UUID
 	return []byte(csv), nil
 }
 
+// ExportPDF exports a report run to PDF format
+func (s *ReportService) ExportPDF(ctx context.Context, tenantID, runID uuid.UUID) ([]byte, error) {
+	run, err := s.repo.GetRunByID(ctx, tenantID, runID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get report run: %w", err)
+	}
+
+	if run.Status != domain.ReportRunStatusCompleted {
+		return nil, fmt.Errorf("report run not in completed status: %s", run.Status)
+	}
+
+	// Build PDF content
+	startedStr := "-"
+	completedStr := "-"
+	filesizeStr := "-"
+
+	if run.StartedAt != nil {
+		startedStr = run.StartedAt.Format("2006-01-02 15:04:05")
+	}
+	if run.CompletedAt != nil {
+		completedStr = run.CompletedAt.Format("2006-01-02 15:04:05")
+	}
+	if run.FileSize != nil {
+		filesizeStr = fmt.Sprintf("%d bytes", *run.FileSize)
+	}
+
+	periodStr := "-"
+	if run.PeriodStart != nil && run.PeriodEnd != nil {
+		periodStr = fmt.Sprintf("%s to %s", run.PeriodStart.Format("2006-01-02"), run.PeriodEnd.Format("2006-01-02"))
+	}
+
+	// Minimal valid PDF 1.4 structure with report data
+	pdf := fmt.Sprintf(`%%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 400 >>
+stream
+BT
+/F1 16 Tf
+50 750 Td
+(Report Export) Tj
+0 -30 Td
+/F1 12 Tf
+(Report ID: %s) Tj
+0 -20 Td
+(Generated: %s) Tj
+0 -20 Td
+(Period: %s) Tj
+0 -20 Td
+(Status: %s) Tj
+0 -20 Td
+(Started: %s) Tj
+0 -20 Td
+(Completed: %s) Tj
+0 -20 Td
+(File Size: %s) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000010 00000 n
+0000000074 00000 n
+0000000133 00000 n
+0000000281 00000 n
+0000000738 00000 n
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+0832
+%%%%EOF
+`, runID.String(), time.Now().Format("2006-01-02 15:04:05"), periodStr, run.Status, startedStr, completedStr, filesizeStr)
+
+	return []byte(pdf), nil
+}
+
 // ProcessScheduledReports processes scheduled reports that are due to run
 func (s *ReportService) ProcessScheduledReports(ctx context.Context, tenantID uuid.UUID) ([]uuid.UUID, error) {
 	// Get all active report definitions for the tenant

@@ -308,6 +308,34 @@ func (h *ReportHandler) ExportReportCSV(w http.ResponseWriter, r *http.Request) 
 	w.Write(csvData)
 }
 
+// ExportReportPDF exports a report run to PDF format
+func (h *ReportHandler) ExportReportPDF(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	tenantID, err := extractTenantID(r)
+	if err != nil {
+		h.errorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	runID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid run ID")
+		return
+	}
+
+	pdfData, err := h.reportService.ExportPDF(ctx, tenantID, runID)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Failed to export report as PDF")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"report-"+runID.String()+".pdf\"")
+	w.WriteHeader(http.StatusOK)
+	w.Write(pdfData)
+}
+
 func (h *ReportHandler) GetKPIDashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
