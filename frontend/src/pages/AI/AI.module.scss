@@ -86,9 +86,10 @@
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
   cursor: pointer;
+  transition: all var(--transition-fast);
 
   &:hover {
-    background: var(--color-bg-tertiary);
+    background: var(--color-bg-elevated);
     border-color: var(--color-primary);
   }
 
@@ -127,7 +128,7 @@
   transition: all var(--transition-fast);
 
   &:hover {
-    background: var(--color-bg-tertiary);
+    background: var(--color-bg-elevated);
     border-color: var(--color-primary);
     transform: translateY(-2px);
   }

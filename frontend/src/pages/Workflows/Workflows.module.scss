@@ -51,7 +51,7 @@
 
   &:hover {
     border-color: var(--color-primary);
-    background: var(--color-bg-secondary);
+    box-shadow: var(--shadow-card-hover);
   }
 }
 
