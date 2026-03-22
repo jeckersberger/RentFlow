@@ -21,7 +21,10 @@ export function StatusBadge({ status, label, size = 'md' }: StatusBadgeProps) {
       case 'sent':
         return 'info'
       case 'maintenance':
+      case 'in_maintenance':
       case 'overdue':
+        return 'danger'
+      case 'damaged':
         return 'danger'
       case 'retired':
       case 'cancelled':

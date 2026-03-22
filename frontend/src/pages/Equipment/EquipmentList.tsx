@@ -1,28 +1,22 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { equipmentApi } from '../../services/api'
+import { equipmentApi, categoryApi } from '../../services/api'
 import { DataTable, Column } from '../../components/DataTable/DataTable'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Input } from '../../components/Form/Input'
 import { Select } from '../../components/Form/Select'
-import { Equipment, EquipmentStatus } from '../../types/equipment'
+import { Equipment, EquipmentStatus, Category } from '../../types/equipment'
 import './Equipment.module.scss'
-
-const CATEGORIES = [
-  { value: 'lighting', label: 'Beleuchtung' },
-  { value: 'sound', label: 'Ton' },
-  { value: 'staging', label: 'Bühne' },
-  { value: 'projection', label: 'Projektion' },
-  { value: 'decoration', label: 'Dekoration' },
-]
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '', label: 'Alle Status' },
   { value: 'available', label: 'Verfügbar' },
   { value: 'reserved', label: 'Reserviert' },
   { value: 'checked_out', label: 'Vermietet' },
-  { value: 'maintenance', label: 'Wartung' },
+  { value: 'in_maintenance', label: 'Wartung' },
+  { value: 'damaged', label: 'Beschädigt' },
+  { value: 'retired', label: 'Ausgemustert' },
 ]
 
 function EquipmentListPage() {
@@ -34,6 +28,17 @@ function EquipmentListPage() {
   const [selectedStatus, setSelectedStatus] = useState('')
   const [importMessage, setImportMessage] = useState('')
   const limit = 20
+
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryApi.list() as Promise<Category[]>,
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const categoryOptions = (categories || []).map((cat: Category) => ({
+    value: cat.id,
+    label: cat.name,
+  }))
 
   const { mutate: importCSV, isPending: isImporting } = useMutation({
     mutationFn: async (file: File) => {
@@ -50,34 +55,27 @@ function EquipmentListPage() {
     },
   })
 
-  const { data: equipmentData, isLoading: _isLoading, error } = useQuery({
+  // Use search endpoint when there's a search query, otherwise use list endpoint
+  const offset = (page - 1) * limit
+
+  const { data: equipmentData, isLoading, error } = useQuery({
     queryKey: ['equipment-list', page, searchQuery, selectedCategory, selectedStatus],
     queryFn: async () => {
-      const params: Record<string, unknown> = { page, limit }
-      if (searchQuery) params.search = searchQuery
-      if (selectedCategory) params.category = selectedCategory
+      if (searchQuery) {
+        return equipmentApi.search(searchQuery, limit, offset)
+      }
+      const params: Record<string, unknown> = { limit, offset }
+      if (selectedCategory) params.category_id = selectedCategory
       if (selectedStatus) params.status = selectedStatus
-      return equipmentApi.list(page, limit)
+      return equipmentApi.list(params as { limit?: number; offset?: number; status?: string; category_id?: string })
     },
     staleTime: 1000 * 60 * 5,
   })
 
-  const _filteredData = useMemo(() => {
-    if (!equipmentData?.data) return []
-    return equipmentData.data.filter((item: Equipment) => {
-      const matchesSearch =
-        !searchQuery ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.sku.toLowerCase().includes(searchQuery.toLowerCase())
+  const items: Equipment[] = equipmentData?.data || []
+  const total: number = equipmentData?.total || 0
 
-      const matchesCategory = !selectedCategory || item.category === selectedCategory
-      const matchesStatus = !selectedStatus || item.status === selectedStatus
-
-      return matchesSearch && matchesCategory && matchesStatus
-    })
-  }, [equipmentData, searchQuery, selectedCategory, selectedStatus])
-
-  const _columns: Column<Equipment>[] = [
+  const columns: Column<Equipment>[] = [
     {
       key: 'name',
       label: 'Name',
@@ -88,8 +86,12 @@ function EquipmentListPage() {
       label: 'SKU',
     },
     {
-      key: 'category',
+      key: 'category_id',
       label: 'Kategorie',
+      render: (categoryId: unknown) => {
+        const cat = categories?.find((c: Category) => c.id === categoryId)
+        return cat ? cat.name : (categoryId as string) || '—'
+      },
     },
     {
       key: 'status',
@@ -100,14 +102,14 @@ function EquipmentListPage() {
       ),
     },
     {
-      key: 'location',
-      label: 'Standort',
+      key: 'condition',
+      label: 'Zustand',
     },
     {
-      key: 'price_daily',
+      key: 'rental_price_day',
       label: 'Tagespreis',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      render: (price: any) => (price ? `€${price.toFixed(2)}` : '—'),
+      render: (price: any) => (price ? `€${Number(price).toFixed(2)}` : '—'),
     },
   ]
 
@@ -167,7 +169,7 @@ function EquipmentListPage() {
         />
 
         <Select
-          options={CATEGORIES}
+          options={categoryOptions}
           value={selectedCategory}
           onChange={(e) => {
             setSelectedCategory(e.target.value)
@@ -193,14 +195,14 @@ function EquipmentListPage() {
       )}
 
       <DataTable<Equipment>
-        columns={_columns}
-        data={_filteredData}
+        columns={columns}
+        data={items}
         rowKey="id"
-        loading={_isLoading}
+        loading={isLoading}
         onRowClick={(equipment) => navigate(`/equipment/${equipment.id}`)}
         pagination={{
           page,
-          total: equipmentData?.total || 0,
+          total,
           limit,
           onPageChange: setPage,
         }}

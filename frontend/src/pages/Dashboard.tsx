@@ -35,13 +35,30 @@ function DashboardPage() {
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       try {
-        const res = await api.get('/api/v1/equipment')
-        const equipment = res.data?.items || res.data || []
-        const available = Array.isArray(equipment) ? equipment.filter((e: Record<string, string>) => e.status === 'available').length : 0
+        const [equipmentRes, projectRes] = await Promise.allSettled([
+          api.get('/api/v1/equipment'),
+          projectApi.list(1, 1),
+        ])
+
+        let totalEquipment = 0
+        let availableEquipment = 0
+        if (equipmentRes.status === 'fulfilled') {
+          const equipment = equipmentRes.value.data?.data || equipmentRes.value.data?.items || equipmentRes.value.data || []
+          if (Array.isArray(equipment)) {
+            totalEquipment = equipment.length
+            availableEquipment = equipment.filter((e: Record<string, string>) => e.status === 'available').length
+          }
+        }
+
+        let activeProjects = 0
+        if (projectRes.status === 'fulfilled') {
+          activeProjects = projectRes.value?.total || 0
+        }
+
         return {
-          total_equipment: Array.isArray(equipment) ? equipment.length : 0,
-          available_equipment: available,
-          active_projects: 0,
+          total_equipment: totalEquipment,
+          available_equipment: availableEquipment,
+          active_projects: activeProjects,
           pending_invoices: 0,
         }
       } catch {
@@ -64,17 +81,18 @@ function DashboardPage() {
       const now = new Date()
       const end = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
       return projectApi.getCalendar(now.toISOString().split('T')[0], end.toISOString().split('T')[0])
-        .then(res => (res.data || []).slice(0, 5))
+        .then(data => (Array.isArray(data) ? data : []).slice(0, 5))
         .catch(() => [])
     },
     staleTime: 1000 * 60 * 10,
   })
 
+  const total = stats?.total_equipment || 0
+  const available = stats?.available_equipment || 0
+  const inUse = total - available
   const equipmentDistribution = [
-    { status: 'Verfügbar', count: stats?.available_equipment || 0, percentage: stats?.total_equipment ? Math.round((stats.available_equipment / stats.total_equipment) * 100) : 0 },
-    { status: 'Vermietet', count: 12, percentage: 35 },
-    { status: 'Reserviert', count: 8, percentage: 25 },
-    { status: 'Wartung', count: 3, percentage: 10 },
+    { status: 'Verfügbar', count: available, percentage: total ? Math.round((available / total) * 100) : 0 },
+    { status: 'In Verwendung', count: inUse, percentage: total ? Math.round((inUse / total) * 100) : 0 },
   ]
 
   const handleQuickAction = (action: string) => {

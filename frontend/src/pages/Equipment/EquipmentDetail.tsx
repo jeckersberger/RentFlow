@@ -1,20 +1,21 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { equipmentApi } from '../../services/api'
+import { equipmentApi, categoryApi } from '../../services/api'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
 import { Select } from '../../components/Form/Select'
 import { Input } from '../../components/Form/Input'
-import { EquipmentStatus } from '../../types/equipment'
+import { EquipmentStatus, Category, PriceResult } from '../../types/equipment'
 import './Equipment.module.scss'
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'available', label: 'Verfügbar' },
   { value: 'reserved', label: 'Reserviert' },
   { value: 'checked_out', label: 'Vermietet' },
-  { value: 'maintenance', label: 'Wartung' },
+  { value: 'in_maintenance', label: 'Wartung' },
+  { value: 'damaged', label: 'Beschädigt' },
   { value: 'retired', label: 'Ausgemustert' },
 ]
 
@@ -27,7 +28,7 @@ function EquipmentDetailPage() {
   const [newStatus, setNewStatus] = useState<EquipmentStatus | ''>('')
   const [priceCalcDays, setPriceCalcDays] = useState('1')
   const [priceCalcDiscount, setPriceCalcDiscount] = useState('0')
-  const [calculatedPrice, setCalculatedPrice] = useState<{ total: number; daily: number } | null>(null)
+  const [calculatedPrice, setCalculatedPrice] = useState<PriceResult | null>(null)
 
   const {
     data: equipment,
@@ -39,9 +40,15 @@ function EquipmentDetailPage() {
     enabled: !!id,
   })
 
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryApi.list() as Promise<Category[]>,
+    staleTime: 1000 * 60 * 10,
+  })
+
   const { mutate: changeStatus, isPending } = useMutation<unknown, unknown, string, { previous: unknown }>({
     mutationFn: async (status) => {
-      return equipmentApi.update(id!, { status: status as EquipmentStatus })
+      return equipmentApi.changeStatus(id!, status)
     },
     onMutate: async (status) => {
       await queryClient.cancelQueries({ queryKey: ['equipment', id] })
@@ -78,9 +85,11 @@ function EquipmentDetailPage() {
 
   const { mutate: calculatePrice } = useMutation({
     mutationFn: async () => {
-      return equipmentApi.getPrice(id!, parseInt(priceCalcDays), parseInt(priceCalcDiscount))
+      // Backend expects discount as 0-1 range (e.g. 0.1 for 10%)
+      const discountFraction = parseInt(priceCalcDiscount) / 100
+      return equipmentApi.getPrice(id!, parseInt(priceCalcDays), discountFraction)
     },
-    onSuccess: (data) => {
+    onSuccess: (data: PriceResult) => {
       setCalculatedPrice(data)
     },
   })
@@ -99,6 +108,11 @@ function EquipmentDetailPage() {
     } catch (err) {
       console.error('Failed to download QR code:', err)
     }
+  }
+
+  const getCategoryName = (categoryId: string) => {
+    const cat = categories?.find((c: Category) => c.id === categoryId)
+    return cat ? cat.name : categoryId || '—'
   }
 
   if (isLoading) return <div className="equipment-detail-page">Wird geladen...</div>
@@ -146,14 +160,19 @@ function EquipmentDetailPage() {
             </div>
 
             <div className="detail-card__row">
-              <span className="detail-card__row-label">Kategorie</span>
-              <span className="detail-card__row-value">{equipment.category}</span>
+              <span className="detail-card__row-label">Zustand</span>
+              <span className="detail-card__row-value">{equipment.condition || '—'}</span>
             </div>
 
             <div className="detail-card__row">
-              <span className="detail-card__row-label">Standort</span>
+              <span className="detail-card__row-label">Kategorie</span>
+              <span className="detail-card__row-value">{getCategoryName(equipment.category_id)}</span>
+            </div>
+
+            <div className="detail-card__row">
+              <span className="detail-card__row-label">Standort-ID</span>
               <span className="detail-card__row-value">
-                {equipment.location || '—'}
+                {equipment.location_id || '—'}
               </span>
             </div>
 
@@ -161,6 +180,13 @@ function EquipmentDetailPage() {
               <span className="detail-card__row-label">Barcode</span>
               <span className="detail-card__row-value">
                 {equipment.barcode || '—'}
+              </span>
+            </div>
+
+            <div className="detail-card__row">
+              <span className="detail-card__row-label">Seriennummer</span>
+              <span className="detail-card__row-value">
+                {equipment.serial_number || '—'}
               </span>
             </div>
 
@@ -180,21 +206,14 @@ function EquipmentDetailPage() {
               <div className="status-box">
                 <p className="status-box__label">Tagespreis</p>
                 <p className="status-box__value">
-                  €{equipment.price_daily?.toFixed(2) || '—'}
+                  {equipment.rental_price_day ? `€${equipment.rental_price_day.toFixed(2)}` : '—'}
                 </p>
               </div>
 
               <div className="status-box">
                 <p className="status-box__label">Wochenpreis</p>
                 <p className="status-box__value">
-                  €{equipment.price_weekly?.toFixed(2) || '—'}
-                </p>
-              </div>
-
-              <div className="status-box">
-                <p className="status-box__label">Monatspreis</p>
-                <p className="status-box__value">
-                  €{equipment.price_monthly?.toFixed(2) || '—'}
+                  {equipment.rental_price_week ? `€${equipment.rental_price_week.toFixed(2)}` : '—'}
                 </p>
               </div>
             </div>
@@ -228,13 +247,26 @@ function EquipmentDetailPage() {
               {calculatedPrice && (
                 <div style={{ padding: 'var(--spacing-3)', backgroundColor: 'var(--color-primary-50)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-primary)' }}>
                   <p style={{ margin: '0 0 var(--spacing-1) 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                    Berechneter Preis
+                    Berechneter Preis (inkl. MwSt.)
                   </p>
                   <p style={{ margin: 0, fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)' }}>
                     €{calculatedPrice.total.toFixed(2)}
                   </p>
                   <p style={{ margin: 'var(--spacing-1) 0 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                    ({priceCalcDays} Tage × €{calculatedPrice.daily.toFixed(2)})
+                    ({calculatedPrice.days} Tage × €{calculatedPrice.daily_rate.toFixed(2)} = €{calculatedPrice.base_price.toFixed(2)})
+                  </p>
+                  {calculatedPrice.volume_discount > 0 && (
+                    <p style={{ margin: 'var(--spacing-1) 0 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                      Mengenrabatt: -€{calculatedPrice.volume_discount.toFixed(2)} ({(calculatedPrice.volume_discount_percent * 100).toFixed(0)}%)
+                    </p>
+                  )}
+                  {calculatedPrice.custom_discount > 0 && (
+                    <p style={{ margin: 'var(--spacing-1) 0 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                      Kundenrabatt: -€{calculatedPrice.custom_discount.toFixed(2)}
+                    </p>
+                  )}
+                  <p style={{ margin: 'var(--spacing-1) 0 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                    Netto: €{calculatedPrice.subtotal.toFixed(2)} | MwSt. ({(calculatedPrice.vat_percent * 100).toFixed(0)}%): €{calculatedPrice.vat.toFixed(2)}
                   </p>
                 </div>
               )}
@@ -244,12 +276,23 @@ function EquipmentDetailPage() {
           <div className="detail-card" style={{ marginTop: 'var(--spacing-4)' }}>
             <h2 className="detail-card__title">Sonstiges</h2>
             <div className="detail-card__content">
-              <div className="detail-card__row">
-                <span className="detail-card__row-label">Menge</span>
-                <span className="detail-card__row-value">
-                  {equipment.quantity || 1}
-                </span>
-              </div>
+              {equipment.weight > 0 && (
+                <div className="detail-card__row">
+                  <span className="detail-card__row-label">Gewicht</span>
+                  <span className="detail-card__row-value">
+                    {equipment.weight} kg
+                  </span>
+                </div>
+              )}
+
+              {equipment.tags && equipment.tags.length > 0 && (
+                <div className="detail-card__row">
+                  <span className="detail-card__row-label">Tags</span>
+                  <span className="detail-card__row-value">
+                    {equipment.tags.join(', ')}
+                  </span>
+                </div>
+              )}
 
               <div className="detail-card__row">
                 <span className="detail-card__row-label">Erstellt am</span>

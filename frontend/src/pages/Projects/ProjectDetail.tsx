@@ -83,7 +83,9 @@ function ProjectDetailPage() {
             <div className="detail-card__row">
               <span className="detail-card__row-label">Standort</span>
               <span className="detail-card__row-value">
-                {project.location || '—'}
+                {project.location
+                  || (project.venue_address && [project.venue_address.street, project.venue_address.city, project.venue_address.country].filter(Boolean).join(', '))
+                  || '—'}
               </span>
             </div>
 

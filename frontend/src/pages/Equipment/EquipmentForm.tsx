@@ -1,21 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { equipmentApi } from '../../services/api'
+import { equipmentApi, categoryApi } from '../../services/api'
 import { Input } from '../../components/Form/Input'
 import { Select } from '../../components/Form/Select'
 import { TextArea } from '../../components/Form/TextArea'
 import { FileUpload } from '../../components/Form/FileUpload'
-import { CreateEquipmentDTO } from '../../types/equipment'
+import { CreateEquipmentDTO, Category } from '../../types/equipment'
 import './Equipment.module.scss'
-
-const CATEGORIES = [
-  { value: 'lighting', label: 'Beleuchtung' },
-  { value: 'sound', label: 'Ton' },
-  { value: 'staging', label: 'Bühne' },
-  { value: 'projection', label: 'Projektion' },
-  { value: 'decoration', label: 'Dekoration' },
-]
 
 function EquipmentFormPage() {
   const navigate = useNavigate()
@@ -27,15 +19,25 @@ function EquipmentFormPage() {
     description: '',
     sku: '',
     barcode: '',
-    category: '',
-    location: '',
-    price_daily: 0,
-    price_weekly: 0,
-    price_monthly: 0,
-    quantity: 1,
+    category_id: '',
+    location_id: '',
+    rental_price_day: 0,
+    rental_price_week: 0,
+    weight: 0,
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryApi.list() as Promise<Category[]>,
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const categoryOptions = (categories || []).map((cat: Category) => ({
+    value: cat.id,
+    label: cat.name,
+  }))
 
   const { data: equipment, isLoading: isLoadingEquipment } = useQuery(
     {
@@ -58,7 +60,7 @@ function EquipmentFormPage() {
     },
     onError: (error: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const errorMessage = (error as any)?.response?.data?.message || 'Fehler beim Speichern'
+      const errorMessage = (error as any)?.response?.data?.error || (error as any)?.response?.data?.message || 'Fehler beim Speichern'
       setErrors({ submit: errorMessage })
     },
   })
@@ -70,12 +72,13 @@ function EquipmentFormPage() {
         description: equipment.description || '',
         sku: equipment.sku,
         barcode: equipment.barcode || '',
-        category: equipment.category,
-        location: equipment.location || '',
-        price_daily: equipment.price_daily || 0,
-        price_weekly: equipment.price_weekly || 0,
-        price_monthly: equipment.price_monthly || 0,
-        quantity: equipment.quantity || 1,
+        category_id: equipment.category_id,
+        location_id: equipment.location_id || '',
+        rental_price_day: equipment.rental_price_day || 0,
+        rental_price_week: equipment.rental_price_week || 0,
+        weight: equipment.weight || 0,
+        serial_number: equipment.serial_number || '',
+        tags: equipment.tags || [],
       })
     }
   }, [equipment, isEditing])
@@ -89,8 +92,8 @@ function EquipmentFormPage() {
     if (!formData.sku?.trim()) {
       newErrors.sku = 'SKU ist erforderlich'
     }
-    if (!formData.category) {
-      newErrors.category = 'Kategorie ist erforderlich'
+    if (!formData.category_id) {
+      newErrors.category_id = 'Kategorie ist erforderlich'
     }
 
     setErrors(newErrors)
@@ -165,12 +168,19 @@ function EquipmentFormPage() {
             onChange={(e) => handleInputChange('barcode', e.target.value)}
             placeholder="Optional"
           />
+          <Input
+            label="Seriennummer"
+            value={formData.serial_number || ''}
+            onChange={(e) => handleInputChange('serial_number', e.target.value)}
+            placeholder="Optional"
+          />
           <Select
             label="Kategorie"
-            options={CATEGORIES}
-            value={formData.category}
-            onChange={(e) => handleInputChange('category', e.target.value)}
-            error={errors.category}
+            options={categoryOptions}
+            value={formData.category_id}
+            onChange={(e) => handleInputChange('category_id', e.target.value)}
+            error={errors.category_id}
+            placeholder="Kategorie auswählen"
           />
         </div>
 
@@ -187,43 +197,44 @@ function EquipmentFormPage() {
           <Input
             label="Tagespreis (€)"
             type="number"
-            value={formData.price_daily || 0}
-            onChange={(e) => handleInputChange('price_daily', parseFloat(e.target.value))}
+            value={formData.rental_price_day || 0}
+            onChange={(e) => handleInputChange('rental_price_day', parseFloat(e.target.value))}
             step="0.01"
             min="0"
           />
           <Input
             label="Wochenpreis (€)"
             type="number"
-            value={formData.price_weekly || 0}
-            onChange={(e) => handleInputChange('price_weekly', parseFloat(e.target.value))}
+            value={formData.rental_price_week || 0}
+            onChange={(e) => handleInputChange('rental_price_week', parseFloat(e.target.value))}
             step="0.01"
             min="0"
           />
           <Input
-            label="Monatspreis (€)"
+            label="Einkaufspreis (€)"
             type="number"
-            value={formData.price_monthly || 0}
-            onChange={(e) => handleInputChange('price_monthly', parseFloat(e.target.value))}
+            value={formData.purchase_price || 0}
+            onChange={(e) => handleInputChange('purchase_price', parseFloat(e.target.value))}
             step="0.01"
             min="0"
           />
           <Input
-            label="Menge"
+            label="Gewicht (kg)"
             type="number"
-            value={formData.quantity || 1}
-            onChange={(e) => handleInputChange('quantity', parseInt(e.target.value))}
-            min="1"
+            value={formData.weight || 0}
+            onChange={(e) => handleInputChange('weight', parseFloat(e.target.value))}
+            step="0.1"
+            min="0"
           />
         </div>
 
         <h2 className="form-section__title">Standort & Bilder</h2>
         <div className="form-section__grid">
           <Input
-            label="Standort"
-            value={formData.location || ''}
-            onChange={(e) => handleInputChange('location', e.target.value)}
-            placeholder="z.B. Lagerraum A, Regal 3"
+            label="Standort-ID"
+            value={formData.location_id || ''}
+            onChange={(e) => handleInputChange('location_id', e.target.value)}
+            placeholder="z.B. Lager-A"
           />
         </div>
 

@@ -86,16 +86,16 @@ export const authApi = {
 // MOCK DATA
 // ============================================================================
 const mockEquipment = [
-  { id: '1', name: 'JBL VTX A12', sku: 'SPK-001', barcode: 'RF-SPK-001', category: 'audio', status: 'available', location: 'Lager A - Regal 1', description: 'Line Array Lautsprecher, 2x 12"', quantity: 8, price_daily: 120, price_weekly: 600, price_monthly: 1800, created_at: '2025-09-15T10:00:00Z', updated_at: '2026-03-01T14:30:00Z' },
-  { id: '2', name: 'Shure SM58', sku: 'MIC-001', barcode: 'RF-MIC-001', category: 'audio', status: 'available', location: 'Lager A - Regal 3', description: 'Dynamisches Gesangsmikrofon', quantity: 24, price_daily: 15, price_weekly: 75, price_monthly: 200, created_at: '2025-09-15T10:00:00Z', updated_at: '2026-02-20T09:00:00Z' },
-  { id: '3', name: 'MA Lighting grandMA3', sku: 'LGT-001', barcode: 'RF-LGT-001', category: 'lighting', status: 'checked_out', location: 'Projekt: Stadtfest München', description: 'Lichtmischpult, Full-Size', quantity: 2, price_daily: 250, price_weekly: 1200, price_monthly: 3500, created_at: '2025-10-01T08:00:00Z', updated_at: '2026-03-18T16:00:00Z' },
-  { id: '4', name: 'Martin MAC Aura XB', sku: 'LGT-002', barcode: 'RF-LGT-002', category: 'lighting', status: 'checked_out', location: 'Projekt: Stadtfest München', description: 'LED Moving Head Wash', quantity: 16, price_daily: 85, price_weekly: 400, price_monthly: 1200, created_at: '2025-10-01T08:00:00Z', updated_at: '2026-03-18T16:00:00Z' },
-  { id: '5', name: 'Blackmagic ATEM Mini Extreme', sku: 'VID-001', barcode: 'RF-VID-001', category: 'video', status: 'available', location: 'Lager B - Regal 1', description: 'Video-Mischpult, 8 HDMI Inputs', quantity: 3, price_daily: 180, price_weekly: 850, price_monthly: 2500, created_at: '2025-11-10T12:00:00Z', updated_at: '2026-01-15T11:00:00Z' },
-  { id: '6', name: 'Prolyte X30V Truss 3m', sku: 'STG-001', barcode: 'RF-STG-001', category: 'stage', status: 'available', location: 'Lager C - Boden', description: 'Traversensystem, Aluminium', quantity: 40, price_daily: 25, price_weekly: 120, price_monthly: 350, created_at: '2025-09-20T09:00:00Z', updated_at: '2026-03-10T08:00:00Z' },
-  { id: '7', name: 'Yamaha CL5', sku: 'AUD-002', barcode: 'RF-AUD-002', category: 'audio', status: 'maintenance', location: 'Werkstatt', description: 'Digitales Mischpult, 72 Kanäle', quantity: 1, price_daily: 350, price_weekly: 1600, price_monthly: 4500, created_at: '2025-09-15T10:00:00Z', updated_at: '2026-03-20T10:00:00Z' },
-  { id: '8', name: 'Canon EOS R5', sku: 'VID-002', barcode: 'RF-VID-002', category: 'video', status: 'reserved', location: 'Lager B - Regal 2', description: 'Vollformat Kamera, 8K Video', quantity: 4, price_daily: 200, price_weekly: 950, price_monthly: 2800, created_at: '2025-12-01T14:00:00Z', updated_at: '2026-03-19T09:00:00Z' },
-  { id: '9', name: 'Chainmaster BGV-D8+ 1t', sku: 'STG-002', barcode: 'RF-STG-002', category: 'stage', status: 'available', location: 'Lager C - Regal 1', description: 'Kettenzug, 1 Tonne, BGV-D8+', quantity: 12, price_daily: 45, price_weekly: 200, price_monthly: 600, created_at: '2025-10-15T11:00:00Z', updated_at: '2026-02-28T13:00:00Z' },
-  { id: '10', name: 'Robe MegaPointe', sku: 'LGT-003', barcode: 'RF-LGT-003', category: 'lighting', status: 'available', location: 'Lager A - Regal 5', description: 'Moving Head Spot/Beam/Wash', quantity: 20, price_daily: 95, price_weekly: 450, price_monthly: 1300, created_at: '2025-11-20T10:00:00Z', updated_at: '2026-03-05T15:00:00Z' },
+  { id: '1', tenant_id: '1', name: 'JBL VTX A12', sku: 'SPK-001', barcode: 'RF-SPK-001', category_id: 'cat-audio', status: 'available', condition: 'good', location_id: 'loc-1', description: 'Line Array Lautsprecher, 2x 12"', rental_price_day: 120, rental_price_week: 600, weight: 35, dimensions: { length: 60, width: 40, height: 35, unit: 'cm' }, image_refs: [], tags: ['audio', 'pa'], custom_fields: {}, created_at: '2025-09-15T10:00:00Z', updated_at: '2026-03-01T14:30:00Z' },
+  { id: '2', tenant_id: '1', name: 'Shure SM58', sku: 'MIC-001', barcode: 'RF-MIC-001', category_id: 'cat-audio', status: 'available', condition: 'good', location_id: 'loc-1', description: 'Dynamisches Gesangsmikrofon', rental_price_day: 15, rental_price_week: 75, weight: 0.33, dimensions: {}, image_refs: [], tags: ['audio', 'mikrofon'], custom_fields: {}, created_at: '2025-09-15T10:00:00Z', updated_at: '2026-02-20T09:00:00Z' },
+  { id: '3', tenant_id: '1', name: 'MA Lighting grandMA3', sku: 'LGT-001', barcode: 'RF-LGT-001', category_id: 'cat-lighting', status: 'checked_out', condition: 'good', location_id: 'loc-2', description: 'Lichtmischpult, Full-Size', rental_price_day: 250, rental_price_week: 1200, weight: 28, dimensions: {}, image_refs: [], tags: ['licht', 'pult'], custom_fields: {}, created_at: '2025-10-01T08:00:00Z', updated_at: '2026-03-18T16:00:00Z' },
+  { id: '4', tenant_id: '1', name: 'Martin MAC Aura XB', sku: 'LGT-002', barcode: 'RF-LGT-002', category_id: 'cat-lighting', status: 'checked_out', condition: 'good', location_id: 'loc-2', description: 'LED Moving Head Wash', rental_price_day: 85, rental_price_week: 400, weight: 6.5, dimensions: {}, image_refs: [], tags: ['licht', 'moving-head'], custom_fields: {}, created_at: '2025-10-01T08:00:00Z', updated_at: '2026-03-18T16:00:00Z' },
+  { id: '5', tenant_id: '1', name: 'Blackmagic ATEM Mini Extreme', sku: 'VID-001', barcode: 'RF-VID-001', category_id: 'cat-video', status: 'available', condition: 'good', location_id: 'loc-3', description: 'Video-Mischpult, 8 HDMI Inputs', rental_price_day: 180, rental_price_week: 850, weight: 1.2, dimensions: {}, image_refs: [], tags: ['video', 'mischer'], custom_fields: {}, created_at: '2025-11-10T12:00:00Z', updated_at: '2026-01-15T11:00:00Z' },
+  { id: '6', tenant_id: '1', name: 'Prolyte X30V Truss 3m', sku: 'STG-001', barcode: 'RF-STG-001', category_id: 'cat-stage', status: 'available', condition: 'good', location_id: 'loc-4', description: 'Traversensystem, Aluminium', rental_price_day: 25, rental_price_week: 120, weight: 12, dimensions: { length: 300, width: 30, height: 30, unit: 'cm' }, image_refs: [], tags: ['bühne', 'truss'], custom_fields: {}, created_at: '2025-09-20T09:00:00Z', updated_at: '2026-03-10T08:00:00Z' },
+  { id: '7', tenant_id: '1', name: 'Yamaha CL5', sku: 'AUD-002', barcode: 'RF-AUD-002', category_id: 'cat-audio', status: 'in_maintenance', condition: 'fair', location_id: 'loc-5', description: 'Digitales Mischpult, 72 Kanäle', rental_price_day: 350, rental_price_week: 1600, weight: 42, dimensions: {}, image_refs: [], tags: ['audio', 'pult'], custom_fields: {}, created_at: '2025-09-15T10:00:00Z', updated_at: '2026-03-20T10:00:00Z' },
+  { id: '8', tenant_id: '1', name: 'Canon EOS R5', sku: 'VID-002', barcode: 'RF-VID-002', category_id: 'cat-video', status: 'reserved', condition: 'new', location_id: 'loc-3', description: 'Vollformat Kamera, 8K Video', rental_price_day: 200, rental_price_week: 950, weight: 0.74, dimensions: {}, image_refs: [], tags: ['video', 'kamera'], custom_fields: {}, created_at: '2025-12-01T14:00:00Z', updated_at: '2026-03-19T09:00:00Z' },
+  { id: '9', tenant_id: '1', name: 'Chainmaster BGV-D8+ 1t', sku: 'STG-002', barcode: 'RF-STG-002', category_id: 'cat-stage', status: 'available', condition: 'good', location_id: 'loc-4', description: 'Kettenzug, 1 Tonne, BGV-D8+', rental_price_day: 45, rental_price_week: 200, weight: 25, dimensions: {}, image_refs: [], tags: ['bühne', 'rigging'], custom_fields: {}, created_at: '2025-10-15T11:00:00Z', updated_at: '2026-02-28T13:00:00Z' },
+  { id: '10', tenant_id: '1', name: 'Robe MegaPointe', sku: 'LGT-003', barcode: 'RF-LGT-003', category_id: 'cat-lighting', status: 'available', condition: 'good', location_id: 'loc-1', description: 'Moving Head Spot/Beam/Wash', rental_price_day: 95, rental_price_week: 450, weight: 11, dimensions: {}, image_refs: [], tags: ['licht', 'moving-head'], custom_fields: {}, created_at: '2025-11-20T10:00:00Z', updated_at: '2026-03-05T15:00:00Z' },
 ]
 
 const mockProjects = [
@@ -161,10 +161,10 @@ const mockStockMovements = [
 
 // Equipment API endpoints
 export const equipmentApi = {
-  list: (page = 1, limit = 50) =>
+  list: (params: { limit?: number; offset?: number; status?: string; category_id?: string; location_id?: string } = {}) =>
     MOCK_MODE
-      ? mockDelay({ items: mockEquipment.slice((page - 1) * limit, page * limit), total: mockEquipment.length, page, limit })
-      : api.get('/api/v1/equipment', { params: { page, limit } }).then(res => res.data),
+      ? mockDelay({ data: mockEquipment.slice(params.offset || 0, (params.offset || 0) + (params.limit || 20)), total: mockEquipment.length, limit: params.limit || 20, offset: params.offset || 0 })
+      : api.get('/api/v1/equipment', { params }).then(res => res.data),
 
   getById: (id: string) =>
     MOCK_MODE
@@ -177,20 +177,23 @@ export const equipmentApi = {
   update: (id: string, data: object) =>
     MOCK_MODE ? mockDelay({ ...data, id }) : api.put(`/api/v1/equipment/${id}`, data).then(res => res.data),
 
+  changeStatus: (id: string, status: string, reason?: string) =>
+    api.patch(`/api/v1/equipment/${id}/status`, { status, reason }).then(res => res.data),
+
   delete: (id: string) =>
     MOCK_MODE ? mockDelay({ success: true, id }) : api.delete(`/api/v1/equipment/${id}`).then(res => res.data),
 
   getPrice: (id: string, days: number, discount = 0) =>
     api.get(`/api/v1/equipment/${id}/price`, { params: { days, discount } }).then(res => res.data),
 
-  getAvailability: (id: string, start: string, end: string) =>
-    api.get(`/api/v1/equipment/${id}/availability`, { params: { start, end } }).then(res => res.data),
+  getAvailability: (id: string, qty = 1) =>
+    api.get(`/api/v1/equipment/${id}/availability`, { params: { qty } }).then(res => res.data),
 
   getQRCode: (id: string) =>
     api.get(`/api/v1/equipment/${id}/qr-code`, { responseType: 'blob' }).then(res => res.data),
 
-  getHistory: (id: string, page = 1, limit = 50) =>
-    api.get(`/api/v1/equipment/${id}/history`, { params: { page, limit } }).then(res => res.data),
+  getHistory: (id: string, limit = 20, offset = 0) =>
+    api.get(`/api/v1/equipment/${id}/history`, { params: { limit, offset } }).then(res => res.data),
 
   importCSV: (file: File) => {
     const formData = new FormData()
@@ -207,10 +210,10 @@ export const equipmentApi = {
       : api.get(`/api/v1/equipment/lookup/barcode/${barcode}`).then(res => res.data),
 
   // Equipment per Suchbegriff finden
-  search: (query: string, limit = 20) =>
+  search: (query: string, limit = 20, offset = 0) =>
     MOCK_MODE
       ? mockDelay(mockEquipment.filter(e => e.name.toLowerCase().includes(query.toLowerCase())).slice(0, limit))
-      : api.get('/api/v1/equipment/search', { params: { q: query, limit } }).then(res => res.data),
+      : api.get('/api/v1/equipment/search', { params: { q: query, limit, offset } }).then(res => res.data),
 
   // Equipment einem Projekt zuweisen (Check-Out)
   checkOut: (equipmentId: string, projectId: string) =>
@@ -221,12 +224,30 @@ export const equipmentApi = {
     api.post(`/api/v1/equipment/${equipmentId}/check-in`, {}).then(res => res.data),
 }
 
+// Category API endpoints
+export const categoryApi = {
+  list: () =>
+    api.get('/api/v1/categories').then(res => res.data),
+
+  getById: (id: string) =>
+    api.get(`/api/v1/categories/${id}`).then(res => res.data),
+
+  create: (data: object) =>
+    api.post('/api/v1/categories', data).then(res => res.data),
+
+  update: (id: string, data: object) =>
+    api.put(`/api/v1/categories/${id}`, data).then(res => res.data),
+
+  delete: (id: string) =>
+    api.delete(`/api/v1/categories/${id}`).then(res => res.data),
+}
+
 // Project API endpoints
 export const projectApi = {
   list: (page = 1, limit = 50) =>
     MOCK_MODE
       ? mockDelay({ items: mockProjects.slice((page - 1) * limit, page * limit), total: mockProjects.length, page, limit })
-      : api.get('/api/v1/projects', { params: { page, limit } }).then(res => res.data),
+      : api.get('/api/v1/projects', { params: { offset: (page - 1) * limit, limit } }).then(res => res.data),
 
   getById: (id: string) =>
     MOCK_MODE
