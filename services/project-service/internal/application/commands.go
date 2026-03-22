@@ -9,43 +9,43 @@ import (
 // Project Commands
 
 type CreateProjectCommand struct {
-	TenantID        string
-	Name            string
-	Description     string
-	ClientName      string
-	ClientEmail     string
-	ClientPhone     string
-	ClientAddress   AddressDTO
-	VenueAddress    AddressDTO
-	StartDate       time.Time
-	EndDate         time.Time
-	SetupDate       *time.Time
-	TeardownDate    *time.Time
-	Budget          float64
-	Currency        string
-	Notes           string
-	Tags            []string
-	CreatedByUserID string
+	TenantID        string     `json:"tenant_id"`
+	Name            string     `json:"name"`
+	Description     string     `json:"description"`
+	ClientName      string     `json:"client_name"`
+	ClientEmail     string     `json:"client_email"`
+	ClientPhone     string     `json:"client_phone"`
+	ClientAddress   AddressDTO `json:"client_address"`
+	VenueAddress    AddressDTO `json:"venue_address"`
+	StartDate       time.Time  `json:"start_date"`
+	EndDate         time.Time  `json:"end_date"`
+	SetupDate       *time.Time `json:"setup_date"`
+	TeardownDate    *time.Time `json:"teardown_date"`
+	Budget          float64    `json:"budget"`
+	Currency        string     `json:"currency"`
+	Notes           string     `json:"notes"`
+	Tags            []string   `json:"tags"`
+	CreatedByUserID string     `json:"created_by_user_id"`
 }
 
 type UpdateProjectCommand struct {
-	ID            string
-	TenantID      string
-	Name          string
-	Description   string
-	ClientName    string
-	ClientEmail   string
-	ClientPhone   string
-	ClientAddress AddressDTO
-	VenueAddress  AddressDTO
-	StartDate     time.Time
-	EndDate       time.Time
-	SetupDate     *time.Time
-	TeardownDate  *time.Time
-	Budget        float64
-	Currency      string
-	Notes         string
-	Tags          []string
+	ID            string     `json:"id"`
+	TenantID      string     `json:"tenant_id"`
+	Name          string     `json:"name"`
+	Description   string     `json:"description"`
+	ClientName    string     `json:"client_name"`
+	ClientEmail   string     `json:"client_email"`
+	ClientPhone   string     `json:"client_phone"`
+	ClientAddress AddressDTO `json:"client_address"`
+	VenueAddress  AddressDTO `json:"venue_address"`
+	StartDate     time.Time  `json:"start_date"`
+	EndDate       time.Time  `json:"end_date"`
+	SetupDate     *time.Time `json:"setup_date"`
+	TeardownDate  *time.Time `json:"teardown_date"`
+	Budget        float64    `json:"budget"`
+	Currency      string     `json:"currency"`
+	Notes         string     `json:"notes"`
+	Tags          []string   `json:"tags"`
 }
 
 type ChangeProjectStatusCommand struct {

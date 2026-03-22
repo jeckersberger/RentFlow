@@ -48,11 +48,21 @@ type EquipmentCondition string
 
 const (
 	ConditionNew       EquipmentCondition = "new"
+	ConditionExcellent EquipmentCondition = "excellent"
 	ConditionGood      EquipmentCondition = "good"
 	ConditionFair      EquipmentCondition = "fair"
 	ConditionPoor      EquipmentCondition = "poor"
+	ConditionDamaged   EquipmentCondition = "damaged"
 	ConditionDefective EquipmentCondition = "defective"
 )
+
+func (c EquipmentCondition) IsValid() bool {
+	switch c {
+	case ConditionNew, ConditionExcellent, ConditionGood, ConditionFair, ConditionPoor, ConditionDamaged, ConditionDefective:
+		return true
+	}
+	return false
+}
 
 type Dimensions struct {
 	Length float64 `json:"length"`
@@ -143,6 +153,9 @@ func (e *Equipment) ChangeStatus(newStatus EquipmentStatus) error {
 }
 
 func (e *Equipment) UpdateCondition(condition EquipmentCondition) error {
+	if !condition.IsValid() {
+		return fmt.Errorf("invalid condition: %s", condition)
+	}
 	if condition == e.Condition {
 		return fmt.Errorf("condition already set to %s", condition)
 	}

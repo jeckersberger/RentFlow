@@ -52,9 +52,11 @@ type ChangeStatusCommand struct {
 }
 
 type UpdateConditionCommand struct {
-	ID        string
-	TenantID  string
-	Condition domain.EquipmentCondition
+	ID         string
+	TenantID   string
+	Condition  domain.EquipmentCondition
+	Notes      string
+	ReportedBy string
 }
 
 type SetLocationCommand struct {

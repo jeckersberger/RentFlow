@@ -251,7 +251,9 @@ func (h *Handler) UpdateEquipmentCondition(w http.ResponseWriter, r *http.Reques
 	}
 
 	var payload struct {
-		Condition domain.EquipmentCondition `json:"condition"`
+		Condition  domain.EquipmentCondition `json:"condition"`
+		Notes      string                    `json:"notes"`
+		ReportedBy string                    `json:"reported_by"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -260,17 +262,20 @@ func (h *Handler) UpdateEquipmentCondition(w http.ResponseWriter, r *http.Reques
 	}
 
 	cmd := application.UpdateConditionCommand{
-		ID:        id,
-		TenantID:  tenantID,
-		Condition: payload.Condition,
+		ID:         id,
+		TenantID:   tenantID,
+		Condition:  payload.Condition,
+		Notes:      payload.Notes,
+		ReportedBy: payload.ReportedBy,
 	}
 
-	if err := h.equipmentSvc.UpdateCondition(r.Context(), cmd); err != nil {
+	dto, err := h.equipmentSvc.UpdateCondition(r.Context(), cmd)
+	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	h.respondJSON(w, http.StatusOK, map[string]string{"message": "condition updated"})
+	h.respondJSON(w, http.StatusOK, dto)
 }
 
 func (h *Handler) AddEquipmentImage(w http.ResponseWriter, r *http.Request) {
@@ -906,6 +911,14 @@ func (h *Handler) CheckInEquipment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse optional condition from request body
+	var payload struct {
+		Condition domain.EquipmentCondition `json:"condition"`
+		Notes     string                    `json:"notes"`
+	}
+	// Body is optional for check-in, so ignore decode errors
+	json.NewDecoder(r.Body).Decode(&payload)
+
 	cmd := application.CheckInCommand{
 		ID:       id,
 		TenantID: tenantID,
@@ -916,6 +929,24 @@ func (h *Handler) CheckInEquipment(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.handleError(w, err)
 		return
+	}
+
+	// If condition was provided, update it after check-in
+	if payload.Condition != "" {
+		condCmd := application.UpdateConditionCommand{
+			ID:         id,
+			TenantID:   tenantID,
+			Condition:  payload.Condition,
+			Notes:      payload.Notes,
+			ReportedBy: userID,
+		}
+		condDTO, err := h.equipmentSvc.UpdateCondition(r.Context(), condCmd)
+		if err != nil {
+			// Log but don't fail the check-in — condition update is secondary
+			h.logger.Warn("Failed to update condition during check-in", "id", id, "err", err.Error())
+		} else {
+			dto = condDTO
+		}
 	}
 
 	h.respondJSON(w, http.StatusOK, dto)

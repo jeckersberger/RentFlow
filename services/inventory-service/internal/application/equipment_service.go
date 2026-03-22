@@ -215,26 +215,34 @@ func (s *EquipmentService) ChangeStatus(ctx context.Context, cmd ChangeStatusCom
 	return nil
 }
 
-func (s *EquipmentService) UpdateCondition(ctx context.Context, cmd UpdateConditionCommand) error {
+func (s *EquipmentService) UpdateCondition(ctx context.Context, cmd UpdateConditionCommand) (*EquipmentDTO, error) {
 	if cmd.TenantID == "" {
-		return domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
 	}
 
 	eq, err := s.equipRepo.GetByID(ctx, cmd.TenantID, cmd.ID)
 	if err != nil {
-		return domain.NewDomainError("NOT_FOUND", "equipment not found", err)
+		return nil, domain.NewDomainError("NOT_FOUND", "equipment not found", err)
 	}
 
 	if err := eq.UpdateCondition(cmd.Condition); err != nil {
-		return domain.NewDomainError("INVALID_CONDITION", err.Error(), nil)
+		return nil, domain.NewDomainError("INVALID_CONDITION", err.Error(), nil)
+	}
+
+	// If condition is "damaged", automatically set status to in_maintenance
+	if cmd.Condition == domain.ConditionDamaged {
+		if err := eq.ChangeStatus(domain.StatusInMaintenance); err != nil {
+			// Status might already be in_maintenance, which is fine
+			s.logger.Info("Could not auto-change status to in_maintenance", "id", cmd.ID, "err", err.Error())
+		}
 	}
 
 	if err := s.equipRepo.Update(ctx, eq); err != nil {
-		return domain.NewDomainError("UPDATE_ERROR", "failed to update condition", err)
+		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to update condition", err)
 	}
 
-	s.logger.Info("Equipment condition updated", "id", cmd.ID, "condition", cmd.Condition)
-	return nil
+	s.logger.Info("Equipment condition updated", "id", cmd.ID, "condition", cmd.Condition, "notes", cmd.Notes, "reported_by", cmd.ReportedBy)
+	return EquipmentToDTO(eq), nil
 }
 
 func (s *EquipmentService) SetLocation(ctx context.Context, cmd SetLocationCommand) error {

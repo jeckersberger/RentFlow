@@ -143,6 +143,12 @@ function ScannerPage() {
   const [feedbackMessage, setFeedbackMessage] = useState<FeedbackMessage | null>(null)
   const [checkOutCount, setCheckOutCount] = useState(0)
   const [checkInCount, setCheckInCount] = useState(0)
+  const [showConditionReport, setShowConditionReport] = useState(false)
+  const [conditionRating, setConditionRating] = useState<string>('')
+  const [conditionNotes, setConditionNotes] = useState('')
+  const [conditionEquipmentId, setConditionEquipmentId] = useState<string>('')
+  const [conditionEquipmentName, setConditionEquipmentName] = useState<string>('')
+  const [isSubmittingCondition, setIsSubmittingCondition] = useState(false)
 
   // Ref to allow useEffects to call processBarcode without circular dependency
   const processBarcodeRef = useRef<((barcode: string) => void) | null>(null)
@@ -427,6 +433,12 @@ function ScannerPage() {
       } else if (scanContext === 'check-in') {
         setCheckInCount((prev) => prev + 1)
         setFeedbackMessage({ type: 'success', text: `${equipment.name} erfolgreich eingecheckt`, timestamp: Date.now() })
+        // Show condition report after successful check-in
+        setConditionEquipmentId(equipment.id)
+        setConditionEquipmentName(equipment.name)
+        setConditionRating('')
+        setConditionNotes('')
+        setShowConditionReport(true)
       } else {
         setFeedbackMessage({ type: 'success', text: `${equipment.name} erfolgreich gescannt`, timestamp: Date.now() })
       }
@@ -621,6 +633,36 @@ function ScannerPage() {
   const handleEndSession = () => {
     setSessionActive(false)
   }
+
+  const handleSubmitCondition = async () => {
+    if (!conditionRating || !conditionEquipmentId) return
+    setIsSubmittingCondition(true)
+    try {
+      await equipmentApi.updateCondition(conditionEquipmentId, conditionRating, conditionNotes || undefined)
+      setFeedbackMessage({ type: 'success', text: `Zustandsbericht für ${conditionEquipmentName} gespeichert`, timestamp: Date.now() })
+      playBeep('success')
+    } catch {
+      setFeedbackMessage({ type: 'error', text: 'Zustandsbericht konnte nicht gespeichert werden', timestamp: Date.now() })
+      playBeep('error')
+    } finally {
+      setIsSubmittingCondition(false)
+      setShowConditionReport(false)
+    }
+  }
+
+  const handleSkipCondition = () => {
+    setShowConditionReport(false)
+    setConditionRating('')
+    setConditionNotes('')
+  }
+
+  const conditionOptions: { value: string; label: string; color: string }[] = [
+    { value: 'excellent', label: 'Ausgezeichnet', color: '#059669' },
+    { value: 'good', label: 'Gut', color: '#16a34a' },
+    { value: 'fair', label: 'Akzeptabel', color: '#d97706' },
+    { value: 'poor', label: 'Schlecht', color: '#dc2626' },
+    { value: 'damaged', label: 'Beschädigt', color: '#991b1b' },
+  ]
 
   return (
     <div className="scanner-page">
@@ -975,6 +1017,107 @@ function ScannerPage() {
                     📥 Check-In: {scannedEquipment.name}
                   </button>
                 )}
+              </div>
+            )}
+
+            {/* Condition Report after Check-In */}
+            {showConditionReport && (
+              <div
+                style={{
+                  marginTop: 'var(--spacing-4)',
+                  padding: 'var(--spacing-5)',
+                  backgroundColor: '#f0f9ff',
+                  borderRadius: 'var(--radius-card)',
+                  border: '2px solid #0284c7',
+                }}
+              >
+                <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '1.25rem', color: 'var(--color-text-primary)' }}>
+                  Zustandsbericht
+                </h3>
+                <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                  {conditionEquipmentName} — Zustand nach Rückgabe bewerten
+                </p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-4)' }}>
+                  {conditionOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setConditionRating(opt.value)}
+                      style={{
+                        padding: 'var(--spacing-2) var(--spacing-4)',
+                        borderRadius: 'var(--radius-base)',
+                        border: conditionRating === opt.value ? `2px solid ${opt.color}` : '2px solid var(--color-border)',
+                        backgroundColor: conditionRating === opt.value ? opt.color + '20' : 'var(--color-bg-primary)',
+                        color: conditionRating === opt.value ? opt.color : 'var(--color-text-primary)',
+                        fontWeight: conditionRating === opt.value ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
+                        cursor: 'pointer',
+                        fontSize: 'var(--font-size-base)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--color-text-secondary)',
+                      marginBottom: 'var(--spacing-1)',
+                    }}
+                  >
+                    Anmerkungen (optional)
+                  </label>
+                  <textarea
+                    value={conditionNotes}
+                    onChange={(e) => setConditionNotes(e.target.value)}
+                    placeholder="z.B. Kratzer an der linken Seite..."
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: 'var(--spacing-2) var(--spacing-3)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      fontSize: 'var(--font-size-base)',
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+                  <button
+                    className="btn btn--primary"
+                    onClick={handleSubmitCondition}
+                    disabled={!conditionRating || isSubmittingCondition}
+                    style={{
+                      flex: 1,
+                      padding: 'var(--spacing-3)',
+                      fontSize: '1rem',
+                      fontWeight: 'var(--font-weight-semibold)',
+                    }}
+                  >
+                    {isSubmittingCondition ? 'Wird gespeichert...' : 'Speichern'}
+                  </button>
+                  <button
+                    className="btn btn--secondary"
+                    onClick={handleSkipCondition}
+                    disabled={isSubmittingCondition}
+                    style={{
+                      flex: 1,
+                      padding: 'var(--spacing-3)',
+                      fontSize: '1rem',
+                      fontWeight: 'var(--font-weight-semibold)',
+                    }}
+                  >
+                    Überspringen
+                  </button>
+                </div>
               </div>
             )}
           </div>

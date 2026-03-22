@@ -235,6 +235,12 @@ export const equipmentApi = {
     MOCK_MODE
       ? mockDelay({ id: equipmentId, status: 'available' })
       : api.post(`/api/v1/equipment/${equipmentId}/check-in`).then(res => res.data),
+
+  // Zustandsbericht für Equipment aktualisieren
+  updateCondition: (equipmentId: string, condition: string, notes?: string, reportedBy?: string) =>
+    MOCK_MODE
+      ? mockDelay({ id: equipmentId, condition, status: condition === 'damaged' ? 'in_maintenance' : 'available' })
+      : api.patch(`/api/v1/equipment/${equipmentId}/condition`, { condition, notes, reported_by: reportedBy }).then(res => res.data),
 }
 
 // Tenant API endpoints
