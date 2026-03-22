@@ -632,4 +632,133 @@ export const scannerApi = {
       : api.get(`/api/v1/scanner/session/${sessionId}/protocol`).then(res => res.data),
 }
 
+// ============================================================================
+// PHASE 4 API ENDPOINTS
+// ============================================================================
+
+// AI Service (port 8013)
+export const aiApi = {
+  chat: (message: string, provider: string) =>
+    MOCK_MODE
+      ? mockDelay({ id: String(Date.now()), role: 'assistant', content: `Response from ${provider}`, timestamp: new Date().toISOString() })
+      : api.post('/api/v1/ai/chat', { message, provider }).then(res => res.data),
+
+  providers: () =>
+    MOCK_MODE
+      ? mockDelay(['Claude', 'GPT-4o', 'Gemini', 'Mistral', 'Ollama'])
+      : api.get('/api/v1/ai/providers').then(res => res.data),
+
+  history: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/ai/requests').then(res => res.data),
+
+  feedback: (requestId: string, rating: number) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, request_id: requestId, rating })
+      : api.post('/api/v1/ai/feedback', { request_id: requestId, rating }).then(res => res.data),
+}
+
+// Workflow Service (port 8014)
+export const workflowApi = {
+  list: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/workflows').then(res => res.data),
+
+  get: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ id, name: 'Workflow', status: 'active' })
+      : api.get(`/api/v1/workflows/${id}`).then(res => res.data),
+
+  create: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/workflows', data).then(res => res.data),
+
+  execute: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, workflow_id: id, instance_id: String(Date.now()) })
+      : api.post(`/api/v1/workflows/${id}/execute`).then(res => res.data),
+
+  instances: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/workflow-instances').then(res => res.data),
+
+  templates: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/workflow-templates').then(res => res.data),
+}
+
+// Federation Service (port 8015)
+export const federationApi = {
+  partners: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/federation/partners').then(res => res.data),
+
+  addPartner: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/federation/partners', data).then(res => res.data),
+
+  equipment: (partnerId: string) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get(`/api/v1/federation/partners/${partnerId}/equipment`).then(res => res.data),
+
+  subRentals: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/federation/sub-rentals').then(res => res.data),
+
+  createSubRental: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/federation/sub-rentals', data).then(res => res.data),
+}
+
+// Audit Service (port 8017)
+export const auditApi = {
+  logs: (params?: any) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/audit/logs', { params }).then(res => res.data),
+
+  verify: () =>
+    MOCK_MODE
+      ? mockDelay({ valid: true, entries_checked: 0, invalid_entries: 0, timestamp: new Date().toISOString(), verification_hash: '' })
+      : api.post('/api/v1/audit/verify-chain').then(res => res.data),
+
+  export: (params: any) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, export_id: String(Date.now()) })
+      : api.post('/api/v1/audit/export', params).then(res => res.data),
+
+  exports: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/audit/exports').then(res => res.data),
+}
+
+// Admin endpoints
+export const adminApi = {
+  health: () =>
+    MOCK_MODE
+      ? mockDelay({ status: 'operational', services: [] })
+      : api.get('/api/v1/admin/health').then(res => res.data),
+
+  settings: () =>
+    MOCK_MODE
+      ? mockDelay({ company_name: 'RentFlow GmbH', timezone: 'Europe/Berlin', language: 'de-DE' })
+      : api.get('/api/v1/admin/settings').then(res => res.data),
+
+  updateSettings: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, updated_at: new Date().toISOString() })
+      : api.put('/api/v1/admin/settings', data).then(res => res.data),
+}
+
 export default api

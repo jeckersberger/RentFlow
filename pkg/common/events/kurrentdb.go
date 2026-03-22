@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
+	"os"
+
+	"github.com/EventStore/EventStore-Client-Go/v4/esdb"
 )
 
 // Direction specifies the direction for reading events
@@ -75,28 +79,55 @@ type KurrentDBClient struct {
 	adapter EventStoreAdapter
 }
 
-// NewKurrentDBClient creates a new KurrentDB client
-// Note: This is a placeholder for the actual EventStore Go client initialization
-// In production, this would use: github.com/EventStore/EventStore-Client-Go/v4/esdb
+// EsdbAdapter implements EventStoreAdapter using EventStoreDB
+type EsdbAdapter struct {
+	client *esdb.Client
+}
+
+// NewKurrentDBClient creates a new KurrentDB client with a real EventStore connection
 func NewKurrentDBClient(connectionString string) (*KurrentDBClient, error) {
 	if connectionString == "" {
 		return nil, fmt.Errorf("connection string cannot be empty")
 	}
 
-	// TODO: Initialize actual EventStore client
-	// opts, err := esdb.ParseConnectionString(connectionString)
-	// if err != nil {
-	//     return nil, fmt.Errorf("failed to parse connection string: %w", err)
-	// }
-	//
-	// client, err := esdb.NewClient(opts)
-	// if err != nil {
-	//     return nil, fmt.Errorf("failed to create event store client: %w", err)
-	// }
+	// Parse connection string
+	opts, err := esdb.ParseConnectionString(connectionString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse connection string: %w", err)
+	}
+
+	// Create EventStore client
+	client, err := esdb.NewClient(opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create event store client: %w", err)
+	}
+
+	adapter := &EsdbAdapter{
+		client: client,
+	}
 
 	return &KurrentDBClient{
-		adapter: nil, // Will be set to actual EventStore adapter
+		adapter: adapter,
 	}, nil
+}
+
+// NewEventStoreFromEnv creates a KurrentDB client from environment variables
+// Falls back to NoopEventStore if connection fails
+func NewEventStoreFromEnv() *KurrentDBClient {
+	connString := os.Getenv("KURRENTDB_URL")
+	if connString == "" {
+		connString = "esdb://localhost:2113?tls=false"
+	}
+
+	client, err := NewKurrentDBClient(connString)
+	if err != nil {
+		log.Printf("Warning: failed to connect to KurrentDB at %s, using noop event store: %v\n", connString, err)
+		return &KurrentDBClient{
+			adapter: NewNoopEventStore(),
+		}
+	}
+
+	return client
 }
 
 // AppendToStream appends events to a stream
@@ -137,6 +168,233 @@ func (c *KurrentDBClient) Close() error {
 		return nil
 	}
 	return c.adapter.Close()
+}
+
+// --- EsdbAdapter Implementation ---
+
+// AppendToStream appends events to a stream using EventStoreDB
+func (e *EsdbAdapter) AppendToStream(ctx context.Context, streamID string, expectedRevision uint64, events []EventData) (*WriteResult, error) {
+	// Convert EventData to esdb.EventData (values, not pointers)
+	esdbEvents := make([]esdb.EventData, len(events))
+	for i, evt := range events {
+		esdbEvents[i] = esdb.EventData{
+			ContentType: esdb.ContentTypeJson,
+			EventType:   evt.Type,
+			Data:        evt.Data,
+			Metadata:    evt.Metadata,
+		}
+	}
+
+	// Append to stream with expected revision
+	writeResult, err := e.client.AppendToStream(ctx, streamID, esdb.AppendToStreamOptions{
+		ExpectedRevision: esdb.Revision(expectedRevision),
+	}, esdbEvents...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to append to stream: %w", err)
+	}
+
+	return &WriteResult{
+		NextExpectedRevision: writeResult.NextExpectedVersion,
+		Position:             writeResult.CommitPosition,
+	}, nil
+}
+
+// ReadStream reads events from a stream
+func (e *EsdbAdapter) ReadStream(ctx context.Context, streamID string, direction Direction, from uint64, count uint64) ([]ResolvedEvent, error) {
+	opts := esdb.ReadStreamOptions{
+		Direction: esdb.Forwards,
+		From:      esdb.Revision(from),
+	}
+
+	if direction == DirectionBackward {
+		opts.Direction = esdb.Backwards
+	}
+
+	stream, err := e.client.ReadStream(ctx, streamID, opts, count)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read stream: %w", err)
+	}
+	defer stream.Close()
+
+	var resolved []ResolvedEvent
+	for {
+		event, err := stream.Recv()
+		if err != nil {
+			// io.EOF means we've read all events
+			break
+		}
+
+		if event.Event == nil {
+			continue
+		}
+
+		resolvedEvent := ResolvedEvent{
+			StreamName: event.Event.StreamID,
+			EventType:  event.Event.EventType,
+			EventData:  event.Event.Data,
+			Metadata:   event.Event.UserMetadata,
+			Revision:   event.Event.EventNumber,
+			Timestamp:  event.Event.CreatedDate.Unix(),
+		}
+
+		if event.Event.Position.Commit > 0 {
+			resolvedEvent.Position = event.Event.Position.Commit
+		}
+
+		resolved = append(resolved, resolvedEvent)
+	}
+
+	return resolved, nil
+}
+
+// SubscribeToStream subscribes to events from a specific stream
+func (e *EsdbAdapter) SubscribeToStream(ctx context.Context, streamID string, from uint64, handler EventHandler) error {
+	opts := esdb.SubscribeToStreamOptions{
+		From: esdb.Revision(from),
+	}
+
+	subscription, err := e.client.SubscribeToStream(ctx, streamID, opts)
+	if err != nil {
+		return fmt.Errorf("failed to subscribe to stream: %w", err)
+	}
+	defer subscription.Close()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		subEvent := subscription.Recv()
+		if subEvent.EventAppeared == nil {
+			if subEvent.SubscriptionDropped != nil {
+				return fmt.Errorf("subscription dropped: %v", subEvent.SubscriptionDropped.Error)
+			}
+			continue
+		}
+
+		event := subEvent.EventAppeared
+		resolvedEvent := &ResolvedEvent{
+			StreamName: event.Event.StreamID,
+			EventType:  event.Event.EventType,
+			EventData:  event.Event.Data,
+			Metadata:   event.Event.UserMetadata,
+			Revision:   event.Event.EventNumber,
+			Timestamp:  event.Event.CreatedDate.Unix(),
+		}
+
+		if err := handler(ctx, resolvedEvent); err != nil {
+			return err
+		}
+	}
+}
+
+// SubscribeToAll subscribes to all events with optional filtering
+func (e *EsdbAdapter) SubscribeToAll(ctx context.Context, filter *SubscriptionFilter, handler EventHandler) error {
+	opts := esdb.SubscribeToAllOptions{}
+
+	if filter != nil && len(filter.EventTypes) > 0 {
+		opts.Filter = &esdb.SubscriptionFilter{
+			Type:     esdb.EventFilterType,
+			Prefixes: filter.EventTypes,
+		}
+	}
+
+	subscription, err := e.client.SubscribeToAll(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("failed to subscribe to all: %w", err)
+	}
+	defer subscription.Close()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		subEvent := subscription.Recv()
+		if subEvent.EventAppeared == nil {
+			if subEvent.SubscriptionDropped != nil {
+				return fmt.Errorf("subscription dropped: %v", subEvent.SubscriptionDropped.Error)
+			}
+			continue
+		}
+
+		event := subEvent.EventAppeared
+
+		// Apply stream prefix filter client-side if specified
+		if filter != nil && filter.StreamPrefix != "" {
+			streamName := event.Event.StreamID
+			if len(streamName) < len(filter.StreamPrefix) || streamName[:len(filter.StreamPrefix)] != filter.StreamPrefix {
+				continue
+			}
+		}
+
+		resolvedEvent := &ResolvedEvent{
+			StreamName: event.Event.StreamID,
+			EventType:  event.Event.EventType,
+			EventData:  event.Event.Data,
+			Metadata:   event.Event.UserMetadata,
+			Revision:   event.Event.EventNumber,
+			Timestamp:  event.Event.CreatedDate.Unix(),
+		}
+
+		if err := handler(ctx, resolvedEvent); err != nil {
+			return err
+		}
+	}
+}
+
+// Close closes the EventStoreDB connection
+func (e *EsdbAdapter) Close() error {
+	if e.client != nil {
+		return e.client.Close()
+	}
+	return nil
+}
+
+// --- NoopEventStore Fallback Implementation ---
+
+// NoopEventStore is a no-op implementation used when EventStoreDB is not available
+type NoopEventStore struct{}
+
+// NewNoopEventStore creates a new noop event store
+func NewNoopEventStore() EventStoreAdapter {
+	return &NoopEventStore{}
+}
+
+// AppendToStream implements EventStoreAdapter (noop)
+func (n *NoopEventStore) AppendToStream(ctx context.Context, streamID string, expectedRevision uint64, events []EventData) (*WriteResult, error) {
+	log.Printf("NoopEventStore: AppendToStream called for stream %s with %d events (noop)", streamID, len(events))
+	return &WriteResult{
+		NextExpectedRevision: expectedRevision + uint64(len(events)),
+		Position:             expectedRevision + uint64(len(events)) - 1,
+	}, nil
+}
+
+// ReadStream implements EventStoreAdapter (noop)
+func (n *NoopEventStore) ReadStream(ctx context.Context, streamID string, direction Direction, from uint64, count uint64) ([]ResolvedEvent, error) {
+	log.Printf("NoopEventStore: ReadStream called for stream %s (noop)", streamID)
+	return []ResolvedEvent{}, nil
+}
+
+// SubscribeToStream implements EventStoreAdapter (noop)
+func (n *NoopEventStore) SubscribeToStream(ctx context.Context, streamID string, from uint64, handler EventHandler) error {
+	log.Printf("NoopEventStore: SubscribeToStream called for stream %s (noop)", streamID)
+	return nil
+}
+
+// SubscribeToAll implements EventStoreAdapter (noop)
+func (n *NoopEventStore) SubscribeToAll(ctx context.Context, filter *SubscriptionFilter, handler EventHandler) error {
+	log.Printf("NoopEventStore: SubscribeToAll called (noop)")
+	return nil
+}
+
+// Close implements EventStoreAdapter (noop)
+func (n *NoopEventStore) Close() error {
+	return nil
 }
 
 // Stream naming convention helpers

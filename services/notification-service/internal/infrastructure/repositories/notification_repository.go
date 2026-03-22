@@ -155,3 +155,42 @@ func (r *PostgresNotificationRepository) GetTodayCount(ctx context.Context, tena
 	}
 	return count, nil
 }
+
+func (r *PostgresNotificationRepository) ListQueued(ctx context.Context, tenantID uuid.UUID) ([]*domain.Notification, error) {
+	query := `SELECT id, tenant_id, user_id, event_type, title, body, data, status, is_read, created_at
+	FROM notifications WHERE tenant_id = $1 AND status IN ('queued', 'scheduled') AND is_read = false ORDER BY created_at ASC`
+
+	rows, err := r.db.QueryContext(ctx, query, tenantID)
+	if err != nil {
+		return nil, domain.ErrDatabaseError
+	}
+	defer rows.Close()
+
+	var notifications []*domain.Notification
+
+	for rows.Next() {
+		n := &domain.Notification{}
+		var dataBytes []byte
+
+		err := rows.Scan(&n.ID, &n.TenantID, &n.UserID, &n.EventType, &n.Title, &n.Body, &dataBytes, &n.Status, &n.IsRead, &n.CreatedAt)
+		if err != nil {
+			r.log.Error("Failed to scan notification", err)
+			continue
+		}
+
+		json.Unmarshal(dataBytes, &n.Data)
+		notifications = append(notifications, n)
+	}
+
+	return notifications, nil
+}
+
+func (r *PostgresNotificationRepository) MarkAsSent(ctx context.Context, id uuid.UUID) error {
+	query := `UPDATE notifications SET status = 'sent', sent_at = NOW() WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		r.log.Error("Failed to mark notification as sent", err)
+		return domain.ErrDatabaseError
+	}
+	return nil
+}

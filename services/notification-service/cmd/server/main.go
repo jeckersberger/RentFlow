@@ -53,7 +53,7 @@ func main() {
 	notificationService := application.NewNotificationService(notificationRepo, channelRepo, preferenceRepo, log)
 	channelService := application.NewChannelService(channelRepo, log)
 	preferenceService := application.NewPreferenceService(preferenceRepo, log)
-	digestService := application.NewDigestService(notificationRepo, preferenceRepo, log)
+	digestService := application.NewDigestService(notificationRepo, channelRepo, preferenceRepo, log)
 
 	// Wire digest service into notification service for quiet hours checking
 	notificationService.SetDigestService(digestService)
@@ -75,6 +75,11 @@ func main() {
 	)
 
 	inAppDriver := application.NewInAppDriver(log)
+
+	// Register drivers with digest service
+	digestService.RegisterDriver(smtpDriver.Type(), smtpDriver)
+	digestService.RegisterDriver(vapidDriver.Type(), vapidDriver)
+	digestService.RegisterDriver(inAppDriver.Type(), inAppDriver)
 
 	// Log initialized drivers
 	log.Info("Notification drivers initialized",

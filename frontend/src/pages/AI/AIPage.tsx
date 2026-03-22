@@ -1,42 +1,60 @@
 import { useState, useRef, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { aiApi } from '../../services/api'
 import type { ChatMessage, AIProvider } from '../../types/ai'
 import styles from './AI.module.scss'
 
-const mockChatMessages: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    content: 'Hallo! Ich bin dein RentFlow KI-Assistent. Ich kann dir bei der Verwaltung deiner Ausrüstung, Preisoptimierung und Nachfrageprognosen helfen. Wie kann ich dir heute helfen?',
-    timestamp: '2026-03-22T09:00:00Z',
-  },
-  {
-    id: '2',
-    role: 'user',
-    content: 'Können Sie mir helfen, den Preis für meine Bühnenausrüstung zu optimieren?',
-    timestamp: '2026-03-22T09:05:00Z',
-  },
-  {
-    id: '3',
-    role: 'assistant',
-    content: 'Natürlich! Basierend auf den aktuellen Markttrends und Ihrer historischen Nachfragedaten kann ich folgende Optimierungen empfehlen:\n\n1. Bühnenlights: Erhöhung von €150/Tag auf €185/Tag\n2. Mietgestelle: Erhöhung von €45/Tag auf €55/Tag\n3. Soundanlage: Preis stabil bei €200/Tag\n\nDiese Preise basieren auf einer 78% Nachfragequote im März.',
-    timestamp: '2026-03-22T09:06:00Z',
-  },
-]
-
-const aiProviders: AIProvider[] = ['Claude', 'GPT-4o', 'Gemini', 'Mistral', 'Ollama']
-
 function AIPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>(mockChatMessages)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>('Claude')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { data: _chatMessages = mockChatMessages } = useQuery({
-    queryKey: ['chat-messages'],
-    queryFn: async () => mockChatMessages,
+  // Fetch available AI providers
+  const { data: aiProviders = ['Claude', 'GPT-4o', 'Gemini', 'Mistral', 'Ollama'] } = useQuery({
+    queryKey: ['ai-providers'],
+    queryFn: () => aiApi.providers(),
+    staleTime: 1000 * 60 * 30,
+  })
+
+  // Fetch chat history
+  const { data: chatHistory = [] } = useQuery({
+    queryKey: ['ai-chat-history'],
+    queryFn: () => aiApi.history(),
     staleTime: 1000 * 60 * 5,
+  })
+
+  // Initialize messages from history
+  useEffect(() => {
+    if (chatHistory.length > 0) {
+      setMessages(chatHistory)
+    }
+  }, [chatHistory])
+
+  // Chat mutation
+  const chatMutation = useMutation({
+    mutationFn: (message: string) => aiApi.chat(message, selectedProvider),
+    onSuccess: (response) => {
+      const assistantMessage: ChatMessage = {
+        id: String(Date.now()),
+        role: 'assistant',
+        content: response.content || response,
+        timestamp: new Date().toISOString(),
+      }
+      setMessages(prev => [...prev, assistantMessage])
+      setIsLoading(false)
+    },
+    onError: () => {
+      const errorMessage: ChatMessage = {
+        id: String(Date.now()),
+        role: 'assistant',
+        content: 'Es tut mir leid, es gab einen Fehler bei der Verarbeitung Ihrer Anfrage. Bitte versuchen Sie es später erneut.',
+        timestamp: new Date().toISOString(),
+      }
+      setMessages(prev => [...prev, errorMessage])
+      setIsLoading(false)
+    },
   })
 
   const scrollToBottom = () => {
@@ -48,30 +66,22 @@ function AIPage() {
   }, [messages])
 
   const handleSendMessage = () => {
-    if (inputValue.trim() === '') return
+    if (inputValue.trim() === '' || isLoading) return
 
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: String(Date.now()),
       role: 'user',
       content: inputValue,
       timestamp: new Date().toISOString(),
     }
 
     setMessages(prev => [...prev, userMessage])
+    const messageToSend = inputValue
     setInputValue('')
     setIsLoading(true)
 
-    // Simulate AI response
-    setTimeout(() => {
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `Ich verstehe deine Anfrage bezüglich "${inputValue}". Dies wird von ${selectedProvider} verarbeitet. Dies ist eine Demo-Antwort - in der produktiven Version würde die echte API-Integration hier stattfinden.`,
-        timestamp: new Date().toISOString(),
-      }
-      setMessages(prev => [...prev, assistantMessage])
-      setIsLoading(false)
-    }, 1000)
+    // Send message to AI API
+    chatMutation.mutate(messageToSend)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -82,63 +92,27 @@ function AIPage() {
   }
 
   const handleSmartAssetCreator = () => {
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: 'Öffne Smart Asset Creator für neue Ausrüstung',
-      timestamp: new Date().toISOString(),
-    }
-    setMessages(prev => [...prev, message])
-
-    setTimeout(() => {
-      const response: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'Smart Asset Creator wurde geöffnet. Du kannst jetzt neue Ausrüstung mit KI-unterstützten Spezifikationen erstellen.',
-        timestamp: new Date().toISOString(),
-      }
-      setMessages(prev => [...prev, response])
-    }, 500)
+    handleSendMessage_Internal('Öffne Smart Asset Creator für neue Ausrüstung')
   }
 
   const handlePriceOptimizer = () => {
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: 'Analysiere meine aktuellen Preise und optimiere sie',
-      timestamp: new Date().toISOString(),
-    }
-    setMessages(prev => [...prev, message])
-
-    setTimeout(() => {
-      const response: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'Preisanalyse abgeschlossen! Empfehlungen:\n- Kategorie A: +8% Erhöhung empfohlen\n- Kategorie B: -3% Reduktion empfohlen\n- Kategorie C: Beibehaltung',
-        timestamp: new Date().toISOString(),
-      }
-      setMessages(prev => [...prev, response])
-    }, 800)
+    handleSendMessage_Internal('Analysiere meine aktuellen Preise und optimiere sie')
   }
 
   const handleDemandForecast = () => {
-    const message: ChatMessage = {
-      id: Date.now().toString(),
+    handleSendMessage_Internal('Erstelle eine Nachfrageprognose für die nächsten 30 Tage')
+  }
+
+  const handleSendMessage_Internal = (message: string) => {
+    const userMessage: ChatMessage = {
+      id: String(Date.now()),
       role: 'user',
-      content: 'Erstelle eine Nachfrageprognose für die nächsten 30 Tage',
+      content: message,
       timestamp: new Date().toISOString(),
     }
-    setMessages(prev => [...prev, message])
-
-    setTimeout(() => {
-      const response: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'Nachfrageprognose für die nächsten 30 Tage:\n📈 Woche 1: Hohe Nachfrage (85%)\n📊 Woche 2: Mittlere Nachfrage (62%)\n📉 Woche 3: Hohe Nachfrage (78%)\n📈 Woche 4: Sehr hohe Nachfrage (92%)',
-        timestamp: new Date().toISOString(),
-      }
-      setMessages(prev => [...prev, response])
-    }, 1000)
+    setMessages(prev => [...prev, userMessage])
+    setIsLoading(true)
+    chatMutation.mutate(message)
   }
 
   return (
@@ -160,7 +134,7 @@ function AIPage() {
               value={selectedProvider}
               onChange={(e) => setSelectedProvider(e.target.value as AIProvider)}
             >
-              {aiProviders.map(provider => (
+              {aiProviders.map((provider: string) => (
                 <option key={provider} value={provider}>{provider}</option>
               ))}
             </select>

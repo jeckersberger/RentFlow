@@ -1,175 +1,36 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { federationApi } from '../../services/api'
 import type { Partner, EquipmentAvailability, SubRentalRequest } from '../../types/federation'
 import styles from './Federation.module.scss'
-
-const mockPartners: Partner[] = [
-  {
-    id: '1',
-    name: 'TechRent GmbH',
-    company: 'TechRent',
-    email: 'contact@techrent.de',
-    phone: '+49 30 123456',
-    country: 'Germany',
-    trust_level: 'verified',
-    equipment_availability: 45,
-    certificate_status: 'valid',
-    certificate_expiry: '2027-06-15',
-    joined_date: '2024-03-01',
-    rating: 4.8,
-  },
-  {
-    id: '2',
-    name: 'EventPro Solutions',
-    company: 'EventPro',
-    email: 'info@eventpro.de',
-    phone: '+49 40 234567',
-    country: 'Germany',
-    trust_level: 'trusted',
-    equipment_availability: 32,
-    certificate_status: 'valid',
-    certificate_expiry: '2026-09-20',
-    joined_date: '2023-11-15',
-    rating: 4.5,
-  },
-  {
-    id: '3',
-    name: 'Ausrüstungs Zentrale',
-    company: 'AZ Rental',
-    email: 'support@az-rental.de',
-    phone: '+49 69 345678',
-    country: 'Germany',
-    trust_level: 'verified',
-    equipment_availability: 67,
-    certificate_status: 'expiring',
-    certificate_expiry: '2026-04-30',
-    joined_date: '2023-06-20',
-    rating: 4.7,
-  },
-  {
-    id: '4',
-    name: 'Studio Equipment Plus',
-    company: 'StudioEQ',
-    email: 'contact@studioeq.de',
-    phone: '+49 80 456789',
-    country: 'Germany',
-    trust_level: 'provisional',
-    equipment_availability: 18,
-    certificate_status: 'pending',
-    certificate_expiry: '2026-05-10',
-    joined_date: '2026-01-10',
-    rating: 3.9,
-  },
-]
-
-const mockEquipmentAvailability: EquipmentAvailability[] = [
-  {
-    partner_id: '1',
-    partner_name: 'TechRent GmbH',
-    equipment_type: 'LED-Wände',
-    quantity_available: 8,
-    location: 'Berlin',
-    delivery_days: 1,
-    price_per_day: 250,
-  },
-  {
-    partner_id: '1',
-    partner_name: 'TechRent GmbH',
-    equipment_type: 'Beamer',
-    quantity_available: 12,
-    location: 'Berlin',
-    delivery_days: 1,
-    price_per_day: 80,
-  },
-  {
-    partner_id: '2',
-    partner_name: 'EventPro Solutions',
-    equipment_type: 'Tische & Stühle',
-    quantity_available: 200,
-    location: 'Hamburg',
-    delivery_days: 2,
-    price_per_day: 15,
-  },
-  {
-    partner_id: '3',
-    partner_name: 'Ausrüstungs Zentrale',
-    equipment_type: 'Gerüste',
-    quantity_available: 45,
-    location: 'Frankfurt',
-    delivery_days: 1,
-    price_per_day: 120,
-  },
-  {
-    partner_id: '3',
-    partner_name: 'Ausrüstungs Zentrale',
-    equipment_type: 'Stromgeneratoren',
-    quantity_available: 15,
-    location: 'Frankfurt',
-    delivery_days: 2,
-    price_per_day: 200,
-  },
-]
-
-const mockSubRentalRequests: SubRentalRequest[] = [
-  {
-    id: '1',
-    partner_id: '1',
-    partner_name: 'TechRent GmbH',
-    equipment: 'LED-Wände',
-    quantity: 6,
-    start_date: '2026-03-25',
-    end_date: '2026-03-30',
-    status: 'approved',
-    requested_at: '2026-03-20T10:30:00Z',
-  },
-  {
-    id: '2',
-    partner_id: '2',
-    partner_name: 'EventPro Solutions',
-    equipment: 'Stühle',
-    quantity: 150,
-    start_date: '2026-03-24',
-    end_date: '2026-03-25',
-    status: 'pending',
-    requested_at: '2026-03-22T09:15:00Z',
-  },
-  {
-    id: '3',
-    partner_id: '3',
-    partner_name: 'Ausrüstungs Zentrale',
-    equipment: 'Gerüste',
-    quantity: 30,
-    start_date: '2026-04-01',
-    end_date: '2026-04-05',
-    status: 'pending',
-    requested_at: '2026-03-21T14:45:00Z',
-  },
-]
 
 function FederationPage() {
   const [filterTrust, setFilterTrust] = useState<string>('all')
 
-  const { data: partners = mockPartners } = useQuery({
+  // Fetch federation partners
+  const { data: partners = [], isLoading: isLoadingPartners } = useQuery({
     queryKey: ['federation-partners'],
-    queryFn: async () => mockPartners,
+    queryFn: () => federationApi.partners(),
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: equipmentAvailability = mockEquipmentAvailability } = useQuery({
+  // Fetch equipment availability
+  const { data: equipmentAvailability = [], isLoading: isLoadingEquipment } = useQuery({
     queryKey: ['equipment-availability'],
-    queryFn: async () => mockEquipmentAvailability,
+    queryFn: () => federationApi.equipment('all'),
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: subRentalRequests = mockSubRentalRequests } = useQuery({
+  // Fetch sub-rental requests
+  const { data: subRentalRequests = [], isLoading: isLoadingSubRentals } = useQuery({
     queryKey: ['sub-rental-requests'],
-    queryFn: async () => mockSubRentalRequests,
+    queryFn: () => federationApi.subRentals(),
     staleTime: 1000 * 60 * 5,
   })
 
   const filteredPartners = filterTrust === 'all'
     ? partners
-    : partners.filter(p => p.trust_level === filterTrust)
+    : (partners as Partner[]).filter(p => p.trust_level === filterTrust)
 
   const getTrustColor = (level: string): string => {
     switch (level) {
@@ -231,7 +92,7 @@ function FederationPage() {
     }
   }
 
-  const totalEquipmentCount = equipmentAvailability.reduce((sum, e) => sum + e.quantity_available, 0)
+  const totalEquipmentCount = (equipmentAvailability as EquipmentAvailability[]).reduce((sum, e) => sum + e.quantity_available, 0)
 
   return (
     <div className={styles.federationPage}>
@@ -254,7 +115,7 @@ function FederationPage() {
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Verifizierte Partner</div>
           <div className={styles.statValue} style={{ color: '#10b981' }}>
-            {partners.filter(p => p.trust_level === 'verified').length}
+            {(partners as Partner[]).filter((p: Partner) => p.trust_level === 'verified').length}
           </div>
         </div>
         <div className={styles.statCard}>
@@ -264,7 +125,7 @@ function FederationPage() {
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Anfragen ausstehend</div>
           <div className={styles.statValue} style={{ color: '#f59e0b' }}>
-            {subRentalRequests.filter(r => r.status === 'pending').length}
+            {(subRentalRequests as SubRentalRequest[]).filter((r: SubRentalRequest) => r.status === 'pending').length}
           </div>
         </div>
       </div>
@@ -290,8 +151,17 @@ function FederationPage() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Partner-Übersicht</h2>
 
-        <div className={styles.partnersGrid}>
-          {filteredPartners.map(partner => (
+        {isLoadingPartners ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+            Laden...
+          </div>
+        ) : filteredPartners.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+            Keine Partner gefunden
+          </div>
+        ) : (
+          <div className={styles.partnersGrid}>
+            {filteredPartners.map((partner: Partner) => (
             <div key={partner.id} className={styles.partnerCard}>
               <div className={styles.partnerHeader}>
                 <div>
@@ -330,8 +200,9 @@ function FederationPage() {
                 <button className="btn btn--sm">Nachricht</button>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <div className={styles.bottomGrid}>
@@ -339,17 +210,26 @@ function FederationPage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Verfügbare Ausrüstung</h2>
 
-          <div className={styles.equipmentTable}>
-            <div className={styles.tableHeader}>
-              <div className={styles.headerCell}>Partner</div>
-              <div className={styles.headerCell}>Ausrüstung</div>
-              <div className={styles.headerCell}>Menge</div>
-              <div className={styles.headerCell}>Standort</div>
-              <div className={styles.headerCell}>Liefertage</div>
-              <div className={styles.headerCell}>Preis/Tag</div>
+          {isLoadingEquipment ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+              Laden...
             </div>
+          ) : equipmentAvailability.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+              Keine Ausrüstung verfügbar
+            </div>
+          ) : (
+            <div className={styles.equipmentTable}>
+              <div className={styles.tableHeader}>
+                <div className={styles.headerCell}>Partner</div>
+                <div className={styles.headerCell}>Ausrüstung</div>
+                <div className={styles.headerCell}>Menge</div>
+                <div className={styles.headerCell}>Standort</div>
+                <div className={styles.headerCell}>Liefertage</div>
+                <div className={styles.headerCell}>Preis/Tag</div>
+              </div>
 
-            {equipmentAvailability.map((item, idx) => (
+              {(equipmentAvailability as EquipmentAvailability[]).map((item, idx) => (
               <div key={idx} className={styles.tableRow}>
                 <div className={styles.cell}>{item.partner_name}</div>
                 <div className={styles.cell}>{item.equipment_type}</div>
@@ -359,15 +239,25 @@ function FederationPage() {
                 <div className={styles.cell}>{item.price_per_day}€</div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </section>
 
         {/* Sub-Rental Requests */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Untermiete-Anfragen</h2>
 
-          <div className={styles.requestsList}>
-            {subRentalRequests.map(request => (
+          {isLoadingSubRentals ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+              Laden...
+            </div>
+          ) : subRentalRequests.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+              Keine Anfragen vorhanden
+            </div>
+          ) : (
+            <div className={styles.requestsList}>
+              {(subRentalRequests as SubRentalRequest[]).map((request: SubRentalRequest) => (
               <div key={request.id} className={styles.requestCard}>
                 <div className={styles.requestHeader}>
                   <div>
@@ -402,7 +292,8 @@ function FederationPage() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </section>
       </div>
     </div>

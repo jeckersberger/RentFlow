@@ -1,94 +1,8 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { auditApi } from '../../services/api'
 import type { AuditEntry, ChainValidationResult } from '../../types/audit'
 import styles from './Audit.module.scss'
-
-const mockAuditEntries: AuditEntry[] = [
-  {
-    id: '1',
-    timestamp: '2026-03-22T14:35:00Z',
-    service: 'equipment-service',
-    operation: 'UPDATE',
-    entity_type: 'equipment',
-    entity_id: 'eq-001',
-    user_id: 'user-123',
-    user_name: 'Thomas Müller',
-    changes: { price: { old: 150, new: 175 }, status: { old: 'available', new: 'maintenance' } },
-    status: 'success',
-    checksum: 'a8f3e2c1b9d4e7f2a5c8...',
-    ip_address: '192.168.1.100',
-  },
-  {
-    id: '2',
-    timestamp: '2026-03-22T13:20:00Z',
-    service: 'project-service',
-    operation: 'CREATE',
-    entity_type: 'project',
-    entity_id: 'proj-042',
-    user_id: 'user-456',
-    user_name: 'Maria Schmidt',
-    changes: { created: { name: 'Stadtfest München 2026', status: 'planning' } },
-    status: 'success',
-    checksum: 'b7e2f1a9c3d5e8g1h4i9...',
-    ip_address: '192.168.1.101',
-  },
-  {
-    id: '3',
-    timestamp: '2026-03-22T12:15:00Z',
-    service: 'crew-service',
-    operation: 'DELETE',
-    entity_type: 'crew',
-    entity_id: 'crew-089',
-    user_id: 'user-789',
-    user_name: 'Admin User',
-    changes: { deleted: { name: 'Archived Member' } },
-    status: 'success',
-    checksum: 'c6d1e8f2a5b9c3d7e2f1...',
-    ip_address: '192.168.1.102',
-  },
-  {
-    id: '4',
-    timestamp: '2026-03-22T11:45:00Z',
-    service: 'invoice-service',
-    operation: 'EXPORT',
-    entity_type: 'invoice',
-    entity_id: 'inv-567',
-    user_id: 'user-123',
-    user_name: 'Thomas Müller',
-    changes: { exported: { format: 'PDF', filename: 'inv-567.pdf' } },
-    status: 'success',
-    checksum: 'd5c2b1f8a4e7d9c3f2e8...',
-    ip_address: '192.168.1.100',
-  },
-  {
-    id: '5',
-    timestamp: '2026-03-22T10:30:00Z',
-    service: 'auth-service',
-    operation: 'LOGIN',
-    entity_type: 'user',
-    entity_id: 'user-123',
-    user_id: 'user-123',
-    user_name: 'Thomas Müller',
-    changes: { login: { method: 'password', success: true } },
-    status: 'success',
-    checksum: 'e4f3c2b1a8d5e7f1c9d2...',
-    ip_address: '192.168.1.100',
-  },
-  {
-    id: '6',
-    timestamp: '2026-03-22T09:55:00Z',
-    service: 'equipment-service',
-    operation: 'READ',
-    entity_type: 'equipment',
-    entity_id: 'eq-002',
-    user_id: 'user-456',
-    user_name: 'Maria Schmidt',
-    changes: { accessed: { details: 'viewed' } },
-    status: 'success',
-    checksum: 'f3e8d1c9b2a5f7e4d8c1...',
-    ip_address: '192.168.1.101',
-  },
-]
 
 function AuditPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -100,13 +14,31 @@ function AuditPage() {
   const [validationResult, setValidationResult] = useState<ChainValidationResult | null>(null)
   const [showValidation, setShowValidation] = useState(false)
 
-  const { data: auditEntries = mockAuditEntries } = useQuery({
-    queryKey: ['audit-log'],
-    queryFn: async () => mockAuditEntries,
+  // Fetch audit logs
+  const { data: auditEntries = [], isLoading: isLoadingAudit } = useQuery({
+    queryKey: ['audit-log', { startDate, endDate, operation: filterOperation, entityType: filterEntityType, userId: filterUser }],
+    queryFn: () => auditApi.logs({ start_date: startDate, end_date: endDate, operation: filterOperation, entity_type: filterEntityType, user_id: filterUser }),
     staleTime: 1000 * 60 * 5,
   })
 
-  const filteredEntries = auditEntries.filter(entry => {
+  // Verify chain mutation
+  const verifyMutation = useMutation({
+    mutationFn: () => auditApi.verify(),
+    onSuccess: (data) => {
+      setValidationResult(data)
+      setShowValidation(true)
+    },
+  })
+
+  // Export mutation
+  const exportMutation = useMutation({
+    mutationFn: () => auditApi.export({ start_date: startDate, end_date: endDate, operation: filterOperation }),
+    onSuccess: () => {
+      // Handle export success
+    },
+  })
+
+  const filteredEntries = (auditEntries as AuditEntry[]).filter(entry => {
     const matchesSearch = searchQuery === '' ||
       entry.entity_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       entry.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -131,34 +63,15 @@ function AuditPage() {
   })
 
   const handleValidateChain = () => {
-    const result: ChainValidationResult = {
-      valid: true,
-      entries_checked: auditEntries.length,
-      invalid_entries: 0,
-      timestamp: new Date().toISOString(),
-      verification_hash: 'ab12cd34ef56gh78ij90kl12mn34op56qr78st90uv...',
-    }
-    setValidationResult(result)
-    setShowValidation(true)
+    verifyMutation.mutate()
   }
 
   const handleExport = () => {
-    // Simulate export
-    const csvContent = 'Timestamp,Service,Operation,Entity Type,Entity ID,User,Status\n' +
-      filteredEntries.map(e =>
-        `${e.timestamp},${e.service},${e.operation},${e.entity_type},${e.entity_id},${e.user_name},${e.status}`
-      ).join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `audit-export-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
+    exportMutation.mutate()
   }
 
-  const uniqueUsers = Array.from(new Set(auditEntries.map(e => e.user_id))).map(id => {
-    const entry = auditEntries.find(e => e.user_id === id)
+  const uniqueUsers = Array.from(new Set((auditEntries as AuditEntry[]).map(e => e.user_id))).map(id => {
+    const entry = (auditEntries as AuditEntry[]).find(e => e.user_id === id)
     return { id, name: entry?.user_name || id }
   })
 
@@ -309,7 +222,12 @@ function AuditPage() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Audit-Einträge ({filteredEntries.length})</h2>
 
-        {filteredEntries.length === 0 ? (
+        {isLoadingAudit ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>⏳</div>
+            <p className={styles.emptyText}>Laden...</p>
+          </div>
+        ) : filteredEntries.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>📋</div>
             <h3 className={styles.emptyTitle}>Keine Einträge gefunden</h3>
@@ -330,7 +248,7 @@ function AuditPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredEntries.map(entry => (
+                {filteredEntries.map((entry: AuditEntry) => (
                   <tr key={entry.id} className={styles.tableRow}>
                     <td className={styles.cellTime}>
                       {new Date(entry.timestamp).toLocaleString('de-DE', {

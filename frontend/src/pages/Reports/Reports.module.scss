@@ -93,10 +93,24 @@
 
 .kpi-section,
 .reports-section,
-.recent-runs-section {
+.recent-runs-section,
+.chart-section {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+}
+
+.chart-container {
+  background: var(--color-bg-secondary);
+  border: var(--card-border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--padding-lg);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
 }
 
 .section-title {

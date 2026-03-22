@@ -12,8 +12,10 @@ type NotificationRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Notification, error)
 	ListByUser(ctx context.Context, tenantID, userID uuid.UUID) ([]*domain.Notification, error)
 	ListUnread(ctx context.Context, tenantID, userID uuid.UUID) ([]*domain.Notification, error)
+	ListQueued(ctx context.Context, tenantID uuid.UUID) ([]*domain.Notification, error)
 	MarkAsRead(ctx context.Context, id uuid.UUID) error
 	MarkAllAsRead(ctx context.Context, tenantID, userID uuid.UUID) error
+	MarkAsSent(ctx context.Context, id uuid.UUID) error
 	GetUnreadCount(ctx context.Context, tenantID, userID uuid.UUID) (int, error)
 	GetTodayCount(ctx context.Context, tenantID uuid.UUID) (int, error)
 }

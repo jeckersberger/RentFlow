@@ -1,107 +1,23 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { workflowApi } from '../../services/api'
 import type { WorkflowDefinition, WorkflowTemplate } from '../../types/workflow'
 import styles from './Workflows.module.scss'
-
-const mockWorkflowDefinitions: WorkflowDefinition[] = [
-  {
-    id: '1',
-    name: 'Onboarding neuer Mitarbeiter',
-    description: 'Automatischer Onboarding-Prozess mit Qualifikationsprüfung',
-    status: 'active',
-    trigger: 'manual',
-    steps: [
-      { id: 's1', type: 'trigger', name: 'Mitarbeiter hinzufügen', description: '', config: {} },
-      { id: 's2', type: 'action', name: 'Willkommens-Email', description: '', config: {} },
-      { id: 's3', type: 'action', name: 'Qualifikationen abfragen', description: '', config: {} },
-      { id: 's4', type: 'notification', name: 'Team benachrichtigen', description: '', config: {} },
-    ],
-    created_at: '2026-01-15T10:00:00Z',
-    updated_at: '2026-03-15T14:30:00Z',
-    created_by: 'admin@rentflow.de',
-    instances_count: 24,
-  },
-  {
-    id: '2',
-    name: 'Wartungserinnerungen',
-    description: 'Regelmäßige Erinnerungen für anstehende Wartungen',
-    status: 'active',
-    trigger: 'scheduled',
-    steps: [
-      { id: 's5', type: 'trigger', name: 'Wöchentlicher Check', description: '', config: {} },
-      { id: 's6', type: 'condition', name: 'Wartung überdue?', description: '', config: {} },
-      { id: 's7', type: 'action', name: 'Email an Techniker', description: '', config: {} },
-      { id: 's8', type: 'action', name: 'Task erstellen', description: '', config: {} },
-    ],
-    created_at: '2026-02-01T08:00:00Z',
-    updated_at: '2026-03-20T11:00:00Z',
-    created_by: 'service@rentflow.de',
-    instances_count: 156,
-  },
-  {
-    id: '3',
-    name: 'Ausrüstungswarnung',
-    description: 'Benachrichtigung bei niedriger Verfügbarkeit',
-    status: 'paused',
-    trigger: 'event',
-    steps: [
-      { id: 's9', type: 'trigger', name: 'Bestand-Event', description: '', config: {} },
-      { id: 's10', type: 'condition', name: 'Minimum erreicht?', description: '', config: {} },
-      { id: 's11', type: 'notification', name: 'Manager benachrichtigen', description: '', config: {} },
-      { id: 's12', type: 'action', name: 'Nachbestellung vorschlagen', description: '', config: {} },
-    ],
-    created_at: '2026-02-10T09:00:00Z',
-    updated_at: '2026-03-18T16:45:00Z',
-    created_by: 'inventory@rentflow.de',
-    instances_count: 42,
-  },
-]
-
-const mockWorkflowTemplates: WorkflowTemplate[] = [
-  {
-    id: 't1',
-    name: 'Onboarding Prozess',
-    description: 'Standard Mitarbeiter Onboarding',
-    category: 'HR',
-    icon: '👥',
-    steps: [
-      { id: 'st1', type: 'trigger', name: 'Start', description: '', config: {} },
-      { id: 'st2', type: 'action', name: 'Welcome Email', description: '', config: {} },
-      { id: 'st3', type: 'decision', name: 'Qualifications?', description: '', config: {} },
-    ],
-  },
-  {
-    id: 't2',
-    name: 'Wartungs-Reminder',
-    description: 'Regelmäßige Wartungsprüfungen',
-    category: 'Maintenance',
-    icon: '🔧',
-    steps: [
-      { id: 'st4', type: 'trigger', name: 'Zeitplan', description: '', config: {} },
-      { id: 'st5', type: 'condition', name: 'Prüfen', description: '', config: {} },
-      { id: 'st6', type: 'action', name: 'Aufgabe erstellen', description: '', config: {} },
-    ],
-  },
-  {
-    id: 't3',
-    name: 'Bestandswarnung',
-    description: 'Alarmierung bei niedrigen Beständen',
-    category: 'Inventory',
-    icon: '📦',
-    steps: [
-      { id: 'st7', type: 'trigger', name: 'Bestandsänderung', description: '', config: {} },
-      { id: 'st8', type: 'condition', name: 'Mindestmenge erreicht?', description: '', config: {} },
-      { id: 'st9', type: 'notification', name: 'Benachrichtigung', description: '', config: {} },
-    ],
-  },
-]
 
 function WorkflowsPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
 
-  const { data: workflows = mockWorkflowDefinitions } = useQuery({
+  // Fetch workflow definitions
+  const { data: workflows = [], isLoading: isLoadingWorkflows } = useQuery({
     queryKey: ['workflows'],
-    queryFn: async () => mockWorkflowDefinitions,
+    queryFn: () => workflowApi.list(),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  // Fetch workflow templates
+  const { data: templates = [], isLoading: isLoadingTemplates } = useQuery({
+    queryKey: ['workflow-templates'],
+    queryFn: () => workflowApi.templates(),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -147,17 +63,17 @@ function WorkflowsPage() {
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Gesamt Workflows</div>
-          <div className={styles.statValue}>{workflows.length}</div>
+          <div className={styles.statValue}>{isLoadingWorkflows ? '⏳' : workflows.length}</div>
         </div>
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Aktiv</div>
           <div className={styles.statValue} style={{ color: 'var(--color-success)' }}>
-            {workflows.filter(w => w.status === 'active').length}
+            {isLoadingWorkflows ? '⏳' : workflows.filter((w: WorkflowDefinition) => w.status === 'active').length}
           </div>
         </div>
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Instanzen läuft</div>
-          <div className={styles.statValue}>{workflows.reduce((sum, w) => sum + w.instances_count, 0)}</div>
+          <div className={styles.statValue}>{isLoadingWorkflows ? '⏳' : workflows.reduce((sum: number, w: WorkflowDefinition) => sum + w.instances_count, 0)}</div>
         </div>
       </div>
 
@@ -166,7 +82,12 @@ function WorkflowsPage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Aktive Workflow-Definitionen</h2>
 
-          {workflows.length === 0 ? (
+          {isLoadingWorkflows ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>⏳</div>
+              <p className={styles.emptyText}>Laden...</p>
+            </div>
+          ) : workflows.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>⚡</div>
               <h3 className={styles.emptyTitle}>Keine Workflows vorhanden</h3>
@@ -174,7 +95,7 @@ function WorkflowsPage() {
             </div>
           ) : (
             <div className={styles.workflowsList}>
-              {workflows.map(workflow => (
+              {workflows.map((workflow: WorkflowDefinition) => (
                 <div key={workflow.id} className={styles.workflowCard}>
                   <div className={styles.workflowHeader}>
                     <div>
@@ -236,25 +157,37 @@ function WorkflowsPage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Template-Galerie</h2>
 
-          <div className={styles.templatesGrid}>
-            {mockWorkflowTemplates.map(template => (
-              <div
-                key={template.id}
-                className={`${styles.templateCard} ${selectedTemplate === template.id ? styles['templateCard--selected'] : ''}`}
-                onClick={() => setSelectedTemplate(selectedTemplate === template.id ? null : template.id)}
-              >
-                <div className={styles.templateIcon}>{template.icon}</div>
-                <h3 className={styles.templateName}>{template.name}</h3>
-                <p className={styles.templateDesc}>{template.description}</p>
-                <span className={styles.templateCategory}>{template.category}</span>
-                {selectedTemplate === template.id && (
-                  <button className="btn btn--sm btn--primary" style={{ marginTop: 'var(--spacing-3)', width: '100%' }}>
-                    Verwenden
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+          {isLoadingTemplates ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>⏳</div>
+              <p className={styles.emptyText}>Laden...</p>
+            </div>
+          ) : templates.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📦</div>
+              <p className={styles.emptyText}>Keine Templates verfügbar</p>
+            </div>
+          ) : (
+            <div className={styles.templatesGrid}>
+              {templates.map((template: WorkflowTemplate) => (
+                <div
+                  key={template.id}
+                  className={`${styles.templateCard} ${selectedTemplate === template.id ? styles['templateCard--selected'] : ''}`}
+                  onClick={() => setSelectedTemplate(selectedTemplate === template.id ? null : template.id)}
+                >
+                  <div className={styles.templateIcon}>{template.icon}</div>
+                  <h3 className={styles.templateName}>{template.name}</h3>
+                  <p className={styles.templateDesc}>{template.description}</p>
+                  <span className={styles.templateCategory}>{template.category}</span>
+                  {selectedTemplate === template.id && (
+                    <button className="btn btn--sm btn--primary" style={{ marginTop: 'var(--spacing-3)', width: '100%' }}>
+                      Verwenden
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>

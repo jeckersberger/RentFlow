@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { adminApi } from '../../services/api'
 import styles from './Admin.module.scss'
 
 interface ServiceHealth {
@@ -27,62 +28,58 @@ interface DatabaseStats {
   last_backup: string
 }
 
-const mockServices: ServiceHealth[] = [
-  { id: '1', name: 'Equipment Service', status: 'operational', uptime: 99.98, response_time: 45, last_check: '2026-03-22T14:35:00Z' },
-  { id: '2', name: 'Project Service', status: 'operational', uptime: 99.95, response_time: 52, last_check: '2026-03-22T14:34:00Z' },
-  { id: '3', name: 'Crew Service', status: 'operational', uptime: 99.99, response_time: 38, last_check: '2026-03-22T14:35:00Z' },
-  { id: '4', name: 'Invoice Service', status: 'operational', uptime: 99.92, response_time: 67, last_check: '2026-03-22T14:34:00Z' },
-  { id: '5', name: 'Transport Service', status: 'degraded', uptime: 99.45, response_time: 152, last_check: '2026-03-22T14:33:00Z' },
-  { id: '6', name: 'Maintenance Service', status: 'operational', uptime: 99.97, response_time: 41, last_check: '2026-03-22T14:35:00Z' },
-  { id: '7', name: 'Document Service', status: 'operational', uptime: 99.89, response_time: 58, last_check: '2026-03-22T14:34:00Z' },
-  { id: '8', name: 'Insurance Service', status: 'operational', uptime: 99.93, response_time: 49, last_check: '2026-03-22T14:35:00Z' },
-  { id: '9', name: 'Reporting Service', status: 'operational', uptime: 99.98, response_time: 102, last_check: '2026-03-22T14:34:00Z' },
-  { id: '10', name: 'Authentication Service', status: 'operational', uptime: 100.0, response_time: 25, last_check: '2026-03-22T14:35:00Z' },
-  { id: '11', name: 'Cache Service', status: 'operational', uptime: 99.99, response_time: 12, last_check: '2026-03-22T14:35:00Z' },
-  { id: '12', name: 'Database Service', status: 'operational', uptime: 99.94, response_time: 78, last_check: '2026-03-22T14:34:00Z' },
-  { id: '13', name: 'File Storage Service', status: 'operational', uptime: 99.96, response_time: 89, last_check: '2026-03-22T14:35:00Z' },
-  { id: '14', name: 'Email Service', status: 'operational', uptime: 99.87, response_time: 234, last_check: '2026-03-22T14:33:00Z' },
-  { id: '15', name: 'Notification Service', status: 'operational', uptime: 99.91, response_time: 56, last_check: '2026-03-22T14:34:00Z' },
-  { id: '16', name: 'Analytics Service', status: 'operational', uptime: 99.99, response_time: 124, last_check: '2026-03-22T14:35:00Z' },
-  { id: '17', name: 'Payment Service', status: 'operational', uptime: 99.99, response_time: 178, last_check: '2026-03-22T14:35:00Z' },
-  { id: '18', name: 'Audit Service', status: 'operational', uptime: 99.98, response_time: 67, last_check: '2026-03-22T14:34:00Z' },
-]
-
-const mockSettings: SystemSettings = {
-  company_name: 'RentFlow GmbH',
-  timezone: 'Europe/Berlin',
-  language: 'de-DE',
-  maintenance_mode: false,
-  debug_mode: false,
-}
-
-const mockDatabaseStats: DatabaseStats = {
-  total_size_gb: 500,
-  used_size_gb: 287,
-  tables_count: 42,
-  backups_count: 24,
-  last_backup: '2026-03-22T02:00:00Z',
-}
-
 function AdminPage() {
-  const [settings, setSettings] = useState<SystemSettings>(mockSettings)
+  const [settings, setSettings] = useState<SystemSettings>({
+    company_name: 'RentFlow GmbH',
+    timezone: 'Europe/Berlin',
+    language: 'de-DE',
+    maintenance_mode: false,
+    debug_mode: false,
+  })
   const [isEditingSettings, setIsEditingSettings] = useState(false)
 
-  const { data: services = mockServices } = useQuery({
-    queryKey: ['system-services'],
-    queryFn: async () => mockServices,
+  // Fetch system health/services
+  const { data: healthData, isLoading: isLoadingHealth } = useQuery({
+    queryKey: ['system-health'],
+    queryFn: () => adminApi.health(),
     staleTime: 1000 * 60,
   })
+  const services = healthData?.services || []
 
-  const { data: dbStats = mockDatabaseStats } = useQuery({
-    queryKey: ['database-stats'],
-    queryFn: async () => mockDatabaseStats,
+  // Fetch admin settings
+  const { data: fetchedSettings } = useQuery({
+    queryKey: ['admin-settings'],
+    queryFn: () => adminApi.settings(),
     staleTime: 1000 * 60 * 5,
   })
 
-  const operationalCount = services.filter(s => s.status === 'operational').length
-  const degradedCount = services.filter(s => s.status === 'degraded').length
-  const downCount = services.filter(s => s.status === 'down').length
+  // Update settings when fetched
+  useEffect(() => {
+    if (fetchedSettings) {
+      setSettings(fetchedSettings)
+    }
+  }, [fetchedSettings])
+
+  // Settings update mutation
+  const updateSettingsMutation = useMutation({
+    mutationFn: (newSettings: SystemSettings) => adminApi.updateSettings(newSettings),
+    onSuccess: () => {
+      setIsEditingSettings(false)
+    },
+  })
+
+  // Mock database stats (not yet in Phase 4)
+  const dbStats: DatabaseStats = {
+    total_size_gb: 500,
+    used_size_gb: 287,
+    tables_count: 42,
+    backups_count: 24,
+    last_backup: '2026-03-22T02:00:00Z',
+  }
+
+  const operationalCount = (services as ServiceHealth[]).filter(s => s.status === 'operational').length
+  const degradedCount = (services as ServiceHealth[]).filter(s => s.status === 'degraded').length
+  const downCount = (services as ServiceHealth[]).filter(s => s.status === 'down').length
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -105,7 +102,13 @@ function AdminPage() {
   }
 
   const handleSaveSettings = () => {
-    // Save settings logic
+    updateSettingsMutation.mutate(settings)
+  }
+
+  const handleCancelSettings = () => {
+    if (fetchedSettings) {
+      setSettings(fetchedSettings)
+    }
     setIsEditingSettings(false)
   }
 
@@ -128,9 +131,10 @@ function AdminPage() {
             className={`btn btn--sm ${isEditingSettings ? 'btn--danger' : 'btn--primary'}`}
             onClick={() => {
               if (isEditingSettings) {
-                setSettings(mockSettings)
+                handleCancelSettings()
+              } else {
+                setIsEditingSettings(true)
               }
-              setIsEditingSettings(!isEditingSettings)
             }}
           >
             {isEditingSettings ? '✕ Abbrechen' : '✎ Bearbeiten'}
@@ -261,14 +265,23 @@ function AdminPage() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Service-Health Dashboard</h2>
           <div className={styles.healthSummary}>
-            <span style={{ color: '#10b981' }}>● {operationalCount} Operational</span>
-            <span style={{ color: '#f59e0b' }}>● {degradedCount} Degraded</span>
-            <span style={{ color: '#ef4444' }}>● {downCount} Down</span>
+            <span style={{ color: '#10b981' }}>● {isLoadingHealth ? '⏳' : operationalCount} Operational</span>
+            <span style={{ color: '#f59e0b' }}>● {isLoadingHealth ? '⏳' : degradedCount} Degraded</span>
+            <span style={{ color: '#ef4444' }}>● {isLoadingHealth ? '⏳' : downCount} Down</span>
           </div>
         </div>
 
-        <div className={styles.servicesGrid}>
-          {services.map(service => (
+        {isLoadingHealth ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+            Laden...
+          </div>
+        ) : services.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+            Keine Services verfügbar
+          </div>
+        ) : (
+          <div className={styles.servicesGrid}>
+            {(services as ServiceHealth[]).map((service: ServiceHealth) => (
             <div key={service.id} className={styles.serviceCard}>
               <div className={styles.serviceHeader}>
                 <div className={styles.serviceName}>{service.name}</div>
@@ -302,8 +315,9 @@ function AdminPage() {
                 Details
               </button>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* User Management */}
