@@ -12,7 +12,7 @@ import ErrorState from '../../components/ErrorState/ErrorState'
 import { SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import { Invoice, InvoiceStatus } from '../../types/invoice'
 import { generateCSV, downloadCSV, formatDateForExport } from '../../utils/csvExport'
-import '../Equipment/Equipment.module.scss'
+import '../Equipment/Equipment.scss'
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value)

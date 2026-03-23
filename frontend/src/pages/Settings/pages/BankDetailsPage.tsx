@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { configApi } from '../../../services/api'
 import { SkeletonCard } from '../../../components/Skeleton/SkeletonLoader'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 function BankDetailsPage() {
   const queryClient = useQueryClient()

@@ -6,7 +6,7 @@ import {
 } from 'recharts'
 import type { ReportPeriod, ReportDefinition, ReportRun } from '../../types/reporting'
 import { equipmentApi, projectApi, maintenanceApi, invoiceApi } from '../../services/api'
-import './Reports.module.scss'
+import './Reports.scss'
 
 const CATEGORY_LABELS: Record<string, string> = {
   'cat-audio': 'Audio',

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import './DataTable.module.scss'
+import './DataTable.scss'
 
 export interface Column<T> {
   key: keyof T | string

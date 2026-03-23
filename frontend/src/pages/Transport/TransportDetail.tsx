@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { transportApi } from '../../services/api'
-import './Transport.module.scss'
+import './Transport.scss'
 
 interface Equipment {
   id: string

@@ -436,17 +436,17 @@ export const mailApi = {
   getById: (id: string) =>
     MOCK_MODE
       ? mockDelay(null)
-      : api.get(`/api/v1/mail/${id}`).then(res => res.data),
+      : api.get(`/api/v1/mail/messages/${id}`).then(res => res.data),
 
   markAsRead: (id: string) =>
     MOCK_MODE
       ? mockDelay({ success: true })
-      : api.put(`/api/v1/mail/${id}/read`).then(res => res.data),
+      : api.put(`/api/v1/mail/messages/${id}/read`).then(res => res.data),
 
   assignToProject: (id: string, projectId: string) =>
     MOCK_MODE
       ? mockDelay({ success: true })
-      : api.put(`/api/v1/mail/${id}/project`, { project_id: projectId }).then(res => res.data),
+      : api.put(`/api/v1/mail/messages/${id}/project`, { project_id: projectId }).then(res => res.data),
 
   send: (data: any) =>
     MOCK_MODE

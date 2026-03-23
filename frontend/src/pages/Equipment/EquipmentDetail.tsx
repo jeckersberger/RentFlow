@@ -8,7 +8,7 @@ import { Modal } from '../../components/Modal/Modal'
 import { Select } from '../../components/Form/Select'
 import { Input } from '../../components/Form/Input'
 import { EquipmentStatus, Category, PriceResult } from '../../types/equipment'
-import './Equipment.module.scss'
+import './Equipment.scss'
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'available', label: 'Verfügbar' },

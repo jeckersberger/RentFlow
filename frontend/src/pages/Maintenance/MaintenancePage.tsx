@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { maintenanceApi } from '../../services/api'
-import './Maintenance.module.scss'
+import './Maintenance.scss'
 
 interface MaintenanceTask {
   id: string

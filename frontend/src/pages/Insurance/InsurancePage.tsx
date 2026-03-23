@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import type { InsurancePolicy, InsuranceClaim } from '../../types/insurance'
-import './Insurance.module.scss'
+import './Insurance.scss'
 
 const mockPolicies: InsurancePolicy[] = [
   {

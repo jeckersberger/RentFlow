@@ -4,8 +4,8 @@ import { tenantApi, userApi, categoryApi } from '../../services/api'
 import { useAuthStore } from '../../stores/authStore'
 import { Input } from '../../components/Form/Input'
 import { Category } from '../../types/equipment'
-import '../Equipment/Equipment.module.scss'
-import './Settings.module.scss'
+import '../Equipment/Equipment.scss'
+import './Settings.scss'
 
 type SettingsTab = 'company' | 'users' | 'categories' | 'notifications'
 

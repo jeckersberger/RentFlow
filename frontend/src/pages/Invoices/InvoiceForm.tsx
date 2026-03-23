@@ -7,7 +7,7 @@ import { TextArea } from '../../components/Form/TextArea'
 import { Select } from '../../components/Form/Select'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { CreateInvoiceDTO } from '../../types/invoice'
-import '../Equipment/Equipment.module.scss'
+import '../Equipment/Equipment.scss'
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value)

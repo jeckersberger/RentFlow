@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { configApi } from '../../../services/api'
 import { Download, RefreshCw } from 'lucide-react'
 import { SkeletonCard } from '../../../components/Skeleton/SkeletonLoader'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 function BackupsPage() {
   const [triggerSuccess, setTriggerSuccess] = useState(false)

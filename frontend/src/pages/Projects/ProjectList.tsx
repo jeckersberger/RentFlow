@@ -11,7 +11,7 @@ import ErrorState from '../../components/ErrorState/ErrorState'
 import { SkeletonTable, SkeletonCard } from '../../components/Skeleton/SkeletonLoader'
 import { Project, ProjectStatus } from '../../types/project'
 import { generateCSV, downloadCSV, formatDateForExport } from '../../utils/csvExport'
-import '../Equipment/Equipment.module.scss'
+import '../Equipment/Equipment.scss'
 
 const STATUS_TABS: Array<{ value: ProjectStatus | ''; label: string }> = [
   { value: '', label: 'Alle' },

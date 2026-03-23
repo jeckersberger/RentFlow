@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { Assignment, TimeRecord } from '../../types/crew'
-import './Crew.module.scss'
+import './Crew.scss'
 
 const mockAssignments: Assignment[] = [
   {

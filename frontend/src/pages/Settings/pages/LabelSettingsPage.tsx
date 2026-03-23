@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { configApi } from '../../../services/api'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 interface LabelConfig {
   default_size: 'small' | 'medium' | 'large' | 'flightcase'

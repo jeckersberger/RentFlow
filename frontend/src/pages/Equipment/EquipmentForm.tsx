@@ -9,7 +9,7 @@ import { TextArea } from '../../components/Form/TextArea'
 import { FileUpload } from '../../components/Form/FileUpload'
 import { Modal } from '../../components/Modal/Modal'
 import { CreateEquipmentDTO, Category } from '../../types/equipment'
-import './Equipment.module.scss'
+import './Equipment.scss'
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'available', label: 'Verfügbar' },

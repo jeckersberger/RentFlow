@@ -171,11 +171,65 @@ export default defineConfig({
     port: 3000,
     strictPort: false,
     proxy: {
-      '/api': {
-        target: 'http://localhost:80',
-        changeOrigin: true,
-        rewrite: (path) => path,
-      },
+      // Auth, Setup, Users, Tenants, Config → auth-service
+      '/api/v1/auth': { target: 'http://localhost:8001', changeOrigin: true },
+      '/api/v1/setup': { target: 'http://localhost:8001', changeOrigin: true },
+      '/api/v1/users': { target: 'http://localhost:8001', changeOrigin: true },
+      '/api/v1/tenants': { target: 'http://localhost:8001', changeOrigin: true },
+      '/api/v1/config': { target: 'http://localhost:8001', changeOrigin: true },
+      '/api/v1/contacts': { target: 'http://localhost:8001', changeOrigin: true },
+      // Inventory → inventory-service
+      '/api/v1/equipment': { target: 'http://localhost:8002', changeOrigin: true },
+      '/api/v1/categories': { target: 'http://localhost:8002', changeOrigin: true },
+      '/api/v1/flightcases': { target: 'http://localhost:8002', changeOrigin: true },
+      // Projects → project-service
+      '/api/v1/projects': { target: 'http://localhost:8003', changeOrigin: true },
+      '/api/v1/packlists': { target: 'http://localhost:8003', changeOrigin: true },
+      '/api/v1/reservations': { target: 'http://localhost:8003', changeOrigin: true },
+      '/api/v1/customers': { target: 'http://localhost:8003', changeOrigin: true },
+      // Scanner → scanner-service
+      '/api/v1/scan': { target: 'http://localhost:8004', changeOrigin: true },
+      '/api/v1/scanner': { target: 'http://localhost:8004', changeOrigin: true },
+      // Warehouse → warehouse-service
+      '/api/v1/locations': { target: 'http://localhost:8005', changeOrigin: true },
+      '/api/v1/movements': { target: 'http://localhost:8005', changeOrigin: true },
+      '/api/v1/inventory': { target: 'http://localhost:8005', changeOrigin: true },
+      '/api/v1/warehouses': { target: 'http://localhost:8005', changeOrigin: true },
+      // Invoices → invoice-service
+      '/api/v1/invoices': { target: 'http://localhost:8006', changeOrigin: true },
+      '/api/v1/quotes': { target: 'http://localhost:8006', changeOrigin: true },
+      '/api/v1/credit-notes': { target: 'http://localhost:8006', changeOrigin: true },
+      '/api/v1/dunning': { target: 'http://localhost:8006', changeOrigin: true },
+      '/api/v1/export': { target: 'http://localhost:8006', changeOrigin: true },
+      // Documents → document-service
+      '/api/v1/documents': { target: 'http://localhost:8007', changeOrigin: true },
+      '/api/v1/templates': { target: 'http://localhost:8007', changeOrigin: true },
+      // Crew → crew-service
+      '/api/v1/crew': { target: 'http://localhost:8008', changeOrigin: true },
+      '/api/v1/time-entries': { target: 'http://localhost:8008', changeOrigin: true },
+      // Federation → federation-service
+      '/api/v1/federation': { target: 'http://localhost:8009', changeOrigin: true },
+      // Maintenance → maintenance-service
+      '/api/v1/maintenance': { target: 'http://localhost:8010', changeOrigin: true },
+      '/api/v1/dguv': { target: 'http://localhost:8010', changeOrigin: true },
+      // Transport → transport-service
+      '/api/v1/transport': { target: 'http://localhost:8011', changeOrigin: true },
+      // Insurance → insurance-service
+      '/api/v1/policies': { target: 'http://localhost:8012', changeOrigin: true },
+      '/api/v1/claims': { target: 'http://localhost:8012', changeOrigin: true },
+      // Workflows → workflow-service
+      '/api/v1/workflows': { target: 'http://localhost:8013', changeOrigin: true },
+      // AI → ai-service
+      '/api/v1/ai': { target: 'http://localhost:8014', changeOrigin: true },
+      // Notifications & Mail → notification-service
+      '/api/v1/notifications': { target: 'http://localhost:8015', changeOrigin: true },
+      '/api/v1/mail': { target: 'http://localhost:8015', changeOrigin: true },
+      // Reporting → reporting-service
+      '/api/v1/reports': { target: 'http://localhost:8016', changeOrigin: true },
+      // Audit → audit-service
+      '/api/v1/audit': { target: 'http://localhost:8017', changeOrigin: true },
+      // Expenses → expense-service
+      '/api/v1/expenses': { target: 'http://localhost:8018', changeOrigin: true },
     },
   },
   build: {

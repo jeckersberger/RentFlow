@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import { crewApi } from '../../services/api'
 import type { CrewMember, TimeRecord, Assignment } from '../../types/crew'
-import './Crew.module.scss'
+import './Crew.scss'
 
 const ROLES: Record<string, string> = {
   technician: 'Techniker',

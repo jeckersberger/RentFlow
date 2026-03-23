@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { configApi } from '../../../services/api'
 import { Plus, Trash2 } from 'lucide-react'
 import { SkeletonCard } from '../../../components/Skeleton/SkeletonLoader'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 interface ProjectType {
   id: string

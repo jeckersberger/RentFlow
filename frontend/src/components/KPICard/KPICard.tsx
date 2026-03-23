@@ -1,4 +1,4 @@
-import './KPICard.module.scss'
+import './KPICard.scss'
 
 interface KPICardProps {
   title: string

@@ -1,5 +1,5 @@
 import { FileText, Download, Lock } from 'lucide-react'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 const templates = [
   { type: 'invoice', label: 'Rechnung', description: 'Standard-Rechnungsvorlage mit Logo und Bankdaten', status: 'aktiv' },

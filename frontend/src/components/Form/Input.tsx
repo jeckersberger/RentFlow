@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import './Form.module.scss'
+import './Form.scss'
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string

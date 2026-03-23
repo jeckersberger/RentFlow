@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import './Form.module.scss'
+import './Form.scss'
 
 interface FileUploadProps {
   label?: string

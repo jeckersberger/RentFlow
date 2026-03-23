@@ -6,7 +6,7 @@ import { Modal } from '../../components/Modal/Modal'
 import { Input } from '../../components/Form/Input'
 import { useNotificationStore } from '../../stores/notificationStore'
 import type { CrewMember } from '../../types/crew'
-import './Crew.module.scss'
+import './Crew.scss'
 
 // Map backend CrewMemberDTO to frontend CrewMember type
 function mapBackendCrewMember(dto: any): CrewMember & { skills: string[]; hourly_rate: number; first_name: string; last_name: string } {

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { warehouseApi, projectApi, api } from '../../services/api'
-import './Warehouse.module.scss'
+import './Warehouse.scss'
 
 // ============================================================================
 // TYPES

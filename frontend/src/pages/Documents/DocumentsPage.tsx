@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { documentApi } from '../../services/api'
 import type { Document } from '../../types/document'
-import './Documents.module.scss'
+import './Documents.scss'
 
 // Map backend DocumentResponse to frontend Document type
 function mapBackendDocument(dto: any): Document {

@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import SettingsNav from './SettingsNav'
-import './Settings.module.scss'
+import './Settings.scss'
 
 function SettingsLayout() {
   return (

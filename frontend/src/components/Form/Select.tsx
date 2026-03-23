@@ -1,4 +1,4 @@
-import './Form.module.scss'
+import './Form.scss'
 
 interface Option {
   value: string | number

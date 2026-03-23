@@ -5,7 +5,7 @@ import { Plus, Tags } from 'lucide-react'
 import { Category } from '../../../types/equipment'
 import { SkeletonTable } from '../../../components/Skeleton/SkeletonLoader'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 function CategoriesPage() {
   const queryClient = useQueryClient()

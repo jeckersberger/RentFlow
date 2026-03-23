@@ -1,5 +1,5 @@
 import { Shield, Lock } from 'lucide-react'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 const roles = [
   {

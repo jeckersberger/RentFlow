@@ -6,7 +6,7 @@ import { Input } from '../../components/Form/Input'
 import { Select } from '../../components/Form/Select'
 import { TextArea } from '../../components/Form/TextArea'
 import { CreateProjectDTO, ProjectStatus } from '../../types/project'
-import '../Equipment/Equipment.module.scss'
+import '../Equipment/Equipment.scss'
 
 const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
   { value: 'draft', label: 'Entwurf' },

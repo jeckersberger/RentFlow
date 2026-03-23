@@ -22,7 +22,7 @@ import {
   QrCode,
   type LucideIcon,
 } from 'lucide-react'
-import './Settings.module.scss'
+import './Settings.scss'
 
 interface SettingsNavItem {
   label: string

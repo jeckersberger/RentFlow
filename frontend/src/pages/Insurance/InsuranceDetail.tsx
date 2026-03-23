@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import type { InsuranceClaim, ClaimStatusTimeline, InsurancePolicy } from '../../types/insurance'
-import './Insurance.module.scss'
+import './Insurance.scss'
 
 const mockPolicies: Record<string, InsurancePolicy> = {
   '1': {

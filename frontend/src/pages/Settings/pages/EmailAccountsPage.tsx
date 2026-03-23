@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { mailApi } from '../../../services/api'
 import { useNotificationStore } from '../../../stores/notificationStore'
 import { Plus, Pencil, Trash2, TestTube, X } from 'lucide-react'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 interface MailboxForm {
   type: 'general' | 'invoices' | 'personal'

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tenantApi, configApi } from '../../../services/api'
 import { useAuthStore } from '../../../stores/authStore'
 import { SkeletonCard } from '../../../components/Skeleton/SkeletonLoader'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 interface TenantData {
   id: string

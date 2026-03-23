@@ -6,7 +6,7 @@ import { Modal } from '../../components/Modal/Modal'
 import { Input } from '../../components/Form/Input'
 import { transportApi } from '../../services/api'
 import { useNotificationStore } from '../../stores/notificationStore'
-import './Transport.module.scss'
+import './Transport.scss'
 
 interface Vehicle {
   id: string

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
-import './Maintenance.module.scss'
+import './Maintenance.scss'
 
 interface CheckItem {
   id: string

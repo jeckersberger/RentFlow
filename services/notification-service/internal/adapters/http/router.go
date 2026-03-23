@@ -42,8 +42,8 @@ func SetupRoutes(
 
 	// E-Mails
 	router.HandleFunc("GET /api/v1/mail", mailHandler.ListMails)
-	router.HandleFunc("GET /api/v1/mail/{id}", mailHandler.GetMail)
-	router.HandleFunc("PUT /api/v1/mail/{id}/read", mailHandler.MarkMailAsRead)
-	router.HandleFunc("PUT /api/v1/mail/{id}/project", mailHandler.AssignMailToProject)
+	router.HandleFunc("GET /api/v1/mail/messages/{id}", mailHandler.GetMail)
+	router.HandleFunc("PUT /api/v1/mail/messages/{id}/read", mailHandler.MarkMailAsRead)
+	router.HandleFunc("PUT /api/v1/mail/messages/{id}/project", mailHandler.AssignMailToProject)
 	router.HandleFunc("POST /api/v1/mail/send", mailHandler.SendMail)
 }

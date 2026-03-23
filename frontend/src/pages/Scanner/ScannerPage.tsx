@@ -4,8 +4,8 @@ import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode'
 import { Select } from '../../components/Form/Select'
 import { Input } from '../../components/Form/Input'
 import { equipmentApi, projectApi } from '../../services/api'
-import '../Equipment/Equipment.module.scss'
-import './Scanner.module.scss'
+import '../Equipment/Equipment.scss'
+import './Scanner.scss'
 
 // IndexedDB Offline Queue (max 500 scans)
 const OFFLINE_DB_NAME = 'rentflow-scanner-offline'

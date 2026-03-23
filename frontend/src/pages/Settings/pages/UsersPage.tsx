@@ -4,7 +4,7 @@ import { userApi } from '../../../services/api'
 import { UserPlus, X, Users } from 'lucide-react'
 import { SkeletonTable } from '../../../components/Skeleton/SkeletonLoader'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import '../Settings.module.scss'
+import '../Settings.scss'
 
 interface UserData {
   id: string

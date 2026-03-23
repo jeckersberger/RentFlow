@@ -14,7 +14,7 @@ import { SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { Equipment, EquipmentStatus, Category } from '../../types/equipment'
 import { generateCSV, downloadCSV, formatDateForExport } from '../../utils/csvExport'
-import './Equipment.module.scss'
+import './Equipment.scss'
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '', label: 'Alle Status' },
