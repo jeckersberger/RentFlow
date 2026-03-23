@@ -1,0 +1,465 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6]:
+    - navigation [ref=e8]:
+      - generic [ref=e9]:
+        - button "" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: 
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Jhons
+          - paragraph [ref=e14]: jhons.rentmanapp.com
+        - button "chevron_right chevron_left" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: chevron_right
+          - generic [ref=e17]: chevron_left
+      - generic: expand_more
+      - generic [ref=e18]:
+        - button "fact_check Implementierungsleitfaden" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]:
+            - generic [ref=e23]: fact_check
+            - generic [ref=e25]: Implementierungsleitfaden
+        - button "dashboard Dashboard" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: dashboard
+            - generic [ref=e32]: Dashboard
+        - generic [ref=e33]:
+          - button "event (Mein) Kalender expand_more expand_less" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: event
+              - generic [ref=e39]: (Mein) Kalender
+              - generic [ref=e40]:
+                - generic [ref=e41]: expand_more
+                - generic [ref=e42]: expand_less
+          - generic [ref=e43]:
+            - button "(Mein) Kalender" [ref=e44] [cursor=pointer]:
+              - generic [ref=e47]: (Mein) Kalender
+            - button "Job Board" [ref=e48] [cursor=pointer]:
+              - generic [ref=e51]: Job Board
+        - generic [ref=e52]:
+          - button " Lager expand_more expand_less" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - generic [ref=e56]: 
+              - generic [ref=e58]: Lager
+              - generic [ref=e59]:
+                - generic [ref=e60]: expand_more
+                - generic [ref=e61]: expand_less
+          - generic [ref=e62]:
+            - button "Lager" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]: Lager
+            - button "Kombinationen" [ref=e67] [cursor=pointer]:
+              - generic [ref=e70]: Kombinationen
+            - button "Cross-Docking-Übersicht" [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: Cross-Docking-Übersicht
+            - button "Lager-Tracking-Log" [ref=e75] [cursor=pointer]:
+              - generic [ref=e78]: Lager-Tracking-Log
+        - generic [ref=e80]:
+          - button "table_chart Projekte expand_more expand_less" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e84]: table_chart
+              - generic [ref=e86]: Projekte
+              - generic [ref=e87]:
+                - generic [ref=e88]: expand_more
+                - generic [ref=e89]: expand_less
+          - generic [ref=e90]:
+            - button "Projekte" [ref=e91] [cursor=pointer]:
+              - generic [ref=e94]: Projekte
+            - button "Vermietungsanfrage" [ref=e95] [cursor=pointer]:
+              - generic [ref=e98]: Vermietungsanfrage
+        - button "account_circle Personalplaner" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]:
+            - generic [ref=e103]: account_circle
+            - generic [ref=e105]: Personalplaner
+        - generic [ref=e106]:
+          - button "swap_horizontal_circle Mangel expand_more expand_less" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e110]: swap_horizontal_circle
+              - generic [ref=e112]: Mangel
+              - generic [ref=e113]:
+                - generic [ref=e114]: expand_more
+                - generic [ref=e115]: expand_less
+          - generic [ref=e116]:
+            - button "Mietengpässe" [ref=e117] [cursor=pointer]:
+              - generic [ref=e120]: Mietengpässe
+            - button "Verkaufsengpässe" [ref=e121] [cursor=pointer]:
+              - generic [ref=e124]: Verkaufsengpässe
+            - button "Zumietungsjobs" [ref=e125] [cursor=pointer]:
+              - generic [ref=e128]: Zumietungsjobs
+        - generic [ref=e129]:
+          - button "monetization_on Finanzen expand_more expand_less" [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]:
+              - generic [ref=e133]: monetization_on
+              - generic [ref=e135]: Finanzen
+              - generic [ref=e136]:
+                - generic [ref=e137]: expand_more
+                - generic [ref=e138]: expand_less
+          - generic [ref=e139]:
+            - button "Rechnungen" [ref=e140] [cursor=pointer]:
+              - generic [ref=e143]: Rechnungen
+            - button "Zu fakturieren" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: Zu fakturieren
+            - button "Bestellungen" [ref=e148] [cursor=pointer]:
+              - generic [ref=e151]: Bestellungen
+        - generic [ref=e153]:
+          - button "category Materialien expand_more expand_less" [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]: category
+              - generic [ref=e159]: Materialien
+              - generic [ref=e160]:
+                - generic [ref=e161]: expand_more
+                - generic [ref=e162]: expand_less
+          - generic [ref=e163]:
+            - button "Materialien" [ref=e164] [cursor=pointer]:
+              - generic [ref=e167]: Materialien
+            - button "Seriennummern" [ref=e168] [cursor=pointer]:
+              - generic [ref=e171]: Seriennummern
+            - button "Lagerstandorte" [ref=e172] [cursor=pointer]:
+              - generic [ref=e175]: Lagerstandorte
+            - button "Archivierte Materialien" [ref=e176] [cursor=pointer]:
+              - generic [ref=e179]: Archivierte Materialien
+            - button "Archivierte Standorte" [ref=e180] [cursor=pointer]:
+              - generic [ref=e183]: Archivierte Standorte
+        - button "contact_phone Kontakte" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]:
+            - generic [ref=e188]: contact_phone
+            - generic [ref=e190]: Kontakte
+        - button "people Mitarbeiter" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]:
+            - generic [ref=e195]: people
+            - generic [ref=e197]: Mitarbeiter
+        - button "local_shipping Fahrzeuge" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - generic [ref=e202]: local_shipping
+            - generic [ref=e204]: Fahrzeuge
+        - button "assignment_turned_in Aufgaben" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: assignment_turned_in
+            - generic [ref=e212]: Aufgaben
+        - generic [ref=e213]:
+          - button "watch_later Stundenerfassung expand_more expand_less" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e217]: watch_later
+              - generic [ref=e219]: Stundenerfassung
+              - generic [ref=e220]:
+                - generic [ref=e221]: expand_more
+                - generic [ref=e222]: expand_less
+          - generic [ref=e223]:
+            - button "Stundenerfassung" [ref=e224] [cursor=pointer]:
+              - generic [ref=e227]: Stundenerfassung
+            - button "Aktivitäten" [ref=e228] [cursor=pointer]:
+              - generic [ref=e231]: Aktivitäten
+            - button "Abwesenheitsanträge" [ref=e232] [cursor=pointer]:
+              - generic [ref=e235]: Abwesenheitsanträge
+        - generic [ref=e236]:
+          - button "build Werkstatt expand_more expand_less" [ref=e237] [cursor=pointer]:
+            - generic [ref=e238]:
+              - generic [ref=e240]: build
+              - generic [ref=e242]: Werkstatt
+              - generic [ref=e243]:
+                - generic [ref=e244]: expand_more
+                - generic [ref=e245]: expand_less
+          - generic [ref=e246]:
+            - button "Reparaturen" [ref=e247] [cursor=pointer]:
+              - generic [ref=e250]: Reparaturen
+            - button "Prüfungen" [ref=e251] [cursor=pointer]:
+              - generic [ref=e254]: Prüfungen
+            - button "Zu prüfende Materialien" [ref=e255] [cursor=pointer]:
+              - generic [ref=e258]: Zu prüfende Materialien
+            - button "Verlorene Materialien" [ref=e259] [cursor=pointer]:
+              - generic [ref=e262]: Verlorene Materialien
+            - button "Bestandszählungen" [ref=e263] [cursor=pointer]:
+              - generic [ref=e266]: Bestandszählungen
+        - button "poll Statistik" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]:
+            - generic [ref=e271]: poll
+            - generic [ref=e273]: Statistik
+        - generic [ref=e275]:
+          - button "dvr Kommunikation expand_more expand_less" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]:
+              - generic [ref=e279]: dvr
+              - generic [ref=e281]: Kommunikation
+              - generic [ref=e282]:
+                - generic [ref=e283]: expand_more
+                - generic [ref=e284]: expand_less
+          - generic [ref=e285]:
+            - button "Kommunikations-Log" [ref=e286] [cursor=pointer]:
+              - generic [ref=e289]: Kommunikations-Log
+            - button "Gesendete E-Mails" [ref=e290] [cursor=pointer]:
+              - generic [ref=e293]: Gesendete E-Mails
+            - button "Erhaltene Notizen" [ref=e294] [cursor=pointer]:
+              - generic [ref=e297]: Erhaltene Notizen
+        - button "settings Konfiguration" [ref=e300] [cursor=pointer]:
+          - generic [ref=e301]:
+            - generic [ref=e303]: settings
+            - generic [ref=e305]: Konfiguration
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - generic [ref=e3004]:
+          - button "settings lock Konfiguration highlight_off" [ref=e17349] [cursor=pointer]:
+            - generic [ref=e3008]:
+              - generic [ref=e3009]: settings
+              - generic [ref=e3010]: lock
+            - generic "Konfiguration" [ref=e3011]
+            - generic [ref=e3012]: highlight_off
+          - button "table_chart lock Liveauftritt Band Soultrain" [ref=e9303] [cursor=pointer]:
+            - generic [ref=e6876]:
+              - generic [ref=e6877]: table_chart
+              - generic [ref=e6878]: lock
+            - generic "Liveauftritt Band Soultrain" [ref=e6879]
+          - button "account_circle lock Personalplaner" [ref=e10417] [cursor=pointer]:
+            - generic [ref=e9625]:
+              - generic [ref=e9626]: account_circle
+              - generic [ref=e9627]: lock
+            - generic "Personalplaner" [ref=e9628]
+          - button "category lock DJ Kit" [ref=e17350] [cursor=pointer]:
+            - generic [ref=e16867]:
+              - generic [ref=e16868]: category
+              - generic [ref=e16869]: lock
+            - generic "DJ Kit" [ref=e16870]
+        - button "close" [ref=e6881] [cursor=pointer]:
+          - generic [ref=e6882]: close
+      - generic [ref=e309]:
+        - generic [ref=e311]: Testzeitraum läuft in 28Tagen ab
+        - button "auto_awesome Jetzt aktivieren mit 50% Rabatt" [ref=e312] [cursor=pointer]:
+          - generic [ref=e313]: auto_awesome
+          - generic [ref=e314]: Jetzt aktivieren mit 50% Rabatt
+      - button "search" [ref=e316] [cursor=pointer]:
+        - generic [ref=e317]: search
+      - button "timelapse" [ref=e320] [cursor=pointer]:
+        - generic [ref=e322]: timelapse
+      - button "help_outline" [ref=e325] [cursor=pointer]:
+        - generic [ref=e326]: help_outline
+      - button "notifications_none" [ref=e331] [cursor=pointer]:
+        - generic [ref=e333]: notifications_none
+      - button "JD John Dee" [ref=e335] [cursor=pointer]:
+        - generic [ref=e338]: JD
+        - generic [ref=e339]: John Dee
+    - generic [ref=e17352]:
+      - generic [ref=e17353]:
+        - generic [ref=e17354]:
+          - generic [ref=e17355]: Account
+          - link "Firmendaten" [ref=e17356] [cursor=pointer]:
+            - /url: "#/configpanel/companydata"
+            - generic [ref=e17357]: Firmendaten
+          - link "Lizenz" [ref=e17358] [cursor=pointer]:
+            - /url: "#/configpanel/licenses"
+            - generic [ref=e17359]: Lizenz
+          - link "Rechnungsverlauf" [ref=e17360] [cursor=pointer]:
+            - /url: "#/configpanel/payments"
+            - generic [ref=e17361]: Rechnungsverlauf
+          - link "Benutzerrollen" [ref=e17362] [cursor=pointer]:
+            - /url: "#/configpanel/roles"
+            - generic [ref=e17363]: Benutzerrollen
+          - link "Integrationen" [ref=e17364] [cursor=pointer]:
+            - /url: "#/configpanel/integrations"
+            - generic [ref=e17365]: Integrationen
+          - link "Backups" [ref=e17366] [cursor=pointer]:
+            - /url: "#/configpanel/backups"
+            - generic [ref=e17367]: Backups
+        - generic [ref=e17368]:
+          - generic [ref=e17369]: Einstellungen
+          - link "Zeit und Ort" [ref=e17370] [cursor=pointer]:
+            - /url: "#/configpanel/time-and-location"
+            - generic [ref=e17371]: Zeit und Ort
+          - link "Wichtige Tage" [ref=e17372] [cursor=pointer]:
+            - /url: "#/configpanel/holidays"
+            - generic [ref=e17373]: Wichtige Tage
+          - link "Nummernkreise" [ref=e17374] [cursor=pointer]:
+            - /url: "#/configpanel/numbers"
+            - generic [ref=e17375]: Nummernkreise
+          - link "Projekttypen" [ref=e17376] [cursor=pointer]:
+            - /url: "#/configpanel/projecttypes"
+            - generic [ref=e17377]: Projekttypen
+          - link "Projektvorlagen" [ref=e17378] [cursor=pointer]:
+            - /url: "#/configpanel/projecttemplates"
+            - generic [ref=e17379]: Projektvorlagen
+          - link "Regelmäßige Prüfungen" [ref=e17380] [cursor=pointer]:
+            - /url: "#/configpanel/inspections"
+            - generic [ref=e17381]: Regelmäßige Prüfungen
+          - link "Stundenerfassung und Abwesenheit" [ref=e17382] [cursor=pointer]:
+            - /url: "#/configpanel/settings"
+            - generic [ref=e17383]: Stundenerfassung und Abwesenheit
+          - link "Lagerstatus" [ref=e17384] [cursor=pointer]:
+            - /url: "#/configpanel/statuses"
+            - generic [ref=e17385]: Lagerstatus
+          - link "Extra Eingabefelder" [ref=e17386] [cursor=pointer]:
+            - /url: "#/configpanel/customfields"
+            - generic [ref=e17387]: Extra Eingabefelder
+          - link "Datenbank leeren" [ref=e17388] [cursor=pointer]:
+            - /url: "#/configpanel/cleardatabase"
+            - generic [ref=e17389]: Datenbank leeren
+        - generic [ref=e17390]:
+          - generic [ref=e17391]: Kommunikation
+          - link "E-Mail" [ref=e17392] [cursor=pointer]:
+            - /url: "#/configpanel/config"
+            - generic [ref=e17393]: E-Mail
+          - link "Digitale Unterschrift" [ref=e17394] [cursor=pointer]:
+            - /url: "#/configpanel/digitalsigning"
+            - generic [ref=e17395]: Digitale Unterschrift
+          - link "Einladungen" [ref=e17396] [cursor=pointer]:
+            - /url: "#/configpanel/crewinvites"
+            - generic [ref=e17397]: Einladungen
+          - link "Dokumentvorlagen" [ref=e17398] [cursor=pointer]:
+            - /url: "#/configpanel/template"
+            - generic [ref=e17399]: Dokumentvorlagen
+          - link "Briefpapier" [ref=e17400] [cursor=pointer]:
+            - /url: "#/configpanel/writingpaper"
+            - generic [ref=e17401]: Briefpapier
+          - link "Online-Angebote" [ref=e17402] [cursor=pointer]:
+            - /url: "#/configpanel/onlinequotes"
+            - generic [ref=e17403]: Online-Angebote
+          - link "Anrede" [ref=e17404] [cursor=pointer]:
+            - /url: "#/configpanel/title"
+            - generic [ref=e17405]: Anrede
+        - generic [ref=e17406]:
+          - generic [ref=e17407]: Finanzen
+          - link "Finanzen" [ref=e17408] [cursor=pointer]:
+            - /url: "#/configpanel/general"
+            - generic [ref=e17409]: Finanzen
+          - link "Digitale Rechnungsstellung" [ref=e17410] [cursor=pointer]:
+            - /url: "#/configpanel/digital-invoicing"
+            - generic [ref=e17411]: Digitale Rechnungsstellung
+          - link "Faktorgruppen" [ref=e17412] [cursor=pointer]:
+            - /url: "#/configpanel/quantitydiscountgroup"
+            - generic [ref=e17413]: Faktorgruppen
+          - link "Mitarbeitertarife" [ref=e17414] [cursor=pointer]:
+            - /url: "#/configpanel/globalrate"
+            - generic [ref=e17415]: Mitarbeitertarife
+          - link "Rabattgruppen" [ref=e17416] [cursor=pointer]:
+            - /url: "#/configpanel/discountgroup"
+            - generic [ref=e17417]: Rabattgruppen
+          - link "Rechnungszeitpunkte" [ref=e17418] [cursor=pointer]:
+            - /url: "#/configpanel/invoicemoment"
+            - generic [ref=e17419]: Rechnungszeitpunkte
+          - link "Zahlungskonditionen" [ref=e17420] [cursor=pointer]:
+            - /url: "#/configpanel/paymentcondition"
+            - generic [ref=e17421]: Zahlungskonditionen
+          - link "MwSt Regelungen" [ref=e17422] [cursor=pointer]:
+            - /url: "#/configpanel/taxschemas"
+            - generic [ref=e17423]: MwSt Regelungen
+          - link "MwSt Klassen" [ref=e17424] [cursor=pointer]:
+            - /url: "#/configpanel/taxclasses"
+            - generic [ref=e17425]: MwSt Klassen
+          - link "Zahlungsmittel" [ref=e17426] [cursor=pointer]:
+            - /url: "#/configpanel/paymentmeans"
+            - generic [ref=e17427]: Zahlungsmittel
+          - link "Hauptbücher" [ref=e17428] [cursor=pointer]:
+            - /url: "#/configpanel/ledger"
+            - generic [ref=e17429]: Hauptbücher
+          - link "Zusätzliche Bedingungen" [ref=e17430] [cursor=pointer]:
+            - /url: "#/configpanel/conditions"
+            - generic [ref=e17431]: Zusätzliche Bedingungen
+      - generic [ref=e17436]:
+        - generic [ref=e17437]:
+          - heading "Zeit und Ort" [level=1] [ref=e17439]
+          - button "" [ref=e17441] [cursor=pointer]:
+            - generic [ref=e17442]: 
+          - generic [ref=e17443]:
+            - button "Schließen" [ref=e17445] [cursor=pointer]:
+              - generic [ref=e17446]: Schließen
+            - button "Speichern" [ref=e17449] [cursor=pointer]:
+              - generic [ref=e17450]: Speichern
+        - generic [ref=e17451]:
+          - generic [ref=e17452]: 
+          - generic [ref=e17453]: Dies bezieht sich auf die Uhrzeit und den Standort deines Unternehmens sowie auf den Standort deines Standardlagers. Dies wird verwendet, um die Entfernungen von Projekten zu anderen Lagern oder Projektstandorten zu berechnen.
+          - button "close" [ref=e17454] [cursor=pointer]:
+            - generic [ref=e17455]: close
+        - generic [ref=e17458]:
+          - generic [ref=e17459]:
+            - generic [ref=e17460]:
+              - generic [ref=e17461]: Zeitanzeige
+              - button "" [ref=e17463] [cursor=pointer]:
+                - generic [ref=e17464]: 
+            - generic [ref=e17466]:
+              - generic [ref=e17467]:
+                - generic [ref=e17468]: 
+                - generic [ref=e17469]:
+                  - paragraph [ref=e17470]: Lege hier die Standard-Zeitzone und das Zeitformat für alle Nutzer im Workspace fest. Ein benutzerdefiniertes Zeitformat ist in Dokumenten erst sichtbar, nachdem diese neu generiert wurden.
+                  - paragraph [ref=e17471]:
+                    - text: Mit der Unterstützung für mehrere Zeitzonen können die Nutzer ihre eigene Anzeigezeitzone wählen und Zeitzonen für jedes Subprojekt festlegen.
+                    - link "Mehr über Zeitzonen erfährst du hier" [ref=e17472] [cursor=pointer]:
+                      - /url: http://support.rentman.io/hc/de/articles/115003579769?utm_source=rentmanapp&utm_medium=in_app_links&utm_campaign=sc_links_within_rentman
+                - button "close" [ref=e17473] [cursor=pointer]:
+                  - generic [ref=e17474]: close
+              - generic [ref=e17475]:
+                - generic [ref=e17476]:
+                  - generic [ref=e17477]: Standard-Zeitzone des Accounts
+                  - generic [ref=e17478]: info
+                - generic [ref=e17479]:
+                  - button "language Europe/Berlin +01:00 (CET) arrow_drop_down" [ref=e17482] [cursor=pointer]:
+                    - generic [ref=e17483]: language
+                    - generic [ref=e17484]: Europe/Berlin
+                    - generic [ref=e17485]: +01:00 (CET)
+                    - generic [ref=e17486]: arrow_drop_down
+                  - paragraph [ref=e17487]: "Aktuelle Zeit: 23.03.2026 01:24"
+              - generic [ref=e17488]:
+                - generic [ref=e17489]:
+                  - generic [ref=e17490]: Zeitnotation
+                  - generic [ref=e17491]: info
+                - generic [ref=e17494]:
+                  - button "Standardnotation verwenden arrow_drop_down" [ref=e17498] [cursor=pointer]:
+                    - generic [ref=e17499]: Standardnotation verwenden
+                    - generic [ref=e17500]: arrow_drop_down
+                  - generic:
+                    - list
+              - generic [ref=e17501]:
+                - generic [ref=e17502]:
+                  - generic [ref=e17503]: Unterstützung für mehrere Zeitzonen
+                  - generic [ref=e17504]: info
+                - generic [ref=e17507]:
+                  - button "Nein arrow_drop_down" [ref=e17511] [cursor=pointer]:
+                    - generic [ref=e17512]: Nein
+                    - generic [ref=e17513]: arrow_drop_down
+                  - generic:
+                    - list
+          - generic [ref=e17514]:
+            - generic [ref=e17515]:
+              - generic [ref=e17516]: Standardlagerort
+              - button "" [ref=e17518] [cursor=pointer]:
+                - generic [ref=e17519]: 
+            - generic [ref=e17521]:
+              - generic [ref=e17522]:
+                - generic [ref=e17523]: 
+                - paragraph [ref=e17525]: Diese Adresse wird für Entfernungsberechnungen in Rentman verwendet und synchronisiert sich automatisch mit dem Lagerhaus Ost Lagerstandort (siehe Materialien > Lagerstandorte)
+                - button "close" [ref=e17526] [cursor=pointer]:
+                  - generic [ref=e17527]: close
+              - generic [ref=e17529]:
+                - generic [ref=e17530]:
+                  - generic [ref=e17531]:
+                    - generic [ref=e17533]: Straße
+                    - generic [ref=e17536]:
+                      - textbox "Straße" [ref=e17539]: Nobelstraat
+                      - generic:
+                        - list
+                  - generic [ref=e17540]:
+                    - generic [ref=e17542]: Hausnummer
+                    - generic [ref=e17545]:
+                      - textbox "Hausnummer" [ref=e17548]: 2a
+                      - generic:
+                        - list
+                - generic [ref=e17549]:
+                  - generic [ref=e17550]:
+                    - generic [ref=e17552]: Postleitzahl
+                    - generic [ref=e17555]:
+                      - textbox "Postleitzahl" [ref=e17558]: 3512EN
+                      - generic:
+                        - list
+                  - generic [ref=e17559]:
+                    - generic [ref=e17561]: Stadt
+                    - generic [ref=e17564]:
+                      - textbox "Stadt" [ref=e17567]: Utrecht
+                      - generic:
+                        - list
+                - generic [ref=e17569]:
+                  - generic [ref=e17571]: Staat / Provinz
+                  - generic [ref=e17574]:
+                    - textbox "Staat / Provinz" [ref=e17577]
+                    - generic:
+                      - list
+                - generic [ref=e17579]:
+                  - generic [ref=e17581]: Land
+                  - generic [ref=e17584]:
+                    - textbox "Land" [ref=e17587]: Nederland
+                    - generic:
+                      - list
+  - iframe [ref=e497]:
+    - button "Messaging-Fenster öffnen" [ref=f16e5] [cursor=pointer]:
+      - img [ref=f16e7]
+      - img [ref=f16e10]

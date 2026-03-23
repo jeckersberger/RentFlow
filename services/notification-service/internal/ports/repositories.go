@@ -35,3 +35,24 @@ type PreferenceRepository interface {
 	Update(ctx context.Context, p *domain.UserPreference) (*domain.UserPreference, error)
 	Delete(ctx context.Context, tenantID, userID uuid.UUID, eventType string) error
 }
+
+// MailRepository — Zugriff auf E-Mail-Daten
+type MailRepository interface {
+	// E-Mails
+	CreateMail(ctx context.Context, m *domain.Mail) (*domain.Mail, error)
+	GetMailByID(ctx context.Context, id uuid.UUID) (*domain.Mail, error)
+	ListMails(ctx context.Context, tenantID uuid.UUID, filter domain.MailFilter) ([]*domain.Mail, error)
+	MarkMailAsRead(ctx context.Context, id uuid.UUID) error
+	AssignMailToProject(ctx context.Context, mailID, projectID uuid.UUID, confidence float64) error
+
+	// Postfächer
+	CreateMailbox(ctx context.Context, mb *domain.Mailbox) (*domain.Mailbox, error)
+	GetMailboxByID(ctx context.Context, id uuid.UUID) (*domain.Mailbox, error)
+	ListMailboxes(ctx context.Context, tenantID uuid.UUID) ([]*domain.Mailbox, error)
+	UpdateMailbox(ctx context.Context, mb *domain.Mailbox) (*domain.Mailbox, error)
+	DeleteMailbox(ctx context.Context, id uuid.UUID) error
+
+	// Anhänge
+	CreateAttachment(ctx context.Context, a *domain.MailAttachment) (*domain.MailAttachment, error)
+	ListAttachments(ctx context.Context, mailID uuid.UUID) ([]domain.MailAttachment, error)
+}

@@ -12,41 +12,84 @@ export default defineConfig({
         'favicon.ico',
         'apple-touch-icon.png',
         'masked-icon.svg',
+        'icons/*.png',
       ],
       manifest: {
-        name: 'RentFlow',
+        name: 'RentFlow \u2014 Vermietungssoftware',
         short_name: 'RentFlow',
-        description: 'Property rental management application',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        description: 'Professionelle Lagerverwaltung und Rechnungssoftware f\u00fcr Veranstaltungstechnik',
+        theme_color: '#0a0f1a',
+        background_color: '#0a0f1a',
         display: 'standalone',
-        orientation: 'portrait-primary',
+        orientation: 'any',
         scope: '/',
         start_url: '/',
+        categories: ['business', 'productivity'],
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
+            src: '/icons/icon-72.png',
+            sizes: '72x72',
             type: 'image/png',
-            purpose: 'any',
           },
           {
-            src: 'pwa-512x512.png',
+            src: '/icons/icon-96.png',
+            sizes: '96x96',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-128.png',
+            sizes: '128x128',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-144.png',
+            sizes: '144x144',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-152.png',
+            sizes: '152x152',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-384.png',
+            sizes: '384x384',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any',
           },
           {
-            src: 'pwa-maskable-192x192.png',
-            sizes: '192x192',
+            src: '/icons/icon-512-maskable.png',
+            sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
           },
+        ],
+        shortcuts: [
           {
-            src: 'pwa-maskable-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
+            name: 'Scanner',
+            short_name: 'Scan',
+            url: '/scanner',
+            icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Neues Projekt',
+            short_name: 'Projekt',
+            url: '/projects/new',
+            icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Equipment',
+            url: '/equipment',
+            icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
           },
         ],
         screenshots: [
@@ -61,38 +104,61 @@ export default defineConfig({
             type: 'image/png',
           },
         ],
-        categories: ['productivity', 'business'],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
         globIgnores: ['**/node_modules/**/*'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/api\..*/i,
+            // Equipment & Projects list API — cache-first for fast offline access
+            urlPattern: /\/api\/(equipment|projects)(\?.*)?$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'api-lists-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // All other API calls — network-first with fallback
+            urlPattern: /\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               networkTimeoutSeconds: 3,
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 86400, // 24 hours
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
               },
             },
           },
           {
-            urlPattern: /^http:\/\/localhost.*\/api\/.*/i,
-            handler: 'NetworkFirst',
+            // Google Fonts or CDN assets
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+            handler: 'CacheFirst',
             options: {
-              cacheName: 'local-api-cache',
-              networkTimeoutSeconds: 3,
+              cacheName: 'google-fonts-cache',
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 3600, // 1 hour for local dev
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
               },
             },
           },
         ],
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,
       },
       devOptions: {

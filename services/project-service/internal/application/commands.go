@@ -181,6 +181,50 @@ type DeleteCustomerCommand struct {
 	TenantID string
 }
 
+// Contact Commands
+
+type CreateContactCommand struct {
+	TenantID    string   `json:"tenant_id"`
+	Type        string   `json:"type"`
+	CompanyName string   `json:"company_name"`
+	FirstName   string   `json:"first_name"`
+	LastName    string   `json:"last_name"`
+	Email       string   `json:"email"`
+	Phone       string   `json:"phone"`
+	Mobile      string   `json:"mobile"`
+	Website     string   `json:"website"`
+	Street      string   `json:"street"`
+	HouseNumber string   `json:"house_number"`
+	Zip         string   `json:"zip"`
+	City        string   `json:"city"`
+	Country     string   `json:"country"`
+	VatID       string   `json:"vat_id"`
+	Notes       string   `json:"notes"`
+	Tags        []string `json:"tags"`
+	CreatedBy   string   `json:"created_by"`
+}
+
+type UpdateContactCommand struct {
+	ID          string   `json:"id"`
+	TenantID    string   `json:"tenant_id"`
+	Type        string   `json:"type"`
+	CompanyName string   `json:"company_name"`
+	FirstName   string   `json:"first_name"`
+	LastName    string   `json:"last_name"`
+	Email       string   `json:"email"`
+	Phone       string   `json:"phone"`
+	Mobile      string   `json:"mobile"`
+	Website     string   `json:"website"`
+	Street      string   `json:"street"`
+	HouseNumber string   `json:"house_number"`
+	Zip         string   `json:"zip"`
+	City        string   `json:"city"`
+	Country     string   `json:"country"`
+	VatID       string   `json:"vat_id"`
+	Notes       string   `json:"notes"`
+	Tags        []string `json:"tags"`
+}
+
 // Copy Project Command
 type CopyProjectCommand struct {
 	ID              string

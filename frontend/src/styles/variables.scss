@@ -68,6 +68,21 @@
   --color-border-strong: rgba(255, 255, 255, 0.12);
   color-scheme: dark;
 
+  // Glass / Surface backgrounds (dark mode defaults)
+  --glass-bg: rgba(17, 24, 39, 0.6);
+  --glass-bg-strong: rgba(17, 24, 39, 0.8);
+  --glass-bg-intense: rgba(17, 24, 39, 0.95);
+  --glass-bg-subtle: rgba(17, 24, 39, 0.4);
+  --glass-bg-alt: rgba(26, 31, 46, 0.6);
+  --glass-bg-alt-subtle: rgba(26, 31, 46, 0.5);
+  --glass-bg-input: rgba(10, 15, 26, 0.6);
+  --glass-bg-input-strong: rgba(10, 15, 26, 0.8);
+  --glass-bg-footer: rgba(10, 15, 26, 0.3);
+  --glass-bg-overlay: rgba(0, 0, 0, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-subtle: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+
   // Glow effects for Dashboard-Pro
   --glow-primary: 0 0 20px rgba(0, 212, 255, 0.15);
   --glow-accent: 0 0 20px rgba(139, 92, 246, 0.15);
@@ -233,12 +248,12 @@
 // LIGHT MODE (opt-in override)
 // ============================================================================
 :root.light-mode {
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8fafc;
+  --color-bg-primary: #f8fafc;
+  --color-bg-secondary: #ffffff;
   --color-bg-tertiary: #f1f5f9;
   --color-bg-elevated: #ffffff;
-  --color-bg-hover: rgba(0, 0, 0, 0.03);
-  --color-text-primary: #0f172a;
+  --color-bg-hover: rgba(0, 0, 0, 0.04);
+  --color-text-primary: #1e293b;
   --color-text-secondary: #475569;
   --color-text-muted: #94a3b8;
   --color-border: rgba(0, 0, 0, 0.08);
@@ -246,7 +261,27 @@
   --color-border-strong: rgba(0, 0, 0, 0.12);
   color-scheme: light;
 
-  --glow-primary: 0 0 20px rgba(0, 212, 255, 0.1);
+  // Glass / Surface backgrounds (light mode)
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-strong: rgba(255, 255, 255, 0.85);
+  --glass-bg-intense: rgba(255, 255, 255, 0.95);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.5);
+  --glass-bg-alt: rgba(241, 245, 249, 0.7);
+  --glass-bg-alt-subtle: rgba(241, 245, 249, 0.5);
+  --glass-bg-input: rgba(255, 255, 255, 0.8);
+  --glass-bg-input-strong: rgba(255, 255, 255, 0.9);
+  --glass-bg-footer: rgba(241, 245, 249, 0.5);
+  --glass-bg-overlay: rgba(241, 245, 249, 0.3);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-subtle: rgba(0, 0, 0, 0.05);
+  --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  // Slightly toned-down accent for light mode
+  --color-primary: #00b8d9;
+  --color-primary-light: #00d4ff;
+  --color-primary-dark: #0097a7;
+
+  --glow-primary: 0 0 20px rgba(0, 184, 217, 0.1);
   --glow-accent: 0 0 20px rgba(139, 92, 246, 0.1);
   --glow-success: 0 0 20px rgba(16, 185, 129, 0.1);
   --glow-danger: 0 0 20px rgba(239, 68, 68, 0.1);
@@ -266,4 +301,103 @@
 :root.dark-mode {
   // Dark is already default, just ensure colorScheme
   color-scheme: dark;
+}
+
+// ============================================================================
+// SCSS MIXINS
+// ============================================================================
+
+@mixin card-glass {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 12px;
+}
+
+@mixin card-hover {
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 212, 255, 0.15);
+    border-color: rgba(0, 212, 255, 0.3);
+  }
+}
+
+@mixin glow($color: #00d4ff, $intensity: 0.3) {
+  box-shadow: 0 0 20px rgba($color, $intensity);
+}
+
+@mixin gradient-text {
+  background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@mixin page-container {
+  padding: var(--spacing-6) var(--spacing-8);
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  animation: pageIn 0.3s ease-out;
+
+  @media (max-width: 768px) {
+    padding: var(--spacing-4);
+  }
+}
+
+@mixin mobile-card-list {
+  @media (max-width: 768px) {
+    thead { display: none; }
+    tbody { display: flex; flex-direction: column; gap: var(--spacing-3); }
+    tr {
+      display: flex;
+      flex-direction: column;
+      background: var(--glass-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-4);
+      gap: var(--spacing-2);
+    }
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-1) 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+      font-size: var(--font-size-sm);
+      &:last-child { border-bottom: none; }
+    }
+  }
+}
+
+@mixin mobile-full-modal {
+  @media (max-width: 768px) {
+    position: fixed;
+    inset: 0;
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    animation: mobileSheetSlideUp 0.3s ease-out;
+  }
+}
+
+@keyframes mobileSheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

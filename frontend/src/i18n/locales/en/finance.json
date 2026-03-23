@@ -1,0 +1,48 @@
+{
+  "invoices": {
+    "title": "Invoices",
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "partial": "Partially Paid",
+      "cancelled": "Cancelled"
+    }
+  },
+  "quotes": {
+    "title": "Quotes",
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "accepted": "Accepted",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    },
+    "all": "All"
+  },
+  "payment_terms": {
+    "immediate": "Due immediately",
+    "net_7": "Net 7 days",
+    "net_14": "Net 14 days",
+    "net_30": "Net 30 days",
+    "net_60": "Net 60 days"
+  },
+  "kleinunternehmer": {
+    "notice": "No VAT charged pursuant to Section 19 UStG (German VAT Act).",
+    "label": "Small Business Regulation",
+    "description": "No VAT displayed pursuant to Section 19 UStG"
+  },
+  "labels": {
+    "subtotal": "Subtotal",
+    "tax": "VAT",
+    "total": "Total",
+    "amount_due": "Amount Due",
+    "payment_received": "Payment Received",
+    "remaining": "Remaining",
+    "discount": "Discount",
+    "deposit": "Deposit",
+    "currency": "Currency"
+  }
+}

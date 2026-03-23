@@ -50,6 +50,7 @@ func main() {
 	packlistRepo := repositories.NewPacklistPostgres(dbPool)
 	reservationRepo := repositories.NewReservationPostgres(dbPool)
 	customerRepo := repositories.NewCustomerPostgres(dbPool)
+	contactRepo := repositories.NewContactPostgres(dbPool)
 
 	log.Info("Repositories initialized")
 
@@ -59,6 +60,7 @@ func main() {
 	packlistSvc := application.NewPacklistService(packlistRepo, log)
 	reservationSvc := application.NewReservationService(reservationRepo, log)
 	customerSvc := application.NewCustomerService(customerRepo, log)
+	contactSvc := application.NewContactService(contactRepo, log)
 
 	// Configure notification service URL if available
 	notificationURL := os.Getenv(notificationServiceURLEnv)
@@ -70,7 +72,7 @@ func main() {
 	log.Info("Services initialized")
 
 	// Setup router
-	router := httpAdapter.NewRouter(projectSvc, packlistSvc, reservationSvc, customerSvc, log)
+	router := httpAdapter.NewRouter(projectSvc, packlistSvc, reservationSvc, customerSvc, contactSvc, log)
 
 	// Create HTTP server
 	srv := &http.Server{

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>2. Mahnung {{.InvoiceNumber}}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+            color: #333333;
+            background: #ffffff;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm 25mm 25mm 25mm;
+            position: relative;
+        }
+
+        .letterhead {
+            display: table;
+            width: 100%;
+            margin-bottom: 10mm;
+        }
+        .letterhead-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .letterhead-right {
+            display: table-cell;
+            vertical-align: top;
+            width: 40%;
+            text-align: right;
+        }
+        .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 4px;
+        }
+        .company-details {
+            font-size: 9px;
+            color: #666666;
+            line-height: 1.6;
+        }
+        .logo-placeholder {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            display: inline-block;
+            text-align: center;
+            line-height: 56px;
+            font-size: 9px;
+            color: #00d4ff;
+        }
+
+        .sender-line {
+            font-size: 7px;
+            color: #999999;
+            border-bottom: 1px solid #cccccc;
+            padding-bottom: 2px;
+            margin-bottom: 4mm;
+        }
+
+        .document-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f44336;
+            margin-bottom: 6mm;
+            letter-spacing: 1px;
+        }
+
+        .meta-section {
+            display: table;
+            width: 100%;
+            margin-bottom: 8mm;
+        }
+        .client-address {
+            display: table-cell;
+            vertical-align: top;
+            width: 55%;
+        }
+        .reminder-meta {
+            display: table-cell;
+            vertical-align: top;
+            width: 45%;
+        }
+        .client-address .label {
+            font-size: 8px;
+            color: #999999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+        }
+        .client-address .name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .client-address .address-line {
+            font-size: 10px;
+            color: #555555;
+            line-height: 1.6;
+        }
+
+        .reminder-meta table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .reminder-meta table td {
+            padding: 3px 6px;
+            font-size: 10px;
+            border: none;
+        }
+        .reminder-meta table td:first-child {
+            color: #666666;
+            width: 55%;
+        }
+        .reminder-meta table td:last-child {
+            font-weight: bold;
+            text-align: right;
+        }
+        .meta-highlight {
+            background-color: #ffebee;
+        }
+
+        .letter-body {
+            font-size: 10px;
+            color: #444444;
+            line-height: 1.8;
+            margin-bottom: 8mm;
+        }
+        .letter-body p {
+            margin-bottom: 4mm;
+        }
+
+        .amount-box {
+            background-color: #ffebee;
+            border: 1px solid #ef9a9a;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-bottom: 8mm;
+        }
+        .amount-box .label {
+            font-size: 9px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .amount-box .amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f44336;
+        }
+        .amount-box .details {
+            font-size: 9px;
+            color: #777777;
+            margin-top: 6px;
+            line-height: 1.6;
+        }
+
+        .fees-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6mm;
+        }
+        .fees-table td {
+            padding: 4px 6px;
+            font-size: 10px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        .fees-table td:first-child {
+            color: #666666;
+        }
+        .fees-table td:last-child {
+            text-align: right;
+            font-weight: bold;
+        }
+        .fees-table .total-row td {
+            border-top: 2px solid #f44336;
+            border-bottom: none;
+            font-size: 12px;
+            font-weight: bold;
+            padding-top: 8px;
+        }
+        .fees-table .total-row td:last-child {
+            color: #f44336;
+        }
+
+        .bank-section {
+            background-color: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 10px 14px;
+            margin-bottom: 6mm;
+        }
+        .bank-section .label {
+            font-size: 9px;
+            font-weight: bold;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .bank-details {
+            display: table;
+            width: 100%;
+        }
+        .bank-details .row {
+            display: table-row;
+        }
+        .bank-details .row span {
+            display: table-cell;
+            font-size: 10px;
+            padding: 2px 0;
+        }
+        .bank-details .row span:first-child {
+            color: #666666;
+            width: 120px;
+        }
+        .bank-details .row span:last-child {
+            font-weight: bold;
+        }
+
+        .closing-text {
+            font-size: 10px;
+            color: #444444;
+            line-height: 1.8;
+            margin-bottom: 10mm;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 25mm;
+            right: 25mm;
+            border-top: 2px solid #00d4ff;
+            padding-top: 6px;
+        }
+        .footer-content {
+            display: table;
+            width: 100%;
+        }
+        .footer-col {
+            display: table-cell;
+            vertical-align: top;
+            font-size: 7.5px;
+            color: #888888;
+            line-height: 1.6;
+        }
+        .footer-col:first-child {
+            width: 35%;
+        }
+        .footer-col:nth-child(2) {
+            width: 35%;
+        }
+        .footer-col:last-child {
+            width: 30%;
+            text-align: right;
+        }
+        .footer-col strong {
+            color: #555555;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Briefkopf -->
+    <div class="letterhead">
+        <div class="letterhead-left">
+            <div class="company-name">{{.CompanyName}}</div>
+            <div class="company-details">
+                {{.CompanyStreet}}<br>
+                {{.CompanyPostCode}} {{.CompanyCity}}<br>
+                Tel: {{.CompanyPhone}} | E-Mail: {{.CompanyEmail}}
+            </div>
+        </div>
+        <div class="letterhead-right">
+            {{if .LogoURL}}
+            <img src="{{.LogoURL}}" alt="Logo" style="max-width: 80px; max-height: 80px;">
+            {{else}}
+            <div class="logo-placeholder">LOGO</div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Absenderzeile -->
+    <div class="sender-line">
+        {{.CompanyName}} | {{.CompanyStreet}} | {{.CompanyPostCode}} {{.CompanyCity}}
+    </div>
+
+    <!-- Metadaten -->
+    <div class="meta-section">
+        <div class="client-address">
+            <div class="label">Empfänger</div>
+            <div class="name">{{.ClientName}}</div>
+            <div class="address-line">
+                {{.ClientStreet}}<br>
+                {{.ClientPostCode}} {{.ClientCity}}<br>
+                {{if .ClientCountry}}{{.ClientCountry}}{{end}}
+            </div>
+        </div>
+        <div class="reminder-meta">
+            <table>
+                <tr>
+                    <td>Datum:</td>
+                    <td>{{.ReminderDate}}</td>
+                </tr>
+                <tr class="meta-highlight">
+                    <td>Rechnungsnummer:</td>
+                    <td>{{.InvoiceNumber}}</td>
+                </tr>
+                <tr>
+                    <td>Rechnungsdatum:</td>
+                    <td>{{.InvoiceDate}}</td>
+                </tr>
+                <tr>
+                    <td>Urspr. Fälligkeitsdatum:</td>
+                    <td>{{.OriginalDueDate}}</td>
+                </tr>
+                <tr class="meta-highlight">
+                    <td>1. Mahnung vom:</td>
+                    <td>{{.FirstReminderDate}}</td>
+                </tr>
+                {{if .CustomerNumber}}
+                <tr>
+                    <td>Kundennummer:</td>
+                    <td>{{.CustomerNumber}}</td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
+    </div>
+
+    <!-- Titel -->
+    <div class="document-title">2. MAHNUNG</div>
+
+    <!-- Brieftext -->
+    <div class="letter-body">
+        <p>Sehr {{if .ClientSalutation}}{{.ClientSalutation}}{{else}}geehrte Damen und Herren{{end}},</p>
+
+        <p>
+            trotz unserer Zahlungserinnerung vom {{.FirstReminderDate}} haben wir bisher keinen
+            Zahlungseingang für die nachfolgend aufgeführte Rechnung feststellen können.
+        </p>
+
+        <p>
+            Wir bitten Sie daher nochmals dringend, den ausstehenden Betrag umgehend zu begleichen.
+        </p>
+    </div>
+
+    <!-- Offener Betrag -->
+    <div class="amount-box">
+        <div class="label">Offener Gesamtbetrag inkl. Mahngebühren</div>
+        <div class="amount">{{.TotalDueFormatted}} {{.Currency}}</div>
+    </div>
+
+    <!-- Aufstellung -->
+    <table class="fees-table">
+        <tr>
+            <td>Offener Rechnungsbetrag ({{.InvoiceNumber}}):</td>
+            <td>{{.OutstandingAmountFormatted}} {{.Currency}}</td>
+        </tr>
+        {{if .LateFee}}
+        <tr>
+            <td>Mahngebühr:</td>
+            <td>{{.LateFeeFormatted}} {{.Currency}}</td>
+        </tr>
+        {{end}}
+        {{if .InterestAmount}}
+        <tr>
+            <td>Verzugszinsen ({{.InterestRate}}% p.a.):</td>
+            <td>{{.InterestAmountFormatted}} {{.Currency}}</td>
+        </tr>
+        {{end}}
+        <tr class="total-row">
+            <td>Gesamtbetrag fällig bis {{.NewDeadline}}:</td>
+            <td>{{.TotalDueFormatted}} {{.Currency}}</td>
+        </tr>
+    </table>
+
+    <!-- Bankverbindung -->
+    <div class="bank-section">
+        <div class="label">Bankverbindung</div>
+        <div class="bank-details">
+            <div class="row">
+                <span>Kontoinhaber:</span>
+                <span>{{.BankAccountHolder}}</span>
+            </div>
+            <div class="row">
+                <span>Bank:</span>
+                <span>{{.BankName}}</span>
+            </div>
+            <div class="row">
+                <span>IBAN:</span>
+                <span>{{.BankIBAN}}</span>
+            </div>
+            <div class="row">
+                <span>BIC:</span>
+                <span>{{.BankBIC}}</span>
+            </div>
+            <div class="row">
+                <span>Verwendungszweck:</span>
+                <span>{{.InvoiceNumber}}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Abschlusstext -->
+    <div class="closing-text">
+        <p>
+            Bitte überweisen Sie den Gesamtbetrag von <strong>{{.TotalDueFormatted}} {{.Currency}}</strong>
+            bis spätestens zum <strong>{{.NewDeadline}}</strong>.
+        </p>
+        <p>
+            Wir weisen Sie darauf hin, dass bei weiterer Nichtzahlung zusätzliche Kosten durch
+            die Einleitung eines gerichtlichen Mahnverfahrens entstehen können.
+        </p>
+        <p>
+            Sollte sich die Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie
+            diese Mahnung bitte als gegenstandslos.
+        </p>
+        <p>
+            Mit freundlichen Grüßen<br><br>
+            {{if .ManagingDirector}}{{.ManagingDirector}}{{else}}{{.CompanyName}}{{end}}
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <strong>{{.CompanyName}}</strong><br>
+                {{.CompanyStreet}}<br>
+                {{.CompanyPostCode}} {{.CompanyCity}}
+            </div>
+            <div class="footer-col">
+                {{if .ManagingDirector}}Geschäftsführer: {{.ManagingDirector}}<br>{{end}}
+                {{if .TaxNumber}}Steuernummer: {{.TaxNumber}}<br>{{end}}
+                {{if .VATId}}USt-IdNr.: {{.VATId}}{{end}}
+            </div>
+            <div class="footer-col">
+                Tel: {{.CompanyPhone}}<br>
+                {{.CompanyEmail}}<br>
+                {{.CompanyWebsite}}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

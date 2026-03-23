@@ -1,6 +1,8 @@
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { NotificationCenter } from '../NotificationCenter/NotificationCenter'
+import { User, LogOut, ChevronDown } from 'lucide-react'
 import './Header.scss'
 
 const pageTitles: Record<string, string> = {
@@ -23,6 +25,7 @@ const pageTitles: Record<string, string> = {
   '/audit': 'Audit-Log',
   '/admin': 'Admin',
   '/settings': 'Einstellungen',
+  '/profile': 'Profil',
 }
 
 function getPageTitle(pathname: string): string {
@@ -35,14 +38,37 @@ function getPageTitle(pathname: string): string {
 
 function Header() {
   const location = useLocation()
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
   const [searchQuery, setSearchQuery] = useState('')
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   const pageTitle = getPageTitle(location.pathname)
 
   const userInitials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() || '?'
+
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [userMenuOpen])
+
+  const handleLogout = () => {
+    setUserMenuOpen(false)
+    logout()
+    navigate('/login')
+  }
 
   return (
     <header className="header">
@@ -65,12 +91,38 @@ function Header() {
         </div>
 
         <div className="header__right">
-          <div className="header__user">
-            <div className="header__user-avatar">{userInitials}</div>
-            <div className="header__user-info">
-              <p className="header__user-name">{user?.name || user?.email || 'Benutzer'}</p>
-              <p className="header__user-email">{user?.email}</p>
-            </div>
+          <NotificationCenter />
+          <div className="header__user-wrapper" ref={userMenuRef}>
+            <button
+              className="header__user"
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+            >
+              <div className="header__user-avatar">{userInitials}</div>
+              <div className="header__user-info">
+                <p className="header__user-name">{user?.name || user?.email || 'Benutzer'}</p>
+                <p className="header__user-email">{user?.email}</p>
+              </div>
+              <ChevronDown size={14} className={`header__user-chevron ${userMenuOpen ? 'header__user-chevron--open' : ''}`} />
+            </button>
+            {userMenuOpen && (
+              <div className="header__user-menu">
+                <button
+                  className="header__user-menu-item"
+                  onClick={() => { setUserMenuOpen(false); navigate('/profile') }}
+                >
+                  <User size={16} />
+                  <span>Profil</span>
+                </button>
+                <div className="header__user-menu-divider" />
+                <button
+                  className="header__user-menu-item header__user-menu-item--danger"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  <span>Abmelden</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

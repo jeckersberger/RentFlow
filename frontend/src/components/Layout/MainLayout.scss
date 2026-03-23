@@ -16,7 +16,12 @@
   &__main {
     flex: 1;
     overflow-y: auto;
-    padding: var(--spacing-6);
+    padding: var(--spacing-8) var(--spacing-8);
+
+    // Smooth page transition for content
+    > * {
+      animation: contentFadeIn 0.3s ease-out;
+    }
   }
 
   @media (max-width: 768px) {
@@ -27,5 +32,16 @@
       // Extra bottom padding for mobile bottom nav
       padding-bottom: calc(var(--spacing-4) + 4.5rem);
     }
+  }
+}
+
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

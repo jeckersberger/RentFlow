@@ -1,5 +1,5 @@
-export type CrewRole = 'technician' | 'rigger' | 'driver' | 'supervisor' | 'assistant'
-export type AvailabilityStatus = 'available' | 'busy' | 'on_leave'
+export type CrewRole = 'technician' | 'rigger' | 'driver' | 'supervisor' | 'assistant' | 'stagehand' | 'light_tech' | 'sound_tech'
+export type AvailabilityStatus = 'available' | 'busy' | 'on_leave' | 'sick'
 export type QualificationType = 'IPAF' | 'electrical_cert' | 'first_aid' | 'forklift' | 'rope_access'
 
 export interface Qualification {

@@ -1,0 +1,716 @@
+- generic [ref=e1]:
+  - generic [ref=e6]:
+    - navigation [ref=e8]:
+      - generic [ref=e9]:
+        - button "" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: 
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Jhons
+          - paragraph [ref=e14]: jhons.rentmanapp.com
+        - button "chevron_right chevron_left" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: chevron_right
+          - generic [ref=e17]: chevron_left
+      - generic [ref=e18]:
+        - button "fact_check Implementierungsleitfaden" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]:
+            - generic [ref=e23]: fact_check
+            - generic [ref=e25]: Implementierungsleitfaden
+        - button "dashboard Dashboard" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: dashboard
+            - generic [ref=e32]: Dashboard
+        - generic [ref=e33]:
+          - button "event (Mein) Kalender expand_more expand_less" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: event
+              - generic [ref=e39]: (Mein) Kalender
+              - generic [ref=e40]:
+                - generic [ref=e41]: expand_more
+                - generic [ref=e42]: expand_less
+          - generic [ref=e43]:
+            - button "(Mein) Kalender" [ref=e44] [cursor=pointer]:
+              - generic [ref=e47]: (Mein) Kalender
+            - button "Job Board" [ref=e48] [cursor=pointer]:
+              - generic [ref=e51]: Job Board
+        - generic [ref=e52]:
+          - button " Lager expand_more expand_less" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - generic [ref=e56]: 
+              - generic [ref=e58]: Lager
+              - generic [ref=e59]:
+                - generic [ref=e60]: expand_more
+                - generic [ref=e61]: expand_less
+          - generic [ref=e62]:
+            - button "Lager" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]: Lager
+            - button "Kombinationen" [ref=e67] [cursor=pointer]:
+              - generic [ref=e70]: Kombinationen
+            - button "Cross-Docking-Übersicht" [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: Cross-Docking-Übersicht
+            - button "Lager-Tracking-Log" [ref=e75] [cursor=pointer]:
+              - generic [ref=e78]: Lager-Tracking-Log
+        - generic [ref=e80]:
+          - button "table_chart Projekte expand_more expand_less" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e84]: table_chart
+              - generic [ref=e86]: Projekte
+              - generic [ref=e87]:
+                - generic [ref=e88]: expand_more
+                - generic [ref=e89]: expand_less
+          - generic [ref=e90]:
+            - button "Projekte" [ref=e91] [cursor=pointer]:
+              - generic [ref=e94]: Projekte
+            - button "Vermietungsanfrage" [ref=e95] [cursor=pointer]:
+              - generic [ref=e98]: Vermietungsanfrage
+        - button "account_circle Personalplaner" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]:
+            - generic [ref=e103]: account_circle
+            - generic [ref=e105]: Personalplaner
+        - generic [ref=e106]:
+          - button "swap_horizontal_circle Mangel expand_more expand_less" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e110]: swap_horizontal_circle
+              - generic [ref=e112]: Mangel
+              - generic [ref=e113]:
+                - generic [ref=e114]: expand_more
+                - generic [ref=e115]: expand_less
+          - generic [ref=e116]:
+            - button "Mietengpässe" [active] [ref=e117] [cursor=pointer]:
+              - generic [ref=e120]: Mietengpässe
+            - button "Verkaufsengpässe" [ref=e121] [cursor=pointer]:
+              - generic [ref=e124]: Verkaufsengpässe
+            - button "Zumietungsjobs" [ref=e125] [cursor=pointer]:
+              - generic [ref=e128]: Zumietungsjobs
+        - generic [ref=e129]:
+          - button "monetization_on Finanzen expand_more expand_less" [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]:
+              - generic [ref=e133]: monetization_on
+              - generic [ref=e135]: Finanzen
+              - generic [ref=e136]:
+                - generic [ref=e137]: expand_more
+                - generic [ref=e138]: expand_less
+          - generic [ref=e139]:
+            - button "Rechnungen" [ref=e140] [cursor=pointer]:
+              - generic [ref=e143]: Rechnungen
+            - button "Zu fakturieren" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: Zu fakturieren
+            - button "Bestellungen" [ref=e148] [cursor=pointer]:
+              - generic [ref=e151]: Bestellungen
+        - generic [ref=e153]:
+          - button "category Materialien expand_more expand_less" [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]: category
+              - generic [ref=e159]: Materialien
+              - generic [ref=e160]:
+                - generic [ref=e161]: expand_more
+                - generic [ref=e162]: expand_less
+          - generic [ref=e163]:
+            - button "Materialien" [ref=e164] [cursor=pointer]:
+              - generic [ref=e167]: Materialien
+            - button "Seriennummern" [ref=e168] [cursor=pointer]:
+              - generic [ref=e171]: Seriennummern
+            - button "Lagerstandorte" [ref=e172] [cursor=pointer]:
+              - generic [ref=e175]: Lagerstandorte
+            - button "Archivierte Materialien" [ref=e176] [cursor=pointer]:
+              - generic [ref=e179]: Archivierte Materialien
+            - button "Archivierte Standorte" [ref=e180] [cursor=pointer]:
+              - generic [ref=e183]: Archivierte Standorte
+        - button "contact_phone Kontakte" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]:
+            - generic [ref=e188]: contact_phone
+            - generic [ref=e190]: Kontakte
+        - button "people Mitarbeiter" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]:
+            - generic [ref=e195]: people
+            - generic [ref=e197]: Mitarbeiter
+        - button "local_shipping Fahrzeuge" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - generic [ref=e202]: local_shipping
+            - generic [ref=e204]: Fahrzeuge
+        - button "assignment_turned_in Aufgaben" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: assignment_turned_in
+            - generic [ref=e212]: Aufgaben
+        - generic [ref=e213]:
+          - button "watch_later Stundenerfassung expand_more expand_less" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e217]: watch_later
+              - generic [ref=e219]: Stundenerfassung
+              - generic [ref=e220]:
+                - generic [ref=e221]: expand_more
+                - generic [ref=e222]: expand_less
+          - generic [ref=e223]:
+            - button "Stundenerfassung" [ref=e224] [cursor=pointer]:
+              - generic [ref=e227]: Stundenerfassung
+            - button "Aktivitäten" [ref=e228] [cursor=pointer]:
+              - generic [ref=e231]: Aktivitäten
+            - button "Abwesenheitsanträge" [ref=e232] [cursor=pointer]:
+              - generic [ref=e235]: Abwesenheitsanträge
+        - generic [ref=e236]:
+          - button "build Werkstatt expand_more expand_less" [ref=e237] [cursor=pointer]:
+            - generic [ref=e238]:
+              - generic [ref=e240]: build
+              - generic [ref=e242]: Werkstatt
+              - generic [ref=e243]:
+                - generic [ref=e244]: expand_more
+                - generic [ref=e245]: expand_less
+          - generic [ref=e246]:
+            - button "Reparaturen" [ref=e247] [cursor=pointer]:
+              - generic [ref=e250]: Reparaturen
+            - button "Prüfungen" [ref=e251] [cursor=pointer]:
+              - generic [ref=e254]: Prüfungen
+            - button "Zu prüfende Materialien" [ref=e255] [cursor=pointer]:
+              - generic [ref=e258]: Zu prüfende Materialien
+            - button "Verlorene Materialien" [ref=e259] [cursor=pointer]:
+              - generic [ref=e262]: Verlorene Materialien
+            - button "Bestandszählungen" [ref=e263] [cursor=pointer]:
+              - generic [ref=e266]: Bestandszählungen
+        - button "poll Statistik" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]:
+            - generic [ref=e271]: poll
+            - generic [ref=e273]: Statistik
+        - generic [ref=e275]:
+          - button "dvr Kommunikation expand_more expand_less" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]:
+              - generic [ref=e279]: dvr
+              - generic [ref=e281]: Kommunikation
+              - generic [ref=e282]:
+                - generic [ref=e283]: expand_more
+                - generic [ref=e284]: expand_less
+          - generic [ref=e285]:
+            - button "Kommunikations-Log" [ref=e286] [cursor=pointer]:
+              - generic [ref=e289]: Kommunikations-Log
+            - button "Gesendete E-Mails" [ref=e290] [cursor=pointer]:
+              - generic [ref=e293]: Gesendete E-Mails
+            - button "Erhaltene Notizen" [ref=e294] [cursor=pointer]:
+              - generic [ref=e297]: Erhaltene Notizen
+        - button "settings Konfiguration" [ref=e300] [cursor=pointer]:
+          - generic [ref=e301]:
+            - generic [ref=e303]: settings
+            - generic [ref=e305]: Konfiguration
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - generic [ref=e3004]:
+          - button "settings lock Konfiguration" [ref=e5690] [cursor=pointer]:
+            - generic [ref=e3008]:
+              - generic [ref=e3009]: settings
+              - generic [ref=e3010]: lock
+            - generic "Konfiguration" [ref=e3011]
+          - button "table_chart lock Liveauftritt Band Soultrain" [ref=e9303] [cursor=pointer]:
+            - generic [ref=e6876]:
+              - generic [ref=e6877]: table_chart
+              - generic [ref=e6878]: lock
+            - generic "Liveauftritt Band Soultrain" [ref=e6879]
+          - button "account_circle lock Personalplaner" [ref=e10417] [cursor=pointer]:
+            - generic [ref=e9625]:
+              - generic [ref=e9626]: account_circle
+              - generic [ref=e9627]: lock
+            - generic "Personalplaner" [ref=e9628]
+        - button "close" [ref=e6881] [cursor=pointer]:
+          - generic [ref=e6882]: close
+      - generic [ref=e309]:
+        - generic [ref=e311]: Testzeitraum läuft in 28Tagen ab
+        - button "auto_awesome Jetzt aktivieren mit 50% Rabatt" [ref=e312] [cursor=pointer]:
+          - generic [ref=e313]: auto_awesome
+          - generic [ref=e314]: Jetzt aktivieren mit 50% Rabatt
+      - button "search" [ref=e316] [cursor=pointer]:
+        - generic [ref=e317]: search
+      - button "timelapse" [ref=e320] [cursor=pointer]:
+        - generic [ref=e322]: timelapse
+      - button "help_outline" [ref=e325] [cursor=pointer]:
+        - generic [ref=e326]: help_outline
+      - button "notifications_none" [ref=e331] [cursor=pointer]:
+        - generic [ref=e333]: notifications_none
+      - button "JD John Dee" [ref=e335] [cursor=pointer]:
+        - generic [ref=e338]: JD
+        - generic [ref=e339]: John Dee
+    - generic [ref=e10584]:
+      - generic [ref=e10585]:
+        - heading "Mietengpässe" [level=1] [ref=e10589]
+        - link "help_outline" [ref=e10591] [cursor=pointer]:
+          - /url: http://support.rentman.io/hc/de/articles/360013836939?utm_source=rentmanapp&utm_medium=in_app_links&utm_campaign=sc_links_within_rentman
+      - generic [ref=e10594]:
+        - button "date_range Nächste Woche arrow_drop_down" [ref=e10598] [cursor=pointer]:
+          - generic [ref=e10599]: date_range
+          - generic [ref=e10600]: Nächste Woche
+          - generic [ref=e10601]: arrow_drop_down
+        - button " Lagerhaus Ost arrow_drop_down" [ref=e10604] [cursor=pointer]:
+          - generic [ref=e10605]: 
+          - generic [ref=e10606]: Lagerhaus Ost
+          - generic [ref=e10607]: arrow_drop_down
+        - generic [ref=e10608]:
+          - button "search close" [ref=e10612] [cursor=pointer]:
+            - generic [ref=e10613]: search
+            - generic [ref=e10614]: close
+          - button "filter_list Filter arrow_drop_down" [ref=e10617] [cursor=pointer]:
+            - generic [ref=e10618]: filter_list
+            - generic [ref=e10619]: Filter
+            - generic [ref=e10620]: arrow_drop_down
+      - generic [ref=e10623]:
+        - generic [ref=e10624]:
+          - generic [ref=e10625]:
+            - button "close" [ref=e10626] [cursor=pointer]:
+              - generic [ref=e10627]: close
+            - generic [ref=e10629]:
+              - button "swap_horiz Materialien zumieten" [ref=e10631] [cursor=pointer]:
+                - generic [ref=e10632]: swap_horiz
+                - generic [ref=e10633]: Materialien zumieten
+              - generic [ref=e10634]:
+                - button "find_replace Mangel beheben" [disabled]:
+                  - generic: find_replace
+                  - generic: Mangel beheben
+              - button "watch_later Zeitleiste öffnen" [ref=e10636] [cursor=pointer]:
+                - generic [ref=e10637]: watch_later
+                - generic [ref=e10638]: Zeitleiste öffnen
+              - button "more_vert" [ref=e10640] [cursor=pointer]:
+                - generic [ref=e10641]: more_vert
+          - button "settings Ansichten arrow_drop_down" [ref=e10645] [cursor=pointer]:
+            - generic [ref=e10646]: settings
+            - generic [ref=e10647]: Ansichten
+            - generic [ref=e10648]: arrow_drop_down
+        - generic [ref=e10651]:
+          - alert [ref=e10652]
+          - grid [ref=e10653]:
+            - generic:
+              - rowgroup [ref=e10654]:
+                - row "check remove expand_more Name (Material) keine Sortierung Mangel keine Sortierung" [ref=e10659]:
+                  - columnheader "check remove" [ref=e10661]:
+                    - generic [ref=e10663] [cursor=pointer]:
+                      - checkbox [ref=e10664]
+                      - generic:
+                        - generic: check
+                        - generic: remove
+                  - button "expand_more" [ref=e10668] [cursor=pointer]
+                  - columnheader "Name (Material) keine Sortierung" [ref=e10670] [cursor=pointer]:
+                    - button "Name (Material)" [ref=e10671]:
+                      - generic [ref=e10672]: Name (Material)
+                    - text: more_vert
+                  - columnheader "Mangel keine Sortierung" [ref=e10676] [cursor=pointer]:
+                    - button "Mangel" [ref=e10677]:
+                      - generic [ref=e10678]: Mangel
+                    - text: more_vert
+              - rowgroup [ref=e10680]:
+                - generic [ref=e10681]:
+                  - row "check remove expand_more Liveauftritt Band Soultrain (2)" [ref=e10683]:
+                    - generic [ref=e10684] [cursor=pointer]:
+                      - generic [ref=e10687]:
+                        - checkbox [ref=e10688]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button "expand_more" [ref=e10691]:
+                        - generic [ref=e10692]: expand_more
+                      - generic [ref=e10696]: Liveauftritt Band Soultrain (2)
+                  - row "check remove QSC K12.2 Lautsprecher -1" [ref=e10701]:
+                    - generic [ref=e10702]:
+                      - generic [ref=e10705] [cursor=pointer]:
+                        - checkbox [ref=e10706]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10709] [cursor=pointer]
+                      - generic [ref=e10713] [cursor=pointer]: QSC K12.2 Lautsprecher
+                      - generic [ref=e10717] [cursor=pointer]: "-1"
+                  - row "check remove Drummic Set -1" [ref=e10719]:
+                    - generic [ref=e10720]:
+                      - generic [ref=e10723] [cursor=pointer]:
+                        - checkbox [ref=e10724]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10727] [cursor=pointer]
+                      - generic [ref=e10731] [cursor=pointer]: Drummic Set
+                      - generic [ref=e10735] [cursor=pointer]: "-1"
+                  - row "check remove expand_more Aufnahmetermin Fred Sheeran (3)" [ref=e10737]:
+                    - generic [ref=e10738] [cursor=pointer]:
+                      - generic [ref=e10741]:
+                        - checkbox [ref=e10742]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button "expand_more" [ref=e10745]:
+                        - generic [ref=e10746]: expand_more
+                      - generic [ref=e10750]: Aufnahmetermin Fred Sheeran (3)
+                  - row "check remove QSC K12.2 Lautsprecher -1" [ref=e10755]:
+                    - generic [ref=e10756]:
+                      - generic [ref=e10759] [cursor=pointer]:
+                        - checkbox [ref=e10760]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10763] [cursor=pointer]
+                      - generic [ref=e10767] [cursor=pointer]: QSC K12.2 Lautsprecher
+                      - generic [ref=e10771] [cursor=pointer]: "-1"
+                  - row "check remove Taperack (Venice 160, 2x MD player, FX) -1" [ref=e10773]:
+                    - generic [ref=e10774]:
+                      - generic [ref=e10777] [cursor=pointer]:
+                        - checkbox [ref=e10778]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10781] [cursor=pointer]
+                      - generic [ref=e10785] [cursor=pointer]: Taperack (Venice 160, 2x MD player, FX)
+                      - generic [ref=e10789] [cursor=pointer]: "-1"
+                  - row "check remove Prolyte Stagedex Topline 2x1m -6" [ref=e10791]:
+                    - generic [ref=e10792]:
+                      - generic [ref=e10795] [cursor=pointer]:
+                        - checkbox [ref=e10796]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10799] [cursor=pointer]
+                      - generic [ref=e10803] [cursor=pointer]: Prolyte Stagedex Topline 2x1m
+                      - generic [ref=e10807] [cursor=pointer]: "-6"
+                  - row "check remove expand_more Abi Feier Dryhire (3)" [ref=e10809]:
+                    - generic [ref=e10810] [cursor=pointer]:
+                      - generic [ref=e10813]:
+                        - checkbox [ref=e10814]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button "expand_more" [ref=e10817]:
+                        - generic [ref=e10818]: expand_more
+                      - generic [ref=e10822]: Abi Feier Dryhire (3)
+                  - row "check remove QSC K12.2 Lautsprecher -1" [ref=e10827]:
+                    - generic [ref=e10828]:
+                      - generic [ref=e10831] [cursor=pointer]:
+                        - checkbox [ref=e10832]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10835] [cursor=pointer]
+                      - generic [ref=e10839] [cursor=pointer]: QSC K12.2 Lautsprecher
+                      - generic [ref=e10843] [cursor=pointer]: "-1"
+                  - row "check remove Midas Venice 160 Mixer -1" [ref=e10845]:
+                    - generic [ref=e10846]:
+                      - generic [ref=e10849] [cursor=pointer]:
+                        - checkbox [ref=e10850]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10853] [cursor=pointer]
+                      - generic [ref=e10857] [cursor=pointer]: Midas Venice 160 Mixer
+                      - generic [ref=e10861] [cursor=pointer]: "-1"
+                  - row "check remove Shure UR4D+ 4-Wege Empfänger -1" [ref=e10863]:
+                    - generic [ref=e10864]:
+                      - generic [ref=e10867] [cursor=pointer]:
+                        - checkbox [ref=e10868]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10871] [cursor=pointer]
+                      - generic [ref=e10875] [cursor=pointer]: Shure UR4D+ 4-Wege Empfänger
+                      - generic [ref=e10879] [cursor=pointer]: "-1"
+                  - row "check remove expand_more Philips Produktvorstellung (1)" [ref=e10881]:
+                    - generic [ref=e10882] [cursor=pointer]:
+                      - generic [ref=e10885]:
+                        - checkbox [ref=e10886]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button "expand_more" [ref=e10889]:
+                        - generic [ref=e10890]: expand_more
+                      - generic [ref=e10894]: Philips Produktvorstellung (1)
+                  - row "check remove QSC KS118 Subwoofer -2" [ref=e10899]:
+                    - generic [ref=e10900]:
+                      - generic [ref=e10903] [cursor=pointer]:
+                        - checkbox [ref=e10904]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10907] [cursor=pointer]
+                      - generic [ref=e10911] [cursor=pointer]: QSC KS118 Subwoofer
+                      - generic [ref=e10915] [cursor=pointer]: "-2"
+                  - row "check remove expand_more Konzert in der Au (7)" [ref=e10917]:
+                    - generic [ref=e10918] [cursor=pointer]:
+                      - generic [ref=e10921]:
+                        - checkbox [ref=e10922]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button "expand_more" [ref=e10925]:
+                        - generic [ref=e10926]: expand_more
+                      - generic [ref=e10930]: Konzert in der Au (7)
+                  - row "check remove ETC Source Four Profile 19˚ Profile Spot -10" [ref=e10935]:
+                    - generic [ref=e10936]:
+                      - generic [ref=e10939] [cursor=pointer]:
+                        - checkbox [ref=e10940]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10943] [cursor=pointer]
+                      - generic [ref=e10947] [cursor=pointer]: ETC Source Four Profile 19˚ Profile Spot
+                      - generic [ref=e10951] [cursor=pointer]: "-10"
+                  - row "check remove QSC K12.2 Lautsprecher -4" [ref=e10953]:
+                    - generic [ref=e10954]:
+                      - generic [ref=e10957] [cursor=pointer]:
+                        - checkbox [ref=e10958]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10961] [cursor=pointer]
+                      - generic [ref=e10965] [cursor=pointer]: QSC K12.2 Lautsprecher
+                      - generic [ref=e10969] [cursor=pointer]: "-4"
+                  - row "check remove Digico SD8 Mixer -1" [ref=e10971]:
+                    - generic [ref=e10972]:
+                      - generic [ref=e10975] [cursor=pointer]:
+                        - checkbox [ref=e10976]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10979] [cursor=pointer]
+                      - generic [ref=e10983] [cursor=pointer]: Digico SD8 Mixer
+                      - generic [ref=e10987] [cursor=pointer]: "-1"
+                  - row "check remove Digico D-Rack Stagerack -1" [ref=e10989]:
+                    - generic [ref=e10990]:
+                      - generic [ref=e10993] [cursor=pointer]:
+                        - checkbox [ref=e10994]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e10997] [cursor=pointer]
+                      - generic [ref=e11001] [cursor=pointer]: Digico D-Rack Stagerack
+                      - generic [ref=e11005] [cursor=pointer]: "-1"
+                  - row "check remove Shure UR4D+ 4-Wege Empfänger -3" [ref=e11007]:
+                    - generic [ref=e11008]:
+                      - generic [ref=e11011] [cursor=pointer]:
+                        - checkbox [ref=e11012]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11015] [cursor=pointer]
+                      - generic [ref=e11019] [cursor=pointer]: Shure UR4D+ 4-Wege Empfänger
+                      - generic [ref=e11023] [cursor=pointer]: "-3"
+                  - row "check remove Shure UR1-M Bodypack -14" [ref=e11025]:
+                    - generic [ref=e11026]:
+                      - generic [ref=e11029] [cursor=pointer]:
+                        - checkbox [ref=e11030]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11033] [cursor=pointer]
+                      - generic [ref=e11037] [cursor=pointer]: Shure UR1-M Bodypack
+                      - generic [ref=e11041] [cursor=pointer]: "-14"
+                  - row "check remove DPA 4060 Headset -14" [ref=e11043]:
+                    - generic [ref=e11044]:
+                      - generic [ref=e11047] [cursor=pointer]:
+                        - checkbox [ref=e11048]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11051] [cursor=pointer]
+                      - generic [ref=e11055] [cursor=pointer]: DPA 4060 Headset
+                      - generic [ref=e11059] [cursor=pointer]: "-14"
+                  - row "check remove expand_more Soultrain Europatour (2)" [ref=e11061]:
+                    - generic [ref=e11062] [cursor=pointer]:
+                      - generic [ref=e11065]:
+                        - checkbox [ref=e11066]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button "expand_more" [ref=e11069]:
+                        - generic [ref=e11070]: expand_more
+                      - generic [ref=e11074]: Soultrain Europatour (2)
+                  - row "check remove QSC K12.2 Lautsprecher -1" [ref=e11079]:
+                    - generic [ref=e11080]:
+                      - generic [ref=e11083] [cursor=pointer]:
+                        - checkbox [ref=e11084]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11087] [cursor=pointer]
+                      - generic [ref=e11091] [cursor=pointer]: QSC K12.2 Lautsprecher
+                      - generic [ref=e11095] [cursor=pointer]: "-1"
+                  - row "check remove QSC K12.2 Lautsprecher -2" [ref=e11097]:
+                    - generic [ref=e11098]:
+                      - generic [ref=e11101] [cursor=pointer]:
+                        - checkbox [ref=e11102]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11105] [cursor=pointer]
+                      - generic [ref=e11109] [cursor=pointer]: QSC K12.2 Lautsprecher
+                      - generic [ref=e11113] [cursor=pointer]: "-2"
+            - rowgroup [ref=e11115]:
+              - row "Geplant keine Sortierung Anzahl aus eigenem Lager keine Sortierung Zugemietet keine Sortierung Grund keine Sortierung Planen ab keine Sortierung Planen bis keine Sortierung" [ref=e11120]:
+                - columnheader "Geplant keine Sortierung" [ref=e11122] [cursor=pointer]:
+                  - button "Geplant" [ref=e11123]:
+                    - generic [ref=e11124]: Geplant
+                  - text: more_vert
+                - columnheader "Anzahl aus eigenem Lager keine Sortierung" [ref=e11128] [cursor=pointer]:
+                  - button "Anzahl aus eigenem Lager" [ref=e11129]:
+                    - generic [ref=e11130]: Anzahl aus eigenem Lager
+                  - text: more_vert
+                - columnheader "Zugemietet keine Sortierung" [ref=e11134] [cursor=pointer]:
+                  - button "Zugemietet" [ref=e11135]:
+                    - generic [ref=e11136]: Zugemietet
+                  - text: more_vert
+                - columnheader "Grund keine Sortierung" [ref=e11140] [cursor=pointer]:
+                  - button "Grund" [ref=e11141]:
+                    - generic [ref=e11142]: Grund
+                  - text: more_vert
+                - columnheader "Planen ab keine Sortierung" [ref=e11146] [cursor=pointer]:
+                  - button "Planen ab" [ref=e11147]:
+                    - generic [ref=e11148]: Planen ab
+                  - text: more_vert
+                - columnheader "Planen bis keine Sortierung" [ref=e11152] [cursor=pointer]:
+                  - button "Planen bis" [ref=e11153]:
+                    - generic [ref=e11154]: Planen bis
+                  - text: more_vert
+            - rowgroup [ref=e11156]:
+              - generic [ref=e11157]:
+                - row [ref=e11159]
+                - row "2 2 0 Mangel aufgrund von Verspätungen bei einem anderen Projekt Sonntag 22.03.2026 Donnerstag 26.03.2026" [ref=e11180]:
+                  - generic [ref=e11181]:
+                    - generic [ref=e11185] [cursor=pointer]: "2"
+                    - generic [ref=e11189] [cursor=pointer]: "2"
+                    - generic [ref=e11193] [cursor=pointer]: "0"
+                    - generic [ref=e11197] [cursor=pointer]: Mangel aufgrund von Verspätungen bei einem anderen Projekt
+                    - generic [ref=e11201] [cursor=pointer]: Sonntag 22.03.2026
+                    - generic [ref=e11205] [cursor=pointer]: Donnerstag 26.03.2026
+                - row "1 0 0 Mangel Sonntag 22.03.2026 Donnerstag 26.03.2026" [ref=e11207]:
+                  - generic [ref=e11208]:
+                    - generic [ref=e11212] [cursor=pointer]: "1"
+                    - generic [ref=e11216] [cursor=pointer]: "0"
+                    - generic [ref=e11220] [cursor=pointer]: "0"
+                    - generic [ref=e11224] [cursor=pointer]: Mangel
+                    - generic [ref=e11228] [cursor=pointer]: Sonntag 22.03.2026
+                    - generic [ref=e11232] [cursor=pointer]: Donnerstag 26.03.2026
+                - row [ref=e11234]
+                - row "2 2 0 Ungültige Reservierungen Sonntag 29.03.2026 Sonntag 29.03.2026" [ref=e11255]:
+                  - generic [ref=e11256]:
+                    - generic [ref=e11260] [cursor=pointer]: "2"
+                    - generic [ref=e11264] [cursor=pointer]: "2"
+                    - generic [ref=e11268] [cursor=pointer]: "0"
+                    - generic [ref=e11272] [cursor=pointer]: Ungültige Reservierungen
+                    - generic [ref=e11276] [cursor=pointer]: Sonntag 29.03.2026
+                    - generic [ref=e11280] [cursor=pointer]: Sonntag 29.03.2026
+                - row "1 1 0 Ungültige Reservierungen Sonntag 29.03.2026 Sonntag 29.03.2026" [ref=e11282]:
+                  - generic [ref=e11283]:
+                    - generic [ref=e11287] [cursor=pointer]: "1"
+                    - generic [ref=e11291] [cursor=pointer]: "1"
+                    - generic [ref=e11295] [cursor=pointer]: "0"
+                    - generic [ref=e11299] [cursor=pointer]: Ungültige Reservierungen
+                    - generic [ref=e11303] [cursor=pointer]: Sonntag 29.03.2026
+                    - generic [ref=e11307] [cursor=pointer]: Sonntag 29.03.2026
+                - row "6 0 0 Mangel Sonntag 29.03.2026 Sonntag 29.03.2026" [ref=e11309]:
+                  - generic [ref=e11310]:
+                    - generic [ref=e11314] [cursor=pointer]: "6"
+                    - generic [ref=e11318] [cursor=pointer]: "0"
+                    - generic [ref=e11322] [cursor=pointer]: "0"
+                    - generic [ref=e11326] [cursor=pointer]: Mangel
+                    - generic [ref=e11330] [cursor=pointer]: Sonntag 29.03.2026
+                    - generic [ref=e11334] [cursor=pointer]: Sonntag 29.03.2026
+                - row [ref=e11336]
+                - row "7 7 0 Ungültige Reservierungen Mittwoch 25.03.2026 Montag 30.03.2026" [ref=e11357]:
+                  - generic [ref=e11358]:
+                    - generic [ref=e11362] [cursor=pointer]: "7"
+                    - generic [ref=e11366] [cursor=pointer]: "7"
+                    - generic [ref=e11370] [cursor=pointer]: "0"
+                    - generic [ref=e11374] [cursor=pointer]: Ungültige Reservierungen
+                    - generic [ref=e11378] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11382] [cursor=pointer]: Montag 30.03.2026
+                - row "1 1 0 Ungültige Reservierungen Mittwoch 25.03.2026 Montag 30.03.2026" [ref=e11384]:
+                  - generic [ref=e11385]:
+                    - generic [ref=e11389] [cursor=pointer]: "1"
+                    - generic [ref=e11393] [cursor=pointer]: "1"
+                    - generic [ref=e11397] [cursor=pointer]: "0"
+                    - generic [ref=e11401] [cursor=pointer]: Ungültige Reservierungen
+                    - generic [ref=e11405] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11409] [cursor=pointer]: Montag 30.03.2026
+                - row "2 1 0 Mangel Mittwoch 25.03.2026 Montag 30.03.2026" [ref=e11411]:
+                  - generic [ref=e11412]:
+                    - generic [ref=e11416] [cursor=pointer]: "2"
+                    - generic [ref=e11420] [cursor=pointer]: "1"
+                    - generic [ref=e11424] [cursor=pointer]: "0"
+                    - generic [ref=e11428] [cursor=pointer]: Mangel
+                    - generic [ref=e11432] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11436] [cursor=pointer]: Montag 30.03.2026
+                - row [ref=e11438]
+                - row "2 0 0 Mangel Samstag 28.03.2026 Donnerstag 02.04.2026" [ref=e11459]:
+                  - generic [ref=e11460]:
+                    - generic [ref=e11464] [cursor=pointer]: "2"
+                    - generic [ref=e11468] [cursor=pointer]: "0"
+                    - generic [ref=e11472] [cursor=pointer]: "0"
+                    - generic [ref=e11476] [cursor=pointer]: Mangel
+                    - generic [ref=e11480] [cursor=pointer]: Samstag 28.03.2026
+                    - generic [ref=e11484] [cursor=pointer]: Donnerstag 02.04.2026
+                - row [ref=e11486]
+                - row "10 0 0 Mangel Mittwoch 25.03.2026 Samstag 25.04.2026" [ref=e11507]:
+                  - generic [ref=e11508]:
+                    - generic [ref=e11512] [cursor=pointer]: "10"
+                    - generic [ref=e11516] [cursor=pointer]: "0"
+                    - generic [ref=e11520] [cursor=pointer]: "0"
+                    - generic [ref=e11524] [cursor=pointer]: Mangel
+                    - generic [ref=e11528] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11532] [cursor=pointer]: Samstag 25.04.2026
+                - row "4 0 0 Mangel Mittwoch 25.03.2026 Samstag 25.04.2026" [ref=e11534]:
+                  - generic [ref=e11535]:
+                    - generic [ref=e11539] [cursor=pointer]: "4"
+                    - generic [ref=e11543] [cursor=pointer]: "0"
+                    - generic [ref=e11547] [cursor=pointer]: "0"
+                    - generic [ref=e11551] [cursor=pointer]: Mangel
+                    - generic [ref=e11555] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11559] [cursor=pointer]: Samstag 25.04.2026
+                - row "1 0 0 Mangel Mittwoch 25.03.2026 Samstag 25.04.2026" [ref=e11561]:
+                  - generic [ref=e11562]:
+                    - generic [ref=e11566] [cursor=pointer]: "1"
+                    - generic [ref=e11570] [cursor=pointer]: "0"
+                    - generic [ref=e11574] [cursor=pointer]: "0"
+                    - generic [ref=e11578] [cursor=pointer]: Mangel
+                    - generic [ref=e11582] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11586] [cursor=pointer]: Samstag 25.04.2026
+                - row "1 0 0 Mangel Mittwoch 25.03.2026 Samstag 25.04.2026" [ref=e11588]:
+                  - generic [ref=e11589]:
+                    - generic [ref=e11593] [cursor=pointer]: "1"
+                    - generic [ref=e11597] [cursor=pointer]: "0"
+                    - generic [ref=e11601] [cursor=pointer]: "0"
+                    - generic [ref=e11605] [cursor=pointer]: Mangel
+                    - generic [ref=e11609] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11613] [cursor=pointer]: Samstag 25.04.2026
+                - row "4 1 0 Mangel Mittwoch 25.03.2026 Samstag 25.04.2026" [ref=e11615]:
+                  - generic [ref=e11616]:
+                    - generic [ref=e11620] [cursor=pointer]: "4"
+                    - generic [ref=e11624] [cursor=pointer]: "1"
+                    - generic [ref=e11628] [cursor=pointer]: "0"
+                    - generic [ref=e11632] [cursor=pointer]: Mangel
+                    - generic [ref=e11636] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11640] [cursor=pointer]: Samstag 25.04.2026
+                - row "20 6 0 Mangel Mittwoch 25.03.2026 Samstag 25.04.2026" [ref=e11642]:
+                  - generic [ref=e11643]:
+                    - generic [ref=e11647] [cursor=pointer]: "20"
+                    - generic [ref=e11651] [cursor=pointer]: "6"
+                    - generic [ref=e11655] [cursor=pointer]: "0"
+                    - generic [ref=e11659] [cursor=pointer]: Mangel
+                    - generic [ref=e11663] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11667] [cursor=pointer]: Samstag 25.04.2026
+                - row "20 6 0 Mangel Mittwoch 25.03.2026 Samstag 25.04.2026" [ref=e11669]:
+                  - generic [ref=e11670]:
+                    - generic [ref=e11674] [cursor=pointer]: "20"
+                    - generic [ref=e11678] [cursor=pointer]: "6"
+                    - generic [ref=e11682] [cursor=pointer]: "0"
+                    - generic [ref=e11686] [cursor=pointer]: Mangel
+                    - generic [ref=e11690] [cursor=pointer]: Mittwoch 25.03.2026
+                    - generic [ref=e11694] [cursor=pointer]: Samstag 25.04.2026
+                - row [ref=e11696]
+                - row "2 1 0 Mangel Freitag 27.03.2026 Samstag 28.03.2026" [ref=e11717]:
+                  - generic [ref=e11718]:
+                    - generic [ref=e11722] [cursor=pointer]: "2"
+                    - generic [ref=e11726] [cursor=pointer]: "1"
+                    - generic [ref=e11730] [cursor=pointer]: "0"
+                    - generic [ref=e11734] [cursor=pointer]: Mangel
+                    - generic [ref=e11738] [cursor=pointer]: Freitag 27.03.2026
+                    - generic [ref=e11742] [cursor=pointer]: Samstag 28.03.2026
+                - row "2 0 0 Mangel Sonntag 29.03.2026 Montag 30.03.2026" [ref=e11744]:
+                  - generic [ref=e11745]:
+                    - generic [ref=e11749] [cursor=pointer]: "2"
+                    - generic [ref=e11753] [cursor=pointer]: "0"
+                    - generic [ref=e11757] [cursor=pointer]: "0"
+                    - generic [ref=e11761] [cursor=pointer]: Mangel
+                    - generic [ref=e11765] [cursor=pointer]: Sonntag 29.03.2026
+                    - generic [ref=e11769] [cursor=pointer]: Montag 30.03.2026
+            - region [ref=e11770]
+  - iframe [ref=e497]:
+    - button "Messaging-Fenster öffnen" [ref=f16e5] [cursor=pointer]:
+      - img [ref=f16e7]
+      - img [ref=f16e10]

@@ -1,0 +1,1168 @@
+- generic [ref=e1]:
+  - generic [ref=e6]:
+    - navigation [ref=e8]:
+      - generic [ref=e9]:
+        - button "" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: 
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Jhons
+          - paragraph [ref=e14]: jhons.rentmanapp.com
+        - button "chevron_right chevron_left" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: chevron_right
+          - generic [ref=e17]: chevron_left
+      - generic [ref=e18]:
+        - button "fact_check Implementierungsleitfaden" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]:
+            - generic [ref=e23]: fact_check
+            - generic [ref=e25]: Implementierungsleitfaden
+        - button "dashboard Dashboard" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: dashboard
+            - generic [ref=e32]: Dashboard
+        - generic [ref=e33]:
+          - button "event (Mein) Kalender expand_more expand_less" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: event
+              - generic [ref=e39]: (Mein) Kalender
+              - generic [ref=e40]:
+                - generic [ref=e41]: expand_more
+                - generic [ref=e42]: expand_less
+          - generic [ref=e43]:
+            - button "(Mein) Kalender" [ref=e44] [cursor=pointer]:
+              - generic [ref=e47]: (Mein) Kalender
+            - button "Job Board" [ref=e48] [cursor=pointer]:
+              - generic [ref=e51]: Job Board
+        - generic [ref=e52]:
+          - button " Lager expand_more expand_less" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - generic [ref=e56]: 
+              - generic [ref=e58]: Lager
+              - generic [ref=e59]:
+                - generic [ref=e60]: expand_more
+                - generic [ref=e61]: expand_less
+          - generic [ref=e62]:
+            - button "Lager" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]: Lager
+            - button "Kombinationen" [ref=e67] [cursor=pointer]:
+              - generic [ref=e70]: Kombinationen
+            - button "Cross-Docking-Übersicht" [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: Cross-Docking-Übersicht
+            - button "Lager-Tracking-Log" [ref=e75] [cursor=pointer]:
+              - generic [ref=e78]: Lager-Tracking-Log
+        - generic [ref=e80]:
+          - button "table_chart Projekte expand_more expand_less" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e84]: table_chart
+              - generic [ref=e86]: Projekte
+              - generic [ref=e87]:
+                - generic [ref=e88]: expand_more
+                - generic [ref=e89]: expand_less
+          - generic [ref=e90]:
+            - button "Projekte" [ref=e91] [cursor=pointer]:
+              - generic [ref=e94]: Projekte
+            - button "Vermietungsanfrage" [ref=e95] [cursor=pointer]:
+              - generic [ref=e98]: Vermietungsanfrage
+        - button "account_circle Personalplaner" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]:
+            - generic [ref=e103]: account_circle
+            - generic [ref=e105]: Personalplaner
+        - generic [ref=e106]:
+          - button "swap_horizontal_circle Mangel expand_more expand_less" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e110]: swap_horizontal_circle
+              - generic [ref=e112]: Mangel
+              - generic [ref=e113]:
+                - generic [ref=e114]: expand_more
+                - generic [ref=e115]: expand_less
+          - generic [ref=e116]:
+            - button "Mietengpässe" [ref=e117] [cursor=pointer]:
+              - generic [ref=e120]: Mietengpässe
+            - button "Verkaufsengpässe" [ref=e121] [cursor=pointer]:
+              - generic [ref=e124]: Verkaufsengpässe
+            - button "Zumietungsjobs" [ref=e125] [cursor=pointer]:
+              - generic [ref=e128]: Zumietungsjobs
+        - generic [ref=e129]:
+          - button "monetization_on Finanzen expand_more expand_less" [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]:
+              - generic [ref=e133]: monetization_on
+              - generic [ref=e135]: Finanzen
+              - generic [ref=e136]:
+                - generic [ref=e137]: expand_more
+                - generic [ref=e138]: expand_less
+          - generic [ref=e139]:
+            - button "Rechnungen" [ref=e140] [cursor=pointer]:
+              - generic [ref=e143]: Rechnungen
+            - button "Zu fakturieren" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: Zu fakturieren
+            - button "Bestellungen" [ref=e148] [cursor=pointer]:
+              - generic [ref=e151]: Bestellungen
+        - generic [ref=e153]:
+          - button "category Materialien expand_more expand_less" [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]: category
+              - generic [ref=e159]: Materialien
+              - generic [ref=e160]:
+                - generic [ref=e161]: expand_more
+                - generic [ref=e162]: expand_less
+          - generic [ref=e163]:
+            - button "Materialien" [ref=e164] [cursor=pointer]:
+              - generic [ref=e167]: Materialien
+            - button "Seriennummern" [ref=e168] [cursor=pointer]:
+              - generic [ref=e171]: Seriennummern
+            - button "Lagerstandorte" [ref=e172] [cursor=pointer]:
+              - generic [ref=e175]: Lagerstandorte
+            - button "Archivierte Materialien" [ref=e176] [cursor=pointer]:
+              - generic [ref=e179]: Archivierte Materialien
+            - button "Archivierte Standorte" [ref=e180] [cursor=pointer]:
+              - generic [ref=e183]: Archivierte Standorte
+        - button "contact_phone Kontakte" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]:
+            - generic [ref=e188]: contact_phone
+            - generic [ref=e190]: Kontakte
+        - button "people Mitarbeiter" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]:
+            - generic [ref=e195]: people
+            - generic [ref=e197]: Mitarbeiter
+        - button "local_shipping Fahrzeuge" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - generic [ref=e202]: local_shipping
+            - generic [ref=e204]: Fahrzeuge
+        - button "assignment_turned_in Aufgaben" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: assignment_turned_in
+            - generic [ref=e212]: Aufgaben
+        - generic [ref=e213]:
+          - button "watch_later Stundenerfassung expand_more expand_less" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e217]: watch_later
+              - generic [ref=e219]: Stundenerfassung
+              - generic [ref=e220]:
+                - generic [ref=e221]: expand_more
+                - generic [ref=e222]: expand_less
+          - generic [ref=e223]:
+            - button "Stundenerfassung" [ref=e224] [cursor=pointer]:
+              - generic [ref=e227]: Stundenerfassung
+            - button "Aktivitäten" [ref=e228] [cursor=pointer]:
+              - generic [ref=e231]: Aktivitäten
+            - button "Abwesenheitsanträge" [ref=e232] [cursor=pointer]:
+              - generic [ref=e235]: Abwesenheitsanträge
+        - generic [ref=e236]:
+          - button "build Werkstatt expand_more expand_less" [ref=e237] [cursor=pointer]:
+            - generic [ref=e238]:
+              - generic [ref=e240]: build
+              - generic [ref=e242]: Werkstatt
+              - generic [ref=e243]:
+                - generic [ref=e244]: expand_more
+                - generic [ref=e245]: expand_less
+          - generic [ref=e246]:
+            - button "Reparaturen" [ref=e247] [cursor=pointer]:
+              - generic [ref=e250]: Reparaturen
+            - button "Prüfungen" [ref=e251] [cursor=pointer]:
+              - generic [ref=e254]: Prüfungen
+            - button "Zu prüfende Materialien" [ref=e255] [cursor=pointer]:
+              - generic [ref=e258]: Zu prüfende Materialien
+            - button "Verlorene Materialien" [ref=e259] [cursor=pointer]:
+              - generic [ref=e262]: Verlorene Materialien
+            - button "Bestandszählungen" [ref=e263] [cursor=pointer]:
+              - generic [ref=e266]: Bestandszählungen
+        - button "poll Statistik" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]:
+            - generic [ref=e271]: poll
+            - generic [ref=e273]: Statistik
+        - generic [ref=e275]:
+          - button "dvr Kommunikation expand_more expand_less" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]:
+              - generic [ref=e279]: dvr
+              - generic [ref=e281]: Kommunikation
+              - generic [ref=e282]:
+                - generic [ref=e283]: expand_more
+                - generic [ref=e284]: expand_less
+          - generic [ref=e285]:
+            - button "Kommunikations-Log" [ref=e286] [cursor=pointer]:
+              - generic [ref=e289]: Kommunikations-Log
+            - button "Gesendete E-Mails" [ref=e290] [cursor=pointer]:
+              - generic [ref=e293]: Gesendete E-Mails
+            - button "Erhaltene Notizen" [ref=e294] [cursor=pointer]:
+              - generic [ref=e297]: Erhaltene Notizen
+        - button "settings Konfiguration" [ref=e300] [cursor=pointer]:
+          - generic [ref=e301]:
+            - generic [ref=e303]: settings
+            - generic [ref=e305]: Konfiguration
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - generic [ref=e3004]:
+          - button "settings lock Konfiguration" [ref=e5690] [cursor=pointer]:
+            - generic [ref=e3008]:
+              - generic [ref=e3009]: settings
+              - generic [ref=e3010]: lock
+            - generic "Konfiguration" [ref=e3011]
+          - button "table_chart lock Liveauftritt Band Soultrain highlight_off" [ref=e6875] [cursor=pointer]:
+            - generic [ref=e6876]:
+              - generic [ref=e6877]: table_chart
+              - generic [ref=e6878]: lock
+            - generic "Liveauftritt Band Soultrain" [ref=e6879]
+            - generic [ref=e6880]: highlight_off
+        - button "close" [ref=e6881] [cursor=pointer]:
+          - generic [ref=e6882]: close
+      - generic [ref=e309]:
+        - generic [ref=e311]: Testzeitraum läuft in 28Tagen ab
+        - button "auto_awesome Jetzt aktivieren mit 50% Rabatt" [ref=e312] [cursor=pointer]:
+          - generic [ref=e313]: auto_awesome
+          - generic [ref=e314]: Jetzt aktivieren mit 50% Rabatt
+      - button "search" [ref=e316] [cursor=pointer]:
+        - generic [ref=e317]: search
+      - button "timelapse" [ref=e320] [cursor=pointer]:
+        - generic [ref=e322]: timelapse
+      - button "help_outline" [ref=e325] [cursor=pointer]:
+        - generic [ref=e326]: help_outline
+      - button "notifications_none" [ref=e331] [cursor=pointer]:
+        - generic [ref=e333]: notifications_none
+      - button "JD John Dee" [ref=e335] [cursor=pointer]:
+        - generic [ref=e338]: JD
+        - generic [ref=e339]: John Dee
+    - generic [ref=e6884]:
+      - generic [ref=e6885]:
+        - button "80 Liveauftritt Band Soultrain Keine Subprojekte arrow_drop_down" [ref=e6888] [cursor=pointer]:
+          - generic [ref=e6889]:
+            - generic [ref=e6890]:
+              - generic [ref=e6891]: "80"
+              - heading "Liveauftritt Band Soultrain" [level=1] [ref=e6892]
+            - generic [ref=e6895]:
+              - generic [ref=e6896]: Keine Subprojekte
+              - generic [ref=e6897]: arrow_drop_down
+        - generic [ref=e6898]:
+          - button "Schließen" [ref=e6900] [cursor=pointer]:
+            - generic [ref=e6901]: Schließen
+          - button "Speichern" [ref=e6904] [cursor=pointer]:
+            - generic [ref=e6905]: Speichern
+      - generic [ref=e6908]:
+        - button "Allgemein" [ref=e6910] [cursor=pointer]:
+          - generic [ref=e6912]: Allgemein
+        - button "Zeitplan" [ref=e6914] [cursor=pointer]:
+          - generic [ref=e6916]: Zeitplan
+        - button "Material" [ref=e6918] [cursor=pointer]:
+          - generic [ref=e6920]: Material
+        - button "Personal und Transport" [ref=e6922] [cursor=pointer]:
+          - generic [ref=e6924]: Personal und Transport
+        - button "Zusatzkosten" [ref=e6926] [cursor=pointer]:
+          - generic [ref=e6928]: Zusatzkosten
+        - button "Finanzen" [ref=e6930] [cursor=pointer]:
+          - generic [ref=e6932]: Finanzen
+        - button "Zumietung" [ref=e6934] [cursor=pointer]:
+          - generic [ref=e6936]: Zumietung
+        - button "Bestellungen" [ref=e6938] [cursor=pointer]:
+          - generic [ref=e6940]: Bestellungen
+        - button "Personalplanung" [ref=e6942] [cursor=pointer]:
+          - generic [ref=e6944]: Personalplanung
+        - button "Transportplanung" [ref=e6946] [cursor=pointer]:
+          - generic [ref=e6948]: Transportplanung
+        - button "History Log" [ref=e6950] [cursor=pointer]:
+          - generic [ref=e6952]: History Log
+      - generic [ref=e7436]:
+        - button "crop_free" [ref=e7437] [cursor=pointer]:
+          - generic [ref=e7438]: crop_free
+        - generic [ref=e7442]:
+          - generic [ref=e7443]:
+            - generic [ref=e7445]:
+              - generic [ref=e7446]:
+                - group [ref=e7448]:
+                  - generic [ref=e7451]:
+                    - button "search" [ref=e7452] [cursor=pointer]:
+                      - generic [ref=e7453]: search
+                    - textbox "Suche" [active] [ref=e7454]
+                  - button "label" [ref=e7457] [cursor=pointer]:
+                    - generic [ref=e7458]: label
+                - generic [ref=e7459]:
+                  - button "close" [ref=e7460] [cursor=pointer]:
+                    - generic [ref=e7461]: close
+                  - generic [ref=e7464]:
+                    - button "search" [ref=e7466] [cursor=pointer]:
+                      - generic [ref=e7467]: search
+                    - button "watch_later" [ref=e7469] [cursor=pointer]:
+                      - generic [ref=e7470]: watch_later
+                    - button "Hinzufügen chevron_right" [ref=e7471] [cursor=pointer]:
+                      - generic [ref=e7472]: Hinzufügen
+                      - generic [ref=e7473]: chevron_right
+              - generic [ref=e7476]:
+                - alert [ref=e7477]
+                - grid [ref=e7478]:
+                  - generic:
+                    - rowgroup [ref=e7479]:
+                      - row "check remove chevron_right" [ref=e7484]:
+                        - columnheader "check remove" [ref=e7486]:
+                          - generic [ref=e7488] [cursor=pointer]:
+                            - checkbox [ref=e7489]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                        - button "chevron_right" [ref=e7493] [cursor=pointer]
+                    - rowgroup [ref=e7494]:
+                      - generic [ref=e7495]:
+                        - row "check remove expand_more" [ref=e7497]:
+                          - generic [ref=e7498] [cursor=pointer]:
+                            - generic [ref=e7501]:
+                              - checkbox [ref=e7502]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button "expand_more" [ref=e7505]:
+                              - generic [ref=e7506]: expand_more
+                        - row "check remove expand_more" [ref=e7508]:
+                          - generic [ref=e7509] [cursor=pointer]:
+                            - generic [ref=e7512]:
+                              - checkbox [ref=e7513]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button "expand_more" [ref=e7516]:
+                              - generic [ref=e7517]: expand_more
+                        - row "check remove expand_more" [ref=e7519]:
+                          - generic [ref=e7520] [cursor=pointer]:
+                            - generic [ref=e7523]:
+                              - checkbox [ref=e7524]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button "expand_more" [ref=e7527]:
+                              - generic [ref=e7528]: expand_more
+                        - row "check remove" [ref=e7530]:
+                          - generic [ref=e7531]:
+                            - generic [ref=e7534] [cursor=pointer]:
+                              - checkbox [ref=e7535]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7538] [cursor=pointer]
+                        - row "check remove" [ref=e7540]:
+                          - generic [ref=e7541]:
+                            - generic [ref=e7544] [cursor=pointer]:
+                              - checkbox [ref=e7545]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7548] [cursor=pointer]
+                        - row "check remove" [ref=e7550]:
+                          - generic [ref=e7551]:
+                            - generic [ref=e7554] [cursor=pointer]:
+                              - checkbox [ref=e7555]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7558] [cursor=pointer]
+                        - row "check remove" [ref=e7560]:
+                          - generic [ref=e7561]:
+                            - generic [ref=e7564] [cursor=pointer]:
+                              - checkbox [ref=e7565]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7568] [cursor=pointer]
+                        - row "check remove" [ref=e7570]:
+                          - generic [ref=e7571]:
+                            - generic [ref=e7574] [cursor=pointer]:
+                              - checkbox [ref=e7575]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7578] [cursor=pointer]
+                        - row "check remove" [ref=e7580]:
+                          - generic [ref=e7581]:
+                            - generic [ref=e7584] [cursor=pointer]:
+                              - checkbox [ref=e7585]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7588] [cursor=pointer]
+                        - row "check remove" [ref=e7590]:
+                          - generic [ref=e7591]:
+                            - generic [ref=e7594] [cursor=pointer]:
+                              - checkbox [ref=e7595]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7598] [cursor=pointer]
+                        - row "check remove" [ref=e7600]:
+                          - generic [ref=e7601]:
+                            - generic [ref=e7604] [cursor=pointer]:
+                              - checkbox [ref=e7605]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7608] [cursor=pointer]
+                        - row "check remove expand_more" [ref=e7610]:
+                          - generic [ref=e7611] [cursor=pointer]:
+                            - generic [ref=e7614]:
+                              - checkbox [ref=e7615]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button "expand_more" [ref=e7618]:
+                              - generic [ref=e7619]: expand_more
+                        - row "check remove" [ref=e7621]:
+                          - generic [ref=e7622]:
+                            - generic [ref=e7625] [cursor=pointer]:
+                              - checkbox [ref=e7626]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7629] [cursor=pointer]
+                        - row "check remove" [ref=e7631]:
+                          - generic [ref=e7632]:
+                            - generic [ref=e7635] [cursor=pointer]:
+                              - checkbox [ref=e7636]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7639] [cursor=pointer]
+                        - row "check remove" [ref=e7641]:
+                          - generic [ref=e7642]:
+                            - generic [ref=e7645] [cursor=pointer]:
+                              - checkbox [ref=e7646]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7649] [cursor=pointer]
+                        - row "check remove" [ref=e7651]:
+                          - generic [ref=e7652]:
+                            - generic [ref=e7655] [cursor=pointer]:
+                              - checkbox [ref=e7656]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7659] [cursor=pointer]
+                        - row "check remove" [ref=e7661]:
+                          - generic [ref=e7662]:
+                            - generic [ref=e7665] [cursor=pointer]:
+                              - checkbox [ref=e7666]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7669] [cursor=pointer]
+                        - row "check remove" [ref=e7671]:
+                          - generic [ref=e7672]:
+                            - generic [ref=e7675] [cursor=pointer]:
+                              - checkbox [ref=e7676]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7679] [cursor=pointer]
+                        - row "check remove" [ref=e7681]:
+                          - generic [ref=e7682]:
+                            - generic [ref=e7685] [cursor=pointer]:
+                              - checkbox [ref=e7686]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7689] [cursor=pointer]
+                        - row "check remove expand_more" [ref=e7691]:
+                          - generic [ref=e7692] [cursor=pointer]:
+                            - generic [ref=e7695]:
+                              - checkbox [ref=e7696]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button "expand_more" [ref=e7699]:
+                              - generic [ref=e7700]: expand_more
+                        - row "check remove" [ref=e7702]:
+                          - generic [ref=e7703]:
+                            - generic [ref=e7706] [cursor=pointer]:
+                              - checkbox [ref=e7707]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7710] [cursor=pointer]
+                        - row "check remove" [ref=e7712]:
+                          - generic [ref=e7713]:
+                            - generic [ref=e7716] [cursor=pointer]:
+                              - checkbox [ref=e7717]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7720] [cursor=pointer]
+                        - row "check remove" [ref=e7722]:
+                          - generic [ref=e7723]:
+                            - generic [ref=e7726] [cursor=pointer]:
+                              - checkbox [ref=e7727]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7730] [cursor=pointer]
+                        - row "check remove expand_more" [ref=e7732]:
+                          - generic [ref=e7733] [cursor=pointer]:
+                            - generic [ref=e7736]:
+                              - checkbox [ref=e7737]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button "expand_more" [ref=e7740]:
+                              - generic [ref=e7741]: expand_more
+                        - row "check remove" [ref=e7743]:
+                          - generic [ref=e7744]:
+                            - generic [ref=e7747] [cursor=pointer]:
+                              - checkbox [ref=e7748]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7751] [cursor=pointer]
+                        - row "check remove" [ref=e7753]:
+                          - generic [ref=e7754]:
+                            - generic [ref=e7757] [cursor=pointer]:
+                              - checkbox [ref=e7758]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7761] [cursor=pointer]
+                        - row "check remove" [ref=e7763]:
+                          - generic [ref=e7764]:
+                            - generic [ref=e7767] [cursor=pointer]:
+                              - checkbox [ref=e7768]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7771] [cursor=pointer]
+                        - row "check remove expand_more" [ref=e7773]:
+                          - generic [ref=e7774] [cursor=pointer]:
+                            - generic [ref=e7777]:
+                              - checkbox [ref=e7778]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button "expand_more" [ref=e7781]:
+                              - generic [ref=e7782]: expand_more
+                        - row "check remove" [ref=e7784]:
+                          - generic [ref=e7785]:
+                            - generic [ref=e7788] [cursor=pointer]:
+                              - checkbox [ref=e7789]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7792] [cursor=pointer]
+                        - row "check remove" [ref=e7794]:
+                          - generic [ref=e7795]:
+                            - generic [ref=e7798] [cursor=pointer]:
+                              - checkbox [ref=e7799]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7802] [cursor=pointer]
+                        - row "check remove" [ref=e7804]:
+                          - generic [ref=e7805]:
+                            - generic [ref=e7808] [cursor=pointer]:
+                              - checkbox [ref=e7809]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7812] [cursor=pointer]
+                        - row "check remove" [ref=e7814]:
+                          - generic [ref=e7815]:
+                            - generic [ref=e7818] [cursor=pointer]:
+                              - checkbox [ref=e7819]
+                              - generic:
+                                - generic: check
+                                - generic: remove
+                            - button [ref=e7822] [cursor=pointer]
+                  - rowgroup [ref=e7824]:
+                    - 'row "Name aufsteigend sortieren. Priorität: 2 Menge (noch zu planen) keine Sortierung" [ref=e7829]':
+                      - 'columnheader "Name aufsteigend sortieren. Priorität: 2" [ref=e7831] [cursor=pointer]':
+                        - 'button "Name aufsteigend sortieren. Priorität: 2" [ref=e7832]':
+                          - generic [ref=e7833]: Name
+                          - 'generic "aufsteigend sortieren. Priorität: 2" [ref=e7834]':
+                            - generic [ref=e7835]: sort
+                            - subscript [ref=e7836]: "2"
+                        - text: more_vert
+                      - columnheader "Menge (noch zu planen) keine Sortierung" [ref=e7840]:
+                        - button "Menge (noch zu planen)" [ref=e7841] [cursor=pointer]:
+                          - generic [ref=e7842]: Menge (noch zu planen)
+                        - text: more_vert
+                  - rowgroup [ref=e7844]:
+                    - generic [ref=e7845]:
+                      - row "folder Audio" [ref=e7847]:
+                        - button "folder Audio" [ref=e7851] [cursor=pointer]:
+                          - generic [ref=e7852]: folder
+                          - generic [ref=e7853]: Audio
+                      - row "∟ folder Mikrofone" [ref=e7856]:
+                        - generic [ref=e7859] [cursor=pointer]:
+                          - text: ∟
+                          - button "folder Mikrofone" [ref=e7860]:
+                            - generic [ref=e7861]: folder
+                            - generic [ref=e7862]: Mikrofone
+                      - row "∟ folder Mit Kabel" [ref=e7865]:
+                        - generic [ref=e7868] [cursor=pointer]:
+                          - text: ∟
+                          - button "folder Mit Kabel" [ref=e7869]:
+                            - generic [ref=e7870]: folder
+                            - generic [ref=e7871]: Mit Kabel
+                      - row "∟ AKG D112 Microphone" [ref=e7874]:
+                        - generic [ref=e7877] [cursor=pointer]:
+                          - text: ∟
+                          - button "AKG D112 Microphone" [ref=e7878]:
+                            - generic [ref=e7879]: AKG D112 Microphone
+                      - row "∟ DPA 4060 Headset" [ref=e7882]:
+                        - generic [ref=e7885] [cursor=pointer]:
+                          - text: ∟
+                          - button "DPA 4060 Headset" [ref=e7886]:
+                            - generic [ref=e7887]: DPA 4060 Headset
+                      - row "∟ Mic Stand Flightcase" [ref=e7890]:
+                        - generic [ref=e7893] [cursor=pointer]:
+                          - text: ∟
+                          - button "Mic Stand Flightcase" [ref=e7894]:
+                            - generic [ref=e7895]: Mic Stand Flightcase
+                      - row "∟ Røde NT5 Microphone" [ref=e7898]:
+                        - generic [ref=e7901] [cursor=pointer]:
+                          - text: ∟
+                          - button "Røde NT5 Microphone" [ref=e7902]:
+                            - generic [ref=e7903]: Røde NT5 Microphone
+                      - row "∟ Sennheiser e604 Microphone" [ref=e7906]:
+                        - generic [ref=e7909] [cursor=pointer]:
+                          - text: ∟
+                          - button "Sennheiser e604 Microphone" [ref=e7910]:
+                            - generic [ref=e7911]: Sennheiser e604 Microphone
+                      - row "∟ Shure Beta 87A Microphone" [ref=e7914]:
+                        - generic [ref=e7917] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure Beta 87A Microphone" [ref=e7918]:
+                            - generic [ref=e7919]: Shure Beta 87A Microphone
+                      - row "∟ Shure SM57 Microphone" [ref=e7922]:
+                        - generic [ref=e7925] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure SM57 Microphone" [ref=e7926]:
+                            - generic [ref=e7927]: Shure SM57 Microphone
+                      - row "∟ Shure SM58 Microphone" [ref=e7930]:
+                        - generic [ref=e7933] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure SM58 Microphone" [ref=e7934]:
+                            - generic [ref=e7935]: Shure SM58 Microphone
+                      - row "∟ folder Kabellos" [ref=e7938]:
+                        - generic [ref=e7941] [cursor=pointer]:
+                          - text: ∟
+                          - button "folder Kabellos" [ref=e7942]:
+                            - generic [ref=e7943]: folder
+                            - generic [ref=e7944]: Kabellos
+                      - row "∟ Shure UR1-M Beltpack" [ref=e7947]:
+                        - generic [ref=e7950] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure UR1-M Beltpack" [ref=e7951]:
+                            - generic [ref=e7952]: Shure UR1-M Beltpack
+                      - row "∟ Shure UR2 B87 Handheld" [ref=e7955]:
+                        - generic [ref=e7958] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure UR2 B87 Handheld" [ref=e7959]:
+                            - generic [ref=e7960]: Shure UR2 B87 Handheld
+                      - row "∟ Shure UR2 SM58 Handheld" [ref=e7963]:
+                        - generic [ref=e7966] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure UR2 SM58 Handheld" [ref=e7967]:
+                            - generic [ref=e7968]: Shure UR2 SM58 Handheld
+                      - row "∟ Shure UR4D kit 2x UR2/B87 + receiver" [ref=e7971]:
+                        - generic [ref=e7974] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure UR4D kit 2x UR2/B87 + receiver" [ref=e7975]:
+                            - generic [ref=e7976]: Shure UR4D kit 2x UR2/B87 + receiver
+                      - row "∟ Shure UR4D kit 2x UR2/SM58 + receiver" [ref=e7979]:
+                        - generic [ref=e7982] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure UR4D kit 2x UR2/SM58 + receiver" [ref=e7983]:
+                            - generic [ref=e7984]: Shure UR4D kit 2x UR2/SM58 + receiver
+                      - row "∟ Shure UR4D+ 2-Wege-Empfänger" [ref=e7987]:
+                        - generic [ref=e7990] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure UR4D+ 2-Wege-Empfänger" [ref=e7991]:
+                            - generic [ref=e7992]: Shure UR4D+ 2-Wege-Empfänger
+                      - row "∟ Shure UR4D+ four-way receiver" [ref=e7995]:
+                        - generic [ref=e7998] [cursor=pointer]:
+                          - text: ∟
+                          - button "Shure UR4D+ four-way receiver" [ref=e7999]:
+                            - generic [ref=e8000]: Shure UR4D+ four-way receiver
+                      - row "∟ folder Aktivboxen" [ref=e8003]:
+                        - generic [ref=e8006] [cursor=pointer]:
+                          - text: ∟
+                          - button "folder Aktivboxen" [ref=e8007]:
+                            - generic [ref=e8008]: folder
+                            - generic [ref=e8009]: Aktivboxen
+                      - row "∟ QSC K10.2 Fullrange Speaker" [ref=e8012]:
+                        - generic [ref=e8015] [cursor=pointer]:
+                          - text: ∟
+                          - button "QSC K10.2 Fullrange Speaker" [ref=e8016]:
+                            - generic [ref=e8017]: QSC K10.2 Fullrange Speaker
+                      - row "∟ QSC K12.2 Fullrange Speaker" [ref=e8020]:
+                        - generic [ref=e8023] [cursor=pointer]:
+                          - text: ∟
+                          - button "QSC K12.2 Fullrange Speaker" [ref=e8024]:
+                            - generic [ref=e8025]: QSC K12.2 Fullrange Speaker
+                      - row "∟ QSC KS118 Subwoofer" [ref=e8028]:
+                        - generic [ref=e8031] [cursor=pointer]:
+                          - text: ∟
+                          - button "QSC KS118 Subwoofer" [ref=e8032]:
+                            - generic [ref=e8033]: QSC KS118 Subwoofer
+                      - row "∟ folder Verstärker" [ref=e8036]:
+                        - generic [ref=e8039] [cursor=pointer]:
+                          - text: ∟
+                          - button "folder Verstärker" [ref=e8040]:
+                            - generic [ref=e8041]: folder
+                            - generic [ref=e8042]: Verstärker
+                      - row "∟ L-Acoustics LA 8/2 amprack" [ref=e8045]:
+                        - generic [ref=e8048] [cursor=pointer]:
+                          - text: ∟
+                          - button "L-Acoustics LA 8/2 amprack" [ref=e8049]:
+                            - generic [ref=e8050]: L-Acoustics LA 8/2 amprack
+                      - row "∟ L-Acoustics LA8/2 Amplifier" [ref=e8053]:
+                        - generic [ref=e8056] [cursor=pointer]:
+                          - text: ∟
+                          - button "L-Acoustics LA8/2 Amplifier" [ref=e8057]:
+                            - generic [ref=e8058]: L-Acoustics LA8/2 Amplifier
+                      - row "∟ Lab Gruppen FP3400 Amplifier" [ref=e8061]:
+                        - generic [ref=e8064] [cursor=pointer]:
+                          - text: ∟
+                          - button "Lab Gruppen FP3400 Amplifier" [ref=e8065]:
+                            - generic [ref=e8066]: Lab Gruppen FP3400 Amplifier
+                      - row "∟ folder DJ" [ref=e8069]:
+                        - generic [ref=e8072] [cursor=pointer]:
+                          - text: ∟
+                          - button "folder DJ" [ref=e8073]:
+                            - generic [ref=e8074]: folder
+                            - generic [ref=e8075]: DJ
+                      - row "∟ 4-Port UTP Switch" [ref=e8078]:
+                        - generic [ref=e8081] [cursor=pointer]:
+                          - text: ∟
+                          - button "4-Port UTP Switch" [ref=e8082]:
+                            - generic [ref=e8083]: 4-Port UTP Switch
+                      - row "∟ Pioneer CDJ2000 NXS2 Tabletop CD Player" [ref=e8086]:
+                        - generic [ref=e8089] [cursor=pointer]:
+                          - text: ∟
+                          - button "Pioneer CDJ2000 NXS2 Tabletop CD Player" [ref=e8090]:
+                            - generic [ref=e8091]: Pioneer CDJ2000 NXS2 Tabletop CD Player
+                      - row "∟ Pioneer DJM900 NXS2 DJ Mixer" [ref=e8094]:
+                        - generic [ref=e8097] [cursor=pointer]:
+                          - text: ∟
+                          - button "Pioneer DJM900 NXS2 DJ Mixer" [ref=e8098]:
+                            - generic [ref=e8099]: Pioneer DJM900 NXS2 DJ Mixer
+                      - row "∟ Weißes DJ Pult" [ref=e8102]:
+                        - generic [ref=e8105] [cursor=pointer]:
+                          - text: ∟
+                          - button "Weißes DJ Pult" [ref=e8106]:
+                            - generic [ref=e8107]: Weißes DJ Pult
+                  - region [ref=e8109]
+            - button "Intelligente Vorschläge settings expand_more" [ref=e8112] [cursor=pointer]:
+              - generic [ref=e8114]: Intelligente Vorschläge
+              - button "settings" [ref=e8117]:
+                - generic [ref=e8118]: settings
+              - generic [ref=e8120]: expand_more
+          - generic [ref=e8123]:
+            - generic [ref=e8124]:
+              - generic [ref=e8125]:
+                - button "search" [ref=e8130] [cursor=pointer]:
+                  - generic [ref=e8131]: search
+                - button "Material buchen" [ref=e8134] [cursor=pointer]:
+                  - generic [ref=e8135]: Material buchen
+                - generic [ref=e8136]:
+                  - generic [ref=e8138]:
+                    - button "add Materialgruppe" [ref=e8139] [cursor=pointer]:
+                      - generic [ref=e8140]: add
+                      - generic [ref=e8141]: Materialgruppe
+                    - button "arrow_drop_down" [ref=e8143] [cursor=pointer]:
+                      - generic [ref=e8144]: arrow_drop_down
+                  - button "more_vert" [ref=e8146] [cursor=pointer]:
+                    - generic [ref=e8147]: more_vert
+              - button "settings Ansichten arrow_drop_down" [ref=e8151] [cursor=pointer]:
+                - generic [ref=e8152]: settings
+                - generic [ref=e8153]: Ansichten
+                - generic [ref=e8154]: arrow_drop_down
+              - generic [ref=e8155]:
+                - button "close" [ref=e8156] [cursor=pointer]:
+                  - generic [ref=e8157]: close
+                - generic [ref=e8159]:
+                  - generic [ref=e8160]:
+                    - button "edit Bearbeiten" [disabled]:
+                      - generic: edit
+                      - generic: Bearbeiten
+                  - button "watch_later Zeitleiste öffnen" [ref=e8162] [cursor=pointer]:
+                    - generic [ref=e8163]: watch_later
+                    - generic [ref=e8164]: Zeitleiste öffnen
+                  - button "more_vert" [ref=e8166] [cursor=pointer]:
+                    - generic [ref=e8167]: more_vert
+            - generic [ref=e8170]:
+              - alert [ref=e8171]
+              - grid [ref=e8172]:
+                - generic:
+                  - rowgroup [ref=e8173]:
+                    - row "keine Sortierung check remove chevron_right Name keine Sortierung Stückzahl (Gesamt in dieser Kombination) keine Sortierung Typ keine Sortierung Vermietung/Verkauf keine Sortierung" [ref=e8178]:
+                      - columnheader "keine Sortierung" [ref=e8180]:
+                        - button [ref=e8181] [cursor=pointer]
+                      - columnheader "check remove" [ref=e8183]:
+                        - generic [ref=e8185] [cursor=pointer]:
+                          - checkbox [ref=e8186]
+                          - generic:
+                            - generic: check
+                            - generic: remove
+                      - button "chevron_right" [ref=e8190] [cursor=pointer]
+                      - columnheader "Name keine Sortierung" [ref=e8192]:
+                        - button "Name" [ref=e8193] [cursor=pointer]:
+                          - generic [ref=e8194]: Name
+                        - text: more_vert
+                      - columnheader "Stückzahl (Gesamt in dieser Kombination) keine Sortierung" [ref=e8198]:
+                        - button "Stückzahl (Gesamt in dieser Kombination)" [ref=e8199] [cursor=pointer]:
+                          - generic [ref=e8200]: Stückzahl (Gesamt in dieser Kombination)
+                        - text: more_vert
+                      - columnheader "Typ keine Sortierung" [ref=e8204]:
+                        - button "Typ" [ref=e8205] [cursor=pointer]:
+                          - generic [ref=e8206]: Typ
+                        - text: more_vert
+                      - columnheader "Vermietung/Verkauf keine Sortierung" [ref=e8210]:
+                        - button "Vermietung/Verkauf" [ref=e8211] [cursor=pointer]:
+                          - generic [ref=e8212]: Vermietung/Verkauf
+                        - text: more_vert
+                  - rowgroup [ref=e8214]:
+                    - generic [ref=e8215]:
+                      - row "drag_indicator check remove expand_more folder Sound 22.03.2026 10:00 - 22.03.2026 23:00" [ref=e8217]:
+                        - generic [ref=e8218] [cursor=pointer]:
+                          - generic [ref=e8220]: drag_indicator
+                          - generic [ref=e8223]:
+                            - checkbox [ref=e8224]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button "expand_more" [ref=e8227]:
+                            - generic [ref=e8228]: expand_more
+                          - generic "Sound - 22.03.2026 10:00 - 22.03.2026 23:00" [ref=e8230]:
+                            - generic [ref=e8231]:
+                              - generic "Diese Materialgruppe enthält eine oder mehrere Mängel" [ref=e8232]: folder
+                              - generic [ref=e8233]:
+                                - generic [ref=e8234]: Sound
+                                - generic [ref=e8235]: 22.03.2026 10:00 - 22.03.2026 23:00
+                      - row "drag_indicator check remove chevron_right Mikro-Ständer Flightcase 1  Physische Kombination - Massenartikel compare_arrows Vermietung" [ref=e8245]:
+                        - generic [ref=e8246] [cursor=pointer]:
+                          - generic [ref=e8248]: drag_indicator
+                          - generic [ref=e8251]:
+                            - checkbox [ref=e8252]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button "chevron_right" [ref=e8255]:
+                            - generic [ref=e8256]: chevron_right
+                          - generic "Mikro-Ständer Flightcase" [ref=e8258]:
+                            - generic [ref=e8260]: Mikro-Ständer Flightcase
+                          - generic [ref=e8264]: "1"
+                          - generic "Physische Kombination - Massenartikel" [ref=e8266]:
+                            - generic [ref=e8268]: 
+                            - generic [ref=e8269]: Physische Kombination - Massenartikel
+                          - generic "Vermietung" [ref=e8271]:
+                            - generic [ref=e8272]: compare_arrows
+                            - generic [ref=e8273]: Vermietung
+                      - row "drag_indicator check remove chevron_right QSC K12.2 Set 1  Virtuelle Kombination - Vermietung compare_arrows Vermietung" [ref=e8275]:
+                        - generic [ref=e8276] [cursor=pointer]:
+                          - generic [ref=e8278]: drag_indicator
+                          - generic [ref=e8281]:
+                            - checkbox [ref=e8282]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button "chevron_right" [ref=e8285]:
+                            - generic [ref=e8286]: chevron_right
+                          - generic "QSC K12.2 Set" [ref=e8288]:
+                            - generic [ref=e8290]: QSC K12.2 Set
+                          - generic [ref=e8294]: "1"
+                          - generic "Virtuelle Kombination - Vermietung" [ref=e8296]:
+                            - generic [ref=e8298]: 
+                            - generic [ref=e8299]: Virtuelle Kombination - Vermietung
+                          - generic "Vermietung" [ref=e8301]:
+                            - generic [ref=e8302]: compare_arrows
+                            - generic [ref=e8303]: Vermietung
+                      - row "drag_indicator check remove chevron_right Bandmic Set 1  Virtuelle Kombination - Vermietung compare_arrows Vermietung" [ref=e8305]:
+                        - generic [ref=e8306] [cursor=pointer]:
+                          - generic [ref=e8308]: drag_indicator
+                          - generic [ref=e8311]:
+                            - checkbox [ref=e8312]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button "chevron_right" [ref=e8315]:
+                            - generic [ref=e8316]: chevron_right
+                          - generic "Bandmic Set" [ref=e8318]:
+                            - generic [ref=e8320]: Bandmic Set
+                          - generic [ref=e8324]: "1"
+                          - generic "Virtuelle Kombination - Vermietung" [ref=e8326]:
+                            - generic [ref=e8328]: 
+                            - generic [ref=e8329]: Virtuelle Kombination - Vermietung
+                          - generic "Vermietung" [ref=e8331]:
+                            - generic [ref=e8332]: compare_arrows
+                            - generic [ref=e8333]: Vermietung
+                      - row "drag_indicator check remove chevron_right Yamaha LS9 + Stagerack 1  Virtuelle Kombination - Vermietung compare_arrows Vermietung" [ref=e8335]:
+                        - generic [ref=e8336] [cursor=pointer]:
+                          - generic [ref=e8338]: drag_indicator
+                          - generic [ref=e8341]:
+                            - checkbox [ref=e8342]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button "chevron_right" [ref=e8345]:
+                            - generic [ref=e8346]: chevron_right
+                          - generic "Yamaha LS9 + Stagerack" [ref=e8348]:
+                            - generic [ref=e8350]: Yamaha LS9 + Stagerack
+                          - generic [ref=e8354]: "1"
+                          - generic "Virtuelle Kombination - Vermietung" [ref=e8356]:
+                            - generic [ref=e8358]: 
+                            - generic [ref=e8359]: Virtuelle Kombination - Vermietung
+                          - generic "Vermietung" [ref=e8361]:
+                            - generic [ref=e8362]: compare_arrows
+                            - generic [ref=e8363]: Vermietung
+                      - row "drag_indicator check remove chevron_right L-Acoustics Monitor Set Gruppe 1  Virtuelle Kombination - Vermietung compare_arrows Vermietung" [ref=e8365]:
+                        - generic [ref=e8366] [cursor=pointer]:
+                          - generic [ref=e8368]: drag_indicator
+                          - generic [ref=e8371]:
+                            - checkbox [ref=e8372]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button "chevron_right" [ref=e8375]:
+                            - generic [ref=e8376]: chevron_right
+                          - generic "L-Acoustics Monitor Set Gruppe" [ref=e8378]:
+                            - generic [ref=e8380]: L-Acoustics Monitor Set Gruppe
+                          - generic [ref=e8384]: "1"
+                          - generic "Virtuelle Kombination - Vermietung" [ref=e8386]:
+                            - generic [ref=e8388]: 
+                            - generic [ref=e8389]: Virtuelle Kombination - Vermietung
+                          - generic "Vermietung" [ref=e8391]:
+                            - generic [ref=e8392]: compare_arrows
+                            - generic [ref=e8393]: Vermietung
+                      - row "drag_indicator check remove expand_more folder Licht 22.03.2026 10:00 - 22.03.2026 16:00" [ref=e8395]:
+                        - generic [ref=e8396] [cursor=pointer]:
+                          - generic [ref=e8398]: drag_indicator
+                          - generic [ref=e8401]:
+                            - checkbox [ref=e8402]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button "expand_more" [ref=e8405]:
+                            - generic [ref=e8406]: expand_more
+                          - generic "Licht - 22.03.2026 10:00 - 22.03.2026 16:00" [ref=e8408]:
+                            - generic [ref=e8409]:
+                              - generic [ref=e8410]: folder
+                              - generic [ref=e8411]:
+                                - generic [ref=e8412]: Licht
+                                - generic [ref=e8413]: 22.03.2026 10:00 - 22.03.2026 16:00
+                      - row "drag_indicator check remove Selecon Acclaim Fresnell 1kW Fresnell Spot 2  Physischer Artikel - Masse compare_arrows Vermietung" [ref=e8423]:
+                        - generic [ref=e8424]:
+                          - generic [ref=e8426]: drag_indicator
+                          - generic [ref=e8429] [cursor=pointer]:
+                            - checkbox [ref=e8430]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button [ref=e8433] [cursor=pointer]
+                          - generic "Selecon Acclaim Fresnell 1kW Fresnell Spot" [ref=e8435] [cursor=pointer]:
+                            - generic [ref=e8437]: Selecon Acclaim Fresnell 1kW Fresnell Spot
+                          - generic [ref=e8441] [cursor=pointer]: "2"
+                          - generic "Physischer Artikel - Masse" [ref=e8443] [cursor=pointer]:
+                            - generic [ref=e8445]: 
+                            - generic [ref=e8446]: Physischer Artikel - Masse
+                          - generic "Vermietung" [ref=e8448] [cursor=pointer]:
+                            - generic [ref=e8449]: compare_arrows
+                            - generic [ref=e8450]: Vermietung
+                      - row "drag_indicator check remove Par 64, 1000W fourbar MFL Schwarz 2  Physischer Artikel - Masse compare_arrows Vermietung" [ref=e8452]:
+                        - generic [ref=e8453]:
+                          - generic [ref=e8455]: drag_indicator
+                          - generic [ref=e8458] [cursor=pointer]:
+                            - checkbox [ref=e8459]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button [ref=e8462] [cursor=pointer]
+                          - generic "Par 64, 1000W fourbar MFL Schwarz" [ref=e8464] [cursor=pointer]:
+                            - generic [ref=e8466]: Par 64, 1000W fourbar MFL Schwarz
+                          - generic [ref=e8470] [cursor=pointer]: "2"
+                          - generic "Physischer Artikel - Masse" [ref=e8472] [cursor=pointer]:
+                            - generic [ref=e8474]: 
+                            - generic [ref=e8475]: Physischer Artikel - Masse
+                          - generic "Vermietung" [ref=e8477] [cursor=pointer]:
+                            - generic [ref=e8478]: compare_arrows
+                            - generic [ref=e8479]: Vermietung
+                      - row "drag_indicator check remove MA Lighting Digital Dimmer 12x 2,3kVa Dimmer 1  Physischer Artikel - Masse compare_arrows Vermietung" [ref=e8481]:
+                        - generic [ref=e8482]:
+                          - generic [ref=e8484]: drag_indicator
+                          - generic [ref=e8487] [cursor=pointer]:
+                            - checkbox [ref=e8488]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button [ref=e8491] [cursor=pointer]
+                          - generic "MA Lighting Digital Dimmer 12x 2,3kVa Dimmer" [ref=e8493] [cursor=pointer]:
+                            - generic [ref=e8495]: MA Lighting Digital Dimmer 12x 2,3kVa Dimmer
+                          - generic [ref=e8499] [cursor=pointer]: "1"
+                          - generic "Physischer Artikel - Masse" [ref=e8501] [cursor=pointer]:
+                            - generic [ref=e8503]: 
+                            - generic [ref=e8504]: Physischer Artikel - Masse
+                          - generic "Vermietung" [ref=e8506] [cursor=pointer]:
+                            - generic [ref=e8507]: compare_arrows
+                            - generic [ref=e8508]: Vermietung
+                      - row "drag_indicator check remove Manfrotto 087NWB Stativ 4  Physischer Artikel - Masse compare_arrows Vermietung" [ref=e8510]:
+                        - generic [ref=e8511]:
+                          - generic [ref=e8513]: drag_indicator
+                          - generic [ref=e8516] [cursor=pointer]:
+                            - checkbox [ref=e8517]
+                            - generic:
+                              - generic: check
+                              - generic: remove
+                          - button [ref=e8520] [cursor=pointer]
+                          - generic "Manfrotto 087NWB Stativ" [ref=e8522] [cursor=pointer]:
+                            - generic [ref=e8524]: Manfrotto 087NWB Stativ
+                          - generic [ref=e8528] [cursor=pointer]: "4"
+                          - generic "Physischer Artikel - Masse" [ref=e8530] [cursor=pointer]:
+                            - generic [ref=e8532]: 
+                            - generic [ref=e8533]: Physischer Artikel - Masse
+                          - generic "Vermietung" [ref=e8535] [cursor=pointer]:
+                            - generic [ref=e8536]: compare_arrows
+                            - generic [ref=e8537]: Vermietung
+                - rowgroup [ref=e8539]:
+                  - row "Faktor keine Sortierung Stückpreis keine Sortierung Materialstatus keine Sortierung Kommentar extern keine Sortierung" [ref=e8544]:
+                    - columnheader "Faktor keine Sortierung" [ref=e8546]:
+                      - button "Faktor" [ref=e8547] [cursor=pointer]:
+                        - generic [ref=e8548]: Faktor
+                      - text: more_vert
+                    - columnheader "Stückpreis keine Sortierung" [ref=e8552]:
+                      - button "Stückpreis" [ref=e8553] [cursor=pointer]:
+                        - generic [ref=e8554]: Stückpreis
+                      - text: more_vert
+                    - columnheader "Materialstatus keine Sortierung" [ref=e8558]:
+                      - button "Materialstatus" [ref=e8559] [cursor=pointer]:
+                        - generic [ref=e8560]: Materialstatus
+                      - text: more_vert
+                    - columnheader "Kommentar extern keine Sortierung" [ref=e8564]:
+                      - button "Kommentar extern" [ref=e8565] [cursor=pointer]:
+                        - generic [ref=e8566]: Kommentar extern
+                      - text: more_vert
+                - rowgroup [ref=e8568]:
+                  - generic [ref=e8569]:
+                    - row [ref=e8571]:
+                      - button [ref=e8583] [cursor=pointer]
+                    - row "1,00 55,00 € fiber_manual_record Vollständig reserviert" [ref=e8585]:
+                      - generic [ref=e8586] [cursor=pointer]:
+                        - generic [ref=e8590]: 1,00
+                        - generic [ref=e8594]: 55,00 €
+                        - generic "Vollständig reserviert" [ref=e8596]:
+                          - generic [ref=e8597]: fiber_manual_record
+                          - generic [ref=e8598]: Vollständig reserviert
+                        - button [ref=e8601]
+                    - row "1,00 175,00 € fiber_manual_record Mangel aufgrund von Verspätungen bei einem anderen Projekt" [ref=e8603]:
+                      - generic [ref=e8604] [cursor=pointer]:
+                        - generic [ref=e8608]: 1,00
+                        - generic [ref=e8612]: 175,00 €
+                        - generic "Mangel aufgrund von Verspätungen bei einem anderen Projekt" [ref=e8614]:
+                          - generic [ref=e8615]: fiber_manual_record
+                          - generic [ref=e8616]: Mangel aufgrund von Verspätungen bei einem anderen Projekt
+                        - button [ref=e8619]
+                    - row "1,00 140,00 € fiber_manual_record Vollständig reserviert" [ref=e8621]:
+                      - generic [ref=e8622] [cursor=pointer]:
+                        - generic [ref=e8626]: 1,00
+                        - generic [ref=e8630]: 140,00 €
+                        - generic "Vollständig reserviert" [ref=e8632]:
+                          - generic [ref=e8633]: fiber_manual_record
+                          - generic [ref=e8634]: Vollständig reserviert
+                        - button [ref=e8637]
+                    - row "1,00 185,00 € fiber_manual_record Vollständig reserviert" [ref=e8639]:
+                      - generic [ref=e8640] [cursor=pointer]:
+                        - generic [ref=e8644]: 1,00
+                        - generic [ref=e8648]: 185,00 €
+                        - generic "Vollständig reserviert" [ref=e8650]:
+                          - generic [ref=e8651]: fiber_manual_record
+                          - generic [ref=e8652]: Vollständig reserviert
+                        - button [ref=e8655]
+                    - row "1,00 250,00 € fiber_manual_record Vollständig reserviert" [ref=e8657]:
+                      - generic [ref=e8658] [cursor=pointer]:
+                        - generic [ref=e8662]: 1,00
+                        - generic [ref=e8666]: 250,00 €
+                        - generic "Vollständig reserviert" [ref=e8668]:
+                          - generic [ref=e8669]: fiber_manual_record
+                          - generic [ref=e8670]: Vollständig reserviert
+                        - button [ref=e8673]
+                    - row [ref=e8675]:
+                      - button [ref=e8687] [cursor=pointer]
+                    - row "1,00 15,00 € fiber_manual_record Vollständig reserviert" [ref=e8689]:
+                      - generic [ref=e8690]:
+                        - generic [ref=e8694] [cursor=pointer]: 1,00
+                        - generic [ref=e8698] [cursor=pointer]: 15,00 €
+                        - generic "Vollständig reserviert" [ref=e8700] [cursor=pointer]:
+                          - generic [ref=e8701]: fiber_manual_record
+                          - generic [ref=e8702]: Vollständig reserviert
+                        - button [ref=e8705] [cursor=pointer]
+                    - row "1,00 15,00 € fiber_manual_record Vollständig reserviert" [ref=e8707]:
+                      - generic [ref=e8708]:
+                        - generic [ref=e8712] [cursor=pointer]: 1,00
+                        - generic [ref=e8716] [cursor=pointer]: 15,00 €
+                        - generic "Vollständig reserviert" [ref=e8718] [cursor=pointer]:
+                          - generic [ref=e8719]: fiber_manual_record
+                          - generic [ref=e8720]: Vollständig reserviert
+                        - button [ref=e8723] [cursor=pointer]
+                    - row "1,00 60,00 € fiber_manual_record Vollständig reserviert" [ref=e8725]:
+                      - generic [ref=e8726]:
+                        - generic [ref=e8730] [cursor=pointer]: 1,00
+                        - generic [ref=e8734] [cursor=pointer]: 60,00 €
+                        - generic "Vollständig reserviert" [ref=e8736] [cursor=pointer]:
+                          - generic [ref=e8737]: fiber_manual_record
+                          - generic [ref=e8738]: Vollständig reserviert
+                        - button [ref=e8741] [cursor=pointer]
+                    - row "1,00 12,00 € fiber_manual_record Vollständig reserviert" [ref=e8743]:
+                      - generic [ref=e8744]:
+                        - generic [ref=e8748] [cursor=pointer]: 1,00
+                        - generic [ref=e8752] [cursor=pointer]: 12,00 €
+                        - generic "Vollständig reserviert" [ref=e8754] [cursor=pointer]:
+                          - generic [ref=e8755]: fiber_manual_record
+                          - generic [ref=e8756]: Vollständig reserviert
+                        - button [ref=e8759] [cursor=pointer]
+                - region [ref=e8760]
+                - generic:
+                  - rowgroup [ref=e8761]:
+                    - row "Rabatt keine Sortierung Gesamtpreis keine Sortierung" [ref=e8766]:
+                      - columnheader "Rabatt keine Sortierung" [ref=e8768]:
+                        - button "Rabatt" [ref=e8769] [cursor=pointer]:
+                          - generic [ref=e8770]: Rabatt
+                        - text: more_vert
+                      - columnheader "Gesamtpreis keine Sortierung" [ref=e8774]:
+                        - button "Gesamtpreis" [ref=e8775] [cursor=pointer]:
+                          - generic [ref=e8776]: Gesamtpreis
+                        - text: more_vert
+                  - rowgroup [ref=e8778]:
+                    - generic [ref=e8779]:
+                      - row "805,00 €" [ref=e8781]:
+                        - generic [ref=e8787] [cursor=pointer]: 805,00 €
+                      - row "0% 55,00 €" [ref=e8789]:
+                        - generic [ref=e8790] [cursor=pointer]:
+                          - generic [ref=e8794]: 0%
+                          - generic [ref=e8796]: 55,00 €
+                      - row "0% 175,00 €" [ref=e8798]:
+                        - generic [ref=e8799] [cursor=pointer]:
+                          - generic [ref=e8803]: 0%
+                          - generic [ref=e8805]: 175,00 €
+                      - row "0% 140,00 €" [ref=e8807]:
+                        - generic [ref=e8808] [cursor=pointer]:
+                          - generic [ref=e8812]: 0%
+                          - generic [ref=e8814]: 140,00 €
+                      - row "0% 185,00 €" [ref=e8816]:
+                        - generic [ref=e8817] [cursor=pointer]:
+                          - generic [ref=e8821]: 0%
+                          - generic [ref=e8823]: 185,00 €
+                      - row "0% 250,00 €" [ref=e8825]:
+                        - generic [ref=e8826] [cursor=pointer]:
+                          - generic [ref=e8830]: 0%
+                          - generic [ref=e8832]: 250,00 €
+                      - row "168,00 €" [ref=e8834]:
+                        - generic [ref=e8840] [cursor=pointer]: 168,00 €
+                      - row "0% 30,00 €" [ref=e8842]:
+                        - generic [ref=e8843]:
+                          - generic [ref=e8847] [cursor=pointer]: 0%
+                          - generic [ref=e8849] [cursor=pointer]: 30,00 €
+                      - row "0% 30,00 €" [ref=e8851]:
+                        - generic [ref=e8852]:
+                          - generic [ref=e8856] [cursor=pointer]: 0%
+                          - generic [ref=e8858] [cursor=pointer]: 30,00 €
+                      - row "0% 60,00 €" [ref=e8860]:
+                        - generic [ref=e8861]:
+                          - generic [ref=e8865] [cursor=pointer]: 0%
+                          - generic [ref=e8867] [cursor=pointer]: 60,00 €
+                      - row "0% 48,00 €" [ref=e8869]:
+                        - generic [ref=e8870]:
+                          - generic [ref=e8874] [cursor=pointer]: 0%
+                          - generic [ref=e8876] [cursor=pointer]: 48,00 €
+  - iframe [ref=e497]:
+    - button "Messaging-Fenster öffnen" [ref=f16e5] [cursor=pointer]:
+      - img [ref=f16e7]
+      - img [ref=f16e10]

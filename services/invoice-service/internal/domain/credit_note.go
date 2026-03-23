@@ -56,6 +56,7 @@ type CreditNoteItem struct {
 	UnitPrice   float64
 	TotalPrice  float64
 	TaxRate     TaxRate
+	TaxAmount   float64
 }
 
 // NewCreditNote creates a new credit note aggregate
@@ -87,7 +88,10 @@ func (c *CreditNote) AddItem(item CreditNoteItem) error {
 	}
 
 	item.TotalPrice = item.Quantity * item.UnitPrice
-	item.TaxRate = c.TaxRate
+	if item.TaxRate == 0 && c.TaxRate != 0 {
+		item.TaxRate = c.TaxRate
+	}
+	item.TaxAmount = item.TotalPrice * (float64(item.TaxRate) / 100)
 	item.ID = fmt.Sprintf("item_%d", len(c.Items)+1)
 
 	c.Items = append(c.Items, item)
@@ -106,18 +110,21 @@ func (c *CreditNote) SetTaxRate(rate float64) error {
 	return nil
 }
 
-// CalculateTotals recalculates SubTotal, TaxAmount, and Total
+// CalculateTotals recalculates SubTotal, TaxAmount, and Total using per-item tax
 func (c *CreditNote) CalculateTotals() error {
 	if len(c.Items) == 0 {
 		return ErrNoItems
 	}
 
 	c.SubTotal = 0
-	for _, item := range c.Items {
-		c.SubTotal += item.TotalPrice
+	c.TaxAmount = 0
+	for idx := range c.Items {
+		c.Items[idx].TotalPrice = c.Items[idx].Quantity * c.Items[idx].UnitPrice
+		c.Items[idx].TaxAmount = c.Items[idx].TotalPrice * (float64(c.Items[idx].TaxRate) / 100)
+		c.SubTotal += c.Items[idx].TotalPrice
+		c.TaxAmount += c.Items[idx].TaxAmount
 	}
 
-	c.TaxAmount = c.SubTotal * (float64(c.TaxRate) / 100)
 	c.Total = c.SubTotal + c.TaxAmount
 
 	if c.Total <= 0 {

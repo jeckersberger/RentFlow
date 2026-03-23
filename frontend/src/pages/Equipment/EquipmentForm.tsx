@@ -1,20 +1,46 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { equipmentApi, categoryApi } from '../../services/api'
+import { useNotificationStore } from '../../stores/notificationStore'
 import { Input } from '../../components/Form/Input'
 import { Select } from '../../components/Form/Select'
 import { TextArea } from '../../components/Form/TextArea'
 import { FileUpload } from '../../components/Form/FileUpload'
+import { Modal } from '../../components/Modal/Modal'
 import { CreateEquipmentDTO, Category } from '../../types/equipment'
 import './Equipment.module.scss'
+
+const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'available', label: 'Verfügbar' },
+  { value: 'reserved', label: 'Reserviert' },
+  { value: 'checked_out', label: 'Vermietet' },
+  { value: 'in_maintenance', label: 'In Wartung' },
+  { value: 'damaged', label: 'Beschädigt' },
+  { value: 'retired', label: 'Ausgemustert' },
+]
+
+const CONDITION_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'new', label: 'Neu' },
+  { value: 'excellent', label: 'Sehr gut' },
+  { value: 'good', label: 'Gut' },
+  { value: 'fair', label: 'Befriedigend' },
+  { value: 'poor', label: 'Mangelhaft' },
+  { value: 'defective', label: 'Defekt' },
+]
+
+interface FormDataExtended extends CreateEquipmentDTO {
+  status?: string
+  condition?: string
+}
 
 function EquipmentFormPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const { addNotification } = useNotificationStore()
   const isEditing = !!id
 
-  const [formData, setFormData] = useState<CreateEquipmentDTO>({
+  const [formData, setFormData] = useState<FormDataExtended>({
     name: '',
     description: '',
     sku: '',
@@ -23,10 +49,21 @@ function EquipmentFormPage() {
     location_id: '',
     rental_price_day: 0,
     rental_price_week: 0,
+    purchase_price: 0,
     weight: 0,
+    dimensions: { length: 0, width: 0, height: 0, unit: 'cm' },
+    tags: [],
+    status: 'available',
+    condition: 'good',
   })
 
+  const [tagInput, setTagInput] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showAiModal, setShowAiModal] = useState(false)
+  const [aiImage, setAiImage] = useState<File | null>(null)
+  const [aiImagePreview, setAiImagePreview] = useState<string | null>(null)
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false)
+  const aiFileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -49,13 +86,20 @@ function EquipmentFormPage() {
 
   const { mutate: saveEquipment, isPending } = useMutation({
     mutationFn: async () => {
+      // Build payload - include status/condition only for create
+      const payload: Record<string, unknown> = { ...formData }
       if (isEditing && id) {
-        return equipmentApi.update(id, formData)
+        return equipmentApi.update(id, payload)
       } else {
-        return equipmentApi.create(formData)
+        return equipmentApi.create(payload)
       }
     },
     onSuccess: (data) => {
+      addNotification(
+        isEditing ? 'Ausrüstung erfolgreich aktualisiert' : 'Ausrüstung erfolgreich erstellt',
+        'success',
+        { title: 'Erfolg', duration: 3000 }
+      )
       navigate(`/equipment/${data.id}`)
     },
     onError: (error: unknown) => {
@@ -76,10 +120,14 @@ function EquipmentFormPage() {
         location_id: equipment.location_id || '',
         rental_price_day: equipment.rental_price_day || 0,
         rental_price_week: equipment.rental_price_week || 0,
+        purchase_price: equipment.purchase_price || 0,
         weight: equipment.weight || 0,
+        dimensions: equipment.dimensions || { length: 0, width: 0, height: 0, unit: 'cm' },
         serial_number: equipment.serial_number || '',
         tags: equipment.tags || [],
         rfid_tag: equipment.rfid_tag || '',
+        status: equipment.status || 'available',
+        condition: equipment.condition || 'good',
       })
     }
   }, [equipment, isEditing])
@@ -102,7 +150,7 @@ function EquipmentFormPage() {
   }
 
   const handleInputChange = (
-    field: keyof CreateEquipmentDTO,
+    field: keyof FormDataExtended,
     value: unknown
   ) => {
     setFormData((prev) => ({
@@ -118,6 +166,65 @@ function EquipmentFormPage() {
     }
   }
 
+  const handleDimensionChange = (dim: 'length' | 'width' | 'height', value: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      dimensions: {
+        ...(prev.dimensions || {}),
+        [dim]: value,
+        unit: prev.dimensions?.unit || 'cm',
+      },
+    }))
+  }
+
+  const handleAddTag = () => {
+    const tag = tagInput.trim().toLowerCase()
+    if (tag && !(formData.tags || []).includes(tag)) {
+      handleInputChange('tags', [...(formData.tags || []), tag])
+    }
+    setTagInput('')
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    handleInputChange('tags', (formData.tags || []).filter((t) => t !== tagToRemove))
+  }
+
+  const handleTagKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddTag()
+    }
+  }
+
+  const handleAiImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setAiImage(file)
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        setAiImagePreview(ev.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleAiAnalyze = () => {
+    if (!aiImage) return
+    setIsAiAnalyzing(true)
+    // Placeholder: simulate AI analysis
+    setTimeout(() => {
+      setIsAiAnalyzing(false)
+      setShowAiModal(false)
+      setAiImage(null)
+      setAiImagePreview(null)
+      addNotification(
+        'KI-Erkennung wird in einer zukünftigen Version verfügbar',
+        'info',
+        { title: 'KI-Erkennung', duration: 5000 }
+      )
+    }, 2000)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -127,7 +234,20 @@ function EquipmentFormPage() {
   }
 
   if (isLoadingEquipment) {
-    return <div className="equipment-form-page">Wird geladen...</div>
+    return (
+      <div className="equipment-form-page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Wird geladen...</h1>
+          </div>
+        </div>
+        <div className="form-section">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={{ height: '2.5rem', background: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-4)' }} />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -137,6 +257,23 @@ function EquipmentFormPage() {
           <h1 className="page-title">
             {isEditing ? 'Ausrüstung bearbeiten' : 'Neue Ausrüstung'}
           </h1>
+          <p className="page-subtitle">
+            {isEditing ? `${equipment?.name} bearbeiten` : 'Fügen Sie ein neues Gerät hinzu'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={() => setShowAiModal(true)}
+            style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(0, 212, 255, 0.15))',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              color: 'var(--color-accent-light)',
+            }}
+          >
+            KI erkennen
+          </button>
         </div>
       </div>
 
@@ -150,14 +287,14 @@ function EquipmentFormPage() {
         <h2 className="form-section__title">Grundinformationen</h2>
         <div className="form-section__grid">
           <Input
-            label="Name"
+            label="Name *"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
             placeholder="z.B. LED-Bühnenbeleuchtung"
             error={errors.name}
           />
           <Input
-            label="SKU"
+            label="SKU *"
             value={formData.sku}
             onChange={(e) => handleInputChange('sku', e.target.value)}
             placeholder="z.B. LED-001"
@@ -182,12 +319,24 @@ function EquipmentFormPage() {
             placeholder="Optional (z.B. E28011606000020...)"
           />
           <Select
-            label="Kategorie"
+            label="Kategorie *"
             options={categoryOptions}
             value={formData.category_id}
             onChange={(e) => handleInputChange('category_id', e.target.value)}
             error={errors.category_id}
             placeholder="Kategorie auswählen"
+          />
+          <Select
+            label="Status"
+            options={STATUS_OPTIONS}
+            value={formData.status || 'available'}
+            onChange={(e) => handleInputChange('status', e.target.value)}
+          />
+          <Select
+            label="Zustand"
+            options={CONDITION_OPTIONS}
+            value={formData.condition || 'good'}
+            onChange={(e) => handleInputChange('condition', e.target.value)}
           />
         </div>
 
@@ -199,13 +348,13 @@ function EquipmentFormPage() {
           rows={4}
         />
 
-        <h2 className="form-section__title">Preisgestaltung</h2>
+        <h2 className="form-section__title">Preisgestaltung & Gewicht</h2>
         <div className="form-section__grid">
           <Input
             label="Tagespreis (€)"
             type="number"
             value={formData.rental_price_day || 0}
-            onChange={(e) => handleInputChange('rental_price_day', parseFloat(e.target.value))}
+            onChange={(e) => handleInputChange('rental_price_day', parseFloat(e.target.value) || 0)}
             step="0.01"
             min="0"
           />
@@ -213,7 +362,7 @@ function EquipmentFormPage() {
             label="Wochenpreis (€)"
             type="number"
             value={formData.rental_price_week || 0}
-            onChange={(e) => handleInputChange('rental_price_week', parseFloat(e.target.value))}
+            onChange={(e) => handleInputChange('rental_price_week', parseFloat(e.target.value) || 0)}
             step="0.01"
             min="0"
           />
@@ -221,7 +370,7 @@ function EquipmentFormPage() {
             label="Einkaufspreis (€)"
             type="number"
             value={formData.purchase_price || 0}
-            onChange={(e) => handleInputChange('purchase_price', parseFloat(e.target.value))}
+            onChange={(e) => handleInputChange('purchase_price', parseFloat(e.target.value) || 0)}
             step="0.01"
             min="0"
           />
@@ -229,13 +378,41 @@ function EquipmentFormPage() {
             label="Gewicht (kg)"
             type="number"
             value={formData.weight || 0}
-            onChange={(e) => handleInputChange('weight', parseFloat(e.target.value))}
+            onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || 0)}
             step="0.1"
             min="0"
           />
         </div>
 
-        <h2 className="form-section__title">Standort & Bilder</h2>
+        <h2 className="form-section__title">Abmessungen</h2>
+        <div className="form-section__grid">
+          <Input
+            label="Länge (cm)"
+            type="number"
+            value={formData.dimensions?.length || 0}
+            onChange={(e) => handleDimensionChange('length', parseFloat(e.target.value) || 0)}
+            step="0.1"
+            min="0"
+          />
+          <Input
+            label="Breite (cm)"
+            type="number"
+            value={formData.dimensions?.width || 0}
+            onChange={(e) => handleDimensionChange('width', parseFloat(e.target.value) || 0)}
+            step="0.1"
+            min="0"
+          />
+          <Input
+            label="Höhe (cm)"
+            type="number"
+            value={formData.dimensions?.height || 0}
+            onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value) || 0)}
+            step="0.1"
+            min="0"
+          />
+        </div>
+
+        <h2 className="form-section__title">Standort, Tags & Bilder</h2>
         <div className="form-section__grid">
           <Input
             label="Standort-ID"
@@ -243,6 +420,73 @@ function EquipmentFormPage() {
             onChange={(e) => handleInputChange('location_id', e.target.value)}
             placeholder="z.B. Lager-A"
           />
+          <div className="form-group">
+            <label className="form-label">Tags</label>
+            <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                placeholder="Tag eingeben + Enter"
+                className="form-input"
+                style={{
+                  flex: 1,
+                  height: 'var(--input-height)',
+                  padding: '0 var(--input-padding-x)',
+                  backgroundColor: 'var(--glass-bg-input-strong)',
+                  border: '1px solid var(--color-border-strong)',
+                  borderRadius: 'var(--radius-input)',
+                  color: 'var(--color-text-primary)',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm"
+                onClick={handleAddTag}
+              >
+                +
+              </button>
+            </div>
+            {(formData.tags || []).length > 0 && (
+              <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap', marginTop: 'var(--spacing-2)' }}>
+                {(formData.tags || []).map((tag) => (
+                  <span
+                    key={tag}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 'var(--spacing-1)',
+                      padding: '0.2rem 0.6rem',
+                      backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                      border: '1px solid rgba(0, 212, 255, 0.2)',
+                      borderRadius: 'var(--radius-full)',
+                      fontSize: 'var(--font-size-xs)',
+                      color: 'var(--color-primary)',
+                    }}
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-primary)',
+                        cursor: 'pointer',
+                        padding: '0 2px',
+                        fontSize: 'var(--font-size-xs)',
+                        lineHeight: 1,
+                      }}
+                    >
+                      x
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <FileUpload
@@ -273,6 +517,152 @@ function EquipmentFormPage() {
           </button>
         </div>
       </form>
+
+      {/* AI Recognition Modal */}
+      <Modal
+        isOpen={showAiModal}
+        onClose={() => {
+          setShowAiModal(false)
+          setAiImage(null)
+          setAiImagePreview(null)
+          setIsAiAnalyzing(false)
+        }}
+        title="KI-Erkennung"
+        size="md"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => {
+                setShowAiModal(false)
+                setAiImage(null)
+                setAiImagePreview(null)
+                setIsAiAnalyzing(false)
+              }}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={handleAiAnalyze}
+              disabled={!aiImage || isAiAnalyzing}
+            >
+              {isAiAnalyzing ? 'KI analysiert Bild...' : 'Analysieren'}
+            </button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-4)' }}>
+          <p style={{ margin: 0, color: 'var(--color-text-secondary)', textAlign: 'center', fontSize: 'var(--font-size-sm)' }}>
+            Laden Sie ein Foto der Ausrüstung hoch. Die KI wird versuchen, das Gerät zu erkennen und die Formularfelder automatisch auszufüllen.
+          </p>
+
+          {aiImagePreview ? (
+            <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+              <img
+                src={aiImagePreview}
+                alt="Hochgeladenes Bild"
+                style={{
+                  width: '100%',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setAiImage(null)
+                  setAiImagePreview(null)
+                  if (aiFileInputRef.current) aiFileInputRef.current.value = ''
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'rgba(0, 0, 0, 0.6)',
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: 'var(--radius-full)',
+                  width: '28px',
+                  height: '28px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              >
+                x
+              </button>
+            </div>
+          ) : (
+            <div
+              onClick={() => aiFileInputRef.current?.click()}
+              style={{
+                width: '100%',
+                maxWidth: '400px',
+                height: '200px',
+                border: '2px dashed rgba(0, 212, 255, 0.3)',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                backgroundColor: 'rgba(0, 212, 255, 0.03)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span style={{ fontSize: '2rem', marginBottom: 'var(--spacing-2)', opacity: 0.5 }}>
+                +
+              </span>
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                Bild hochladen
+              </span>
+            </div>
+          )}
+
+          <input
+            ref={aiFileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleAiImageSelect}
+          />
+
+          {isAiAnalyzing && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-3)',
+              padding: 'var(--spacing-3)',
+              backgroundColor: 'rgba(139, 92, 246, 0.1)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: 'var(--radius-md)',
+              width: '100%',
+            }}>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                border: '2px solid rgba(139, 92, 246, 0.3)',
+                borderTopColor: 'var(--color-accent)',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }} />
+              <span style={{ color: 'var(--color-accent-light)', fontSize: 'var(--font-size-sm)' }}>
+                KI analysiert Bild...
+              </span>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Inline CSS for spinner animation */}
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }

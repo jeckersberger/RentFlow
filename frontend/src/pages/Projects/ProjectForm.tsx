@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { projectApi } from '../../services/api'
+import { projectApi, contactApi } from '../../services/api'
 import { Input } from '../../components/Form/Input'
 import { Select } from '../../components/Form/Select'
 import { TextArea } from '../../components/Form/TextArea'
@@ -13,14 +13,32 @@ const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
   { value: 'quoted', label: 'Angebot' },
   { value: 'confirmed', label: 'Bestätigt' },
   { value: 'in_progress', label: 'In Bearbeitung' },
+  { value: 'completed', label: 'Abgeschlossen' },
+  { value: 'cancelled', label: 'Storniert' },
 ]
+
+const PROJECT_TYPE_OPTIONS = [
+  { value: 'dryhire', label: 'Dryhire' },
+  { value: 'band', label: 'Band' },
+  { value: 'production', label: 'Produktion' },
+  { value: 'sale', label: 'Verkauf' },
+  { value: 'installation', label: 'Festinstallation' },
+]
+
+interface Contact {
+  id: string
+  name?: string
+  company_name?: string
+  email?: string
+}
 
 function ProjectFormPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isEditing = !!id
 
-  const [formData, setFormData] = useState<CreateProjectDTO>({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [formData, setFormData] = useState<CreateProjectDTO & { project_type?: string; color?: string; venue_name?: string; contact_id?: string }>({
     name: '',
     description: '',
     client_name: '',
@@ -39,9 +57,21 @@ function ProjectFormPage() {
     budget: 0,
     currency: 'EUR',
     notes: '',
+    project_type: '',
+    color: '#00d4ff',
+    venue_name: '',
+    contact_id: '',
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Load contacts for customer selector
+  const { data: contactsData } = useQuery({
+    queryKey: ['contacts-list'],
+    queryFn: () => contactApi.list({ limit: 200 }),
+    staleTime: 1000 * 60 * 5,
+  })
+  const contacts: Contact[] = contactsData?.data || []
 
   const { data: project, isLoading: isLoadingProject } = useQuery({
     queryKey: ['project', id],
@@ -57,8 +87,14 @@ function ProjectFormPage() {
         return projectApi.create(formData)
       }
     },
-    onSuccess: () => {
-      navigate('/projects')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onSuccess: (data: any) => {
+      const newId = data?.id || id
+      if (newId) {
+        navigate(`/projects/${newId}`)
+      } else {
+        navigate('/projects')
+      }
     },
     onError: (error: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -91,6 +127,14 @@ function ProjectFormPage() {
         budget: project.budget || 0,
         currency: project.currency || 'EUR',
         notes: project.notes || '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        project_type: (project as any).project_type || '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        color: (project as any).color || '#00d4ff',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        venue_name: (project as any).venue_name || '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        contact_id: (project as any).contact_id || '',
       })
     }
   }, [project, isEditing])
@@ -145,7 +189,16 @@ function ProjectFormPage() {
   }
 
   if (isLoadingProject) {
-    return <div className="equipment-form-page">Wird geladen...</div>
+    return (
+      <div className="equipment-form-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-3)', animation: 'pulse-active 1.5s infinite' }}>
+            ...
+          </div>
+          <p style={{ color: 'var(--color-text-secondary)' }}>Projekt wird geladen...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -168,11 +221,18 @@ function ProjectFormPage() {
         <h2 className="form-section__title">Grundinformationen</h2>
         <div className="form-section__grid">
           <Input
-            label="Projektname"
+            label="Projektname *"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
             placeholder="z.B. Firmenfeier Müller GmbH"
             error={errors.name}
+          />
+          <Select
+            label="Projekttyp"
+            options={PROJECT_TYPE_OPTIONS}
+            value={formData.project_type || ''}
+            onChange={(e) => handleInputChange('project_type', e.target.value)}
+            placeholder="Typ auswählen..."
           />
           <Select
             label="Status"
@@ -181,6 +241,31 @@ function ProjectFormPage() {
             onChange={(e) => handleInputChange('status', e.target.value)}
             placeholder="Status auswählen"
           />
+          <div className="form-group">
+            <label className="form-label">Farbe</label>
+            <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+              <input
+                type="color"
+                value={formData.color || '#00d4ff'}
+                onChange={(e) => handleInputChange('color', e.target.value)}
+                style={{
+                  width: '48px',
+                  height: '40px',
+                  padding: '2px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-bg-tertiary)',
+                  cursor: 'pointer',
+                }}
+              />
+              <Input
+                value={formData.color || '#00d4ff'}
+                onChange={(e) => handleInputChange('color', e.target.value)}
+                placeholder="#00d4ff"
+                style={{ fontFamily: 'monospace' }}
+              />
+            </div>
+          </div>
           <Input
             label="Startdatum"
             type="date"
@@ -205,8 +290,29 @@ function ProjectFormPage() {
           rows={4}
         />
 
-        <h2 className="form-section__title">Kundeninformationen</h2>
+        <h2 className="form-section__title">Auftraggeber / Kunde</h2>
         <div className="form-section__grid">
+          {contacts.length > 0 ? (
+            <Select
+              label="Kontakt auswählen"
+              options={contacts.map((c) => ({
+                value: c.id,
+                label: c.company_name ? `${c.name || ''} (${c.company_name})` : c.name || c.email || c.id,
+              }))}
+              value={formData.contact_id || ''}
+              onChange={(e) => {
+                const selectedContact = contacts.find((c) => c.id === e.target.value)
+                handleInputChange('contact_id', e.target.value)
+                if (selectedContact) {
+                  handleInputChange('client_name', selectedContact.company_name || selectedContact.name || '')
+                  if (selectedContact.email) {
+                    handleInputChange('client_email', selectedContact.email)
+                  }
+                }
+              }}
+              placeholder="Kontakt aus CRM auswählen..."
+            />
+          ) : null}
           <Input
             label="Kundenname"
             value={formData.client_name}
@@ -232,6 +338,12 @@ function ProjectFormPage() {
         <h2 className="form-section__title">Veranstaltungsort</h2>
         <div className="form-section__grid">
           <Input
+            label="Venue / Veranstaltungsort"
+            value={formData.venue_name || ''}
+            onChange={(e) => handleInputChange('venue_name', e.target.value)}
+            placeholder="z.B. Stadthalle Wien"
+          />
+          <Input
             label="Straße"
             value={formData.venue_address?.street || ''}
             onChange={(e) => handleAddressChange('street', e.target.value)}
@@ -254,7 +366,7 @@ function ProjectFormPage() {
         <h2 className="form-section__title">Budget & Notizen</h2>
         <div className="form-section__grid">
           <Input
-            label="Budget (€)"
+            label="Budget (EUR)"
             type="number"
             value={formData.budget || 0}
             onChange={(e) => handleInputChange('budget', parseFloat(e.target.value) || 0)}

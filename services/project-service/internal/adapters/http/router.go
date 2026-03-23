@@ -12,10 +12,11 @@ func NewRouter(
 	packlistSvc *application.PacklistService,
 	reservationSvc *application.ReservationService,
 	customerSvc *application.CustomerService,
+	contactSvc *application.ContactService,
 	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
-	handler := NewHandler(projectSvc, packlistSvc, reservationSvc, customerSvc, logger)
+	handler := NewHandler(projectSvc, packlistSvc, reservationSvc, customerSvc, contactSvc, logger)
 
 	// Health & readiness
 	router.HandleFunc("GET /health", healthHandler)
@@ -60,6 +61,13 @@ func NewRouter(
 	router.HandleFunc("GET /api/v1/customers/{id}", handler.GetCustomer)
 	router.HandleFunc("PUT /api/v1/customers/{id}", handler.UpdateCustomer)
 	router.HandleFunc("DELETE /api/v1/customers/{id}", handler.DeleteCustomer)
+
+	// Contact routes (CRM)
+	router.HandleFunc("POST /api/v1/contacts", handler.CreateContact)
+	router.HandleFunc("GET /api/v1/contacts", handler.ListContacts)
+	router.HandleFunc("GET /api/v1/contacts/{id}", handler.GetContact)
+	router.HandleFunc("PUT /api/v1/contacts/{id}", handler.UpdateContact)
+	router.HandleFunc("DELETE /api/v1/contacts/{id}", handler.DeleteContact)
 
 	return router
 }

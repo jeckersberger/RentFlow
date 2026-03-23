@@ -14,10 +14,19 @@ const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'available', label: 'Verfügbar' },
   { value: 'reserved', label: 'Reserviert' },
   { value: 'checked_out', label: 'Vermietet' },
-  { value: 'in_maintenance', label: 'Wartung' },
+  { value: 'in_maintenance', label: 'In Wartung' },
   { value: 'damaged', label: 'Beschädigt' },
   { value: 'retired', label: 'Ausgemustert' },
 ]
+
+const CONDITION_LABELS: Record<string, string> = {
+  new: 'Neu',
+  excellent: 'Sehr gut',
+  good: 'Gut',
+  fair: 'Befriedigend',
+  poor: 'Mangelhaft',
+  defective: 'Defekt',
+}
 
 function EquipmentDetailPage() {
   const navigate = useNavigate()
@@ -25,6 +34,9 @@ function EquipmentDetailPage() {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore()
   const [showStatusModal, setShowStatusModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showQrModal, setShowQrModal] = useState(false)
+  const [qrBlobUrl, setQrBlobUrl] = useState<string | null>(null)
   const [newStatus, setNewStatus] = useState<EquipmentStatus | ''>('')
   const [showRfidModal, setShowRfidModal] = useState(false)
   const [rfidTagInput, setRfidTagInput] = useState('')
@@ -85,6 +97,26 @@ function EquipmentDetailPage() {
     },
   })
 
+  const { mutate: deleteEquipment, isPending: isDeletePending } = useMutation({
+    mutationFn: async () => {
+      return equipmentApi.delete(id!)
+    },
+    onSuccess: () => {
+      addNotification('Ausrüstung erfolgreich gelöscht', 'success', {
+        title: 'Erfolg',
+        duration: 3000,
+      })
+      queryClient.invalidateQueries({ queryKey: ['equipment-list'] })
+      navigate('/equipment')
+    },
+    onError: () => {
+      addNotification('Fehler beim Löschen der Ausrüstung', 'error', {
+        title: 'Fehler',
+        duration: 5000,
+      })
+    },
+  })
+
   const { mutate: calculatePrice } = useMutation({
     mutationFn: async () => {
       // Backend expects discount as 0-1 range (e.g. 0.1 for 10%)
@@ -117,20 +149,29 @@ function EquipmentDetailPage() {
     },
   })
 
-  const handleDownloadQRCode = async () => {
+  const handleShowQRCode = async () => {
     try {
       const blob = await equipmentApi.getQRCode(id!)
       const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${equipment?.name}-qr-code.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      setQrBlobUrl(url)
+      setShowQrModal(true)
     } catch (err) {
-      console.error('Failed to download QR code:', err)
+      console.error('Failed to load QR code:', err)
+      addNotification('QR-Code konnte nicht geladen werden', 'error', {
+        title: 'Fehler',
+        duration: 5000,
+      })
     }
+  }
+
+  const handleDownloadQRCode = () => {
+    if (!qrBlobUrl) return
+    const link = document.createElement('a')
+    link.href = qrBlobUrl
+    link.download = `${equipment?.name}-qr-code.png`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const getCategoryName = (categoryId: string) => {
@@ -138,9 +179,50 @@ function EquipmentDetailPage() {
     return cat ? cat.name : categoryId || '—'
   }
 
-  if (isLoading) return <div className="equipment-detail-page">Wird geladen...</div>
-  if (error) return <div className="error-message">Fehler beim Laden der Ausrüstung</div>
-  if (!equipment) return <div className="error-message">Ausrüstung nicht gefunden</div>
+  if (isLoading) {
+    return (
+      <div className="equipment-detail-page">
+        <div className="detail-grid">
+          <div className="detail-card">
+            <div className="detail-card__content">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="detail-card__row">
+                  <span className="detail-card__row-label" style={{ background: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-sm)', height: '1rem', width: '80px' }}>&nbsp;</span>
+                  <span className="detail-card__row-value" style={{ background: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-sm)', height: '1rem', width: '150px' }}>&nbsp;</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="equipment-detail-page">
+        <div className="error-message" role="alert">
+          Fehler beim Laden der Ausrüstung. Bitte versuchen Sie es später erneut.
+        </div>
+        <button className="btn btn--secondary" onClick={() => navigate('/equipment')}>
+          Zurück zur Liste
+        </button>
+      </div>
+    )
+  }
+
+  if (!equipment) {
+    return (
+      <div className="equipment-detail-page">
+        <div className="error-message" role="alert">
+          Ausrüstung nicht gefunden
+        </div>
+        <button className="btn btn--secondary" onClick={() => navigate('/equipment')}>
+          Zurück zur Liste
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="equipment-detail-page">
@@ -152,7 +234,7 @@ function EquipmentDetailPage() {
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
           <button
             className="btn btn--secondary"
-            onClick={handleDownloadQRCode}
+            onClick={handleShowQRCode}
           >
             QR-Code
           </button>
@@ -170,6 +252,12 @@ function EquipmentDetailPage() {
             onClick={() => navigate(`/equipment/${id}/edit`)}
           >
             Bearbeiten
+          </button>
+          <button
+            className="btn btn--danger"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            Löschen
           </button>
           <button
             className="btn btn--primary"
@@ -193,7 +281,9 @@ function EquipmentDetailPage() {
 
             <div className="detail-card__row">
               <span className="detail-card__row-label">Zustand</span>
-              <span className="detail-card__row-value">{equipment.condition || '—'}</span>
+              <span className="detail-card__row-value">
+                {CONDITION_LABELS[equipment.condition] || equipment.condition || '—'}
+              </span>
             </div>
 
             <div className="detail-card__row">
@@ -235,6 +325,27 @@ function EquipmentDetailPage() {
                 {equipment.description || '—'}
               </span>
             </div>
+
+            {equipment.dimensions && (equipment.dimensions.length || equipment.dimensions.width || equipment.dimensions.height) && (
+              <div className="detail-card__row">
+                <span className="detail-card__row-label">Abmessungen</span>
+                <span className="detail-card__row-value">
+                  {[equipment.dimensions.length, equipment.dimensions.width, equipment.dimensions.height]
+                    .filter(Boolean)
+                    .join(' x ')}{' '}
+                  {equipment.dimensions.unit || 'cm'}
+                </span>
+              </div>
+            )}
+
+            {equipment.purchase_price != null && equipment.purchase_price > 0 && (
+              <div className="detail-card__row">
+                <span className="detail-card__row-label">Einkaufspreis</span>
+                <span className="detail-card__row-value">
+                  {`€${equipment.purchase_price.toFixed(2)}`}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -284,7 +395,7 @@ function EquipmentDetailPage() {
                 Berechnen
               </button>
               {calculatedPrice && (
-                <div style={{ padding: 'var(--spacing-3)', backgroundColor: 'var(--color-primary-50)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-primary)' }}>
+                <div style={{ padding: 'var(--spacing-3)', backgroundColor: 'rgba(0, 212, 255, 0.08)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-primary)' }}>
                   <p style={{ margin: '0 0 var(--spacing-1) 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                     Berechneter Preis (inkl. MwSt.)
                   </p>
@@ -315,7 +426,7 @@ function EquipmentDetailPage() {
           <div className="detail-card" style={{ marginTop: 'var(--spacing-4)' }}>
             <h2 className="detail-card__title">Sonstiges</h2>
             <div className="detail-card__content">
-              {equipment.weight > 0 && (
+              {equipment.weight != null && equipment.weight > 0 && (
                 <div className="detail-card__row">
                   <span className="detail-card__row-label">Gewicht</span>
                   <span className="detail-card__row-value">
@@ -327,8 +438,22 @@ function EquipmentDetailPage() {
               {equipment.tags && equipment.tags.length > 0 && (
                 <div className="detail-card__row">
                   <span className="detail-card__row-label">Tags</span>
-                  <span className="detail-card__row-value">
-                    {equipment.tags.join(', ')}
+                  <span className="detail-card__row-value" style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+                    {equipment.tags.map((tag: string) => (
+                      <span
+                        key={tag}
+                        style={{
+                          padding: '0.15rem 0.5rem',
+                          backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                          border: '1px solid rgba(0, 212, 255, 0.2)',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: 'var(--font-size-xs)',
+                          color: 'var(--color-primary)',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </span>
                 </div>
               )}
@@ -351,6 +476,7 @@ function EquipmentDetailPage() {
         </div>
       </div>
 
+      {/* Status Change Modal */}
       <Modal
         isOpen={showStatusModal}
         onClose={() => setShowStatusModal(false)}
@@ -387,6 +513,91 @@ function EquipmentDetailPage() {
         />
       </Modal>
 
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Ausrüstung löschen"
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn--danger"
+              onClick={() => deleteEquipment()}
+              disabled={isDeletePending}
+            >
+              {isDeletePending ? 'Wird gelöscht...' : 'Endgültig löschen'}
+            </button>
+          </div>
+        }
+      >
+        <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>
+          Möchten Sie <strong>{equipment.name}</strong> wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+        </p>
+      </Modal>
+
+      {/* QR Code Modal */}
+      <Modal
+        isOpen={showQrModal}
+        onClose={() => {
+          setShowQrModal(false)
+          if (qrBlobUrl) {
+            window.URL.revokeObjectURL(qrBlobUrl)
+            setQrBlobUrl(null)
+          }
+        }}
+        title="QR-Code"
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => {
+                setShowQrModal(false)
+                if (qrBlobUrl) {
+                  window.URL.revokeObjectURL(qrBlobUrl)
+                  setQrBlobUrl(null)
+                }
+              }}
+            >
+              Schließen
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={handleDownloadQRCode}
+            >
+              Herunterladen
+            </button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-4)' }}>
+          {qrBlobUrl && (
+            <img
+              src={qrBlobUrl}
+              alt={`QR-Code für ${equipment.name}`}
+              style={{
+                width: '200px',
+                height: '200px',
+                borderRadius: 'var(--radius-md)',
+                background: 'white',
+                padding: 'var(--spacing-3)',
+              }}
+            />
+          )}
+          <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', textAlign: 'center' }}>
+            {equipment.name} ({equipment.sku})
+          </p>
+        </div>
+      </Modal>
+
+      {/* RFID Modal */}
       <Modal
         isOpen={showRfidModal}
         onClose={() => setShowRfidModal(false)}

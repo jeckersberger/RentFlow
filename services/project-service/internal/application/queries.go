@@ -52,6 +52,13 @@ type SearchCustomersQuery struct {
 	Offset     int
 }
 
+type ListContactsQuery struct {
+	TenantID   string
+	SearchTerm string
+	Limit      int
+	Offset     int
+}
+
 type GetCalendarQuery struct {
 	TenantID  string
 	StartDate string

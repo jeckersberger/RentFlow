@@ -59,13 +59,13 @@ function MaintenancePage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: eChecksData, isLoading: eChecksLoading } = useQuery({
+  const { data: eChecksData, isLoading: eChecksLoading, error: eChecksError } = useQuery({
     queryKey: ['echeck-results'],
     queryFn: () => maintenanceApi.listElectricalTests(),
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: plansData, isLoading: plansLoading } = useQuery({
+  const { data: plansData, isLoading: plansLoading, error: plansError } = useQuery({
     queryKey: ['maintenance-plans'],
     queryFn: () => maintenanceApi.listPlans(),
     staleTime: 1000 * 60 * 5,
@@ -136,7 +136,9 @@ function MaintenancePage() {
     )
   }
 
-  if (tasksError) {
+  const hasError = tasksError || eChecksError || plansError
+  if (hasError) {
+    const errorMsg = tasksError ? String(tasksError) : eChecksError ? String(eChecksError) : plansError ? String(plansError) : 'Unbekannter Fehler'
     return (
       <div className="maintenance-page">
         <div className="page-header">
@@ -148,7 +150,7 @@ function MaintenancePage() {
         <div className="empty-state">
           <div className="empty-state__icon">&#x26A0;</div>
           <h3 className="empty-state__title">Daten konnten nicht geladen werden</h3>
-          <p className="empty-state__description">{String(tasksError)}</p>
+          <p className="empty-state__description">{errorMsg}</p>
         </div>
       </div>
     )

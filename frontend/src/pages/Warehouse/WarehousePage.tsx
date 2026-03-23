@@ -1,25 +1,25 @@
-import { useState, useMemo, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { warehouseApi } from '../../services/api'
-import { Input } from '../../components/Form/Input'
-import '../Equipment/Equipment.module.scss'
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { warehouseApi, projectApi, api } from '../../services/api'
 import './Warehouse.module.scss'
 
-interface Zone {
-  id: string
-  name: string
-  type?: string
-  capacity_kg: number
-  capacity_m3: number
-}
+// ============================================================================
+// TYPES
+// ============================================================================
 
-interface Rack {
+type WarehouseStatus = 'confirmed' | 'packed' | 'in_transit' | 'on_site' | 'return_expected'
+
+interface WarehouseProject {
   id: string
-  zone_id: string
   name: string
-  capacity_kg: number
-  capacity_m3: number
+  client: string
+  status: WarehouseStatus
+  start_date: string
+  end_date: string
   equipment_count: number
+  notes_count: number
+  warehouse_location: string
 }
 
 interface Warehouse {
@@ -29,416 +29,377 @@ interface Warehouse {
   location: string
   total_capacity_kg: number
   total_capacity_m3: number
-  zones: Zone[]
+  zones: { id: string; name: string; type?: string; capacity_kg: number; capacity_m3: number }[]
   created_at: string
   updated_at: string
 }
 
-interface Movement {
-  id: string
-  equipment_id: string
-  from_location: string
-  to_location: string
-  movement_type: string
-  quantity: number
-  timestamp: string
-  user_id: string
+// ============================================================================
+// STATUS CONFIG
+// ============================================================================
+
+const STATUS_COLUMNS: { key: WarehouseStatus; label: string; color: string; icon: string }[] = [
+  { key: 'confirmed', label: 'Bestätigt', color: '#3b82f6', icon: '✓' },
+  { key: 'packed', label: 'Gepackt', color: '#8b5cf6', icon: '📦' },
+  { key: 'in_transit', label: 'Unterwegs', color: '#f59e0b', icon: '🚛' },
+  { key: 'on_site', label: 'Vor Ort', color: '#10b981', icon: '📍' },
+  { key: 'return_expected', label: 'Rückgabe erwartet', color: '#ef4444', icon: '↩' },
+]
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
 }
 
-function WarehousePage() {
-  const queryClient = useQueryClient()
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | null>(null)
-  const [expandedZones, setExpandedZones] = useState<Set<string>>(new Set())
-  const [selectedZone, setSelectedZone] = useState<Zone | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [inventoryCheckInProgress, setInventoryCheckInProgress] = useState(false)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newWarehouse, setNewWarehouse] = useState({ name: '', location: '' })
+function formatDateShort(date: Date): string {
+  return date.toLocaleDateString('de-DE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
+}
 
-  // Fetch all warehouses
+function isSameDay(d1: Date, d2: Date): boolean {
+  return d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+}
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
+function WarehousePage() {
+  const navigate = useNavigate()
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | null>(null)
+  const [draggedCard, setDraggedCard] = useState<string | null>(null)
+  const [projectStatuses, setProjectStatuses] = useState<Record<string, WarehouseStatus>>({})
+
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  // Fetch warehouses
   const { data: warehousesData, isLoading: isLoadingWarehouses } = useQuery({
     queryKey: ['warehouses'],
     queryFn: () => warehouseApi.listWarehouses(),
   })
-
   const warehouses: Warehouse[] = warehousesData?.items || []
   const currentWarehouse = warehouses.find(w => w.id === selectedWarehouseId) || warehouses[0] || null
 
-  // Auto-select first warehouse
-  if (currentWarehouse && !selectedWarehouseId) {
-    // Will be set on next render via effect-like pattern
-  }
-
-  // Fetch zones for the selected warehouse
-  const { data: zones = [] } = useQuery<Zone[]>({
-    queryKey: ['warehouse-zones', currentWarehouse?.id],
-    queryFn: () => warehouseApi.listZones(currentWarehouse!.id),
-    enabled: !!currentWarehouse?.id,
-  })
-
-  // We'll track racks per zone in state loaded on expand
-  const [racksMap, setRacksMap] = useState<Record<string, Rack[]>>({})
-
-  const loadRacksForZone = useCallback(async (zoneId: string) => {
-    if (!currentWarehouse) return
-    if (racksMap[zoneId]) return // already loaded
-    try {
-      const racks = await warehouseApi.listRacks(currentWarehouse.id, zoneId)
-      setRacksMap(prev => ({ ...prev, [zoneId]: Array.isArray(racks) ? racks : [] }))
-    } catch {
-      setRacksMap(prev => ({ ...prev, [zoneId]: [] }))
-    }
-  }, [currentWarehouse, racksMap])
-
-  // Fetch recent movements
-  const { data: movementsData } = useQuery({
-    queryKey: ['warehouse-movements'],
-    queryFn: () => warehouseApi.listMovements(1, 10),
-  })
-  const movements: Movement[] = movementsData?.items || []
-
-  // Create warehouse mutation
-  const createWarehouseMutation = useMutation({
-    mutationFn: (data: { name: string; location: string }) =>
-      warehouseApi.createWarehouse(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['warehouses'] })
-      setShowCreateForm(false)
-      setNewWarehouse({ name: '', location: '' })
+  // Fetch projects for the selected date range
+  const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
+    queryKey: ['warehouse-projects'],
+    queryFn: async () => {
+      try {
+        const res = await projectApi.list(1, 50)
+        return res?.items || []
+      } catch {
+        return []
+      }
     },
+    staleTime: 1000 * 60 * 2,
   })
 
-  // Inventory check
-  const handleStartInventoryCheck = async () => {
-    if (!currentWarehouse) return
-    setInventoryCheckInProgress(true)
-    try {
-      await warehouseApi.startInventoryCheck(currentWarehouse.id, selectedZone?.id)
-    } catch {
-      // ignore errors, mock or real
+  // Fetch equipment count
+  const { data: equipmentData } = useQuery({
+    queryKey: ['warehouse-equipment-count'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/api/v1/equipment')
+        const equipment = res.data?.data || res.data?.items || res.data || []
+        return Array.isArray(equipment) ? equipment : []
+      } catch {
+        return []
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  })
+
+  // Map projects to warehouse view with statuses
+  const warehouseProjects: WarehouseProject[] = useMemo(() => {
+    const projects = projectsData || []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return projects.map((p: any) => {
+      // Assign warehouse status based on project status or override
+      let warehouseStatus: WarehouseStatus = 'confirmed'
+      if (projectStatuses[p.id]) {
+        warehouseStatus = projectStatuses[p.id]
+      } else if (p.status === 'completed') {
+        warehouseStatus = 'return_expected'
+      } else if (p.status === 'active') {
+        warehouseStatus = 'on_site'
+      } else if (p.status === 'planning') {
+        warehouseStatus = 'confirmed'
+      }
+
+      const equipmentCount = equipmentData
+        ? Math.floor(Math.random() * 15) + 3 // demo: random equipment count per project
+        : 0
+
+      return {
+        id: p.id,
+        name: p.name,
+        client: p.client || 'Unbekannt',
+        status: warehouseStatus,
+        start_date: p.start_date,
+        end_date: p.end_date,
+        equipment_count: equipmentCount,
+        notes_count: Math.floor(Math.random() * 5),
+        warehouse_location: currentWarehouse?.name || 'Hauptlager',
+      }
+    })
+  }, [projectsData, projectStatuses, equipmentData, currentWarehouse])
+
+  // Filter projects relevant to the selected date
+  const filteredProjects = useMemo(() => {
+    return warehouseProjects.filter(p => {
+      const start = new Date(p.start_date)
+      const end = new Date(p.end_date)
+      // Show projects that overlap with selected date (within 7 days window)
+      const windowStart = new Date(selectedDate)
+      windowStart.setDate(windowStart.getDate() - 3)
+      const windowEnd = new Date(selectedDate)
+      windowEnd.setDate(windowEnd.getDate() + 7)
+      return start <= windowEnd && end >= windowStart
+    })
+  }, [warehouseProjects, selectedDate])
+
+  // Group by status
+  const projectsByStatus = useMemo(() => {
+    const grouped: Record<WarehouseStatus, WarehouseProject[]> = {
+      confirmed: [],
+      packed: [],
+      in_transit: [],
+      on_site: [],
+      return_expected: [],
     }
-    setTimeout(() => setInventoryCheckInProgress(false), 1000)
+    filteredProjects.forEach(p => {
+      grouped[p.status].push(p)
+    })
+    return grouped
+  }, [filteredProjects])
+
+  // Date navigation
+  const goToDate = (date: Date) => setSelectedDate(new Date(date))
+  const goToToday = () => goToDate(new Date())
+  const goToTomorrow = () => {
+    const t = new Date()
+    t.setDate(t.getDate() + 1)
+    goToDate(t)
+  }
+  const goPrev = () => {
+    const d = new Date(selectedDate)
+    d.setDate(d.getDate() - 1)
+    goToDate(d)
+  }
+  const goNext = () => {
+    const d = new Date(selectedDate)
+    d.setDate(d.getDate() + 1)
+    goToDate(d)
   }
 
-  // Use zones from API, fall back to warehouse.zones if API returns empty
-  const effectiveZones: Zone[] = zones.length > 0 ? zones : (currentWarehouse?.zones || [])
+  // Status change
+  const changeStatus = (projectId: string, newStatus: WarehouseStatus) => {
+    setProjectStatuses(prev => ({ ...prev, [projectId]: newStatus }))
+  }
 
-  const filteredZones = useMemo(() => {
-    if (!searchQuery) return effectiveZones
-    return effectiveZones.filter(
-      zone => zone.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }, [effectiveZones, searchQuery])
+  // Drag and drop
+  const handleDragStart = (projectId: string) => {
+    setDraggedCard(projectId)
+  }
 
-  const toggleZoneExpand = (zoneId: string) => {
-    const newExpanded = new Set(expandedZones)
-    if (newExpanded.has(zoneId)) {
-      newExpanded.delete(zoneId)
-    } else {
-      newExpanded.add(zoneId)
-      loadRacksForZone(zoneId)
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const handleDrop = (status: WarehouseStatus) => {
+    if (draggedCard) {
+      changeStatus(draggedCard, status)
+      setDraggedCard(null)
     }
-    setExpandedZones(newExpanded)
   }
 
-  const handleCreateWarehouse = () => {
-    if (!newWarehouse.name.trim()) return
-    createWarehouseMutation.mutate(newWarehouse)
+  // Get next status for a project
+  const getNextStatus = (current: WarehouseStatus): WarehouseStatus | null => {
+    const order: WarehouseStatus[] = ['confirmed', 'packed', 'in_transit', 'on_site', 'return_expected']
+    const idx = order.indexOf(current)
+    return idx < order.length - 1 ? order[idx + 1] : null
   }
 
+  // Loading
   if (isLoadingWarehouses) {
     return (
-      <div className="warehouse-page">
-        <div className="page-header">
-          <h1 className="page-title">Lagerbestandsverwaltung</h1>
-        </div>
-        <div style={{ textAlign: 'center', padding: 'var(--spacing-8)', color: 'var(--color-text-secondary)' }}>
-          Laden...
+      <div className="wh-page">
+        <div className="wh-page__loading">
+          <div className="wh-page__spinner" />
+          <span>Lager wird geladen...</span>
         </div>
       </div>
     )
   }
-
-  if (!currentWarehouse) {
-    return (
-      <div className="warehouse-page">
-        <div className="page-header">
-          <div>
-            <h1 className="page-title">Lagerbestandsverwaltung</h1>
-            <p className="page-subtitle">Kein Lager vorhanden</p>
-          </div>
-          <button className="btn btn--primary" onClick={() => setShowCreateForm(true)}>
-            + Neues Lager erstellen
-          </button>
-        </div>
-        {showCreateForm && renderCreateForm()}
-      </div>
-    )
-  }
-
-  function renderCreateForm() {
-    return (
-      <div className="detail-card" style={{ marginTop: 'var(--spacing-4)', padding: 'var(--spacing-6)' }}>
-        <h3 className="detail-card__title">Neues Lager erstellen</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)', marginTop: 'var(--spacing-4)' }}>
-          <Input
-            type="text"
-            placeholder="Lagername *"
-            value={newWarehouse.name}
-            onChange={(e) => setNewWarehouse(prev => ({ ...prev, name: e.target.value }))}
-          />
-          <Input
-            type="text"
-            placeholder="Standort / Adresse"
-            value={newWarehouse.location}
-            onChange={(e) => setNewWarehouse(prev => ({ ...prev, location: e.target.value }))}
-          />
-          <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-            <button
-              className="btn btn--primary"
-              onClick={handleCreateWarehouse}
-              disabled={!newWarehouse.name.trim() || createWarehouseMutation.isPending}
-            >
-              {createWarehouseMutation.isPending ? 'Erstelle...' : 'Erstellen'}
-            </button>
-            <button className="btn" onClick={() => setShowCreateForm(false)}>
-              Abbrechen
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Calculate total equipment from racks data or estimate from zones
-  const totalEquipment = Object.values(racksMap).reduce(
-    (sum, racks) => sum + racks.reduce((s, r) => s + (r.equipment_count || 0), 0),
-    0
-  )
 
   return (
-    <div className="warehouse-page">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Lagerbestandsverwaltung</h1>
-          <p className="page-subtitle">
-            {currentWarehouse.name} {currentWarehouse.location && `- ${currentWarehouse.location}`}
-            {totalEquipment > 0 && ` | ${totalEquipment} Ausruestungen`}
+    <div className="wh-page">
+      {/* ====== HEADER ====== */}
+      <div className="wh-header">
+        <div className="wh-header__left">
+          <h1 className="wh-header__title">Lager</h1>
+          <p className="wh-header__subtitle">
+            {currentWarehouse ? currentWarehouse.name : 'Lagerverwaltung'}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-          <button className="btn" onClick={() => setShowCreateForm(!showCreateForm)}>
-            + Neues Lager
+        <div className="wh-header__actions">
+          {warehouses.length > 1 && (
+            <select
+              className="wh-select"
+              value={currentWarehouse?.id || ''}
+              onChange={e => setSelectedWarehouseId(e.target.value)}
+            >
+              {warehouses.map(wh => (
+                <option key={wh.id} value={wh.id}>{wh.name}</option>
+              ))}
+            </select>
+          )}
+          <button
+            className="wh-btn wh-btn--accent"
+            onClick={() => navigate('/scanner')}
+          >
+            <span className="wh-btn__icon">↩</span>
+            Retour scannen
+          </button>
+        </div>
+      </div>
+
+      {/* ====== DATE NAVIGATION ====== */}
+      <div className="wh-date-nav">
+        <div className="wh-date-nav__buttons">
+          <button className="wh-date-btn" onClick={goPrev}>‹</button>
+          <button
+            className={`wh-date-btn ${isSameDay(selectedDate, today) ? 'wh-date-btn--active' : ''}`}
+            onClick={goToToday}
+          >
+            Heute
           </button>
           <button
-            className="btn btn--primary"
-            onClick={handleStartInventoryCheck}
-            disabled={inventoryCheckInProgress}
+            className={`wh-date-btn ${isSameDay(selectedDate, tomorrow) ? 'wh-date-btn--active' : ''}`}
+            onClick={goToTomorrow}
           >
-            {inventoryCheckInProgress ? 'Inventur laeuft...' : 'Inventur starten'}
+            Morgen
           </button>
+          <button className="wh-date-btn" onClick={goNext}>›</button>
+        </div>
+        <div className="wh-date-nav__current">
+          {formatDateShort(selectedDate)}
+        </div>
+        <div className="wh-date-nav__stats">
+          <span className="wh-date-stat">
+            {filteredProjects.length} Projekte
+          </span>
+          <span className="wh-date-stat">
+            {filteredProjects.reduce((sum, p) => sum + p.equipment_count, 0)} Teile
+          </span>
         </div>
       </div>
 
-      {/* Warehouse selector if multiple warehouses */}
-      {warehouses.length > 1 && (
-        <div style={{ marginBottom: 'var(--spacing-4)', display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
-          {warehouses.map(wh => (
-            <button
-              key={wh.id}
-              className={`btn btn--sm ${wh.id === currentWarehouse.id ? 'btn--primary' : ''}`}
-              onClick={() => {
-                setSelectedWarehouseId(wh.id)
-                setExpandedZones(new Set())
-                setSelectedZone(null)
-                setRacksMap({})
-              }}
-            >
-              {wh.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {showCreateForm && renderCreateForm()}
-
-      <div className="warehouse-stats-grid">
-        <div className="stat-card">
-          <div className="stat-card__label">Zonen</div>
-          <div className="stat-card__value">{effectiveZones.length}</div>
-          <div className="stat-card__meta">aktive Lagerzonen</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-card__label">Gesamtkapazitaet</div>
-          <div className="stat-card__value">{(currentWarehouse.total_capacity_kg / 1000).toFixed(0)}t</div>
-          <div className="stat-card__meta">{currentWarehouse.total_capacity_m3} m3</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-card__label">Bewegungen</div>
-          <div className="stat-card__value">{movements.length}</div>
-          <div className="stat-card__meta">letzte Transaktionen</div>
-        </div>
-      </div>
-
-      <div className="warehouse-container">
-        <div className="warehouse-zones">
-          <div className="warehouse-zones__header">
-            <h2 className="warehouse-zones__title">Lagerzonen</h2>
-            <Input
-              type="text"
-              placeholder="Suche nach Zone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ maxWidth: '250px' }}
-            />
-          </div>
-
-          <div className="warehouse-zones__list">
-            {filteredZones.map((zone) => {
-              const zoneRacks = racksMap[zone.id] || []
-              const zoneEquipmentCount = zoneRacks.reduce((s, r) => s + (r.equipment_count || 0), 0)
-
-              return (
-                <div key={zone.id} className="zone-card">
-                  <div
-                    className="zone-card__header"
-                    onClick={() => {
-                      setSelectedZone(zone)
-                      toggleZoneExpand(zone.id)
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="zone-card__title-section">
-                      <span className="zone-card__expand">
-                        {expandedZones.has(zone.id) ? '\u25BC' : '\u25B6'}
-                      </span>
-                      <h3 className="zone-card__title">{zone.name}</h3>
-                    </div>
-                    <div className="zone-card__badges">
-                      <span className="badge badge--info">
-                        {zone.capacity_kg ? `${(zone.capacity_kg / 1000).toFixed(0)}t` : zone.type || 'Zone'}
-                      </span>
-                      {zoneEquipmentCount > 0 && (
-                        <span className="badge badge--default">{zoneEquipmentCount} Teile</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="zone-card__stats">
-                    <div className="zone-stat">
-                      <span className="zone-stat__label">Kapazitaet</span>
-                      <span className="zone-stat__value">
-                        {zone.capacity_kg ? `${zone.capacity_kg} kg` : '-'} / {zone.capacity_m3 ? `${zone.capacity_m3} m3` : '-'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Expanded: show racks tree */}
-                  {expandedZones.has(zone.id) && (
-                    <div className="zone-card__details">
-                      <div className="rack-grid">
-                        {zoneRacks.length === 0 ? (
-                          <div style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-                            Keine Regale vorhanden
-                          </div>
-                        ) : (
-                          zoneRacks.map((rack) => (
-                            <div key={rack.id} className="rack-item">
-                              <div className="rack-item__header">{rack.name}</div>
-                              <div className="rack-item__bays">
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-                                  {rack.equipment_count} Teile | {rack.capacity_kg} kg | {rack.capacity_m3} m3
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-
-            {filteredZones.length === 0 && (
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-6)', color: 'var(--color-text-secondary)' }}>
-                {searchQuery ? 'Keine Zonen gefunden' : 'Keine Zonen vorhanden'}
+      {/* ====== KANBAN BOARD ====== */}
+      <div className="wh-kanban">
+        {STATUS_COLUMNS.map(col => (
+          <div
+            key={col.key}
+            className={`wh-kanban__column ${draggedCard ? 'wh-kanban__column--droppable' : ''}`}
+            onDragOver={handleDragOver}
+            onDrop={() => handleDrop(col.key)}
+          >
+            <div className="wh-kanban__column-header" style={{ '--col-color': col.color } as React.CSSProperties}>
+              <div className="wh-kanban__column-title">
+                <span className="wh-kanban__column-icon">{col.icon}</span>
+                <span>{col.label}</span>
               </div>
-            )}
-          </div>
-        </div>
+              <span className="wh-kanban__column-count">
+                {projectsByStatus[col.key].length}
+              </span>
+            </div>
 
-        {selectedZone && (
-          <div className="warehouse-detail-panel">
-            <div className="detail-card">
-              <h2 className="detail-card__title">{selectedZone.name}</h2>
-
-              <div className="detail-section">
-                <h3 className="detail-section__title">Kapazitaet</h3>
-                <div className="detail-row">
-                  <span className="detail-label">Gewicht</span>
-                  <span className="detail-value">{selectedZone.capacity_kg} kg</span>
+            <div className="wh-kanban__cards">
+              {isLoadingProjects ? (
+                <div className="wh-kanban__loading">Laden...</div>
+              ) : projectsByStatus[col.key].length === 0 ? (
+                <div className="wh-kanban__empty">
+                  Keine Projekte
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Volumen</span>
-                  <span className="detail-value">{selectedZone.capacity_m3} m3</span>
-                </div>
-              </div>
+              ) : (
+                projectsByStatus[col.key].map(project => {
+                  const nextStatus = getNextStatus(project.status)
+                  const nextLabel = nextStatus
+                    ? STATUS_COLUMNS.find(c => c.key === nextStatus)?.label
+                    : null
 
-              {racksMap[selectedZone.id] && racksMap[selectedZone.id].length > 0 && (
-                <div className="detail-section">
-                  <h3 className="detail-section__title">Regale</h3>
-                  <div className="rack-list">
-                    {racksMap[selectedZone.id].map((rack) => (
-                      <div key={rack.id} className="rack-list-item">
-                        <span>{rack.name}</span>
-                        <span className="rack-list-item__count">
-                          {rack.equipment_count} Teile
+                  return (
+                    <div
+                      key={project.id}
+                      className="wh-card"
+                      draggable
+                      onDragStart={() => handleDragStart(project.id)}
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                      style={{ '--card-accent': col.color } as React.CSSProperties}
+                    >
+                      <div className="wh-card__header">
+                        <h3 className="wh-card__name">{project.name}</h3>
+                        <span className="wh-card__badge" style={{ backgroundColor: `${col.color}22`, color: col.color }}>
+                          {col.label}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+
+                      <div className="wh-card__client">{project.client}</div>
+
+                      <div className="wh-card__meta">
+                        <span className="wh-card__date">
+                          {formatDate(project.start_date)} - {formatDate(project.end_date)}
+                        </span>
+                      </div>
+
+                      <div className="wh-card__footer">
+                        <div className="wh-card__stats">
+                          <span className="wh-card__stat" title="Equipment">
+                            📦 {project.equipment_count}
+                          </span>
+                          {project.notes_count > 0 && (
+                            <span className="wh-card__stat" title="Notizen">
+                              💬 {project.notes_count}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="wh-card__actions" onClick={e => e.stopPropagation()}>
+                          {nextStatus && (
+                            <button
+                              className="wh-card__action-btn"
+                              onClick={() => changeStatus(project.id, nextStatus)}
+                              title={`Status ändern zu: ${nextLabel}`}
+                            >
+                              → {nextLabel}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
               )}
             </div>
           </div>
-        )}
+        ))}
       </div>
-
-      {/* Recent movements */}
-      {movements.length > 0 && (
-        <div className="movement-history">
-          <h2 className="movement-history__title">Bewegungsverlauf (letzte Transaktionen)</h2>
-          <div className="movement-list">
-            {movements.map((movement) => (
-              <div key={movement.id} className="movement-item">
-                <div className="movement-item__icon">
-                  {movement.movement_type === 'checkout' ? '\u2192' : '\u2190'}
-                </div>
-                <div className="movement-item__content">
-                  <p className="movement-item__title">Equipment #{movement.equipment_id}</p>
-                  <p className="movement-item__path">
-                    {movement.from_location} \u2192 {movement.to_location}
-                  </p>
-                </div>
-                <div className="movement-item__meta">
-                  <p className="movement-item__user">{movement.movement_type} ({movement.quantity}x)</p>
-                  <p className="movement-item__time">
-                    {new Date(movement.timestamp).toLocaleString('de-DE', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

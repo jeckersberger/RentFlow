@@ -36,9 +36,16 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// Response interceptor - handle 401 and refresh token
+// Response interceptor - unwrap { data: ..., message: "..." } envelope from backend
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Backend wraps responses as { data: <payload>, message: "..." }
+    // Unwrap so that res.data gives the actual payload directly
+    if (response.data && typeof response.data === 'object' && 'data' in response.data && 'message' in response.data) {
+      response.data = response.data.data
+    }
+    return response
+  },
   (error) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().logout()
@@ -89,6 +96,30 @@ export const authApi = {
 
   refreshToken: () =>
     api.post('/api/v1/auth/refresh').then(res => res.data),
+
+  updateProfile: (data: { first_name?: string; last_name?: string; email?: string; phone?: string }) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: '1', name: `${data.first_name || 'Marco'} ${data.last_name || 'Berger'}`, email: data.email || 'admin@example.com' })
+      : api.put('/api/v1/auth/profile', data).then(res => res.data),
+
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.put('/api/v1/auth/password', data).then(res => res.data),
+
+  getSessions: () =>
+    MOCK_MODE
+      ? mockDelay([
+          { id: '1', browser: 'Chrome 122', ip: '192.168.1.42', last_active: '2026-03-23T10:30:00Z', current: true },
+          { id: '2', browser: 'Firefox 124', ip: '10.0.0.15', last_active: '2026-03-22T18:15:00Z', current: false },
+          { id: '3', browser: 'Safari 18', ip: '172.16.0.8', last_active: '2026-03-21T09:00:00Z', current: false },
+        ])
+      : api.get('/api/v1/auth/sessions').then(res => res.data),
+
+  revokeOtherSessions: () =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.post('/api/v1/auth/sessions/revoke-others').then(res => res.data),
 }
 
 // ============================================================================
@@ -116,11 +147,12 @@ const mockProjects = [
 ]
 
 const mockInvoices = [
-  { id: '1', invoice_number: 'RF-2026-001', client: 'AutoBrand AG', project_name: 'Produktlaunch AutoBrand', status: 'paid', amount: 32000, tax: 6080, total: 38080, issue_date: '2026-03-01', due_date: '2026-03-31', paid_date: '2026-03-15', items: [{ description: 'LED-Wall 6x3m (3 Tage)', quantity: 1, price: 4500, total: 4500 }, { description: 'Line Array System (3 Tage)', quantity: 2, price: 3600, total: 7200 }, { description: 'Lichttechnik Paket', quantity: 1, price: 8500, total: 8500 }, { description: 'Techniker (3 Tage)', quantity: 4, price: 2950, total: 11800 }] },
-  { id: '2', invoice_number: 'RF-2026-002', client: 'Familie Weber', project_name: 'Hochzeit Familie Weber', status: 'paid', amount: 8500, tax: 1615, total: 10115, issue_date: '2026-03-09', due_date: '2026-04-09', paid_date: '2026-03-20', items: [{ description: 'DJ-Setup komplett', quantity: 1, price: 3500, total: 3500 }, { description: 'Ambientebeleuchtung', quantity: 1, price: 2800, total: 2800 }, { description: 'Techniker', quantity: 2, price: 1100, total: 2200 }] },
-  { id: '3', invoice_number: 'RF-2026-003', client: 'Stadt München', project_name: 'Stadtfest München 2026', status: 'draft', amount: 45000, tax: 8550, total: 53550, issue_date: '2026-03-22', due_date: '2026-04-22', paid_date: null, items: [{ description: 'PA-System Hauptbühne', quantity: 1, price: 12000, total: 12000 }, { description: 'Lichttechnik 3 Bühnen', quantity: 1, price: 15000, total: 15000 }, { description: 'Bühne + Truss', quantity: 1, price: 8000, total: 8000 }, { description: 'Techniker-Team (4 Tage)', quantity: 8, price: 1250, total: 10000 }] },
-  { id: '4', invoice_number: 'RF-2026-004', client: 'TechCorp GmbH', project_name: 'Firmen-Gala TechCorp', status: 'sent', amount: 18500, tax: 3515, total: 22015, issue_date: '2026-03-18', due_date: '2026-04-18', paid_date: null, items: [{ description: 'Audio-Paket Gala', quantity: 1, price: 6500, total: 6500 }, { description: 'Licht-Design Gala', quantity: 1, price: 7000, total: 7000 }, { description: 'Video/Streaming', quantity: 1, price: 5000, total: 5000 }] },
-  { id: '5', invoice_number: 'RF-2026-005', client: 'Festival GmbH', project_name: 'Open Air Festival Bodensee', status: 'overdue', amount: 25000, tax: 4750, total: 29750, issue_date: '2026-02-01', due_date: '2026-03-01', paid_date: null, items: [{ description: 'Anzahlung Festival-Paket (30%)', quantity: 1, price: 25000, total: 25000 }] },
+  { id: '1', number: 'RF-2026-001', client_id: 'c1', client_name: 'AutoBrand AG', client_email: 'info@autobrand.de', client_address: 'Industriestr. 12, 80333 München', project_id: 'p1', project_name: 'Produktlaunch AutoBrand', status: 'paid', subtotal: 32000, tax_total: 6080, total: 38080, issue_date: '2026-03-01', due_date: '2026-03-31', paid_date: '2026-03-15', payment_terms: '30', notes: 'Vielen Dank für Ihren Auftrag!', bank_name: 'Sparkasse München', bank_iban: 'DE89 3704 0044 0532 0130 00', bank_bic: 'COBADEFFXXX', bank_account_holder: 'RentFlow GmbH', created_at: '2026-03-01T10:00:00Z', updated_at: '2026-03-15T14:00:00Z', line_items: [{ id: 'li1', invoice_id: '1', name: 'LED-Wall 6x3m', description: 'LED-Wall 6x3m (3 Tage)', quantity: 1, unit_price: 4500, total: 4500, tax_rate: 19, tax_amount: 855 }, { id: 'li2', invoice_id: '1', name: 'Line Array System', description: 'Line Array System (3 Tage)', quantity: 2, unit_price: 3600, total: 7200, tax_rate: 19, tax_amount: 1368 }, { id: 'li3', invoice_id: '1', name: 'Lichttechnik Paket', description: 'Lichttechnik Paket', quantity: 1, unit_price: 8500, total: 8500, tax_rate: 19, tax_amount: 1615 }, { id: 'li4', invoice_id: '1', name: 'Techniker', description: 'Techniker (3 Tage)', quantity: 4, unit_price: 2950, total: 11800, tax_rate: 19, tax_amount: 2242 }] },
+  { id: '2', number: 'RF-2026-002', client_id: 'c2', client_name: 'Familie Weber', client_email: 'weber@email.de', client_address: 'Rosenstr. 5, 81669 München', project_id: 'p2', project_name: 'Hochzeit Familie Weber', status: 'paid', subtotal: 8500, tax_total: 1615, total: 10115, issue_date: '2026-03-09', due_date: '2026-04-09', paid_date: '2026-03-20', payment_terms: '30', notes: '', bank_name: 'Sparkasse München', bank_iban: 'DE89 3704 0044 0532 0130 00', bank_bic: 'COBADEFFXXX', bank_account_holder: 'RentFlow GmbH', created_at: '2026-03-09T09:00:00Z', updated_at: '2026-03-20T11:00:00Z', line_items: [{ id: 'li5', invoice_id: '2', name: 'DJ-Setup komplett', description: 'DJ-Setup komplett', quantity: 1, unit_price: 3500, total: 3500, tax_rate: 19, tax_amount: 665 }, { id: 'li6', invoice_id: '2', name: 'Ambientebeleuchtung', description: 'Ambientebeleuchtung', quantity: 1, unit_price: 2800, total: 2800, tax_rate: 19, tax_amount: 532 }, { id: 'li7', invoice_id: '2', name: 'Techniker', description: 'Techniker', quantity: 2, unit_price: 1100, total: 2200, tax_rate: 19, tax_amount: 418 }] },
+  { id: '3', number: 'RF-2026-003', client_id: 'c3', client_name: 'Stadt München', client_email: 'veranstaltungen@muenchen.de', client_address: 'Marienplatz 8, 80331 München', project_id: 'p3', project_name: 'Stadtfest München 2026', status: 'draft', subtotal: 45000, tax_total: 8550, total: 53550, issue_date: '2026-03-22', due_date: '2026-04-22', paid_date: null, payment_terms: '30', notes: 'Anzahlung 50% bei Auftragsbestätigung', bank_name: 'Sparkasse München', bank_iban: 'DE89 3704 0044 0532 0130 00', bank_bic: 'COBADEFFXXX', bank_account_holder: 'RentFlow GmbH', created_at: '2026-03-22T08:00:00Z', updated_at: '2026-03-22T08:00:00Z', line_items: [{ id: 'li8', invoice_id: '3', name: 'PA-System Hauptbühne', description: 'PA-System Hauptbühne', quantity: 1, unit_price: 12000, total: 12000, tax_rate: 19, tax_amount: 2280 }, { id: 'li9', invoice_id: '3', name: 'Lichttechnik 3 Bühnen', description: 'Lichttechnik 3 Bühnen', quantity: 1, unit_price: 15000, total: 15000, tax_rate: 19, tax_amount: 2850 }, { id: 'li10', invoice_id: '3', name: 'Bühne + Truss', description: 'Bühne + Truss', quantity: 1, unit_price: 8000, total: 8000, tax_rate: 19, tax_amount: 1520 }, { id: 'li11', invoice_id: '3', name: 'Techniker-Team', description: 'Techniker-Team (4 Tage)', quantity: 8, unit_price: 1250, total: 10000, tax_rate: 19, tax_amount: 1900 }] },
+  { id: '4', number: 'RF-2026-004', client_id: 'c4', client_name: 'TechCorp GmbH', client_email: 'events@techcorp.de', client_address: 'Leopoldstr. 44, 80802 München', project_id: 'p4', project_name: 'Firmen-Gala TechCorp', status: 'sent', subtotal: 18500, tax_total: 3515, total: 22015, issue_date: '2026-03-18', due_date: '2026-04-18', paid_date: null, payment_terms: '30', notes: '', bank_name: 'Sparkasse München', bank_iban: 'DE89 3704 0044 0532 0130 00', bank_bic: 'COBADEFFXXX', bank_account_holder: 'RentFlow GmbH', created_at: '2026-03-18T10:00:00Z', updated_at: '2026-03-18T10:00:00Z', line_items: [{ id: 'li12', invoice_id: '4', name: 'Audio-Paket Gala', description: 'Audio-Paket Gala', quantity: 1, unit_price: 6500, total: 6500, tax_rate: 19, tax_amount: 1235 }, { id: 'li13', invoice_id: '4', name: 'Licht-Design Gala', description: 'Licht-Design Gala', quantity: 1, unit_price: 7000, total: 7000, tax_rate: 19, tax_amount: 1330 }, { id: 'li14', invoice_id: '4', name: 'Video/Streaming', description: 'Video/Streaming', quantity: 1, unit_price: 5000, total: 5000, tax_rate: 19, tax_amount: 950 }] },
+  { id: '5', number: 'RF-2026-005', client_id: 'c5', client_name: 'Festival GmbH', client_email: 'buchhaltung@festival-gmbh.de', client_address: 'Seestr. 22, 88131 Lindau', project_id: 'p5', project_name: 'Open Air Festival Bodensee', status: 'overdue', subtotal: 25000, tax_total: 4750, total: 29750, issue_date: '2026-02-01', due_date: '2026-03-01', paid_date: null, payment_terms: '30', notes: 'Zahlungserinnerung wurde gesendet', bank_name: 'Sparkasse München', bank_iban: 'DE89 3704 0044 0532 0130 00', bank_bic: 'COBADEFFXXX', bank_account_holder: 'RentFlow GmbH', dunning_entries: [{ level: 1, date: '2026-03-08', sent: true }], created_at: '2026-02-01T09:00:00Z', updated_at: '2026-03-08T10:00:00Z', line_items: [{ id: 'li15', invoice_id: '5', name: 'Anzahlung Festival-Paket', description: 'Anzahlung Festival-Paket (30%)', quantity: 1, unit_price: 25000, total: 25000, tax_rate: 19, tax_amount: 4750 }] },
+  { id: '6', number: 'RF-2026-006', client_id: 'c6', client_name: 'Messe Frankfurt GmbH', client_email: 'technik@messe-ffm.de', client_address: 'Ludwig-Erhard-Anlage 1, 60327 Frankfurt', project_id: 'p6', project_name: 'Messe-Auftritt Q2', status: 'partial', subtotal: 15000, tax_total: 2850, total: 17850, issue_date: '2026-03-05', due_date: '2026-04-05', paid_date: null, payment_terms: '30', notes: 'Erste Teilzahlung erhalten', bank_name: 'Sparkasse München', bank_iban: 'DE89 3704 0044 0532 0130 00', bank_bic: 'COBADEFFXXX', bank_account_holder: 'RentFlow GmbH', payments: [{ id: 'pay1', invoice_id: '6', amount: 10000, date: '2026-03-15', method: 'Überweisung', notes: 'Erste Rate' }], created_at: '2026-03-05T11:00:00Z', updated_at: '2026-03-15T14:00:00Z', line_items: [{ id: 'li16', invoice_id: '6', name: 'Messe-Technikpaket', description: 'Komplettes Audio/Video-Paket für Messestand', quantity: 1, unit_price: 15000, total: 15000, tax_rate: 19, tax_amount: 2850 }] },
 ]
 
 // Transport/Fleet Mock Data
@@ -264,6 +296,9 @@ export const tenantApi = {
 export const userApi = {
   list: () =>
     api.get('/api/v1/users').then(res => res.data),
+
+  create: (data: { name: string; email: string; password: string; role: string }) =>
+    api.post('/api/v1/users', data).then(res => res.data),
 }
 
 // Category API endpoints
@@ -322,7 +357,7 @@ export const projectApi = {
 export const invoiceApi = {
   list: (page = 1, limit = 50) =>
     MOCK_MODE
-      ? mockDelay({ items: mockInvoices.slice((page - 1) * limit, page * limit), total: mockInvoices.length, page, limit })
+      ? mockDelay({ data: mockInvoices.slice((page - 1) * limit, page * limit), total: mockInvoices.length, page, limit })
       : api.get('/api/v1/invoices', { params: { page, limit } }).then(res => res.data),
 
   getById: (id: string) =>
@@ -350,6 +385,73 @@ export const invoiceApi = {
 
   getQuotePDF: (quoteId: string) =>
     api.get(`/api/v1/invoices/${quoteId}/quote-pdf`, { responseType: 'blob' }).then(res => res.data),
+
+  sendEmail: (id: string) =>
+    MOCK_MODE ? mockDelay({ success: true }) : api.post(`/api/v1/invoices/${id}/send-email`).then(res => res.data),
+
+  createDunning: (id: string, level: number) =>
+    MOCK_MODE ? mockDelay({ success: true, level, date: new Date().toISOString() }) : api.post(`/api/v1/invoices/${id}/dunning`, { level }).then(res => res.data),
+}
+
+// ============================================================================
+// MAIL API endpoints
+// ============================================================================
+export const mailApi = {
+  // Mailboxes
+  listMailboxes: () =>
+    MOCK_MODE
+      ? mockDelay([
+          { id: 'mb-1', type: 'general', email: 'info@berger-eventtechnik.de', label: 'Allgemein', imap_host: 'imap.strato.de', imap_port: 993, smtp_host: 'smtp.strato.de', smtp_port: 587, username: 'info@berger-eventtechnik.de', tls: true },
+          { id: 'mb-2', type: 'invoices', email: 'rechnung@berger-eventtechnik.de', label: 'Rechnungen', imap_host: 'imap.strato.de', imap_port: 993, smtp_host: 'smtp.strato.de', smtp_port: 587, username: 'rechnung@berger-eventtechnik.de', tls: true },
+          { id: 'mb-3', type: 'personal', email: 'marco@berger-eventtechnik.de', label: 'Persönlich', imap_host: 'imap.strato.de', imap_port: 993, smtp_host: 'smtp.strato.de', smtp_port: 587, username: 'marco@berger-eventtechnik.de', tls: true },
+        ])
+      : api.get('/api/v1/mail/mailboxes').then(res => res.data),
+
+  createMailbox: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: `mb-${Date.now()}` })
+      : api.post('/api/v1/mail/mailboxes', data).then(res => res.data),
+
+  updateMailbox: (id: string, data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id })
+      : api.put(`/api/v1/mail/mailboxes/${id}`, data).then(res => res.data),
+
+  deleteMailbox: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.delete(`/api/v1/mail/mailboxes/${id}`).then(res => res.data),
+
+  testMailbox: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, message: 'Verbindung erfolgreich' })
+      : api.post(`/api/v1/mail/mailboxes/${id}/test`).then(res => res.data),
+
+  // Mails
+  list: (params?: any) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/mail', { params }).then(res => res.data),
+
+  getById: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.get(`/api/v1/mail/${id}`).then(res => res.data),
+
+  markAsRead: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.put(`/api/v1/mail/${id}/read`).then(res => res.data),
+
+  assignToProject: (id: string, projectId: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.put(`/api/v1/mail/${id}/project`, { project_id: projectId }).then(res => res.data),
+
+  send: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, id: `sent-${Date.now()}` })
+      : api.post('/api/v1/mail/send', data).then(res => res.data),
 }
 
 // Customers API endpoints
@@ -371,6 +473,84 @@ export const customerApi = {
 }
 
 // ============================================================================
+// CONTACTS/CRM API endpoints
+// ============================================================================
+export const contactApi = {
+  list: (params?: any) =>
+    MOCK_MODE
+      ? mockDelay({ data: [], total: 0 })
+      : api.get('/api/v1/contacts', { params }).then(res => res.data),
+
+  getById: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.get(`/api/v1/contacts/${id}`).then(res => res.data),
+
+  create: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()), created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      : api.post('/api/v1/contacts', data).then(res => res.data),
+
+  update: (id: string, data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id, updated_at: new Date().toISOString() })
+      : api.put(`/api/v1/contacts/${id}`, data).then(res => res.data),
+
+  delete: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.delete(`/api/v1/contacts/${id}`).then(res => res.data),
+}
+
+// ============================================================================
+// QUOTES API endpoints
+// ============================================================================
+export const quoteApi = {
+  list: (params?: any) =>
+    MOCK_MODE
+      ? mockDelay({ data: [], total: 0 })
+      : api.get('/api/v1/quotes', { params }).then(res => res.data),
+
+  getById: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.get(`/api/v1/quotes/${id}`).then(res => res.data),
+
+  create: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/quotes', data).then(res => res.data),
+
+  send: (id: string, email: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.post(`/api/v1/quotes/${id}/send`, { email }).then(res => res.data),
+
+  accept: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.post(`/api/v1/quotes/${id}/accept`).then(res => res.data),
+
+  confirm: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.post(`/api/v1/quotes/${id}/confirm`).then(res => res.data),
+
+  reject: (id: string, reason: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.post(`/api/v1/quotes/${id}/reject`, { reason }).then(res => res.data),
+
+  convertToInvoice: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ id: String(Date.now()) })
+      : api.post(`/api/v1/quotes/${id}/convert-to-invoice`).then(res => res.data),
+
+  getPdf: (id: string) =>
+    api.get(`/api/v1/quotes/${id}/pdf`, { responseType: 'blob' }).then(res => res.data),
+}
+
+// ============================================================================
 // TRANSPORT/FLEET API endpoints
 // ============================================================================
 export const transportApi = {
@@ -378,77 +558,77 @@ export const transportApi = {
   listVehicles: (page = 1, limit = 50) =>
     MOCK_MODE
       ? mockDelay({ items: mockVehicles.slice((page - 1) * limit, page * limit), total: mockVehicles.length, page, limit })
-      : api.get('/api/v1/vehicles', { params: { page, limit } }).then(res => res.data),
+      : api.get('/api/v1/transport/vehicles', { params: { page, limit } }).then(res => res.data),
 
   getVehicle: (id: string) =>
     MOCK_MODE
       ? mockDelay(mockVehicles.find(v => v.id === id) || mockVehicles[0])
-      : api.get(`/api/v1/vehicles/${id}`).then(res => res.data),
+      : api.get(`/api/v1/transport/vehicles/${id}`).then(res => res.data),
 
   createVehicle: (data: object) =>
-    MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()), status: 'available' }) : api.post('/api/v1/vehicles', data).then(res => res.data),
+    MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()), status: 'available' }) : api.post('/api/v1/transport/vehicles', data).then(res => res.data),
 
   updateVehicle: (id: string, data: object) =>
-    MOCK_MODE ? mockDelay({ ...data, id }) : api.put(`/api/v1/vehicles/${id}`, data).then(res => res.data),
+    MOCK_MODE ? mockDelay({ ...data, id }) : api.put(`/api/v1/transport/vehicles/${id}`, data).then(res => res.data),
 
   deleteVehicle: (id: string) =>
-    MOCK_MODE ? mockDelay({ success: true, id }) : api.delete(`/api/v1/vehicles/${id}`).then(res => res.data),
+    MOCK_MODE ? mockDelay({ success: true, id }) : api.delete(`/api/v1/transport/vehicles/${id}`).then(res => res.data),
 
   // Tour Management
   listTours: (page = 1, limit = 50) =>
     MOCK_MODE
       ? mockDelay({ items: mockTours.slice((page - 1) * limit, page * limit), total: mockTours.length, page, limit })
-      : api.get('/api/v1/tours', { params: { page, limit } }).then(res => res.data),
+      : api.get('/api/v1/transport/tours', { params: { page, limit } }).then(res => res.data),
 
   getTour: (id: string) =>
     MOCK_MODE
       ? mockDelay(mockTours.find(t => t.id === id) || mockTours[0])
-      : api.get(`/api/v1/tours/${id}`).then(res => res.data),
+      : api.get(`/api/v1/transport/tours/${id}`).then(res => res.data),
 
   createTour: (data: object) =>
-    MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()), status: 'planned', equipment_items: [] }) : api.post('/api/v1/tours', data).then(res => res.data),
+    MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()), status: 'planned', equipment_items: [] }) : api.post('/api/v1/transport/tours', data).then(res => res.data),
 
   updateTour: (id: string, data: object) =>
-    MOCK_MODE ? mockDelay({ ...data, id }) : api.put(`/api/v1/tours/${id}`, data).then(res => res.data),
+    MOCK_MODE ? mockDelay({ ...data, id }) : api.put(`/api/v1/transport/tours/${id}`, data).then(res => res.data),
 
   // Tour Equipment Management
   addEquipmentToTour: (tourId: string, equipmentId: string, weight_kg: number, volume_m3: number) =>
     MOCK_MODE
       ? mockDelay({ id: String(Date.now()), tour_id: tourId, equipment_id: equipmentId, weight_kg, volume_m3, loaded_at: new Date().toISOString(), unloaded_at: null })
-      : api.post(`/api/v1/tours/${tourId}/equipment`, { equipment_id: equipmentId, weight_kg, volume_m3 }).then(res => res.data),
+      : api.post(`/api/v1/transport/tours/${tourId}/equipment`, { equipment_id: equipmentId, weight_kg, volume_m3 }).then(res => res.data),
 
   removeEquipmentFromTour: (tourId: string, equipmentId: string) =>
     MOCK_MODE
       ? mockDelay({ success: true, tour_id: tourId, equipment_id: equipmentId })
-      : api.delete(`/api/v1/tours/${tourId}/equipment/${equipmentId}`).then(res => res.data),
+      : api.delete(`/api/v1/transport/tours/${tourId}/equipment/${equipmentId}`).then(res => res.data),
 
   // Tour Status Management
   startTour: (tourId: string, kmStart: number) =>
     MOCK_MODE
       ? mockDelay({ id: tourId, status: 'in_transit', km_start: kmStart, started_at: new Date().toISOString() })
-      : api.post(`/api/v1/tours/${tourId}/start`, { km_start: kmStart }).then(res => res.data),
+      : api.post(`/api/v1/transport/tours/${tourId}/start`, { km_start: kmStart }).then(res => res.data),
 
   completeTour: (tourId: string, kmEnd: number, notes?: string) =>
     MOCK_MODE
       ? mockDelay({ id: tourId, status: 'completed', km_end: kmEnd, completed_at: new Date().toISOString(), notes })
-      : api.post(`/api/v1/tours/${tourId}/complete`, { km_end: kmEnd, notes }).then(res => res.data),
+      : api.post(`/api/v1/transport/tours/${tourId}/complete`, { km_end: kmEnd, notes }).then(res => res.data),
 
   // Tour Capacity
   getTourCapacity: (tourId: string) =>
     MOCK_MODE
       ? mockDelay({ vehicle_capacity_kg: 18000, vehicle_capacity_m3: 52, used_kg: 8500, used_m3: 24, remaining_kg: 9500, remaining_m3: 28 })
-      : api.get(`/api/v1/tours/${tourId}/capacity`).then(res => res.data),
+      : api.get(`/api/v1/transport/tours/${tourId}/capacity`).then(res => res.data),
 
   // Driver Logs
   createDriverLog: (tourId: string, driverId: string, startTime: string, endTime: string, breakMinutes: number, kmDriven: number, notes?: string) =>
     MOCK_MODE
       ? mockDelay({ id: String(Date.now()), tour_id: tourId, driver_id: driverId, start_time: startTime, end_time: endTime, break_minutes: breakMinutes, km_driven: kmDriven, notes })
-      : api.post(`/api/v1/tours/${tourId}/driver-log`, { driver_id: driverId, start_time: startTime, end_time: endTime, break_minutes: breakMinutes, km_driven: kmDriven, notes }).then(res => res.data),
+      : api.post(`/api/v1/transport/tours/${tourId}/driver-log`, { driver_id: driverId, start_time: startTime, end_time: endTime, break_minutes: breakMinutes, km_driven: kmDriven, notes }).then(res => res.data),
 
   getDriverLogs: (tourId: string) =>
     MOCK_MODE
       ? mockDelay([{ id: '1', tour_id: tourId, driver_id: 'user-2', start_time: '2026-03-20T06:00:00Z', end_time: '2026-03-20T14:30:00Z', break_minutes: 45, km_driven: 280, notes: 'Fahrt ohne Besonderheiten' }])
-      : api.get(`/api/v1/tours/${tourId}/driver-logs`).then(res => res.data),
+      : api.get(`/api/v1/transport/tours/${tourId}/driver-logs`).then(res => res.data),
 }
 
 // ============================================================================
@@ -492,12 +672,12 @@ export const maintenanceApi = {
   startTask: (id: string, notes?: string) =>
     MOCK_MODE
       ? mockDelay({ id, status: 'in_progress', started_at: new Date().toISOString(), notes })
-      : api.post(`/api/v1/maintenance/tasks/${id}/start`, { notes }).then(res => res.data),
+      : api.put(`/api/v1/maintenance/tasks/${id}/start`, { notes }).then(res => res.data),
 
   completeTask: (id: string, checklistData?: object, notes?: string) =>
     MOCK_MODE
       ? mockDelay({ id, status: 'completed', completed_at: new Date().toISOString(), checklist_data: checklistData, notes })
-      : api.post(`/api/v1/maintenance/tasks/${id}/complete`, { checklist_data: checklistData, notes }).then(res => res.data),
+      : api.put(`/api/v1/maintenance/tasks/${id}/complete`, { checklist_data: checklistData, notes }).then(res => res.data),
 
   getDueTasks: () =>
     MOCK_MODE
@@ -525,12 +705,12 @@ export const maintenanceApi = {
 
   // Electrical Tests (VDE)
   createElectricalTest: (data: object) =>
-    MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()) }) : api.post('/api/v1/maintenance/tests/electrical', data).then(res => res.data),
+    MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()) }) : api.post('/api/v1/maintenance/electrical-tests', data).then(res => res.data),
 
   listElectricalTests: (page = 1, limit = 50) =>
     MOCK_MODE
       ? mockDelay({ items: mockElectricalTests.slice((page - 1) * limit, page * limit), total: mockElectricalTests.length, page, limit })
-      : api.get('/api/v1/maintenance/tests/electrical', { params: { page, limit } }).then(res => res.data),
+      : api.get('/api/v1/maintenance/electrical-tests', { params: { page, limit } }).then(res => res.data),
 
   // Izytron XML Import
   importIzytronXML: (file: File) => {
@@ -736,7 +916,7 @@ export const workflowApi = {
   list: () =>
     MOCK_MODE
       ? mockDelay([])
-      : api.get('/api/v1/workflows').then(res => res.data),
+      : api.get('/api/v1/workflows').then(res => Array.isArray(res.data) ? res.data : []),
 
   get: (id: string) =>
     MOCK_MODE
@@ -756,12 +936,12 @@ export const workflowApi = {
   instances: () =>
     MOCK_MODE
       ? mockDelay([])
-      : api.get('/api/v1/workflow-instances').then(res => res.data),
+      : api.get('/api/v1/workflow-instances').then(res => Array.isArray(res.data) ? res.data : []),
 
   templates: () =>
     MOCK_MODE
       ? mockDelay([])
-      : api.get('/api/v1/workflow-templates').then(res => res.data),
+      : api.get('/api/v1/workflow-templates').then(res => Array.isArray(res.data) ? res.data : []),
 }
 
 // Federation Service (port 8015)
@@ -1039,4 +1219,29 @@ export const setupApi = {
     MOCK_MODE
       ? mockDelay({ success: true, message: 'Setup completed successfully' })
       : api.post('/api/v1/setup/complete', data).then(res => res.data),
+}
+
+// ============================================================================
+// CONFIG API - Settings/Config key-value store
+// ============================================================================
+export const configApi = {
+  getAll: () =>
+    MOCK_MODE
+      ? mockDelay({})
+      : api.get('/api/v1/config').then(res => res.data),
+
+  get: (key: string) =>
+    MOCK_MODE
+      ? mockDelay({})
+      : api.get(`/api/v1/config/${key}`).then(res => res.data),
+
+  set: (key: string, value: any) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.put(`/api/v1/config/${key}`, value).then(res => res.data),
+
+  testSmtp: () =>
+    MOCK_MODE
+      ? mockDelay({ success: true, message: 'Test email sent' })
+      : api.post('/api/v1/config/smtp-test').then(res => res.data),
 }

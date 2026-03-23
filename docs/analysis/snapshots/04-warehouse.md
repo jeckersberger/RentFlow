@@ -1,0 +1,438 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6]:
+    - navigation [ref=e8]:
+      - generic [ref=e9]:
+        - button "" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: 
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Jhons
+          - paragraph [ref=e14]: jhons.rentmanapp.com
+        - button "chevron_right chevron_left" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: chevron_right
+          - generic [ref=e17]: chevron_left
+      - generic [ref=e18]:
+        - button "fact_check Implementierungsleitfaden" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]:
+            - generic [ref=e23]: fact_check
+            - generic [ref=e25]: Implementierungsleitfaden
+        - button "dashboard Dashboard" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: dashboard
+            - generic [ref=e32]: Dashboard
+        - generic [ref=e33]:
+          - button "event (Mein) Kalender expand_more expand_less" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: event
+              - generic [ref=e39]: (Mein) Kalender
+              - generic [ref=e40]:
+                - generic [ref=e41]: expand_more
+                - generic [ref=e42]: expand_less
+          - generic [ref=e43]:
+            - button "(Mein) Kalender" [ref=e44] [cursor=pointer]:
+              - generic [ref=e47]: (Mein) Kalender
+            - button "Job Board" [ref=e48] [cursor=pointer]:
+              - generic [ref=e51]: Job Board
+        - generic [ref=e52]:
+          - button " Lager expand_more expand_less" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - generic [ref=e56]: 
+              - generic [ref=e58]: Lager
+              - generic [ref=e59]:
+                - generic [ref=e60]: expand_more
+                - generic [ref=e61]: expand_less
+          - generic [ref=e62]:
+            - button "Lager" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]: Lager
+            - button "Kombinationen" [ref=e67] [cursor=pointer]:
+              - generic [ref=e70]: Kombinationen
+            - button "Cross-Docking-Übersicht" [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: Cross-Docking-Übersicht
+            - button "Lager-Tracking-Log" [ref=e75] [cursor=pointer]:
+              - generic [ref=e78]: Lager-Tracking-Log
+        - generic [ref=e80]:
+          - button "table_chart Projekte expand_more expand_less" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e84]: table_chart
+              - generic [ref=e86]: Projekte
+              - generic [ref=e87]:
+                - generic [ref=e88]: expand_more
+                - generic [ref=e89]: expand_less
+          - generic [ref=e90]:
+            - button "Projekte" [ref=e91] [cursor=pointer]:
+              - generic [ref=e94]: Projekte
+            - button "Vermietungsanfrage" [ref=e95] [cursor=pointer]:
+              - generic [ref=e98]: Vermietungsanfrage
+        - button "account_circle Personalplaner" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]:
+            - generic [ref=e103]: account_circle
+            - generic [ref=e105]: Personalplaner
+        - generic [ref=e106]:
+          - button "swap_horizontal_circle Mangel expand_more expand_less" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e110]: swap_horizontal_circle
+              - generic [ref=e112]: Mangel
+              - generic [ref=e113]:
+                - generic [ref=e114]: expand_more
+                - generic [ref=e115]: expand_less
+          - generic [ref=e116]:
+            - button "Mietengpässe" [ref=e117] [cursor=pointer]:
+              - generic [ref=e120]: Mietengpässe
+            - button "Verkaufsengpässe" [ref=e121] [cursor=pointer]:
+              - generic [ref=e124]: Verkaufsengpässe
+            - button "Zumietungsjobs" [ref=e125] [cursor=pointer]:
+              - generic [ref=e128]: Zumietungsjobs
+        - generic [ref=e129]:
+          - button "monetization_on Finanzen expand_more expand_less" [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]:
+              - generic [ref=e133]: monetization_on
+              - generic [ref=e135]: Finanzen
+              - generic [ref=e136]:
+                - generic [ref=e137]: expand_more
+                - generic [ref=e138]: expand_less
+          - generic [ref=e139]:
+            - button "Rechnungen" [ref=e140] [cursor=pointer]:
+              - generic [ref=e143]: Rechnungen
+            - button "Zu fakturieren" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: Zu fakturieren
+            - button "Bestellungen" [ref=e148] [cursor=pointer]:
+              - generic [ref=e151]: Bestellungen
+        - generic [ref=e153]:
+          - button "category Materialien expand_more expand_less" [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]: category
+              - generic [ref=e159]: Materialien
+              - generic [ref=e160]:
+                - generic [ref=e161]: expand_more
+                - generic [ref=e162]: expand_less
+          - generic [ref=e163]:
+            - button "Materialien" [ref=e164] [cursor=pointer]:
+              - generic [ref=e167]: Materialien
+            - button "Seriennummern" [ref=e168] [cursor=pointer]:
+              - generic [ref=e171]: Seriennummern
+            - button "Lagerstandorte" [ref=e172] [cursor=pointer]:
+              - generic [ref=e175]: Lagerstandorte
+            - button "Archivierte Materialien" [ref=e176] [cursor=pointer]:
+              - generic [ref=e179]: Archivierte Materialien
+            - button "Archivierte Standorte" [ref=e180] [cursor=pointer]:
+              - generic [ref=e183]: Archivierte Standorte
+        - button "contact_phone Kontakte" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]:
+            - generic [ref=e188]: contact_phone
+            - generic [ref=e190]: Kontakte
+        - button "people Mitarbeiter" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]:
+            - generic [ref=e195]: people
+            - generic [ref=e197]: Mitarbeiter
+        - button "local_shipping Fahrzeuge" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - generic [ref=e202]: local_shipping
+            - generic [ref=e204]: Fahrzeuge
+        - button "assignment_turned_in Aufgaben" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: assignment_turned_in
+            - generic [ref=e212]: Aufgaben
+        - generic [ref=e213]:
+          - button "watch_later Stundenerfassung expand_more expand_less" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e217]: watch_later
+              - generic [ref=e219]: Stundenerfassung
+              - generic [ref=e220]:
+                - generic [ref=e221]: expand_more
+                - generic [ref=e222]: expand_less
+          - generic [ref=e223]:
+            - button "Stundenerfassung" [ref=e224] [cursor=pointer]:
+              - generic [ref=e227]: Stundenerfassung
+            - button "Aktivitäten" [ref=e228] [cursor=pointer]:
+              - generic [ref=e231]: Aktivitäten
+            - button "Abwesenheitsanträge" [ref=e232] [cursor=pointer]:
+              - generic [ref=e235]: Abwesenheitsanträge
+        - generic [ref=e236]:
+          - button "build Werkstatt expand_more expand_less" [ref=e237] [cursor=pointer]:
+            - generic [ref=e238]:
+              - generic [ref=e240]: build
+              - generic [ref=e242]: Werkstatt
+              - generic [ref=e243]:
+                - generic [ref=e244]: expand_more
+                - generic [ref=e245]: expand_less
+          - generic [ref=e246]:
+            - button "Reparaturen" [ref=e247] [cursor=pointer]:
+              - generic [ref=e250]: Reparaturen
+            - button "Prüfungen" [ref=e251] [cursor=pointer]:
+              - generic [ref=e254]: Prüfungen
+            - button "Zu prüfende Materialien" [ref=e255] [cursor=pointer]:
+              - generic [ref=e258]: Zu prüfende Materialien
+            - button "Verlorene Materialien" [ref=e259] [cursor=pointer]:
+              - generic [ref=e262]: Verlorene Materialien
+            - button "Bestandszählungen" [ref=e263] [cursor=pointer]:
+              - generic [ref=e266]: Bestandszählungen
+        - button "poll Statistik" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]:
+            - generic [ref=e271]: poll
+            - generic [ref=e273]: Statistik
+        - generic [ref=e275]:
+          - button "dvr Kommunikation expand_more expand_less" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]:
+              - generic [ref=e279]: dvr
+              - generic [ref=e281]: Kommunikation
+              - generic [ref=e282]:
+                - generic [ref=e283]: expand_more
+                - generic [ref=e284]: expand_less
+          - generic [ref=e285]:
+            - button "Kommunikations-Log" [ref=e286] [cursor=pointer]:
+              - generic [ref=e289]: Kommunikations-Log
+            - button "Gesendete E-Mails" [ref=e290] [cursor=pointer]:
+              - generic [ref=e293]: Gesendete E-Mails
+            - button "Erhaltene Notizen" [ref=e294] [cursor=pointer]:
+              - generic [ref=e297]: Erhaltene Notizen
+        - button "settings Konfiguration" [ref=e300] [cursor=pointer]:
+          - generic [ref=e301]:
+            - generic [ref=e303]: settings
+            - generic [ref=e305]: Konfiguration
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - generic [ref=e3004]:
+          - button "settings lock Konfiguration" [ref=e5690] [cursor=pointer]:
+            - generic [ref=e3008]:
+              - generic [ref=e3009]: settings
+              - generic [ref=e3010]: lock
+            - generic "Konfiguration" [ref=e3011]
+          - button "table_chart lock Liveauftritt Band Soultrain" [ref=e9303] [cursor=pointer]:
+            - generic [ref=e6876]:
+              - generic [ref=e6877]: table_chart
+              - generic [ref=e6878]: lock
+            - generic "Liveauftritt Band Soultrain" [ref=e6879]
+        - button "close" [ref=e6881] [cursor=pointer]:
+          - generic [ref=e6882]: close
+      - generic [ref=e309]:
+        - generic [ref=e311]: Testzeitraum läuft in 28Tagen ab
+        - button "auto_awesome Jetzt aktivieren mit 50% Rabatt" [ref=e312] [cursor=pointer]:
+          - generic [ref=e313]: auto_awesome
+          - generic [ref=e314]: Jetzt aktivieren mit 50% Rabatt
+      - button "search" [ref=e316] [cursor=pointer]:
+        - generic [ref=e317]: search
+      - button "timelapse" [ref=e320] [cursor=pointer]:
+        - generic [ref=e322]: timelapse
+      - button "help_outline" [ref=e325] [cursor=pointer]:
+        - generic [ref=e326]: help_outline
+      - button "notifications_none" [ref=e331] [cursor=pointer]:
+        - generic [ref=e333]: notifications_none
+      - button "JD John Dee" [ref=e335] [cursor=pointer]:
+        - generic [ref=e338]: JD
+        - generic [ref=e339]: John Dee
+    - generic [ref=e9307]:
+      - generic [ref=e9308]:
+        - generic [ref=e9309]:
+          - generic [ref=e9311]:
+            - generic [ref=e9312]:
+              - button "chevron_left" [ref=e9313] [cursor=pointer]:
+                - generic [ref=e9314]: chevron_left
+              - generic [ref=e9316]: 23 März 2026
+              - button "chevron_right" [ref=e9317] [cursor=pointer]:
+                - generic [ref=e9318]: chevron_right
+            - generic [ref=e9319]:
+              - button "Heute" [ref=e9320] [cursor=pointer]:
+                - generic [ref=e9321]: Heute
+              - button "Morgen" [ref=e9322] [cursor=pointer]:
+                - generic [ref=e9323]: Morgen
+          - button " Lagerhaus Ost arrow_drop_down" [ref=e9327] [cursor=pointer]:
+            - generic [ref=e9328]: 
+            - generic [ref=e9329]: Lagerhaus Ost
+            - generic [ref=e9330]: arrow_drop_down
+          - link "help_outline" [ref=e9332] [cursor=pointer]:
+            - /url: http://support.rentman.io/hc/de/articles/360014458519?utm_source=rentmanapp&utm_medium=in_app_links&utm_campaign=sc_links_within_rentman
+        - generic [ref=e9333]:
+          - button "filter_list Filter arrow_drop_down" [ref=e9336] [cursor=pointer]:
+            - generic [ref=e9337]: filter_list
+            - generic [ref=e9338]: Filter
+            - generic [ref=e9339]: arrow_drop_down
+          - button "view_list Ansicht anpassen arrow_drop_down" [ref=e9342] [cursor=pointer]:
+            - generic [ref=e9343]: view_list
+            - generic [ref=e9344]: Ansicht anpassen
+            - generic [ref=e9345]: arrow_drop_down
+          - button "search" [ref=e9346] [cursor=pointer]:
+            - generic [ref=e9347]: search
+          - button "settings Ansichten arrow_drop_down" [ref=e9350] [cursor=pointer]:
+            - generic [ref=e9351]: settings
+            - generic [ref=e9352]: Ansichten
+            - generic [ref=e9353]: arrow_drop_down
+          - button "Retour scannen" [ref=e9354] [cursor=pointer]:
+            - generic [ref=e9355]: Retour scannen
+      - generic [ref=e9357]:
+        - generic [ref=e9358]:
+          - generic [ref=e9360]:
+            - button "Fahrten expand_less" [ref=e9361] [cursor=pointer]:
+              - generic [ref=e9362]: Fahrten
+              - generic [ref=e9364]: expand_less
+            - grid [ref=e9382]:
+              - row "SPACE for context menu, ENTER to sort SPACE for context menu" [ref=e9383]:
+                - columnheader "SPACE for context menu, ENTER to sort" [ref=e9384]
+                - columnheader "SPACE for context menu" [ref=e9385]: Montag 23/03 00:00 01:00 02:00 03:00 04:00 05:00 06:00 07:00 08:00 09:00 10:00 11:00 12:00 13:00 14:00 15:00 16:00 17:00 18:00 19:00 20:00 21:00 22:00 23:00
+              - generic [ref=e9386]:
+                - generic "locked" [ref=e9387]: Keine Artikel ausgewählt
+                - generic "normal" [ref=e9388]
+          - generic [ref=e9369]:
+            - button "Geplante Mitarbeiter expand_less" [ref=e9370] [cursor=pointer]:
+              - generic [ref=e9371]: Geplante Mitarbeiter
+              - generic [ref=e9373]: expand_less
+            - grid [ref=e9389]:
+              - row "SPACE for context menu, ENTER to sort SPACE for context menu" [ref=e9390]:
+                - columnheader "SPACE for context menu, ENTER to sort" [ref=e9391]
+                - columnheader "SPACE for context menu" [ref=e9392]: Montag 23/03 00:00 01:00 02:00 03:00 04:00 05:00 06:00 07:00 08:00 09:00 10:00 11:00 12:00 13:00 14:00 15:00 16:00 17:00 18:00 19:00 20:00 21:00 22:00 23:00
+              - generic [ref=e9393]:
+                - generic "locked" [ref=e9394]:
+                  - row "Bruno Zampanowitsch" [ref=e9395]:
+                    - gridcell "Bruno Zampanowitsch" [ref=e9396]
+                - generic "normal" [ref=e9397]:
+                  - row [ref=e9398]:
+                    - gridcell [ref=e9399]
+                  - generic [ref=e9400]: Liveauftritt Band Soultrain - Stagehand
+        - generic [ref=e9377]:
+          - generic [ref=e9401]:
+            - generic [ref=e9403]: Bestätigt (1)
+            - generic [ref=e9407]:
+              - generic [ref=e9408]:
+                - generic [ref=e9409]: Liveauftritt Band Soultrain
+                - generic [ref=e9410]:
+                  - button "launch" [ref=e9411] [cursor=pointer]:
+                    - generic [ref=e9412]: launch
+                  - button "print" [ref=e9414] [cursor=pointer]:
+                    - generic [ref=e9415]: print
+              - generic [ref=e9419]:
+                - generic [ref=e9421]:
+                  - generic [ref=e9422]:
+                    - generic [ref=e9423]: "80"
+                    - generic [ref=e9424]:
+                      - generic [ref=e9425]: 
+                      - generic [ref=e9426]: Lagerhaus Ost
+                    - generic [ref=e9427]: Stage Entertainment
+                  - generic [ref=e9428]: Beginn Planungszeitraum
+                  - generic [ref=e9429]: 22.03.2026 00:00
+                - generic [ref=e9435]:
+                  - button "0 Notizen" [ref=e9436] [cursor=pointer]:
+                    - generic [ref=e9437]: "0"
+                    - generic [ref=e9438]: Notizen
+                  - button "add Notiz hinzufügen" [ref=e9439] [cursor=pointer]:
+                    - generic [ref=e9440]: add
+                    - generic [ref=e9441]: Notiz hinzufügen
+              - generic [ref=e9442]:
+                - button "assignment_ind" [ref=e9443] [cursor=pointer]:
+                  - generic [ref=e9444]: assignment_ind
+                - generic [ref=e9445]:
+                  - button "Status ändern" [ref=e9446] [cursor=pointer]:
+                    - generic [ref=e9447]: Status ändern
+                  - button "Buchen" [ref=e9449] [cursor=pointer]:
+                    - generic [ref=e9450]: Buchen
+          - generic [ref=e9451]:
+            - generic [ref=e9453]: Gepackt (1)
+            - generic [ref=e9457]:
+              - generic [ref=e9458]:
+                - generic [ref=e9460]: category
+                - generic [ref=e9461]: Gasthof Der Goldene Löwe Festinstallation
+                - generic [ref=e9462]:
+                  - button "launch" [ref=e9463] [cursor=pointer]:
+                    - generic [ref=e9464]: launch
+                  - button "print" [ref=e9466] [cursor=pointer]:
+                    - generic [ref=e9467]: print
+              - generic [ref=e9471]:
+                - generic [ref=e9473]:
+                  - generic [ref=e9474]:
+                    - generic [ref=e9475]: "145"
+                    - generic [ref=e9476]:
+                      - generic [ref=e9477]: 
+                      - generic [ref=e9478]: Lagerhaus Ost
+                    - generic [ref=e9479]: Der Goldene Löwe
+                  - generic [ref=e9480]: Beginn Planungszeitraum
+                  - generic [ref=e9481]: 23.03.2026 08:00
+                - generic [ref=e9487]:
+                  - button "0 Notizen" [ref=e9488] [cursor=pointer]:
+                    - generic [ref=e9489]: "0"
+                    - generic [ref=e9490]: Notizen
+                  - button "add Notiz hinzufügen" [ref=e9491] [cursor=pointer]:
+                    - generic [ref=e9492]: add
+                    - generic [ref=e9493]: Notiz hinzufügen
+              - generic [ref=e9494]:
+                - button "assignment_ind" [ref=e9495] [cursor=pointer]:
+                  - generic [ref=e9496]: assignment_ind
+                - generic [ref=e9497]:
+                  - button "Status ändern" [ref=e9498] [cursor=pointer]:
+                    - generic [ref=e9499]: Status ändern
+                  - button "Buchen" [ref=e9501] [cursor=pointer]:
+                    - generic [ref=e9502]: Buchen
+          - generic [ref=e9503]:
+            - generic [ref=e9505]:
+              - button "Am Veranstaltungsort (1)" [ref=e9507] [cursor=pointer]:
+                - generic [ref=e9509]: Am Veranstaltungsort (1)
+              - button "Zurück erwartet (1)" [ref=e9511] [cursor=pointer]:
+                - generic [ref=e9513]: Zurück erwartet (1)
+            - generic [ref=e9517]:
+              - generic [ref=e9518]:
+                - generic [ref=e9519]: DJ Set und Sound Dryhire Kunde Gertenhalter
+                - generic [ref=e9520]:
+                  - button "launch" [ref=e9521] [cursor=pointer]:
+                    - generic [ref=e9522]: launch
+                  - button "print" [ref=e9524] [cursor=pointer]:
+                    - generic [ref=e9525]: print
+              - generic [ref=e9531]:
+                - generic [ref=e9533]:
+                  - generic [ref=e9534]:
+                    - generic [ref=e9535]: "142"
+                    - generic [ref=e9536]:
+                      - generic [ref=e9537]: 
+                      - generic [ref=e9538]: Lagerhaus Ost
+                    - generic [ref=e9539]: Gertenhalter
+                  - generic [ref=e9540]: Ende Planungszeitraum
+                  - generic [ref=e9541]: 23.03.2026 10:00
+                - generic [ref=e9547]:
+                  - button "0 Notizen" [ref=e9548] [cursor=pointer]:
+                    - generic [ref=e9549]: "0"
+                    - generic [ref=e9550]: Notizen
+                  - button "add Notiz hinzufügen" [ref=e9551] [cursor=pointer]:
+                    - generic [ref=e9552]: add
+                    - generic [ref=e9553]: Notiz hinzufügen
+              - generic [ref=e9554]:
+                - button "assignment_ind" [ref=e9555] [cursor=pointer]:
+                  - generic [ref=e9556]: assignment_ind
+                - generic [ref=e9557]:
+                  - button "Status ändern" [ref=e9558] [cursor=pointer]:
+                    - generic [ref=e9559]: Status ändern
+                  - button "Buchen" [ref=e9561] [cursor=pointer]:
+                    - generic [ref=e9562]: Buchen
+          - generic [ref=e9563]:
+            - generic [ref=e9565]: Verspätet (1)
+            - generic [ref=e9569]:
+              - generic [ref=e9570]:
+                - generic [ref=e9571]: Königsteiner Jazz Festival
+                - generic [ref=e9572]:
+                  - button "launch" [ref=e9573] [cursor=pointer]:
+                    - generic [ref=e9574]: launch
+                  - button "print" [ref=e9576] [cursor=pointer]:
+                    - generic [ref=e9577]: print
+              - generic [ref=e9583]:
+                - generic [ref=e9585]:
+                  - generic [ref=e9586]:
+                    - generic [ref=e9587]: "153"
+                    - generic [ref=e9588]:
+                      - generic [ref=e9589]: 
+                      - generic [ref=e9590]: Lagerhaus Ost
+                    - generic [ref=e9591]: Stage Entertainment
+                  - generic [ref=e9592]: Ende Planungszeitraum
+                  - generic [ref=e9593]: 22.03.2026 15:00
+                - generic [ref=e9599]:
+                  - button "0 Notizen" [ref=e9600] [cursor=pointer]:
+                    - generic [ref=e9601]: "0"
+                    - generic [ref=e9602]: Notizen
+                  - button "add Notiz hinzufügen" [ref=e9603] [cursor=pointer]:
+                    - generic [ref=e9604]: add
+                    - generic [ref=e9605]: Notiz hinzufügen
+              - generic [ref=e9606]:
+                - button "assignment_ind" [ref=e9607] [cursor=pointer]:
+                  - generic [ref=e9608]: assignment_ind
+                - generic [ref=e9609]:
+                  - button "Status ändern" [ref=e9610] [cursor=pointer]:
+                    - generic [ref=e9611]: Status ändern
+                  - button "Buchen" [ref=e9613] [cursor=pointer]:
+                    - generic [ref=e9614]: Buchen
+  - iframe [ref=e497]:
+    - button "Messaging-Fenster öffnen" [ref=f16e5] [cursor=pointer]:
+      - img [ref=f16e7]
+      - img [ref=f16e10]

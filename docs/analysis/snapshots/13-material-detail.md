@@ -1,0 +1,598 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6]:
+    - navigation [ref=e8]:
+      - generic [ref=e9]:
+        - button "" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: 
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Jhons
+          - paragraph [ref=e14]: jhons.rentmanapp.com
+        - button "chevron_right chevron_left" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: chevron_right
+          - generic [ref=e17]: chevron_left
+      - generic: expand_more
+      - generic [ref=e18]:
+        - button "fact_check Implementierungsleitfaden" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]:
+            - generic [ref=e23]: fact_check
+            - generic [ref=e25]: Implementierungsleitfaden
+        - button "dashboard Dashboard" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: dashboard
+            - generic [ref=e32]: Dashboard
+        - generic [ref=e33]:
+          - button "event (Mein) Kalender expand_more expand_less" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: event
+              - generic [ref=e39]: (Mein) Kalender
+              - generic [ref=e40]:
+                - generic [ref=e41]: expand_more
+                - generic [ref=e42]: expand_less
+          - generic [ref=e43]:
+            - button "(Mein) Kalender" [ref=e44] [cursor=pointer]:
+              - generic [ref=e47]: (Mein) Kalender
+            - button "Job Board" [ref=e48] [cursor=pointer]:
+              - generic [ref=e51]: Job Board
+        - generic [ref=e52]:
+          - button " Lager expand_more expand_less" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - generic [ref=e56]: 
+              - generic [ref=e58]: Lager
+              - generic [ref=e59]:
+                - generic [ref=e60]: expand_more
+                - generic [ref=e61]: expand_less
+          - generic [ref=e62]:
+            - button "Lager" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]: Lager
+            - button "Kombinationen" [ref=e67] [cursor=pointer]:
+              - generic [ref=e70]: Kombinationen
+            - button "Cross-Docking-Übersicht" [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: Cross-Docking-Übersicht
+            - button "Lager-Tracking-Log" [ref=e75] [cursor=pointer]:
+              - generic [ref=e78]: Lager-Tracking-Log
+        - generic [ref=e80]:
+          - button "table_chart Projekte expand_more expand_less" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e84]: table_chart
+              - generic [ref=e86]: Projekte
+              - generic [ref=e87]:
+                - generic [ref=e88]: expand_more
+                - generic [ref=e89]: expand_less
+          - generic [ref=e90]:
+            - button "Projekte" [ref=e91] [cursor=pointer]:
+              - generic [ref=e94]: Projekte
+            - button "Vermietungsanfrage" [ref=e95] [cursor=pointer]:
+              - generic [ref=e98]: Vermietungsanfrage
+        - button "account_circle Personalplaner" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]:
+            - generic [ref=e103]: account_circle
+            - generic [ref=e105]: Personalplaner
+        - generic [ref=e106]:
+          - button "swap_horizontal_circle Mangel expand_more expand_less" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e110]: swap_horizontal_circle
+              - generic [ref=e112]: Mangel
+              - generic [ref=e113]:
+                - generic [ref=e114]: expand_more
+                - generic [ref=e115]: expand_less
+          - generic [ref=e116]:
+            - button "Mietengpässe" [ref=e117] [cursor=pointer]:
+              - generic [ref=e120]: Mietengpässe
+            - button "Verkaufsengpässe" [ref=e121] [cursor=pointer]:
+              - generic [ref=e124]: Verkaufsengpässe
+            - button "Zumietungsjobs" [ref=e125] [cursor=pointer]:
+              - generic [ref=e128]: Zumietungsjobs
+        - generic [ref=e129]:
+          - button "monetization_on Finanzen expand_more expand_less" [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]:
+              - generic [ref=e133]: monetization_on
+              - generic [ref=e135]: Finanzen
+              - generic [ref=e136]:
+                - generic [ref=e137]: expand_more
+                - generic [ref=e138]: expand_less
+          - generic [ref=e139]:
+            - button "Rechnungen" [ref=e140] [cursor=pointer]:
+              - generic [ref=e143]: Rechnungen
+            - button "Zu fakturieren" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: Zu fakturieren
+            - button "Bestellungen" [ref=e148] [cursor=pointer]:
+              - generic [ref=e151]: Bestellungen
+        - generic [ref=e153]:
+          - button "category Materialien expand_more expand_less" [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]: category
+              - generic [ref=e159]: Materialien
+              - generic [ref=e160]:
+                - generic [ref=e161]: expand_more
+                - generic [ref=e162]: expand_less
+          - generic [ref=e163]:
+            - button "Materialien" [ref=e164] [cursor=pointer]:
+              - generic [ref=e167]: Materialien
+            - button "Seriennummern" [ref=e168] [cursor=pointer]:
+              - generic [ref=e171]: Seriennummern
+            - button "Lagerstandorte" [ref=e172] [cursor=pointer]:
+              - generic [ref=e175]: Lagerstandorte
+            - button "Archivierte Materialien" [ref=e176] [cursor=pointer]:
+              - generic [ref=e179]: Archivierte Materialien
+            - button "Archivierte Standorte" [ref=e180] [cursor=pointer]:
+              - generic [ref=e183]: Archivierte Standorte
+        - button "contact_phone Kontakte" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]:
+            - generic [ref=e188]: contact_phone
+            - generic [ref=e190]: Kontakte
+        - button "people Mitarbeiter" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]:
+            - generic [ref=e195]: people
+            - generic [ref=e197]: Mitarbeiter
+        - button "local_shipping Fahrzeuge" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - generic [ref=e202]: local_shipping
+            - generic [ref=e204]: Fahrzeuge
+        - button "assignment_turned_in Aufgaben" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: assignment_turned_in
+            - generic [ref=e212]: Aufgaben
+        - generic [ref=e213]:
+          - button "watch_later Stundenerfassung expand_more expand_less" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e217]: watch_later
+              - generic [ref=e219]: Stundenerfassung
+              - generic [ref=e220]:
+                - generic [ref=e221]: expand_more
+                - generic [ref=e222]: expand_less
+          - generic [ref=e223]:
+            - button "Stundenerfassung" [ref=e224] [cursor=pointer]:
+              - generic [ref=e227]: Stundenerfassung
+            - button "Aktivitäten" [ref=e228] [cursor=pointer]:
+              - generic [ref=e231]: Aktivitäten
+            - button "Abwesenheitsanträge" [ref=e232] [cursor=pointer]:
+              - generic [ref=e235]: Abwesenheitsanträge
+        - generic [ref=e236]:
+          - button "build Werkstatt expand_more expand_less" [ref=e237] [cursor=pointer]:
+            - generic [ref=e238]:
+              - generic [ref=e240]: build
+              - generic [ref=e242]: Werkstatt
+              - generic [ref=e243]:
+                - generic [ref=e244]: expand_more
+                - generic [ref=e245]: expand_less
+          - generic [ref=e246]:
+            - button "Reparaturen" [ref=e247] [cursor=pointer]:
+              - generic [ref=e250]: Reparaturen
+            - button "Prüfungen" [ref=e251] [cursor=pointer]:
+              - generic [ref=e254]: Prüfungen
+            - button "Zu prüfende Materialien" [ref=e255] [cursor=pointer]:
+              - generic [ref=e258]: Zu prüfende Materialien
+            - button "Verlorene Materialien" [ref=e259] [cursor=pointer]:
+              - generic [ref=e262]: Verlorene Materialien
+            - button "Bestandszählungen" [ref=e263] [cursor=pointer]:
+              - generic [ref=e266]: Bestandszählungen
+        - button "poll Statistik" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]:
+            - generic [ref=e271]: poll
+            - generic [ref=e273]: Statistik
+        - generic [ref=e275]:
+          - button "dvr Kommunikation expand_more expand_less" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]:
+              - generic [ref=e279]: dvr
+              - generic [ref=e281]: Kommunikation
+              - generic [ref=e282]:
+                - generic [ref=e283]: expand_more
+                - generic [ref=e284]: expand_less
+          - generic [ref=e285]:
+            - button "Kommunikations-Log" [ref=e286] [cursor=pointer]:
+              - generic [ref=e289]: Kommunikations-Log
+            - button "Gesendete E-Mails" [ref=e290] [cursor=pointer]:
+              - generic [ref=e293]: Gesendete E-Mails
+            - button "Erhaltene Notizen" [ref=e294] [cursor=pointer]:
+              - generic [ref=e297]: Erhaltene Notizen
+        - button "settings Konfiguration" [ref=e300] [cursor=pointer]:
+          - generic [ref=e301]:
+            - generic [ref=e303]: settings
+            - generic [ref=e305]: Konfiguration
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - generic [ref=e3004]:
+          - button "settings lock Konfiguration" [ref=e5690] [cursor=pointer]:
+            - generic [ref=e3008]:
+              - generic [ref=e3009]: settings
+              - generic [ref=e3010]: lock
+            - generic "Konfiguration" [ref=e3011]
+          - button "table_chart lock Liveauftritt Band Soultrain" [ref=e9303] [cursor=pointer]:
+            - generic [ref=e6876]:
+              - generic [ref=e6877]: table_chart
+              - generic [ref=e6878]: lock
+            - generic "Liveauftritt Band Soultrain" [ref=e6879]
+          - button "account_circle lock Personalplaner" [ref=e10417] [cursor=pointer]:
+            - generic [ref=e9625]:
+              - generic [ref=e9626]: account_circle
+              - generic [ref=e9627]: lock
+            - generic "Personalplaner" [ref=e9628]
+          - button "category lock DJ Kit highlight_off" [ref=e16866] [cursor=pointer]:
+            - generic [ref=e16867]:
+              - generic [ref=e16868]: category
+              - generic [ref=e16869]: lock
+            - generic "DJ Kit" [ref=e16870]
+            - generic [ref=e16871]: highlight_off
+        - button "close" [ref=e6881] [cursor=pointer]:
+          - generic [ref=e6882]: close
+      - generic [ref=e309]:
+        - generic [ref=e311]: Testzeitraum läuft in 28Tagen ab
+        - button "auto_awesome Jetzt aktivieren mit 50% Rabatt" [ref=e312] [cursor=pointer]:
+          - generic [ref=e313]: auto_awesome
+          - generic [ref=e314]: Jetzt aktivieren mit 50% Rabatt
+      - button "search" [ref=e316] [cursor=pointer]:
+        - generic [ref=e317]: search
+      - button "timelapse" [ref=e320] [cursor=pointer]:
+        - generic [ref=e322]: timelapse
+      - button "help_outline" [ref=e325] [cursor=pointer]:
+        - generic [ref=e326]: help_outline
+      - button "notifications_none" [ref=e331] [cursor=pointer]:
+        - generic [ref=e333]: notifications_none
+      - button "JD John Dee" [ref=e335] [cursor=pointer]:
+        - generic [ref=e338]: JD
+        - generic [ref=e339]: John Dee
+    - generic [ref=e16873]:
+      - generic [ref=e16874]:
+        - generic [ref=e16875]:
+          - generic [ref=e16876]: Audio-348
+          - heading "DJ Kit" [level=1] [ref=e16877]
+        - generic [ref=e16878]:
+          - button "Schließen" [ref=e16880] [cursor=pointer]:
+            - generic [ref=e16881]: Schließen
+          - button "Speichern" [ref=e16884] [cursor=pointer]:
+            - generic [ref=e16885]: Speichern
+      - generic [ref=e16888]:
+        - button "Daten" [ref=e16890] [cursor=pointer]:
+          - generic [ref=e16892]: Daten
+        - button "Seriennummern" [ref=e16894] [cursor=pointer]:
+          - generic [ref=e16896]: Seriennummern
+        - button "Einblicke" [ref=e16898] [cursor=pointer]:
+          - generic [ref=e16900]: Einblicke
+        - button "Standardinhalt" [ref=e16902] [cursor=pointer]:
+          - generic [ref=e16904]: Standardinhalt
+        - button "Zubehör" [ref=e16906] [cursor=pointer]:
+          - generic [ref=e16908]: Zubehör
+        - button "Alternativen" [ref=e16910] [cursor=pointer]:
+          - generic [ref=e16912]: Alternativen
+        - button "Lieferanten" [ref=e16914] [cursor=pointer]:
+          - generic [ref=e16916]: Lieferanten
+        - button "Webshop" [ref=e16918] [cursor=pointer]:
+          - generic [ref=e16920]: Webshop
+        - button "Reparaturen" [ref=e16922] [cursor=pointer]:
+          - generic [ref=e16924]: Reparaturen
+        - button "Bestandszählungen" [ref=e16926] [cursor=pointer]:
+          - generic [ref=e16928]: Bestandszählungen
+        - button "History Log" [ref=e16930] [cursor=pointer]:
+          - generic [ref=e16932]: History Log
+      - generic [ref=e16936]:
+        - generic [ref=e16937]:
+          - generic [ref=e16938]:
+            - generic [ref=e16939]:
+              - generic [ref=e16940]: Material
+              - button "print Dokument erstellen" [ref=e16943] [cursor=pointer]:
+                - generic [ref=e16944]: print
+                - generic [ref=e16945]: Dokument erstellen
+            - generic [ref=e16947]:
+              - generic [ref=e16948]:
+                - generic [ref=e16950]: Name (in der Datenbank)
+                - generic [ref=e16953]:
+                  - textbox "Name (in der Datenbank)" [ref=e16956]: DJ Kit
+                  - generic:
+                    - list
+              - generic [ref=e16957]:
+                - generic [ref=e16958]:
+                  - generic [ref=e16959]: Code
+                  - generic [ref=e16960]: info
+                  - generic [ref=e16961]: (Optional)
+                - generic [ref=e16964]:
+                  - textbox "Code" [ref=e16967]: Audio-348
+                  - generic:
+                    - list
+              - generic [ref=e16968]:
+                - generic [ref=e16970]: Ordner
+                - generic [ref=e16973]:
+                  - generic [ref=e16975]:
+                    - button "Sets arrow_drop_down" [ref=e16976] [cursor=pointer]:
+                      - generic [ref=e16977]: Sets
+                      - generic [ref=e16978]: arrow_drop_down
+                    - paragraph [ref=e16979]: Sets
+                  - generic:
+                    - list
+              - generic [ref=e16980]:
+                - generic [ref=e16982]: In Planer wiedergeben
+                - generic [ref=e16985]:
+                  - button "Ja arrow_drop_down" [ref=e16989] [cursor=pointer]:
+                    - generic [ref=e16990]: Ja
+                    - generic [ref=e16991]: arrow_drop_down
+                  - generic:
+                    - list
+              - generic [ref=e16992]:
+                - generic [ref=e16993]:
+                  - generic [ref=e16994]: Standard-Materialgruppe
+                  - generic [ref=e16995]: info
+                - generic [ref=e16998]:
+                  - textbox "Standard-Materialgruppe" [ref=e17001]: Sets
+                  - generic:
+                    - list
+              - generic [ref=e17002]:
+                - generic [ref=e17003]:
+                  - generic [ref=e17004]: Inhalt kann im Projekt bearbeitet werden
+                  - generic [ref=e17005]: info
+                - generic [ref=e17008]:
+                  - button "Ja arrow_drop_down" [ref=e17012] [cursor=pointer]:
+                    - generic [ref=e17013]: Ja
+                    - generic [ref=e17014]: arrow_drop_down
+                  - generic:
+                    - list
+          - generic [ref=e17015]:
+            - generic [ref=e17016]:
+              - generic [ref=e17017]: Eigenschaften
+              - generic [ref=e17019]:
+                - generic [ref=e17020]: 
+                - generic [ref=e17021]: Virtuelle Kombination - Vermietung
+            - generic [ref=e17023]:
+              - generic [ref=e17024]:
+                - generic [ref=e17026]: Physisch/Virtuell
+                - generic [ref=e17029]:
+                  - generic [ref=e17031]:
+                    - generic [ref=e17032]:
+                      - radio "Physische Materialien Ein physischer Artikel, welches optional auch andere Materialien enthalten kann" [ref=e17034] [cursor=pointer]
+                      - generic [ref=e17037] [cursor=pointer]: Physische Materialien
+                      - generic [ref=e17038] [cursor=pointer]: Ein physischer Artikel, welches optional auch andere Materialien enthalten kann
+                    - generic [ref=e17039]:
+                      - radio "Virtuelle Kombination Eine Kombination aus einzelnen Materialien. Der Bestand wird anhand des Inhalts der Kombination ermittelt." [checked] [ref=e17041] [cursor=pointer]
+                      - generic [ref=e17045] [cursor=pointer]: Virtuelle Kombination
+                      - generic [ref=e17046] [cursor=pointer]: Eine Kombination aus einzelnen Materialien. Der Bestand wird anhand des Inhalts der Kombination ermittelt.
+                  - generic:
+                    - list
+              - generic [ref=e17047]:
+                - generic [ref=e17049]: Vermietung/Verkauf
+                - generic [ref=e17052]:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - radio "Vermietung Material, das benutzt wird und anschließend wieder in das Lager zurückkehrt" [checked] [disabled]
+                        - generic: Vermietung
+                        - generic: Material, das benutzt wird und anschließend wieder in das Lager zurückkehrt
+                      - generic:
+                        - generic:
+                          - radio "Verkauf Material, das nach einem Projekt nicht in das Lager zurückkehrt" [disabled]
+                        - generic: Verkauf
+                        - generic: Material, das nach einem Projekt nicht in das Lager zurückkehrt
+                  - generic:
+                    - list
+              - generic [ref=e17053]:
+                - generic [ref=e17055]: Das Material kann weitere Inhalte haben
+                - generic [ref=e17058]:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - radio "Nein Es ist ein einzelnes Material" [disabled]
+                        - generic: Nein
+                        - generic: Es ist ein einzelnes Material
+                      - generic:
+                        - generic:
+                          - radio "Ja Es kann weitere Inhalte haben" [checked] [disabled]
+                        - generic: Ja
+                        - generic: Es kann weitere Inhalte haben
+                  - generic:
+                    - list
+          - generic [ref=e17059]:
+            - generic [ref=e17061]: Finanzen
+            - generic [ref=e17063]:
+              - generic [ref=e17064]:
+                - generic [ref=e17065]:
+                  - generic [ref=e17066]: Vermietpreis
+                  - generic [ref=e17067]: info
+                - generic [ref=e17069]:
+                  - generic [ref=e17071]:
+                    - generic [ref=e17072]:
+                      - generic [ref=e17073]: €
+                      - textbox "Vermietungs-/Verkaufspreis" [ref=e17074]: 175,00
+                    - generic:
+                      - list
+                  - button "cached" [ref=e17075] [cursor=pointer]:
+                    - generic [ref=e17076]: cached
+              - generic [ref=e17077]:
+                - generic [ref=e17078]:
+                  - generic [ref=e17079]: Zumietungspreis
+                  - generic [ref=e17080]: info
+                - generic [ref=e17082]:
+                  - generic [ref=e17084]:
+                    - generic [ref=e17085]:
+                      - generic [ref=e17086]: €
+                      - textbox "Zumietungs-/Einkaufspreis" [ref=e17087]: 105,00
+                    - generic:
+                      - list
+                  - button "cached" [ref=e17088] [cursor=pointer]:
+                    - generic [ref=e17089]: cached
+              - generic [ref=e17090]:
+                - generic [ref=e17091]:
+                  - generic [ref=e17092]: Neupreis
+                  - generic [ref=e17093]: info
+                - generic [ref=e17095]:
+                  - generic [ref=e17097]:
+                    - generic [ref=e17098]:
+                      - generic [ref=e17099]: €
+                      - textbox "Neupreis" [ref=e17100]: 0,00
+                    - generic:
+                      - list
+                  - button "cached" [ref=e17101] [cursor=pointer]:
+                    - generic [ref=e17102]: cached
+              - generic [ref=e17103]:
+                - generic [ref=e17104]:
+                  - generic [ref=e17105]: Break-even Preis
+                  - generic [ref=e17106]: info
+                - generic [ref=e17109]:
+                  - generic [ref=e17110]:
+                    - generic [ref=e17111]: €
+                    - textbox "Break-even Preis" [ref=e17112]: 94,50
+                  - generic:
+                    - list
+              - generic [ref=e17113]:
+                - generic [ref=e17115]: Rabattgruppe
+                - generic [ref=e17118]:
+                  - button "Rental arrow_drop_down" [ref=e17122] [cursor=pointer]:
+                    - generic [ref=e17123]: Rental
+                    - generic [ref=e17124]: arrow_drop_down
+                  - generic:
+                    - list
+              - generic [ref=e17125]:
+                - generic [ref=e17127]: Faktorgruppe
+                - generic [ref=e17130]:
+                  - button "Default arrow_drop_down" [ref=e17134] [cursor=pointer]:
+                    - generic [ref=e17135]: Default
+                    - generic [ref=e17136]: arrow_drop_down
+                  - generic:
+                    - list
+              - generic [ref=e17137]:
+                - generic [ref=e17139]: MwSt Klasse
+                - generic [ref=e17142]:
+                  - button "Hoher Steuersatz arrow_drop_down" [ref=e17146] [cursor=pointer]:
+                    - generic [ref=e17147]: Hoher Steuersatz
+                    - generic [ref=e17148]: arrow_drop_down
+                  - generic:
+                    - list
+              - generic [ref=e17149]:
+                - generic [ref=e17150]:
+                  - generic [ref=e17151]: Hauptbuch - Haben
+                  - generic [ref=e17152]: info
+                  - generic [ref=e17153]: (Optional)
+                - generic [ref=e17156]:
+                  - button "Audio arrow_drop_down" [ref=e17160] [cursor=pointer]:
+                    - generic [ref=e17161]: Audio
+                    - generic [ref=e17162]: arrow_drop_down
+                  - generic:
+                    - list
+              - generic [ref=e17163]:
+                - generic [ref=e17164]:
+                  - generic [ref=e17165]: Hauptbuch - Soll
+                  - generic [ref=e17166]: info
+                  - generic [ref=e17167]: (Optional)
+                - generic [ref=e17170]:
+                  - button "Vermietung (soll) arrow_drop_down" [ref=e17174] [cursor=pointer]:
+                    - generic [ref=e17175]: Vermietung (soll)
+                    - generic [ref=e17176]: arrow_drop_down
+                  - generic:
+                    - list
+          - generic [ref=e17179]:
+            - button "Extra input fields expand_less" [ref=e17180] [cursor=pointer]:
+              - generic [ref=e17181]: Extra input fields
+              - generic [ref=e17183]: expand_less
+            - generic [ref=e17186]:
+              - generic [ref=e17188]: Artikelbezeichnung in Englisch
+              - generic [ref=e17191]:
+                - textbox "Artikelbezeichnung in Englisch" [ref=e17194]: DJ Kit
+                - generic:
+                  - list
+          - generic [ref=e17196]:
+            - generic [ref=e17197]:
+              - generic [ref=e17198]:
+                - button "Aufgaben" [ref=e17200] [cursor=pointer]:
+                  - generic [ref=e17202]: Aufgaben
+                - button "Notizen" [ref=e17204] [cursor=pointer]:
+                  - generic [ref=e17206]: Notizen
+                - button "Dateien (1)" [ref=e17208] [cursor=pointer]:
+                  - generic [ref=e17210]: Dateien (1)
+              - generic [ref=e17211]:
+                - button "filter_list Filter" [ref=e17214] [cursor=pointer]:
+                  - generic [ref=e17215]: filter_list
+                  - generic [ref=e17216]: Filter
+                - button "add Hinzufügen" [ref=e17218] [cursor=pointer]:
+                  - generic [ref=e17219]: add
+                  - generic [ref=e17220]: Hinzufügen
+            - generic [ref=e17225]:
+              - paragraph [ref=e17226]: Aufgabe hinzufügen
+              - paragraph [ref=e17227]: Benutze Aufgaben, um dich an bestimmte Aktivitäten zu erinnern oder diese anderen zuzuweisen. Aufgaben können bestimmten oder allen Mitarbeitern zugeordnet werden.
+              - button "Aufgabe hinzufügen" [ref=e17228] [cursor=pointer]:
+                - generic [ref=e17229]: Aufgabe hinzufügen
+        - generic [ref=e17230]:
+          - generic [ref=e17232]:
+            - generic [ref=e17233]:
+              - generic [ref=e17234]: Abbildung
+              - button "Mit Google suchen" [ref=e17236] [cursor=pointer]:
+                - generic [ref=e17237]: Mit Google suchen
+            - button "Klicke hier, um ein neues Bild auszuwählen" [ref=e17239] [cursor=pointer]:
+              - generic [ref=e17241]: Klicke hier, um ein neues Bild auszuwählen
+          - generic [ref=e17242]:
+            - generic [ref=e17244]: Bestand
+            - generic [ref=e17247]:
+              - generic [ref=e17248]: info
+              - paragraph [ref=e17250]: Der Bestand und die Verfügbarkeit von virtuellen Kombinationen wird auf der Grundlage der einzelnen Materialien in der virtuellen Kombination berechnet.
+          - generic [ref=e17252]:
+            - generic [ref=e17253]:
+              - generic [ref=e17254]: Kommentare
+              - button "Ändern" [ref=e17256] [cursor=pointer]:
+                - generic [ref=e17257]: Ändern
+            - generic [ref=e17259]:
+              - generic [ref=e17260]:
+                - generic [ref=e17261]:
+                  - generic [ref=e17262]: Kommentar intern
+                  - generic [ref=e17263]: info
+                - generic [ref=e17265]: Kein kommentar intern eingegeben
+              - generic [ref=e17266]:
+                - generic [ref=e17267]:
+                  - generic [ref=e17268]: Kommentar extern
+                  - generic [ref=e17269]: info
+                - generic [ref=e17271]: Kein kommentar extern eingegeben
+          - generic [ref=e17273]:
+            - generic [ref=e17275]: Zusammensetzung
+            - table [ref=e17278]:
+              - rowgroup [ref=e17279]:
+                - row "Inhalt" [ref=e17280]:
+                  - columnheader "Inhalt" [ref=e17281]
+                - row " 2 Audio-345 - Pioneer CDJ2000 NXS2 Tabletop CD Player launch" [ref=e17282]:
+                  - cell "" [ref=e17283]:
+                    - generic [ref=e17285]: 
+                  - cell "2" [ref=e17286]
+                  - cell "Audio-345 - Pioneer CDJ2000 NXS2 Tabletop CD Player" [ref=e17287]
+                  - cell "launch" [ref=e17288]:
+                    - button "launch" [ref=e17290] [cursor=pointer]:
+                      - generic [ref=e17291]: launch
+                - row " 1 Audio-344 - Pioneer DJM900 NXS2 DJ Mixer launch" [ref=e17292]:
+                  - cell "" [ref=e17293]:
+                    - generic [ref=e17295]: 
+                  - cell "1" [ref=e17296]
+                  - cell "Audio-344 - Pioneer DJM900 NXS2 DJ Mixer" [ref=e17297]
+                  - cell "launch" [ref=e17298]:
+                    - button "launch" [ref=e17300] [cursor=pointer]:
+                      - generic [ref=e17301]: launch
+                - row " 1 Audio-346 - Shure SM58 Microphone launch" [ref=e17302]:
+                  - cell "" [ref=e17303]:
+                    - generic [ref=e17305]: 
+                  - cell "1" [ref=e17306]
+                  - cell "Audio-346 - Shure SM58 Microphone" [ref=e17307]
+                  - cell "launch" [ref=e17308]:
+                    - button "launch" [ref=e17310] [cursor=pointer]:
+                      - generic [ref=e17311]: launch
+              - rowgroup [ref=e17312]:
+                - row "Ist Teil von" [ref=e17313]:
+                  - columnheader "Ist Teil von" [ref=e17314]
+                - row " 1 Show-350 - Drive-in show without lighting launch" [ref=e17315]:
+                  - cell "" [ref=e17316]:
+                    - generic [ref=e17318]: 
+                  - cell "1" [ref=e17319]
+                  - cell "Show-350 - Drive-in show without lighting" [ref=e17320]
+                  - cell "launch" [ref=e17321]:
+                    - button "launch" [ref=e17323] [cursor=pointer]:
+                      - generic [ref=e17324]: launch
+                - row " 1 Show-351 - Drive-in show with lighting launch" [ref=e17325]:
+                  - cell "" [ref=e17326]:
+                    - generic [ref=e17328]: 
+                  - cell "1" [ref=e17329]
+                  - cell "Show-351 - Drive-in show with lighting" [ref=e17330]
+                  - cell "launch" [ref=e17331]:
+                    - button "launch" [ref=e17333] [cursor=pointer]:
+                      - generic [ref=e17334]: launch
+          - generic [ref=e17336]:
+            - generic [ref=e17337]:
+              - generic [ref=e17338]: Tags
+              - button "Bearbeiten" [ref=e17341] [cursor=pointer]:
+                - generic [ref=e17342]: Bearbeiten
+            - generic [ref=e17348]: trial
+  - iframe [ref=e497]:
+    - button "Messaging-Fenster öffnen" [ref=f16e5] [cursor=pointer]:
+      - img [ref=f16e7]
+      - img [ref=f16e10]

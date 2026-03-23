@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react'
 import { useNotificationStore, type Notification } from '../../stores/notificationStore'
 import styles from './Toast.module.scss'
 
@@ -8,46 +9,93 @@ interface ToastItemProps {
 }
 
 function ToastItem({ notification, onClose }: ToastItemProps) {
-  useEffect(() => {
-    if (notification.duration === null) {
-      return
-    }
+  const [exiting, setExiting] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const [progress, setProgress] = useState(100)
 
-    const timer = setTimeout(onClose, notification.duration)
-    return () => clearTimeout(timer)
-  }, [notification.duration, onClose])
+  const duration = notification.duration
+
+  const handleClose = useCallback(() => {
+    setExiting(true)
+    setTimeout(onClose, 300)
+  }, [onClose])
+
+  useEffect(() => {
+    if (duration === null || duration === undefined || duration === 0) return
+
+    const interval = 50
+    let elapsed = 0
+
+    const timer = setInterval(() => {
+      if (paused) return
+      elapsed += interval
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100)
+      setProgress(remaining)
+
+      if (elapsed >= duration) {
+        clearInterval(timer)
+        handleClose()
+      }
+    }, interval)
+
+    return () => clearInterval(timer)
+  }, [duration, paused, handleClose])
 
   const getIcon = () => {
+    const size = 20
     switch (notification.type) {
       case 'success':
-        return '✓'
+        return <CheckCircle size={size} />
       case 'error':
-        return '✕'
+        return <XCircle size={size} />
       case 'warning':
-        return '!'
+        return <AlertTriangle size={size} />
       case 'info':
-        return 'ℹ'
+        return <Info size={size} />
       default:
-        return '•'
+        return <Info size={size} />
     }
   }
 
   return (
-    <div className={`${styles.toast} ${styles[`toast--${notification.type}`]}`}>
+    <div
+      className={`${styles.toast} ${styles[`toast--${notification.type}`]} ${exiting ? styles['toast--exiting'] : ''}`}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       <div className={styles.toast__icon}>{getIcon()}</div>
       <div className={styles.toast__content}>
         {notification.title && (
           <div className={styles.toast__title}>{notification.title}</div>
         )}
         <div className={styles.toast__message}>{notification.message}</div>
+        {notification.action && (
+          <button
+            className={styles.toast__action}
+            onClick={() => {
+              notification.action?.onClick()
+              handleClose()
+            }}
+          >
+            {notification.action.label}
+          </button>
+        )}
       </div>
       <button
         className={styles.toast__close}
-        onClick={onClose}
-        aria-label="Close notification"
+        onClick={handleClose}
+        aria-label="Benachrichtigung schließen"
       >
-        ×
+        <X size={16} />
       </button>
+      {duration !== null && duration !== undefined && duration > 0 && (
+        <div className={styles.toast__progress}>
+          <div
+            className={styles.toast__progressBar}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -57,7 +105,7 @@ export function ToastContainer() {
 
   return (
     <div className={styles.container}>
-      {notifications.map((n) => (
+      {notifications.map((n: Notification) => (
         <ToastItem
           key={n.id}
           notification={n}

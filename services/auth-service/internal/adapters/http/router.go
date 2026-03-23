@@ -24,12 +24,14 @@ func SetupRoutes(
 	userService *application.UserService,
 	tenantService *application.TenantService,
 	setupService *application.SetupService,
+	configService *application.ConfigService,
 	tokenMgr *application.TokenManager,
 	sessionMgr *application.SessionManager,
 	log logger.Logger,
 ) {
 	handlers := NewHandlers(userService, tenantService, setupService, log)
 	handlers.sessionMgr = sessionMgr
+	configHandlers := NewConfigHandlers(configService, log)
 
 	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login
 	loginRateLimiter := NewRateLimiter(10, 1*time.Minute, log)
@@ -68,6 +70,12 @@ func SetupRoutes(
 	mux.HandleFunc("POST /api/v1/tenants", handlers.CreateTenant)
 	mux.HandleFunc("GET /api/v1/tenants/{id}", handlers.GetTenant)
 	mux.HandleFunc("PUT /api/v1/tenants/{id}", handlers.UpdateTenant)
+
+	// Tenant config (authenticated)
+	mux.HandleFunc("GET /api/v1/config", authMiddleware(http.HandlerFunc(configHandlers.GetAllConfigs)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/config/{key...}", authMiddleware(http.HandlerFunc(configHandlers.GetConfig)).ServeHTTP)
+	mux.HandleFunc("PUT /api/v1/config/{key...}", authMiddleware(http.HandlerFunc(configHandlers.SetConfig)).ServeHTTP)
+	mux.HandleFunc("POST /api/v1/config/smtp-test", authMiddleware(http.HandlerFunc(configHandlers.TestSMTP)).ServeHTTP)
 }
 
 // createRS256Middleware creates an RS256 JWT validation middleware

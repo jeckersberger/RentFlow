@@ -1,4 +1,4 @@
-export type ScanType = 'check_in' | 'check_out' | 'inventory'
+export type ScanType = 'check_in' | 'check_out' | 'inventory' | 'pack_verify'
 
 export interface ScanEvent {
   id: string

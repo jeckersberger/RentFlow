@@ -1,0 +1,345 @@
+- generic [ref=e1]:
+  - generic [ref=e6]:
+    - navigation [ref=e8]:
+      - generic [ref=e9]:
+        - button "" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: 
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Jhons
+          - paragraph [ref=e14]: jhons.rentmanapp.com
+        - button "chevron_right chevron_left" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: chevron_right
+          - generic [ref=e17]: chevron_left
+      - generic: expand_more
+      - generic [ref=e18]:
+        - button "fact_check Implementierungsleitfaden" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]:
+            - generic [ref=e23]: fact_check
+            - generic [ref=e25]: Implementierungsleitfaden
+        - button "dashboard Dashboard" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: dashboard
+            - generic [ref=e32]: Dashboard
+        - generic [ref=e33]:
+          - button "event (Mein) Kalender expand_more expand_less" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: event
+              - generic [ref=e39]: (Mein) Kalender
+              - generic [ref=e40]:
+                - generic [ref=e41]: expand_more
+                - generic [ref=e42]: expand_less
+          - generic [ref=e43]:
+            - button "(Mein) Kalender" [ref=e44] [cursor=pointer]:
+              - generic [ref=e47]: (Mein) Kalender
+            - button "Job Board" [ref=e48] [cursor=pointer]:
+              - generic [ref=e51]: Job Board
+        - generic [ref=e52]:
+          - button " Lager expand_more expand_less" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - generic [ref=e56]: 
+              - generic [ref=e58]: Lager
+              - generic [ref=e59]:
+                - generic [ref=e60]: expand_more
+                - generic [ref=e61]: expand_less
+          - generic [ref=e62]:
+            - button "Lager" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]: Lager
+            - button "Kombinationen" [ref=e67] [cursor=pointer]:
+              - generic [ref=e70]: Kombinationen
+            - button "Cross-Docking-Übersicht" [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: Cross-Docking-Übersicht
+            - button "Lager-Tracking-Log" [ref=e75] [cursor=pointer]:
+              - generic [ref=e78]: Lager-Tracking-Log
+        - generic [ref=e80]:
+          - button "table_chart Projekte expand_more expand_less" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e84]: table_chart
+              - generic [ref=e86]: Projekte
+              - generic [ref=e87]:
+                - generic [ref=e88]: expand_more
+                - generic [ref=e89]: expand_less
+          - generic [ref=e90]:
+            - button "Projekte" [ref=e91] [cursor=pointer]:
+              - generic [ref=e94]: Projekte
+            - button "Vermietungsanfrage" [ref=e95] [cursor=pointer]:
+              - generic [ref=e98]: Vermietungsanfrage
+        - button "account_circle Personalplaner" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]:
+            - generic [ref=e103]: account_circle
+            - generic [ref=e105]: Personalplaner
+        - generic [ref=e106]:
+          - button "swap_horizontal_circle Mangel expand_more expand_less" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e110]: swap_horizontal_circle
+              - generic [ref=e112]: Mangel
+              - generic [ref=e113]:
+                - generic [ref=e114]: expand_more
+                - generic [ref=e115]: expand_less
+          - generic [ref=e116]:
+            - button "Mietengpässe" [ref=e117] [cursor=pointer]:
+              - generic [ref=e120]: Mietengpässe
+            - button "Verkaufsengpässe" [ref=e121] [cursor=pointer]:
+              - generic [ref=e124]: Verkaufsengpässe
+            - button "Zumietungsjobs" [ref=e125] [cursor=pointer]:
+              - generic [ref=e128]: Zumietungsjobs
+        - generic [ref=e129]:
+          - button "monetization_on Finanzen expand_more expand_less" [active] [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]:
+              - generic [ref=e133]: monetization_on
+              - generic [ref=e135]: Finanzen
+              - generic [ref=e136]:
+                - generic [ref=e137]: expand_more
+                - generic [ref=e138]: expand_less
+          - generic [ref=e139]:
+            - button "Rechnungen" [ref=e140] [cursor=pointer]:
+              - generic [ref=e143]: Rechnungen
+            - button "Zu fakturieren" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: Zu fakturieren
+            - button "Bestellungen" [ref=e148] [cursor=pointer]:
+              - generic [ref=e151]: Bestellungen
+        - generic [ref=e153]:
+          - button "category Materialien expand_more expand_less" [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]: category
+              - generic [ref=e159]: Materialien
+              - generic [ref=e160]:
+                - generic [ref=e161]: expand_more
+                - generic [ref=e162]: expand_less
+          - generic [ref=e163]:
+            - button "Materialien" [ref=e164] [cursor=pointer]:
+              - generic [ref=e167]: Materialien
+            - button "Seriennummern" [ref=e168] [cursor=pointer]:
+              - generic [ref=e171]: Seriennummern
+            - button "Lagerstandorte" [ref=e172] [cursor=pointer]:
+              - generic [ref=e175]: Lagerstandorte
+            - button "Archivierte Materialien" [ref=e176] [cursor=pointer]:
+              - generic [ref=e179]: Archivierte Materialien
+            - button "Archivierte Standorte" [ref=e180] [cursor=pointer]:
+              - generic [ref=e183]: Archivierte Standorte
+        - button "contact_phone Kontakte" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]:
+            - generic [ref=e188]: contact_phone
+            - generic [ref=e190]: Kontakte
+        - button "people Mitarbeiter" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]:
+            - generic [ref=e195]: people
+            - generic [ref=e197]: Mitarbeiter
+        - button "local_shipping Fahrzeuge" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - generic [ref=e202]: local_shipping
+            - generic [ref=e204]: Fahrzeuge
+        - button "assignment_turned_in Aufgaben" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: assignment_turned_in
+            - generic [ref=e212]: Aufgaben
+        - generic [ref=e213]:
+          - button "watch_later Stundenerfassung expand_more expand_less" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e217]: watch_later
+              - generic [ref=e219]: Stundenerfassung
+              - generic [ref=e220]:
+                - generic [ref=e221]: expand_more
+                - generic [ref=e222]: expand_less
+          - generic [ref=e223]:
+            - button "Stundenerfassung" [ref=e224] [cursor=pointer]:
+              - generic [ref=e227]: Stundenerfassung
+            - button "Aktivitäten" [ref=e228] [cursor=pointer]:
+              - generic [ref=e231]: Aktivitäten
+            - button "Abwesenheitsanträge" [ref=e232] [cursor=pointer]:
+              - generic [ref=e235]: Abwesenheitsanträge
+        - generic [ref=e236]:
+          - button "build Werkstatt expand_more expand_less" [ref=e237] [cursor=pointer]:
+            - generic [ref=e238]:
+              - generic [ref=e240]: build
+              - generic [ref=e242]: Werkstatt
+              - generic [ref=e243]:
+                - generic [ref=e244]: expand_more
+                - generic [ref=e245]: expand_less
+          - generic [ref=e246]:
+            - button "Reparaturen" [ref=e247] [cursor=pointer]:
+              - generic [ref=e250]: Reparaturen
+            - button "Prüfungen" [ref=e251] [cursor=pointer]:
+              - generic [ref=e254]: Prüfungen
+            - button "Zu prüfende Materialien" [ref=e255] [cursor=pointer]:
+              - generic [ref=e258]: Zu prüfende Materialien
+            - button "Verlorene Materialien" [ref=e259] [cursor=pointer]:
+              - generic [ref=e262]: Verlorene Materialien
+            - button "Bestandszählungen" [ref=e263] [cursor=pointer]:
+              - generic [ref=e266]: Bestandszählungen
+        - button "poll Statistik" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]:
+            - generic [ref=e271]: poll
+            - generic [ref=e273]: Statistik
+        - generic [ref=e275]:
+          - button "dvr Kommunikation expand_more expand_less" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]:
+              - generic [ref=e279]: dvr
+              - generic [ref=e281]: Kommunikation
+              - generic [ref=e282]:
+                - generic [ref=e283]: expand_more
+                - generic [ref=e284]: expand_less
+          - generic [ref=e285]:
+            - button "Kommunikations-Log" [ref=e286] [cursor=pointer]:
+              - generic [ref=e289]: Kommunikations-Log
+            - button "Gesendete E-Mails" [ref=e290] [cursor=pointer]:
+              - generic [ref=e293]: Gesendete E-Mails
+            - button "Erhaltene Notizen" [ref=e294] [cursor=pointer]:
+              - generic [ref=e297]: Erhaltene Notizen
+        - button "settings Konfiguration" [ref=e300] [cursor=pointer]:
+          - generic [ref=e301]:
+            - generic [ref=e303]: settings
+            - generic [ref=e305]: Konfiguration
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - generic [ref=e3004]:
+          - button "settings lock Konfiguration" [ref=e5690] [cursor=pointer]:
+            - generic [ref=e3008]:
+              - generic [ref=e3009]: settings
+              - generic [ref=e3010]: lock
+            - generic "Konfiguration" [ref=e3011]
+          - button "table_chart lock Liveauftritt Band Soultrain" [ref=e9303] [cursor=pointer]:
+            - generic [ref=e6876]:
+              - generic [ref=e6877]: table_chart
+              - generic [ref=e6878]: lock
+            - generic "Liveauftritt Band Soultrain" [ref=e6879]
+          - button "account_circle lock Personalplaner" [ref=e10417] [cursor=pointer]:
+            - generic [ref=e9625]:
+              - generic [ref=e9626]: account_circle
+              - generic [ref=e9627]: lock
+            - generic "Personalplaner" [ref=e9628]
+        - button "close" [ref=e6881] [cursor=pointer]:
+          - generic [ref=e6882]: close
+      - generic [ref=e309]:
+        - generic [ref=e311]: Testzeitraum läuft in 28Tagen ab
+        - button "auto_awesome Jetzt aktivieren mit 50% Rabatt" [ref=e312] [cursor=pointer]:
+          - generic [ref=e313]: auto_awesome
+          - generic [ref=e314]: Jetzt aktivieren mit 50% Rabatt
+      - button "search" [ref=e316] [cursor=pointer]:
+        - generic [ref=e317]: search
+      - button "timelapse" [ref=e320] [cursor=pointer]:
+        - generic [ref=e322]: timelapse
+      - button "help_outline" [ref=e325] [cursor=pointer]:
+        - generic [ref=e326]: help_outline
+      - button "notifications_none" [ref=e331] [cursor=pointer]:
+        - generic [ref=e333]: notifications_none
+      - button "JD John Dee" [ref=e335] [cursor=pointer]:
+        - generic [ref=e338]: JD
+        - generic [ref=e339]: John Dee
+    - generic [ref=e13325]:
+      - generic [ref=e13326]:
+        - heading "Rechnungen" [level=1] [ref=e13328]
+        - link "help_outline" [ref=e13330] [cursor=pointer]:
+          - /url: http://support.rentman.io/hc/de/articles/360013628279?utm_source=rentmanapp&utm_medium=in_app_links&utm_campaign=sc_links_within_rentman
+        - button "add Rechnung hinzufügen" [ref=e13333] [cursor=pointer]:
+          - generic [ref=e13334]: add
+          - generic [ref=e13335]: Rechnung hinzufügen
+      - generic [ref=e13338]:
+        - button "date_range Nächste Woche arrow_drop_down" [ref=e13342] [cursor=pointer]:
+          - generic [ref=e13343]: date_range
+          - generic [ref=e13344]: Nächste Woche
+          - generic [ref=e13345]: arrow_drop_down
+        - generic [ref=e13346]:
+          - button "search close" [ref=e13350] [cursor=pointer]:
+            - generic [ref=e13351]: search
+            - generic [ref=e13352]: close
+          - button "label Tags arrow_drop_down" [ref=e13356] [cursor=pointer]:
+            - generic [ref=e13357]: label
+            - generic [ref=e13358]: Tags
+            - generic [ref=e13359]: arrow_drop_down
+          - button "filter_list Filter arrow_drop_down" [ref=e13362] [cursor=pointer]:
+            - generic [ref=e13363]: filter_list
+            - generic [ref=e13364]: Filter
+            - generic [ref=e13365]: arrow_drop_down
+      - generic [ref=e13367]:
+        - generic [ref=e13368]:
+          - generic [ref=e13369]:
+            - button "close" [ref=e13370] [cursor=pointer]:
+              - generic [ref=e13371]: close
+            - generic [ref=e13373]:
+              - generic [ref=e13374]:
+                - button "insert_drive_file Ansehen" [disabled]:
+                  - generic: insert_drive_file
+                  - generic: Ansehen
+              - generic [ref=e13375]:
+                - button "print Mahnung erstellen" [disabled]:
+                  - generic: print
+                  - generic: Mahnung erstellen
+              - generic [ref=e13376]:
+                - button "payment Zahlungen bearbeiten" [disabled]:
+                  - generic: payment
+                  - generic: Zahlungen bearbeiten
+              - button "more_vert" [ref=e13378] [cursor=pointer]:
+                - generic [ref=e13379]: more_vert
+          - button "settings Ansichten arrow_drop_down" [ref=e13383] [cursor=pointer]:
+            - generic [ref=e13384]: settings
+            - generic [ref=e13385]: Ansichten
+            - generic [ref=e13386]: arrow_drop_down
+        - generic [ref=e13387]:
+          - generic [ref=e13388]:
+            - paragraph [ref=e13389]: Es wurden keine Rechnungen gefunden. Probiere es mit anderen Suchkriterien, z.B. einem anderen Zeitraum oder anderen Suchbegriffen.
+            - generic [ref=e13391]: calendar_today
+          - generic [ref=e13393]:
+            - alert [ref=e13394]
+            - grid [ref=e13395]:
+              - generic:
+                - rowgroup [ref=e13396]:
+                  - row "check remove Nummer keine Sortierung Accountmanager (Projekt) keine Sortierung Auftraggeber keine Sortierung" [ref=e13401]:
+                    - columnheader "check remove" [ref=e13403]:
+                      - generic [ref=e13405] [cursor=pointer]:
+                        - checkbox [ref=e13406]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                    - generic [ref=e13409]:
+                      - button
+                    - columnheader "Nummer keine Sortierung" [ref=e13411] [cursor=pointer]:
+                      - button "Nummer" [ref=e13412]:
+                        - generic [ref=e13413]: Nummer
+                      - text: more_vert
+                    - columnheader "Accountmanager (Projekt) keine Sortierung" [ref=e13417] [cursor=pointer]:
+                      - button "Accountmanager (Projekt)" [ref=e13418]:
+                        - generic [ref=e13419]: Accountmanager (Projekt)
+                      - text: more_vert
+                    - columnheader "Auftraggeber keine Sortierung" [ref=e13423] [cursor=pointer]:
+                      - button "Auftraggeber" [ref=e13424]:
+                        - generic [ref=e13425]: Auftraggeber
+                      - text: more_vert
+                - rowgroup [ref=e13427]
+              - rowgroup [ref=e13430]:
+                - row "Zahlungsdatum keine Sortierung Fälligkeitsdatum keine Sortierung Datum keine Sortierung Projekt keine Sortierung Notizen keine Sortierung" [ref=e13435]:
+                  - columnheader "Zahlungsdatum keine Sortierung" [ref=e13437] [cursor=pointer]:
+                    - button "Zahlungsdatum" [ref=e13438]:
+                      - generic [ref=e13439]: Zahlungsdatum
+                    - text: more_vert
+                  - columnheader "Fälligkeitsdatum keine Sortierung" [ref=e13443] [cursor=pointer]:
+                    - button "Fälligkeitsdatum" [ref=e13444]:
+                      - generic [ref=e13445]: Fälligkeitsdatum
+                    - text: more_vert
+                  - columnheader "Datum keine Sortierung" [ref=e13449] [cursor=pointer]:
+                    - button "Datum" [ref=e13450]:
+                      - generic [ref=e13451]: Datum
+                    - text: more_vert
+                  - columnheader "Projekt keine Sortierung" [ref=e13455] [cursor=pointer]:
+                    - button "Projekt" [ref=e13456]:
+                      - generic [ref=e13457]: Projekt
+                    - text: more_vert
+                  - columnheader "Notizen keine Sortierung" [ref=e13461] [cursor=pointer]:
+                    - button "Notizen" [ref=e13462]:
+                      - generic [ref=e13463]: Notizen
+                    - text: more_vert
+              - rowgroup [ref=e13465]
+              - region [ref=e13467]
+              - generic:
+                - rowgroup [ref=e13468]:
+                  - row "Preis exkl. MwSt. aufsteigend sortieren" [ref=e13473]:
+                    - columnheader "Preis exkl. MwSt. aufsteigend sortieren" [ref=e13475] [cursor=pointer]:
+                      - button "Preis exkl. MwSt. aufsteigend sortieren" [ref=e13476]:
+                        - generic [ref=e13477]: Preis exkl. MwSt.
+                        - generic "aufsteigend sortieren" [ref=e13478]:
+                          - generic [ref=e13479]: sort
+                      - text: more_vert
+                - rowgroup [ref=e13481]
+  - iframe [ref=e497]:
+    - button "Messaging-Fenster öffnen" [ref=f16e5] [cursor=pointer]:
+      - img [ref=f16e7]
+      - img [ref=f16e10]

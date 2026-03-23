@@ -9,20 +9,21 @@ import (
 // Invoice Commands
 
 type CreateInvoiceCommand struct {
-	TenantID        string
-	ProjectID       *string
-	ClientName      string
-	ClientAddress   domain.Address
-	ClientEmail     string
-	ClientTaxID     string
-	Items           []CreateInvoiceItemCommand
-	TaxRate         float64
-	Currency        string
-	IssueDate       time.Time
-	DueDate         time.Time
-	Notes           string
-	InternalNotes   string
-	CreatedByUserID string
+	TenantID           string
+	ProjectID          *string
+	ClientName         string
+	ClientAddress      domain.Address
+	ClientEmail        string
+	ClientTaxID        string
+	Items              []CreateInvoiceItemCommand
+	TaxRate            float64
+	IsKleinunternehmer bool
+	Currency           string
+	IssueDate          time.Time
+	DueDate            time.Time
+	Notes              string
+	InternalNotes      string
+	CreatedByUserID    string
 }
 
 type CreateInvoiceItemCommand struct {
@@ -30,6 +31,7 @@ type CreateInvoiceItemCommand struct {
 	Quantity    float64
 	Unit        string
 	UnitPrice   float64
+	TaxRate     float64  // per-item tax rate; 0 means use invoice default
 	EquipmentID *string
 }
 

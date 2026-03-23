@@ -9,29 +9,35 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean
   error: Error | null
+  errorInfo: ErrorInfo | null
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, errorInfo: null }
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error }
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[ErrorBoundary] Unhandled error:', error)
     console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack)
+    this.setState({ errorInfo })
   }
 
   handleReload = () => {
     window.location.reload()
   }
 
+  handleDashboard = () => {
+    window.location.href = '/'
+  }
+
   handleReset = () => {
-    this.setState({ hasError: false, error: null })
+    this.setState({ hasError: false, error: null, errorInfo: null })
   }
 
   render() {
@@ -46,20 +52,36 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             <div className={styles.icon}>!</div>
             <h1 className={styles.title}>Etwas ist schiefgelaufen</h1>
             <p className={styles.description}>
-              Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut oder lade die Seite neu.
+              Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut oder laden Sie die Seite neu.
             </p>
+
             {this.state.error && (
               <details className={styles.details}>
                 <summary>Technische Details</summary>
-                <pre className={styles.errorText}>{this.state.error.message}</pre>
+                <pre className={styles.errorText}>
+                  {this.state.error.message}
+                  {this.state.error.stack && (
+                    <>
+                      {'\n\n--- Stack Trace ---\n'}
+                      {this.state.error.stack}
+                    </>
+                  )}
+                  {this.state.errorInfo?.componentStack && (
+                    <>
+                      {'\n\n--- Component Stack ---\n'}
+                      {this.state.errorInfo.componentStack}
+                    </>
+                  )}
+                </pre>
               </details>
             )}
+
             <div className={styles.actions}>
               <button className={styles.buttonPrimary} onClick={this.handleReload}>
                 Seite neu laden
               </button>
-              <button className={styles.buttonSecondary} onClick={this.handleReset}>
-                Erneut versuchen
+              <button className={styles.buttonSecondary} onClick={this.handleDashboard}>
+                Zum Dashboard
               </button>
             </div>
           </div>

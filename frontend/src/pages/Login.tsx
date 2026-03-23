@@ -109,8 +109,9 @@ function LoginPage() {
             <span className="login-card__logo-icon">📦</span>
           </div>
           <h1 className="login-card__title">RentFlow</h1>
+          <p className="login-card__tagline">Professionelle Vermietungssoftware</p>
           <p className="login-card__subtitle">
-            Professionelle Verwaltung von Veranstaltungsausstattung
+            Verwaltung von Veranstaltungsausstattung
           </p>
         </div>
 
@@ -152,15 +153,25 @@ function LoginPage() {
             autoComplete="current-password"
           />
 
-          <div className="login-form__remember">
-            <input
-              id="remember-me"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
+          <div className="login-form__options">
+            <div className="login-form__remember">
+              <input
+                id="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
+              />
+              <label htmlFor="remember-me">E-Mail merken</label>
+            </div>
+            <button
+              type="button"
+              className="login-form__forgot"
+              onClick={() => {/* Future: password reset flow */}}
               disabled={isLoading}
-            />
-            <label htmlFor="remember-me">E-Mail merken</label>
+            >
+              Passwort vergessen?
+            </button>
           </div>
 
           <button
@@ -179,6 +190,10 @@ function LoginPage() {
               Erstellt im Setup-Wizard beim ersten Start.</p>
           </div>
         </div>
+      </div>
+
+      <div className="login-version">
+        RentFlow v1.0.0
       </div>
     </div>
   )

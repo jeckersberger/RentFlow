@@ -183,6 +183,56 @@ type CustomerDTO struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+type ContactDTO struct {
+	ID          string    `json:"id"`
+	TenantID    string    `json:"tenant_id"`
+	Type        string    `json:"type"`
+	CompanyName string    `json:"company_name"`
+	FirstName   string    `json:"first_name"`
+	LastName    string    `json:"last_name"`
+	Email       string    `json:"email"`
+	Phone       string    `json:"phone"`
+	Mobile      string    `json:"mobile"`
+	Website     string    `json:"website"`
+	Street      string    `json:"street"`
+	HouseNumber string    `json:"house_number"`
+	Zip         string    `json:"zip"`
+	City        string    `json:"city"`
+	Country     string    `json:"country"`
+	VatID       string    `json:"vat_id"`
+	Notes       string    `json:"notes"`
+	Tags        []string  `json:"tags"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedBy   string    `json:"created_by,omitempty"`
+}
+
+func ContactToDTO(c *domain.Contact) *ContactDTO {
+	return &ContactDTO{
+		ID:          c.ID,
+		TenantID:    c.TenantID,
+		Type:        string(c.Type),
+		CompanyName: c.CompanyName,
+		FirstName:   c.FirstName,
+		LastName:    c.LastName,
+		Email:       c.Email,
+		Phone:       c.Phone,
+		Mobile:      c.Mobile,
+		Website:     c.Website,
+		Street:      c.Street,
+		HouseNumber: c.HouseNumber,
+		Zip:         c.Zip,
+		City:        c.City,
+		Country:     c.Country,
+		VatID:       c.VatID,
+		Notes:       c.Notes,
+		Tags:        c.Tags,
+		CreatedAt:   c.CreatedAt,
+		UpdatedAt:   c.UpdatedAt,
+		CreatedBy:   c.CreatedBy,
+	}
+}
+
 func CustomerToDTO(c *domain.Customer) *CustomerDTO {
 	return &CustomerDTO{
 		ID:              c.ID,

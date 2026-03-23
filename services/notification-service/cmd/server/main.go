@@ -48,12 +48,14 @@ func main() {
 	notificationRepo := repositories.NewPostgresNotificationRepository(db, log)
 	channelRepo := repositories.NewPostgresChannelRepository(db, log)
 	preferenceRepo := repositories.NewPostgresPreferenceRepository(db, log)
+	mailRepo := repositories.NewPostgresMailRepository(db, log)
 
 	// Create services
 	notificationService := application.NewNotificationService(notificationRepo, channelRepo, preferenceRepo, log)
 	channelService := application.NewChannelService(channelRepo, log)
 	preferenceService := application.NewPreferenceService(preferenceRepo, log)
 	digestService := application.NewDigestService(notificationRepo, channelRepo, preferenceRepo, log)
+	mailService := application.NewMailService(mailRepo, log)
 
 	// Wire digest service into notification service for quiet hours checking
 	notificationService.SetDigestService(digestService)
@@ -96,7 +98,7 @@ func main() {
 	router.HandleFunc("GET /ready", readyHandler(serviceName, db, log))
 
 	// Setup API routes
-	notificationhttp.SetupRoutes(router, notificationService, channelService, preferenceService, digestService, log)
+	notificationhttp.SetupRoutes(router, notificationService, channelService, preferenceService, digestService, mailService, log)
 
 	// Create HTTP server
 	srv := &nethttp.Server{

@@ -15,6 +15,7 @@ type Handler struct {
 	packlistSvc    *application.PacklistService
 	reservationSvc *application.ReservationService
 	customerSvc    *application.CustomerService
+	contactSvc     *application.ContactService
 	logger         logger.Logger
 }
 
@@ -23,6 +24,7 @@ func NewHandler(
 	packlistSvc *application.PacklistService,
 	reservationSvc *application.ReservationService,
 	customerSvc *application.CustomerService,
+	contactSvc *application.ContactService,
 	logger logger.Logger,
 ) *Handler {
 	return &Handler{
@@ -30,6 +32,7 @@ func NewHandler(
 		packlistSvc:    packlistSvc,
 		reservationSvc: reservationSvc,
 		customerSvc:    customerSvc,
+		contactSvc:     contactSvc,
 		logger:         logger,
 	}
 }
@@ -934,4 +937,132 @@ func (h *Handler) GetPackingListHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(html))
+}
+
+// Contact Handlers
+
+func (h *Handler) CreateContact(w http.ResponseWriter, r *http.Request) {
+	var cmd application.CreateContactCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+	cmd.TenantID = tenantID
+	cmd.CreatedBy = r.Header.Get("X-User-ID")
+
+	dto, err := h.contactSvc.CreateContact(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) GetContact(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dto, err := h.contactSvc.GetContact(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) ListContacts(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	limit := 50
+	offset := 0
+	searchTerm := ""
+
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	if o := r.URL.Query().Get("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	if s := r.URL.Query().Get("search"); s != "" {
+		searchTerm = s
+	}
+
+	query := application.ListContactsQuery{
+		TenantID:   tenantID,
+		SearchTerm: searchTerm,
+		Limit:      limit,
+		Offset:     offset,
+	}
+
+	result, err := h.contactSvc.ListContacts(r.Context(), query)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) UpdateContact(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var cmd application.UpdateContactCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	cmd.ID = id
+	cmd.TenantID = tenantID
+
+	dto, err := h.contactSvc.UpdateContact(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) DeleteContact(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	if err := h.contactSvc.DeleteContact(r.Context(), tenantID, id); err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

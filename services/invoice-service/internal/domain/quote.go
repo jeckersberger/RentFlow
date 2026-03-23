@@ -80,7 +80,10 @@ func (q *Quote) AddItem(item InvoiceItem) error {
 	}
 
 	item.TotalPrice = item.Quantity * item.UnitPrice
-	item.TaxRate = q.TaxRate
+	if item.TaxRate == 0 && q.TaxRate != 0 {
+		item.TaxRate = q.TaxRate
+	}
+	item.TaxAmount = item.TotalPrice * (float64(item.TaxRate) / 100)
 	item.ID = fmt.Sprintf("item_%d", len(q.Items)+1)
 
 	q.Items = append(q.Items, item)
@@ -111,18 +114,21 @@ func (q *Quote) SetTaxRate(rate float64) error {
 	return nil
 }
 
-// CalculateTotals recalculates SubTotal, TaxAmount, and Total
+// CalculateTotals recalculates SubTotal, TaxAmount, and Total using per-item tax
 func (q *Quote) CalculateTotals() error {
 	if len(q.Items) == 0 {
 		return ErrNoItems
 	}
 
 	q.SubTotal = 0
-	for _, item := range q.Items {
-		q.SubTotal += item.TotalPrice
+	q.TaxAmount = 0
+	for idx := range q.Items {
+		q.Items[idx].TotalPrice = q.Items[idx].Quantity * q.Items[idx].UnitPrice
+		q.Items[idx].TaxAmount = q.Items[idx].TotalPrice * (float64(q.Items[idx].TaxRate) / 100)
+		q.SubTotal += q.Items[idx].TotalPrice
+		q.TaxAmount += q.Items[idx].TaxAmount
 	}
 
-	q.TaxAmount = q.SubTotal * (float64(q.TaxRate) / 100)
 	q.Total = q.SubTotal + q.TaxAmount
 
 	if q.Total <= 0 {

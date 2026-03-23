@@ -78,6 +78,9 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, cmd CreateInvoiceCom
 		return nil, domain.NewDomainError("INVALID_TAX_RATE", err.Error(), err)
 	}
 
+	// Kleinunternehmerregelung (§19 UStG)
+	invoice.IsKleinunternehmer = cmd.IsKleinunternehmer
+
 	// Add items
 	for _, item := range cmd.Items {
 		invoiceItem := domain.InvoiceItem{
@@ -85,6 +88,7 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, cmd CreateInvoiceCom
 			Quantity:    item.Quantity,
 			Unit:        item.Unit,
 			UnitPrice:   item.UnitPrice,
+			TaxRate:     domain.TaxRate(item.TaxRate),
 			EquipmentID: item.EquipmentID,
 		}
 		if err := invoice.AddItem(invoiceItem); err != nil {
@@ -636,10 +640,18 @@ func buildInvoiceHTML(invoice *domain.Invoice) string {
     <table>
         <thead>
             <tr>
-                <th style="width: 50%;">Description</th>
-                <th style="width: 15%; text-align: right;">Qty</th>
-                <th style="width: 15%; text-align: right;">Unit Price</th>
-                <th style="width: 20%; text-align: right;">Total</th>
+                <th style="width: 40%;">Description</th>
+                <th style="width: 10%; text-align: right;">Qty</th>
+                <th style="width: 15%; text-align: right;">Unit Price</th>` +
+		func() string {
+			if !invoice.IsKleinunternehmer {
+				return `
+                <th style="width: 10%; text-align: right;">MwSt. %</th>
+                <th style="width: 10%; text-align: right;">MwSt.</th>`
+			}
+			return ""
+		}() + `
+                <th style="width: 15%; text-align: right;">Total</th>
             </tr>
         </thead>
         <tbody>`
@@ -648,7 +660,13 @@ func buildInvoiceHTML(invoice *domain.Invoice) string {
 		html += `<tr>
             <td>` + item.Description + `</td>
             <td style="text-align: right;">` + fmt.Sprintf("%.2f", item.Quantity) + ` ` + item.Unit + `</td>
-            <td style="text-align: right;">` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", item.UnitPrice) + `</td>
+            <td style="text-align: right;">` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", item.UnitPrice) + `</td>`
+		if !invoice.IsKleinunternehmer {
+			html += `
+            <td style="text-align: right;">` + fmt.Sprintf("%.0f", float64(item.TaxRate)) + `%</td>
+            <td style="text-align: right;">` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", item.TaxAmount) + `</td>`
+		}
+		html += `
             <td style="text-align: right;">` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", item.TotalPrice) + `</td>
         </tr>`
 	}
@@ -660,16 +678,31 @@ func buildInvoiceHTML(invoice *domain.Invoice) string {
         <div class="total-row">
             <span>Subtotal:</span>
             <span>` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", invoice.SubTotal) + `</span>
-        </div>
+        </div>`
+
+	if !invoice.IsKleinunternehmer {
+		html += `
         <div class="total-row">
-            <span>Tax (` + fmt.Sprintf("%.0f", float64(invoice.TaxRate)) + `%):</span>
+            <span>Tax:</span>
             <span>` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", invoice.TaxAmount) + `</span>
-        </div>
+        </div>`
+	}
+
+	html += `
         <div class="total-row total-amount">
             <span>TOTAL:</span>
             <span>` + invoice.Currency + ` ` + fmt.Sprintf("%.2f", invoice.Total) + `</span>
         </div>
-    </div>
+    </div>`
+
+	if invoice.IsKleinunternehmer && invoice.KleinunternehmerText != "" {
+		html += `
+    <div style="margin-top: 20px; padding: 10px; background: #f0f7ff; border: 1px solid #b3d4fc; border-radius: 4px; font-size: 12px;">
+        <strong>Hinweis:</strong> ` + invoice.KleinunternehmerText + `
+    </div>`
+	}
+
+	html += `
 
     <div class="footer">
         <p><strong>Payment Terms:</strong> Due by ` + invoice.DueDate.Format("2006-01-02") + `</p>

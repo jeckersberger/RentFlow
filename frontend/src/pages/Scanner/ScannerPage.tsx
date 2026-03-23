@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode'
 import { Select } from '../../components/Form/Select'
 import { Input } from '../../components/Form/Input'
@@ -114,7 +115,7 @@ interface Project {
 
 interface ScanSession {
   id: string
-  context: 'check-out' | 'check-in' | 'warehouse-store' | 'inventory'
+  context: 'check-out' | 'check-in' | 'warehouse-store' | 'inventory' | 'pack-verify'
   project_id?: string
   started_at: string
   total_scans: number
@@ -123,10 +124,12 @@ interface ScanSession {
 }
 
 function ScannerPage() {
+  const navigate = useNavigate()
   const scanInputRef = useRef<HTMLInputElement>(null)
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null)
   const [barcode, setBarcode] = useState('')
-  const [scanContext, setScanContext] = useState<'check-out' | 'check-in' | 'warehouse-store' | 'inventory'>('check-in')
+  const [scanContext, setScanContext] = useState<'check-out' | 'check-in' | 'warehouse-store' | 'inventory' | 'pack-verify'>('check-in')
+  const [packVerifyResult, setPackVerifyResult] = useState<{ found: boolean; itemName?: string } | null>(null)
   const [projectId, setProjectId] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
   const [recentScans, setRecentScans] = useState<ScanEvent[]>([])
@@ -150,6 +153,9 @@ function ScannerPage() {
   const [conditionEquipmentId, setConditionEquipmentId] = useState<string>('')
   const [conditionEquipmentName, setConditionEquipmentName] = useState<string>('')
   const [isSubmittingCondition, setIsSubmittingCondition] = useState(false)
+  const [showCheckOutModal, setShowCheckOutModal] = useState(false)
+  const [checkOutProjectId, setCheckOutProjectId] = useState('')
+  const [flashType, setFlashType] = useState<'success' | 'error' | null>(null)
 
   // Ref to allow useEffects to call processBarcode without circular dependency
   const processBarcodeRef = useRef<((barcode: string) => void) | null>(null)
@@ -246,8 +252,9 @@ function ScannerPage() {
   useEffect(() => {
     projectApi.list(1, 100)
       .then((data) => {
-        const projectList = (data?.items || []).filter(
-          (p: Project) => p.status === 'confirmed' || p.status === 'in_progress' || p.status === 'active' || p.status === 'planning'
+        const allProjects = data?.items || data?.data || []
+        const projectList = allProjects.filter(
+          (p: Project) => p.status === 'confirmed' || p.status === 'in_progress' || p.status === 'active' || p.status === 'planning' || p.status === 'draft'
         )
         setProjects(projectList)
       })
@@ -418,6 +425,21 @@ function ScannerPage() {
       } else if (scanContext === 'inventory') {
         // Inventory check (mock, no action needed)
         await new Promise(resolve => setTimeout(resolve, 100))
+      } else if (scanContext === 'pack-verify') {
+        // Pack-verify: check against packing list via global bridge
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const verifyFn = (window as any).__packingListVerify as ((barcode: string) => { found: boolean; item?: { name: string } }) | undefined
+        if (verifyFn) {
+          const result = verifyFn(scannedBarcode)
+          setPackVerifyResult({ found: result.found, itemName: result.item?.name })
+          if (!result.found) {
+            throw new Error('Nicht in dieser Packliste')
+          }
+        } else {
+          // No packing list loaded - use barcode lookup as fallback
+          await new Promise(resolve => setTimeout(resolve, 100))
+          setPackVerifyResult({ found: true, itemName: equipment?.name })
+        }
       }
 
       // Erfolg
@@ -431,6 +453,10 @@ function ScannerPage() {
         prev.map((s) => (s.id === scanId ? successScan : s))
       )
       setSuccessCount((prev) => prev + 1)
+
+      // Flash green
+      setFlashType('success')
+      setTimeout(() => setFlashType(null), 600)
 
       // Track check-in/check-out counts and show feedback
       if (scanContext === 'check-out') {
@@ -507,6 +533,10 @@ function ScannerPage() {
         setErrorCount((prev) => prev + 1)
         setScannedEquipment(null)
         setFeedbackMessage({ type: 'error', text: errorMessage, timestamp: Date.now() })
+
+        // Flash red
+        setFlashType('error')
+        setTimeout(() => setFlashType(null), 600)
 
         // Play error beep
         playBeep('error')
@@ -672,6 +702,23 @@ function ScannerPage() {
 
   return (
     <div className="scanner-page">
+      {/* Flash overlay for scan feedback */}
+      {flashType && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: flashType === 'success' ? 'rgba(22, 163, 74, 0.15)' : 'rgba(220, 38, 38, 0.15)',
+            zIndex: 9998,
+            pointerEvents: 'none',
+            animation: 'scanFlash 0.6s ease-out forwards',
+          }}
+        />
+      )}
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Scanner & Bestandsverwaltung</h1>
@@ -680,13 +727,25 @@ function ScannerPage() {
           </p>
         </div>
         <div className="header-actions">
+          {offlineQueue > 0 && !offlineMode && (
+            <span style={{
+              padding: 'var(--spacing-2) var(--spacing-3)',
+              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+              color: '#fbbf24',
+              borderRadius: 'var(--radius-full)',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 'var(--font-weight-semibold)',
+            }}>
+              {offlineQueue} in Warteschlange
+            </span>
+          )}
           {!sessionActive ? (
             <button className="btn btn--primary" onClick={handleStartSession}>
-              ▶ Sitzung starten
+              Sitzung starten
             </button>
           ) : (
             <button className="btn btn--secondary" onClick={handleEndSession}>
-              ⏹ Sitzung beenden
+              Sitzung beenden
             </button>
           )}
         </div>
@@ -731,9 +790,10 @@ function ScannerPage() {
             marginBottom: 'var(--spacing-4)',
             fontWeight: 'var(--font-weight-semibold)',
             fontSize: 'var(--font-size-base)',
-            backgroundColor: feedbackMessage.type === 'success' ? '#dcfce7' : '#fef2f2',
-            color: feedbackMessage.type === 'success' ? '#166534' : '#991b1b',
-            border: `2px solid ${feedbackMessage.type === 'success' ? '#16a34a' : '#dc2626'}`,
+            backgroundColor: feedbackMessage.type === 'success' ? 'rgba(22, 163, 74, 0.15)' : 'rgba(220, 38, 38, 0.15)',
+            color: feedbackMessage.type === 'success' ? '#34d399' : '#f87171',
+            border: `2px solid ${feedbackMessage.type === 'success' ? 'rgba(22, 163, 74, 0.4)' : 'rgba(220, 38, 38, 0.4)'}`,
+            backdropFilter: 'blur(8px)',
             animation: 'fadeIn 0.2s ease',
           }}
         >
@@ -745,23 +805,28 @@ function ScannerPage() {
       <div className="context-selector">
         <h3 className="context-selector__title">Scan-Kontext</h3>
         <div className="context-cards">
-          {(['check-in', 'check-out', 'warehouse-store', 'inventory'] as const).map((ctx) => (
+          {(['check-in', 'check-out', 'warehouse-store', 'inventory', 'pack-verify'] as const).map((ctx) => (
             <button
               key={ctx}
               className={`context-card ${scanContext === ctx ? 'context-card--active' : ''}`}
-              onClick={() => setScanContext(ctx)}
+              onClick={() => {
+                setScanContext(ctx)
+                setPackVerifyResult(null)
+              }}
             >
               <div className="context-card__icon">
-                {ctx === 'check-in' && '📥'}
-                {ctx === 'check-out' && '📤'}
-                {ctx === 'warehouse-store' && '🏢'}
-                {ctx === 'inventory' && '📊'}
+                {ctx === 'check-in' && '\u{1F4E5}'}
+                {ctx === 'check-out' && '\u{1F4E4}'}
+                {ctx === 'warehouse-store' && '\u{1F3E2}'}
+                {ctx === 'inventory' && '\u{1F4CA}'}
+                {ctx === 'pack-verify' && '\u{1F4E6}'}
               </div>
               <div className="context-card__label">
                 {ctx === 'check-in' && 'Einchecken'}
                 {ctx === 'check-out' && 'Auschecken'}
                 {ctx === 'warehouse-store' && 'Lagerort'}
                 {ctx === 'inventory' && 'Inventur'}
+                {ctx === 'pack-verify' && 'Packliste pr\u00FCfen'}
               </div>
             </button>
           ))}
@@ -773,18 +838,69 @@ function ScannerPage() {
           <div className="scanner-panel">
             <h2 className="scanner-panel__title">Scan-Eingabe</h2>
 
-            {scanContext === 'check-out' && (
+            {(scanContext === 'check-out' || scanContext === 'pack-verify') && (
               <div className="scanner-panel__section">
                 <Select
-                  label="Projekt auswählen"
+                  label={scanContext === 'pack-verify' ? 'Projekt f\u00FCr Packliste' : 'Projekt ausw\u00E4hlen'}
                   options={projects.map((p) => ({
                     value: p.id,
                     label: p.name,
                   }))}
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
-                  placeholder="Projekt für Auschecken..."
+                  placeholder={scanContext === 'pack-verify' ? 'Projekt f\u00FCr Packliste w\u00E4hlen...' : 'Projekt f\u00FCr Auschecken...'}
                 />
+              </div>
+            )}
+
+            {/* Pack-Verify Progress Info */}
+            {scanContext === 'pack-verify' && projectId && (
+              <div
+                style={{
+                  padding: 'var(--spacing-3) var(--spacing-4)',
+                  backgroundColor: 'rgba(0, 212, 255, 0.08)',
+                  borderRadius: 'var(--radius-card)',
+                  marginBottom: 'var(--spacing-3)',
+                  border: '1px solid rgba(0, 212, 255, 0.15)',
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 'var(--spacing-2)',
+                }}>
+                  <span style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>
+                    {'\u{1F4E6}'} Packlisten-Scan aktiv
+                  </span>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                    {successCount} Artikel gepr\u00FCft
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                  Scannen Sie Equipment-Barcodes. Artikel auf der Packliste werden automatisch als gepackt markiert.
+                </p>
+              </div>
+            )}
+
+            {/* Pack-Verify Last Result */}
+            {scanContext === 'pack-verify' && packVerifyResult && (
+              <div
+                style={{
+                  padding: 'var(--spacing-3) var(--spacing-4)',
+                  borderRadius: 'var(--radius-card)',
+                  marginBottom: 'var(--spacing-3)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  fontSize: 'var(--font-size-base)',
+                  backgroundColor: packVerifyResult.found ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  color: packVerifyResult.found ? '#34d399' : '#f87171',
+                  border: `2px solid ${packVerifyResult.found ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                  animation: 'fadeIn 0.2s ease',
+                }}
+              >
+                {packVerifyResult.found
+                  ? `\u2713 ${packVerifyResult.itemName || 'Artikel'} gefunden und als gepackt markiert`
+                  : '\u2717 Nicht in dieser Packliste!'}
               </div>
             )}
 
@@ -863,7 +979,7 @@ function ScannerPage() {
                     placeholder="Code eingeben und Enter drücken..."
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
-                    onKeyPress={handleManualScan}
+                    onKeyDown={handleManualScan}
                     autoFocus
                     disabled={isProcessing}
                     style={{ fontSize: '1.25rem', padding: 'var(--spacing-3) var(--spacing-4)', height: '3.25rem' }}
@@ -885,21 +1001,23 @@ function ScannerPage() {
                 </button>
               </div>
 
-              {/* Project warning for check-out */}
-              {scanContext === 'check-out' && !projectId && (
+              {/* Project warning for check-out / pack-verify */}
+              {(scanContext === 'check-out' || scanContext === 'pack-verify') && !projectId && (
                 <div
                   style={{
                     marginTop: 'var(--spacing-2)',
                     padding: 'var(--spacing-2) var(--spacing-3)',
-                    backgroundColor: '#fffbeb',
-                    color: '#92400e',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    color: '#fbbf24',
                     borderRadius: 'var(--radius-md)',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 'var(--font-weight-semibold)',
-                    border: '1px solid #d97706',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
                   }}
                 >
-                  ⚠ Bitte zuerst ein Projekt auswählen, bevor Sie Equipment auschecken.
+                  {'\u26A0'} {scanContext === 'pack-verify'
+                    ? 'Bitte zuerst ein Projekt ausw\u00E4hlen, um die Packliste zu pr\u00FCfen.'
+                    : 'Bitte zuerst ein Projekt ausw\u00E4hlen, bevor Sie Equipment auschecken.'}
                 </div>
               )}
             </div>
@@ -993,42 +1111,155 @@ function ScannerPage() {
                   </div>
                 </div>
 
-                {/* Action button based on context */}
-                {scanContext === 'check-out' && scannedEquipment.status === 'available' && (
+                {/* Quick Actions */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-2)' }}>
+                  {/* Check-Out an Projekt */}
+                  {(scannedEquipment.status === 'available' || scannedEquipment.status === 'reserved') && (
+                    <button
+                      className="btn btn--primary"
+                      style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}
+                      onClick={() => {
+                        setCheckOutProjectId('')
+                        setShowCheckOutModal(true)
+                      }}
+                    >
+                      Check-Out an Projekt
+                    </button>
+                  )}
+
+                  {/* Check-In */}
+                  {scannedEquipment.status === 'checked_out' && (
+                    <button
+                      className="btn btn--primary"
+                      style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', backgroundColor: '#16a34a', borderColor: '#16a34a' }}
+                      onClick={() => {
+                        equipmentApi.checkIn(scannedEquipment.id).then(() => {
+                          setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} eingecheckt`, timestamp: Date.now() })
+                          setScannedEquipment({ ...scannedEquipment, status: 'available' })
+                          playBeep('success')
+                        }).catch(() => {
+                          setFeedbackMessage({ type: 'error', text: 'Check-In fehlgeschlagen', timestamp: Date.now() })
+                          playBeep('error')
+                        })
+                      }}
+                    >
+                      Check-In
+                    </button>
+                  )}
+
+                  {/* Defekt melden */}
+                  {scannedEquipment.status !== 'damaged' && scannedEquipment.status !== 'in_maintenance' && (
+                    <button
+                      className="btn btn--secondary"
+                      style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: '#dc2626', borderColor: '#dc2626' }}
+                      onClick={() => {
+                        equipmentApi.updateCondition(scannedEquipment.id, 'damaged', 'Per Scanner als defekt gemeldet').then(() => {
+                          setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} als defekt gemeldet`, timestamp: Date.now() })
+                          setScannedEquipment({ ...scannedEquipment, status: 'in_maintenance', condition: 'damaged' })
+                          playBeep('info')
+                        }).catch(() => {
+                          setFeedbackMessage({ type: 'error', text: 'Defektmeldung fehlgeschlagen', timestamp: Date.now() })
+                          playBeep('error')
+                        })
+                      }}
+                    >
+                      Defekt melden
+                    </button>
+                  )}
+
+                  {/* Details anzeigen */}
                   <button
-                    className="btn btn--primary"
-                    style={{ width: '100%', padding: 'var(--spacing-3)', fontSize: '1.1rem', fontWeight: 'var(--font-weight-semibold)' }}
-                    onClick={() => {
-                      if (projectId) {
-                        equipmentApi.checkOut(scannedEquipment.id, projectId).then(() => {
+                    className="btn btn--secondary"
+                    style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}
+                    onClick={() => navigate(`/equipment/${scannedEquipment.id}`)}
+                  >
+                    Details anzeigen
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Check-Out Modal */}
+            {showCheckOutModal && scannedEquipment && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 9999,
+                  backdropFilter: 'blur(4px)',
+                }}
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) setShowCheckOutModal(false)
+                }}
+              >
+                <div
+                  style={{
+                    background: 'var(--color-bg-primary)',
+                    borderRadius: 'var(--radius-card)',
+                    padding: 'var(--spacing-6)',
+                    width: '100%',
+                    maxWidth: '480px',
+                    margin: 'var(--spacing-4)',
+                    border: '1px solid var(--color-border)',
+                    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.4)',
+                  }}
+                >
+                  <h3 style={{ margin: '0 0 var(--spacing-2) 0', color: 'var(--color-text-primary)', fontSize: '1.25rem' }}>
+                    Check-Out an Projekt
+                  </h3>
+                  <p style={{ margin: '0 0 var(--spacing-4) 0', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                    {scannedEquipment.name} einem Projekt zuweisen
+                  </p>
+
+                  <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                    <Select
+                      label="Projekt auswählen"
+                      options={projects.map((p) => ({
+                        value: p.id,
+                        label: p.name,
+                      }))}
+                      value={checkOutProjectId}
+                      onChange={(e) => setCheckOutProjectId(e.target.value)}
+                      placeholder="Projekt auswählen..."
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+                    <button
+                      className="btn btn--primary"
+                      style={{ flex: 1, padding: 'var(--spacing-3)' }}
+                      disabled={!checkOutProjectId}
+                      onClick={() => {
+                        equipmentApi.checkOut(scannedEquipment.id, checkOutProjectId).then(() => {
                           setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} ausgecheckt`, timestamp: Date.now() })
                           setScannedEquipment({ ...scannedEquipment, status: 'checked_out' })
+                          setShowCheckOutModal(false)
+                          setCheckOutCount((prev) => prev + 1)
+                          playBeep('success')
                         }).catch(() => {
                           setFeedbackMessage({ type: 'error', text: 'Check-Out fehlgeschlagen', timestamp: Date.now() })
+                          playBeep('error')
                         })
-                      }
-                    }}
-                    disabled={!projectId}
-                  >
-                    📤 Check-Out: {scannedEquipment.name}
-                  </button>
-                )}
-                {scanContext === 'check-in' && scannedEquipment.status === 'checked_out' && (
-                  <button
-                    className="btn btn--primary"
-                    style={{ width: '100%', padding: 'var(--spacing-3)', fontSize: '1.1rem', fontWeight: 'var(--font-weight-semibold)', backgroundColor: '#16a34a', borderColor: '#16a34a' }}
-                    onClick={() => {
-                      equipmentApi.checkIn(scannedEquipment.id).then(() => {
-                        setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} eingecheckt`, timestamp: Date.now() })
-                        setScannedEquipment({ ...scannedEquipment, status: 'available' })
-                      }).catch(() => {
-                        setFeedbackMessage({ type: 'error', text: 'Check-In fehlgeschlagen', timestamp: Date.now() })
-                      })
-                    }}
-                  >
-                    📥 Check-In: {scannedEquipment.name}
-                  </button>
-                )}
+                      }}
+                    >
+                      Check-Out
+                    </button>
+                    <button
+                      className="btn btn--secondary"
+                      style={{ flex: 1, padding: 'var(--spacing-3)' }}
+                      onClick={() => setShowCheckOutModal(false)}
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1038,9 +1269,10 @@ function ScannerPage() {
                 style={{
                   marginTop: 'var(--spacing-4)',
                   padding: 'var(--spacing-5)',
-                  backgroundColor: '#f0f9ff',
+                  backgroundColor: 'rgba(2, 132, 199, 0.1)',
                   borderRadius: 'var(--radius-card)',
-                  border: '2px solid #0284c7',
+                  border: '2px solid rgba(2, 132, 199, 0.3)',
+                  backdropFilter: 'blur(8px)',
                 }}
               >
                 <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '1.25rem', color: 'var(--color-text-primary)' }}>

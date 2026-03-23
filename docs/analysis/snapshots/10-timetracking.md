@@ -1,0 +1,355 @@
+- generic [ref=e1]:
+  - generic [ref=e6]:
+    - navigation [ref=e8]:
+      - generic [ref=e9]:
+        - button "" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: 
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Jhons
+          - paragraph [ref=e14]: jhons.rentmanapp.com
+        - button "chevron_right chevron_left" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: chevron_right
+          - generic [ref=e17]: chevron_left
+      - generic: expand_more
+      - generic [ref=e18]:
+        - button "fact_check Implementierungsleitfaden" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]:
+            - generic [ref=e23]: fact_check
+            - generic [ref=e25]: Implementierungsleitfaden
+        - button "dashboard Dashboard" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: dashboard
+            - generic [ref=e32]: Dashboard
+        - generic [ref=e33]:
+          - button "event (Mein) Kalender expand_more expand_less" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: event
+              - generic [ref=e39]: (Mein) Kalender
+              - generic [ref=e40]:
+                - generic [ref=e41]: expand_more
+                - generic [ref=e42]: expand_less
+          - generic [ref=e43]:
+            - button "(Mein) Kalender" [ref=e44] [cursor=pointer]:
+              - generic [ref=e47]: (Mein) Kalender
+            - button "Job Board" [ref=e48] [cursor=pointer]:
+              - generic [ref=e51]: Job Board
+        - generic [ref=e52]:
+          - button " Lager expand_more expand_less" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - generic [ref=e56]: 
+              - generic [ref=e58]: Lager
+              - generic [ref=e59]:
+                - generic [ref=e60]: expand_more
+                - generic [ref=e61]: expand_less
+          - generic [ref=e62]:
+            - button "Lager" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]: Lager
+            - button "Kombinationen" [ref=e67] [cursor=pointer]:
+              - generic [ref=e70]: Kombinationen
+            - button "Cross-Docking-Übersicht" [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: Cross-Docking-Übersicht
+            - button "Lager-Tracking-Log" [ref=e75] [cursor=pointer]:
+              - generic [ref=e78]: Lager-Tracking-Log
+        - generic [ref=e80]:
+          - button "table_chart Projekte expand_more expand_less" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e84]: table_chart
+              - generic [ref=e86]: Projekte
+              - generic [ref=e87]:
+                - generic [ref=e88]: expand_more
+                - generic [ref=e89]: expand_less
+          - generic [ref=e90]:
+            - button "Projekte" [ref=e91] [cursor=pointer]:
+              - generic [ref=e94]: Projekte
+            - button "Vermietungsanfrage" [ref=e95] [cursor=pointer]:
+              - generic [ref=e98]: Vermietungsanfrage
+        - button "account_circle Personalplaner" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]:
+            - generic [ref=e103]: account_circle
+            - generic [ref=e105]: Personalplaner
+        - generic [ref=e106]:
+          - button "swap_horizontal_circle Mangel expand_more expand_less" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e110]: swap_horizontal_circle
+              - generic [ref=e112]: Mangel
+              - generic [ref=e113]:
+                - generic [ref=e114]: expand_more
+                - generic [ref=e115]: expand_less
+          - generic [ref=e116]:
+            - button "Mietengpässe" [ref=e117] [cursor=pointer]:
+              - generic [ref=e120]: Mietengpässe
+            - button "Verkaufsengpässe" [ref=e121] [cursor=pointer]:
+              - generic [ref=e124]: Verkaufsengpässe
+            - button "Zumietungsjobs" [ref=e125] [cursor=pointer]:
+              - generic [ref=e128]: Zumietungsjobs
+        - generic [ref=e129]:
+          - button "monetization_on Finanzen expand_more expand_less" [active] [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]:
+              - generic [ref=e133]: monetization_on
+              - generic [ref=e135]: Finanzen
+              - generic [ref=e136]:
+                - generic [ref=e137]: expand_more
+                - generic [ref=e138]: expand_less
+          - generic [ref=e139]:
+            - button "Rechnungen" [ref=e140] [cursor=pointer]:
+              - generic [ref=e143]: Rechnungen
+            - button "Zu fakturieren" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: Zu fakturieren
+            - button "Bestellungen" [ref=e148] [cursor=pointer]:
+              - generic [ref=e151]: Bestellungen
+        - generic [ref=e153]:
+          - button "category Materialien expand_more expand_less" [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]: category
+              - generic [ref=e159]: Materialien
+              - generic [ref=e160]:
+                - generic [ref=e161]: expand_more
+                - generic [ref=e162]: expand_less
+          - generic [ref=e163]:
+            - button "Materialien" [ref=e164] [cursor=pointer]:
+              - generic [ref=e167]: Materialien
+            - button "Seriennummern" [ref=e168] [cursor=pointer]:
+              - generic [ref=e171]: Seriennummern
+            - button "Lagerstandorte" [ref=e172] [cursor=pointer]:
+              - generic [ref=e175]: Lagerstandorte
+            - button "Archivierte Materialien" [ref=e176] [cursor=pointer]:
+              - generic [ref=e179]: Archivierte Materialien
+            - button "Archivierte Standorte" [ref=e180] [cursor=pointer]:
+              - generic [ref=e183]: Archivierte Standorte
+        - button "contact_phone Kontakte" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]:
+            - generic [ref=e188]: contact_phone
+            - generic [ref=e190]: Kontakte
+        - button "people Mitarbeiter" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]:
+            - generic [ref=e195]: people
+            - generic [ref=e197]: Mitarbeiter
+        - button "local_shipping Fahrzeuge" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - generic [ref=e202]: local_shipping
+            - generic [ref=e204]: Fahrzeuge
+        - button "assignment_turned_in Aufgaben" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: assignment_turned_in
+            - generic [ref=e212]: Aufgaben
+        - generic [ref=e213]:
+          - button "watch_later Stundenerfassung expand_more expand_less" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e217]: watch_later
+              - generic [ref=e219]: Stundenerfassung
+              - generic [ref=e220]:
+                - generic [ref=e221]: expand_more
+                - generic [ref=e222]: expand_less
+          - generic [ref=e223]:
+            - button "Stundenerfassung" [ref=e224] [cursor=pointer]:
+              - generic [ref=e227]: Stundenerfassung
+            - button "Aktivitäten" [ref=e228] [cursor=pointer]:
+              - generic [ref=e231]: Aktivitäten
+            - button "Abwesenheitsanträge" [ref=e232] [cursor=pointer]:
+              - generic [ref=e235]: Abwesenheitsanträge
+        - generic [ref=e236]:
+          - button "build Werkstatt expand_more expand_less" [ref=e237] [cursor=pointer]:
+            - generic [ref=e238]:
+              - generic [ref=e240]: build
+              - generic [ref=e242]: Werkstatt
+              - generic [ref=e243]:
+                - generic [ref=e244]: expand_more
+                - generic [ref=e245]: expand_less
+          - generic [ref=e246]:
+            - button "Reparaturen" [ref=e247] [cursor=pointer]:
+              - generic [ref=e250]: Reparaturen
+            - button "Prüfungen" [ref=e251] [cursor=pointer]:
+              - generic [ref=e254]: Prüfungen
+            - button "Zu prüfende Materialien" [ref=e255] [cursor=pointer]:
+              - generic [ref=e258]: Zu prüfende Materialien
+            - button "Verlorene Materialien" [ref=e259] [cursor=pointer]:
+              - generic [ref=e262]: Verlorene Materialien
+            - button "Bestandszählungen" [ref=e263] [cursor=pointer]:
+              - generic [ref=e266]: Bestandszählungen
+        - button "poll Statistik" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]:
+            - generic [ref=e271]: poll
+            - generic [ref=e273]: Statistik
+        - generic [ref=e275]:
+          - button "dvr Kommunikation expand_more expand_less" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]:
+              - generic [ref=e279]: dvr
+              - generic [ref=e281]: Kommunikation
+              - generic [ref=e282]:
+                - generic [ref=e283]: expand_more
+                - generic [ref=e284]: expand_less
+          - generic [ref=e285]:
+            - button "Kommunikations-Log" [ref=e286] [cursor=pointer]:
+              - generic [ref=e289]: Kommunikations-Log
+            - button "Gesendete E-Mails" [ref=e290] [cursor=pointer]:
+              - generic [ref=e293]: Gesendete E-Mails
+            - button "Erhaltene Notizen" [ref=e294] [cursor=pointer]:
+              - generic [ref=e297]: Erhaltene Notizen
+        - button "settings Konfiguration" [ref=e300] [cursor=pointer]:
+          - generic [ref=e301]:
+            - generic [ref=e303]: settings
+            - generic [ref=e305]: Konfiguration
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - generic [ref=e3004]:
+          - button "settings lock Konfiguration" [ref=e5690] [cursor=pointer]:
+            - generic [ref=e3008]:
+              - generic [ref=e3009]: settings
+              - generic [ref=e3010]: lock
+            - generic "Konfiguration" [ref=e3011]
+          - button "table_chart lock Liveauftritt Band Soultrain" [ref=e9303] [cursor=pointer]:
+            - generic [ref=e6876]:
+              - generic [ref=e6877]: table_chart
+              - generic [ref=e6878]: lock
+            - generic "Liveauftritt Band Soultrain" [ref=e6879]
+          - button "account_circle lock Personalplaner" [ref=e10417] [cursor=pointer]:
+            - generic [ref=e9625]:
+              - generic [ref=e9626]: account_circle
+              - generic [ref=e9627]: lock
+            - generic "Personalplaner" [ref=e9628]
+        - button "close" [ref=e6881] [cursor=pointer]:
+          - generic [ref=e6882]: close
+      - generic [ref=e309]:
+        - generic [ref=e311]: Testzeitraum läuft in 28Tagen ab
+        - button "auto_awesome Jetzt aktivieren mit 50% Rabatt" [ref=e312] [cursor=pointer]:
+          - generic [ref=e313]: auto_awesome
+          - generic [ref=e314]: Jetzt aktivieren mit 50% Rabatt
+      - button "search" [ref=e316] [cursor=pointer]:
+        - generic [ref=e317]: search
+      - button "timelapse" [ref=e320] [cursor=pointer]:
+        - generic [ref=e322]: timelapse
+      - button "help_outline" [ref=e325] [cursor=pointer]:
+        - generic [ref=e326]: help_outline
+      - button "notifications_none" [ref=e331] [cursor=pointer]:
+        - generic [ref=e333]: notifications_none
+      - button "JD John Dee" [ref=e335] [cursor=pointer]:
+        - generic [ref=e338]: JD
+        - generic [ref=e339]: John Dee
+    - generic [ref=e14646]:
+      - generic [ref=e14647]:
+        - heading "Stundenerfassung" [level=1] [ref=e14651]
+        - link "help_outline" [ref=e14653] [cursor=pointer]:
+          - /url: http://support.rentman.io/hc/de/articles/360015498439?utm_source=rentmanapp&utm_medium=in_app_links&utm_campaign=sc_links_within_rentman
+        - generic [ref=e14654]:
+          - button "open_in_new Meine Aktivitäten" [ref=e14655] [cursor=pointer]:
+            - generic [ref=e14656]: open_in_new
+            - generic [ref=e14657]: Meine Aktivitäten
+          - button "add Stundenerfassung hinzufügen" [ref=e14659] [cursor=pointer]:
+            - generic [ref=e14660]: add
+            - generic [ref=e14661]: Stundenerfassung hinzufügen
+      - generic [ref=e14664]:
+        - button "date_range Vorherige Woche arrow_drop_down" [ref=e14668] [cursor=pointer]:
+          - generic [ref=e14669]: date_range
+          - generic [ref=e14670]: Vorherige Woche
+          - generic [ref=e14671]: arrow_drop_down
+        - generic [ref=e14672]:
+          - button "search close" [ref=e14676] [cursor=pointer]:
+            - generic [ref=e14677]: search
+            - generic [ref=e14678]: close
+          - button "label Tags arrow_drop_down" [ref=e14682] [cursor=pointer]:
+            - generic [ref=e14683]: label
+            - generic [ref=e14684]: Tags
+            - generic [ref=e14685]: arrow_drop_down
+          - button "filter_list Filter arrow_drop_down" [ref=e14688] [cursor=pointer]:
+            - generic [ref=e14689]: filter_list
+            - generic [ref=e14690]: Filter
+            - generic [ref=e14691]: arrow_drop_down
+      - generic [ref=e14693]:
+        - generic [ref=e14694]:
+          - button "settings Ansichten arrow_drop_down" [ref=e14698] [cursor=pointer]:
+            - generic [ref=e14699]: settings
+            - generic [ref=e14700]: Ansichten
+            - generic [ref=e14701]: arrow_drop_down
+          - generic [ref=e14702]:
+            - button "close" [ref=e14703] [cursor=pointer]:
+              - generic [ref=e14704]: close
+            - generic [ref=e14706]:
+              - button "edit Bearbeiten" [ref=e14708] [cursor=pointer]:
+                - generic [ref=e14709]: edit
+                - generic [ref=e14710]: Bearbeiten
+              - generic [ref=e14711]:
+                - button "check Genehmigen" [disabled]:
+                  - generic: check
+                  - generic: Genehmigen
+              - button "more_vert" [ref=e14713] [cursor=pointer]:
+                - generic [ref=e14714]: more_vert
+        - generic [ref=e14715]:
+          - generic [ref=e14716]:
+            - paragraph [ref=e14717]: Im ausgewählten Zeitraum wurde keine Stundenerfassung gefunden
+            - generic [ref=e14719]: calendar_today
+          - generic [ref=e14721]:
+            - alert [ref=e14722]
+            - grid [ref=e14723]:
+              - generic:
+                - rowgroup [ref=e14724]:
+                  - 'row "check remove Mitarbeiter aufsteigend sortieren. Priorität: 1" [ref=e14729]':
+                    - columnheader "check remove" [ref=e14731]:
+                      - generic [ref=e14733] [cursor=pointer]:
+                        - checkbox [ref=e14734]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                    - generic [ref=e14737]:
+                      - button
+                    - 'columnheader "Mitarbeiter aufsteigend sortieren. Priorität: 1" [ref=e14739] [cursor=pointer]':
+                      - 'button "Mitarbeiter aufsteigend sortieren. Priorität: 1" [ref=e14740]':
+                        - generic [ref=e14741]: Mitarbeiter
+                        - 'generic "aufsteigend sortieren. Priorität: 1" [ref=e14742]':
+                          - generic [ref=e14743]: sort
+                          - subscript [ref=e14744]: "1"
+                      - text: more_vert
+                - rowgroup [ref=e14746]
+              - rowgroup [ref=e14749]:
+                - 'row "Von aufsteigend sortieren. Priorität: 2 Name (Typ) keine Sortierung Status keine Sortierung Genehmigungsprüfung keine Sortierung Von aufsteigend sortieren. Priorität: 2 Bis keine Sortierung Registrierte Zeit keine Sortierung Pause keine Sortierung Fahrtzeit keine Sortierung Strecke keine Sortierung" [ref=e14754]':
+                  - 'columnheader "Von aufsteigend sortieren. Priorität: 2" [ref=e14756] [cursor=pointer]':
+                    - 'button "Von aufsteigend sortieren. Priorität: 2" [ref=e14757]':
+                      - generic [ref=e14758]: Von
+                      - 'generic "aufsteigend sortieren. Priorität: 2" [ref=e14759]':
+                        - generic [ref=e14760]: sort
+                        - subscript [ref=e14761]: "2"
+                    - text: more_vert
+                  - columnheader "Name (Typ) keine Sortierung" [ref=e14765] [cursor=pointer]:
+                    - button "Name (Typ)" [ref=e14766]:
+                      - generic [ref=e14767]: Name (Typ)
+                    - text: more_vert
+                  - columnheader "Status keine Sortierung" [ref=e14771] [cursor=pointer]:
+                    - button "Status" [ref=e14772]:
+                      - generic [ref=e14773]: Status
+                    - text: more_vert
+                  - columnheader "Genehmigungsprüfung keine Sortierung" [ref=e14777] [cursor=pointer]:
+                    - button "Genehmigungsprüfung" [ref=e14778]:
+                      - generic [ref=e14779]: Genehmigungsprüfung
+                    - text: more_vert
+                  - 'columnheader "Von aufsteigend sortieren. Priorität: 2" [ref=e14783] [cursor=pointer]':
+                    - 'button "Von aufsteigend sortieren. Priorität: 2" [ref=e14784]':
+                      - generic [ref=e14785]: Von
+                      - 'generic "aufsteigend sortieren. Priorität: 2" [ref=e14786]':
+                        - generic [ref=e14787]: sort
+                        - subscript [ref=e14788]: "2"
+                    - text: more_vert
+                  - columnheader "Bis keine Sortierung" [ref=e14792] [cursor=pointer]:
+                    - button "Bis" [ref=e14793]:
+                      - generic [ref=e14794]: Bis
+                    - text: more_vert
+                  - columnheader "Registrierte Zeit keine Sortierung" [ref=e14798] [cursor=pointer]:
+                    - button "Registrierte Zeit" [ref=e14799]:
+                      - generic [ref=e14800]: Registrierte Zeit
+                    - text: more_vert
+                  - columnheader "Pause keine Sortierung" [ref=e14804] [cursor=pointer]:
+                    - button "Pause" [ref=e14805]:
+                      - generic [ref=e14806]: Pause
+                    - text: more_vert
+                  - columnheader "Fahrtzeit keine Sortierung" [ref=e14810] [cursor=pointer]:
+                    - button "Fahrtzeit" [ref=e14811]:
+                      - generic [ref=e14812]: Fahrtzeit
+                    - text: more_vert
+                  - columnheader "Strecke keine Sortierung" [ref=e14816] [cursor=pointer]:
+                    - button "Strecke" [ref=e14817]:
+                      - generic [ref=e14818]: Strecke
+                    - text: more_vert
+              - rowgroup [ref=e14820]
+              - region [ref=e14822]
+  - iframe [ref=e497]:
+    - button "Messaging-Fenster öffnen" [ref=f16e5] [cursor=pointer]:
+      - img [ref=f16e7]
+      - img [ref=f16e10]

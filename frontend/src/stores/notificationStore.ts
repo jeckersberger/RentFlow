@@ -2,6 +2,11 @@ import { create } from 'zustand'
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info'
 
+export interface NotificationAction {
+  label: string
+  onClick: () => void
+}
+
 export interface Notification {
   id: string
   type: NotificationType
@@ -9,7 +14,8 @@ export interface Notification {
   title?: string
   timestamp: number
   read: boolean
-  duration?: number // in milliseconds, null for persistent
+  duration?: number | null // in milliseconds, null for persistent
+  action?: NotificationAction
 }
 
 interface NotificationStore {
@@ -19,14 +25,16 @@ interface NotificationStore {
     type: NotificationType,
     options?: {
       title?: string
-      duration?: number
+      duration?: number | null
       id?: string
+      action?: NotificationAction
     }
   ) => string
   removeNotification: (id: string) => void
   markAsRead: (id: string) => void
   markAllRead: () => void
   clearAll: () => void
+  unreadCount: () => number
 }
 
 const generateId = () => `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -36,7 +44,7 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
 
   addNotification: (message: string, type: NotificationType, options = {}) => {
     const id = options.id || generateId()
-    const duration = options.duration ?? 5000 // Default 5 seconds
+    const duration = options.duration === undefined ? 4000 : options.duration
 
     const notification: Notification = {
       id,
@@ -46,6 +54,7 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       timestamp: Date.now(),
       read: false,
       duration,
+      action: options.action,
     }
 
     set((state) => ({
@@ -85,4 +94,8 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
     set({
       notifications: [],
     }),
+
+  unreadCount: (): number => {
+    return (useNotificationStore as { getState: () => NotificationStore }).getState().notifications.filter((n: Notification) => !n.read).length
+  },
 }))

@@ -1,0 +1,933 @@
+- generic [ref=e1]:
+  - generic [ref=e6]:
+    - navigation [ref=e8]:
+      - generic [ref=e9]:
+        - button "" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: 
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Jhons
+          - paragraph [ref=e14]: jhons.rentmanapp.com
+        - button "chevron_right chevron_left" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: chevron_right
+          - generic [ref=e17]: chevron_left
+      - generic: expand_more
+      - generic [ref=e18]:
+        - button "fact_check Implementierungsleitfaden" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]:
+            - generic [ref=e23]: fact_check
+            - generic [ref=e25]: Implementierungsleitfaden
+        - button "dashboard Dashboard" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: dashboard
+            - generic [ref=e32]: Dashboard
+        - generic [ref=e33]:
+          - button "event (Mein) Kalender expand_more expand_less" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: event
+              - generic [ref=e39]: (Mein) Kalender
+              - generic [ref=e40]:
+                - generic [ref=e41]: expand_more
+                - generic [ref=e42]: expand_less
+          - generic [ref=e43]:
+            - button "(Mein) Kalender" [ref=e44] [cursor=pointer]:
+              - generic [ref=e47]: (Mein) Kalender
+            - button "Job Board" [ref=e48] [cursor=pointer]:
+              - generic [ref=e51]: Job Board
+        - generic [ref=e52]:
+          - button " Lager expand_more expand_less" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - generic [ref=e56]: 
+              - generic [ref=e58]: Lager
+              - generic [ref=e59]:
+                - generic [ref=e60]: expand_more
+                - generic [ref=e61]: expand_less
+          - generic [ref=e62]:
+            - button "Lager" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]: Lager
+            - button "Kombinationen" [ref=e67] [cursor=pointer]:
+              - generic [ref=e70]: Kombinationen
+            - button "Cross-Docking-Übersicht" [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: Cross-Docking-Übersicht
+            - button "Lager-Tracking-Log" [ref=e75] [cursor=pointer]:
+              - generic [ref=e78]: Lager-Tracking-Log
+        - generic [ref=e80]:
+          - button "table_chart Projekte expand_more expand_less" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e84]: table_chart
+              - generic [ref=e86]: Projekte
+              - generic [ref=e87]:
+                - generic [ref=e88]: expand_more
+                - generic [ref=e89]: expand_less
+          - generic [ref=e90]:
+            - button "Projekte" [ref=e91] [cursor=pointer]:
+              - generic [ref=e94]: Projekte
+            - button "Vermietungsanfrage" [ref=e95] [cursor=pointer]:
+              - generic [ref=e98]: Vermietungsanfrage
+        - button "account_circle Personalplaner" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]:
+            - generic [ref=e103]: account_circle
+            - generic [ref=e105]: Personalplaner
+        - generic [ref=e106]:
+          - button "swap_horizontal_circle Mangel expand_more expand_less" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e110]: swap_horizontal_circle
+              - generic [ref=e112]: Mangel
+              - generic [ref=e113]:
+                - generic [ref=e114]: expand_more
+                - generic [ref=e115]: expand_less
+          - generic [ref=e116]:
+            - button "Mietengpässe" [ref=e117] [cursor=pointer]:
+              - generic [ref=e120]: Mietengpässe
+            - button "Verkaufsengpässe" [ref=e121] [cursor=pointer]:
+              - generic [ref=e124]: Verkaufsengpässe
+            - button "Zumietungsjobs" [ref=e125] [cursor=pointer]:
+              - generic [ref=e128]: Zumietungsjobs
+        - generic [ref=e129]:
+          - button "monetization_on Finanzen expand_more expand_less" [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]:
+              - generic [ref=e133]: monetization_on
+              - generic [ref=e135]: Finanzen
+              - generic [ref=e136]:
+                - generic [ref=e137]: expand_more
+                - generic [ref=e138]: expand_less
+          - generic [ref=e139]:
+            - button "Rechnungen" [ref=e140] [cursor=pointer]:
+              - generic [ref=e143]: Rechnungen
+            - button "Zu fakturieren" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: Zu fakturieren
+            - button "Bestellungen" [ref=e148] [cursor=pointer]:
+              - generic [ref=e151]: Bestellungen
+        - generic [ref=e153]:
+          - button "category Materialien expand_more expand_less" [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]: category
+              - generic [ref=e159]: Materialien
+              - generic [ref=e160]:
+                - generic [ref=e161]: expand_more
+                - generic [ref=e162]: expand_less
+          - generic [ref=e163]:
+            - button "Materialien" [active] [ref=e164] [cursor=pointer]:
+              - generic [ref=e167]: Materialien
+            - button "Seriennummern" [ref=e168] [cursor=pointer]:
+              - generic [ref=e171]: Seriennummern
+            - button "Lagerstandorte" [ref=e172] [cursor=pointer]:
+              - generic [ref=e175]: Lagerstandorte
+            - button "Archivierte Materialien" [ref=e176] [cursor=pointer]:
+              - generic [ref=e179]: Archivierte Materialien
+            - button "Archivierte Standorte" [ref=e180] [cursor=pointer]:
+              - generic [ref=e183]: Archivierte Standorte
+        - button "contact_phone Kontakte" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]:
+            - generic [ref=e188]: contact_phone
+            - generic [ref=e190]: Kontakte
+        - button "people Mitarbeiter" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]:
+            - generic [ref=e195]: people
+            - generic [ref=e197]: Mitarbeiter
+        - button "local_shipping Fahrzeuge" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - generic [ref=e202]: local_shipping
+            - generic [ref=e204]: Fahrzeuge
+        - button "assignment_turned_in Aufgaben" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: assignment_turned_in
+            - generic [ref=e212]: Aufgaben
+        - generic [ref=e213]:
+          - button "watch_later Stundenerfassung expand_more expand_less" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e217]: watch_later
+              - generic [ref=e219]: Stundenerfassung
+              - generic [ref=e220]:
+                - generic [ref=e221]: expand_more
+                - generic [ref=e222]: expand_less
+          - generic [ref=e223]:
+            - button "Stundenerfassung" [ref=e224] [cursor=pointer]:
+              - generic [ref=e227]: Stundenerfassung
+            - button "Aktivitäten" [ref=e228] [cursor=pointer]:
+              - generic [ref=e231]: Aktivitäten
+            - button "Abwesenheitsanträge" [ref=e232] [cursor=pointer]:
+              - generic [ref=e235]: Abwesenheitsanträge
+        - generic [ref=e236]:
+          - button "build Werkstatt expand_more expand_less" [ref=e237] [cursor=pointer]:
+            - generic [ref=e238]:
+              - generic [ref=e240]: build
+              - generic [ref=e242]: Werkstatt
+              - generic [ref=e243]:
+                - generic [ref=e244]: expand_more
+                - generic [ref=e245]: expand_less
+          - generic [ref=e246]:
+            - button "Reparaturen" [ref=e247] [cursor=pointer]:
+              - generic [ref=e250]: Reparaturen
+            - button "Prüfungen" [ref=e251] [cursor=pointer]:
+              - generic [ref=e254]: Prüfungen
+            - button "Zu prüfende Materialien" [ref=e255] [cursor=pointer]:
+              - generic [ref=e258]: Zu prüfende Materialien
+            - button "Verlorene Materialien" [ref=e259] [cursor=pointer]:
+              - generic [ref=e262]: Verlorene Materialien
+            - button "Bestandszählungen" [ref=e263] [cursor=pointer]:
+              - generic [ref=e266]: Bestandszählungen
+        - button "poll Statistik" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]:
+            - generic [ref=e271]: poll
+            - generic [ref=e273]: Statistik
+        - generic [ref=e275]:
+          - button "dvr Kommunikation expand_more expand_less" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]:
+              - generic [ref=e279]: dvr
+              - generic [ref=e281]: Kommunikation
+              - generic [ref=e282]:
+                - generic [ref=e283]: expand_more
+                - generic [ref=e284]: expand_less
+          - generic [ref=e285]:
+            - button "Kommunikations-Log" [ref=e286] [cursor=pointer]:
+              - generic [ref=e289]: Kommunikations-Log
+            - button "Gesendete E-Mails" [ref=e290] [cursor=pointer]:
+              - generic [ref=e293]: Gesendete E-Mails
+            - button "Erhaltene Notizen" [ref=e294] [cursor=pointer]:
+              - generic [ref=e297]: Erhaltene Notizen
+        - button "settings Konfiguration" [ref=e300] [cursor=pointer]:
+          - generic [ref=e301]:
+            - generic [ref=e303]: settings
+            - generic [ref=e305]: Konfiguration
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - generic [ref=e3004]:
+          - button "settings lock Konfiguration" [ref=e5690] [cursor=pointer]:
+            - generic [ref=e3008]:
+              - generic [ref=e3009]: settings
+              - generic [ref=e3010]: lock
+            - generic "Konfiguration" [ref=e3011]
+          - button "table_chart lock Liveauftritt Band Soultrain" [ref=e9303] [cursor=pointer]:
+            - generic [ref=e6876]:
+              - generic [ref=e6877]: table_chart
+              - generic [ref=e6878]: lock
+            - generic "Liveauftritt Band Soultrain" [ref=e6879]
+          - button "account_circle lock Personalplaner" [ref=e10417] [cursor=pointer]:
+            - generic [ref=e9625]:
+              - generic [ref=e9626]: account_circle
+              - generic [ref=e9627]: lock
+            - generic "Personalplaner" [ref=e9628]
+        - button "close" [ref=e6881] [cursor=pointer]:
+          - generic [ref=e6882]: close
+      - generic [ref=e309]:
+        - generic [ref=e311]: Testzeitraum läuft in 28Tagen ab
+        - button "auto_awesome Jetzt aktivieren mit 50% Rabatt" [ref=e312] [cursor=pointer]:
+          - generic [ref=e313]: auto_awesome
+          - generic [ref=e314]: Jetzt aktivieren mit 50% Rabatt
+      - button "search" [ref=e316] [cursor=pointer]:
+        - generic [ref=e317]: search
+      - button "timelapse" [ref=e320] [cursor=pointer]:
+        - generic [ref=e322]: timelapse
+      - button "help_outline" [ref=e325] [cursor=pointer]:
+        - generic [ref=e326]: help_outline
+      - button "notifications_none" [ref=e331] [cursor=pointer]:
+        - generic [ref=e333]: notifications_none
+      - button "JD John Dee" [ref=e335] [cursor=pointer]:
+        - generic [ref=e338]: JD
+        - generic [ref=e339]: John Dee
+    - generic [ref=e11775]:
+      - generic [ref=e11776]:
+        - heading "Materialien" [level=1] [ref=e11778]
+        - link "help_outline" [ref=e11780] [cursor=pointer]:
+          - /url: http://support.rentman.io/hc/de/articles/360013580119?utm_source=rentmanapp&utm_medium=in_app_links&utm_campaign=sc_links_within_rentman
+        - generic [ref=e11781]:
+          - generic [ref=e11782]:
+            - button "Importieren" [ref=e11784] [cursor=pointer]:
+              - generic [ref=e11785]: Importieren
+            - button "arrow_drop_down" [ref=e11787] [cursor=pointer]:
+              - generic [ref=e11788]: arrow_drop_down
+          - generic [ref=e11789]:
+            - button "add Material hinzufügen" [ref=e11791] [cursor=pointer]:
+              - generic [ref=e11792]: add
+              - generic [ref=e11793]: Material hinzufügen
+            - button "arrow_drop_down" [ref=e11795] [cursor=pointer]:
+              - generic [ref=e11796]: arrow_drop_down
+      - generic [ref=e11799]:
+        - button "folder Alle Ordner arrow_drop_down" [ref=e11802] [cursor=pointer]:
+          - generic [ref=e11803]: folder
+          - generic [ref=e11804]: Alle Ordner
+          - generic [ref=e11805]: arrow_drop_down
+        - button " Lagerhaus Ost arrow_drop_down" [ref=e11808] [cursor=pointer]:
+          - generic [ref=e11809]: 
+          - generic [ref=e11810]: Lagerhaus Ost
+          - generic [ref=e11811]: arrow_drop_down
+        - generic [ref=e11812]:
+          - button "search close" [ref=e11816] [cursor=pointer]:
+            - generic [ref=e11817]: search
+            - generic [ref=e11818]: close
+          - button "label Tags arrow_drop_down" [ref=e11822] [cursor=pointer]:
+            - generic [ref=e11823]: label
+            - generic [ref=e11824]: Tags
+            - generic [ref=e11825]: arrow_drop_down
+          - button "filter_list Filter arrow_drop_down" [ref=e11828] [cursor=pointer]:
+            - generic [ref=e11829]: filter_list
+            - generic [ref=e11830]: Filter
+            - generic [ref=e11831]: arrow_drop_down
+      - generic [ref=e11836]:
+        - generic [ref=e11837]:
+          - generic [ref=e11838]:
+            - button "close" [ref=e11839] [cursor=pointer]:
+              - generic [ref=e11840]: close
+            - generic [ref=e11842]:
+              - generic [ref=e11843]:
+                - button "edit Bearbeiten" [disabled]:
+                  - generic: edit
+                  - generic: Bearbeiten
+              - button "watch_later Zeitleiste öffnen" [ref=e11845] [cursor=pointer]:
+                - generic [ref=e11846]: watch_later
+                - generic [ref=e11847]: Zeitleiste öffnen
+              - generic [ref=e11848]:
+                - button "print Dokument erstellen" [disabled]:
+                  - generic: print
+                  - generic: Dokument erstellen
+              - button "more_vert" [ref=e11850] [cursor=pointer]:
+                - generic [ref=e11851]: more_vert
+          - button "settings Ansichten arrow_drop_down" [ref=e11855] [cursor=pointer]:
+            - generic [ref=e11856]: settings
+            - generic [ref=e11857]: Ansichten
+            - generic [ref=e11858]: arrow_drop_down
+        - generic [ref=e11861]:
+          - alert [ref=e11862]
+          - grid [ref=e11863]:
+            - generic:
+              - rowgroup [ref=e11864]:
+                - row "check remove Code keine Sortierung Name (in der Datenbank) keine Sortierung" [ref=e11869]:
+                  - columnheader "check remove" [ref=e11871]:
+                    - generic [ref=e11873] [cursor=pointer]:
+                      - checkbox [ref=e11874]
+                      - generic:
+                        - generic: check
+                        - generic: remove
+                  - generic [ref=e11877]:
+                    - button
+                  - columnheader "Code keine Sortierung" [ref=e11879] [cursor=pointer]:
+                    - button "Code" [ref=e11880]:
+                      - generic [ref=e11881]: Code
+                    - text: more_vert
+                  - columnheader "Name (in der Datenbank) keine Sortierung" [ref=e11885] [cursor=pointer]:
+                    - button "Name (in der Datenbank)" [ref=e11886]:
+                      - generic [ref=e11887]: Name (in der Datenbank)
+                    - text: more_vert
+              - rowgroup [ref=e11889]:
+                - generic [ref=e11890]:
+                  - row "check remove Audio-348 DJ Kit" [ref=e11892]:
+                    - generic [ref=e11893]:
+                      - generic [ref=e11896] [cursor=pointer]:
+                        - checkbox [ref=e11897]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11900] [cursor=pointer]
+                      - generic "Audio-348" [ref=e11902] [cursor=pointer]:
+                        - generic [ref=e11904]: Audio-348
+                      - generic "DJ Kit" [ref=e11906] [cursor=pointer]:
+                        - generic [ref=e11908]: DJ Kit
+                  - row "check remove Show-350 Drive-in show without lighting" [ref=e11910]:
+                    - generic [ref=e11911]:
+                      - generic [ref=e11914] [cursor=pointer]:
+                        - checkbox [ref=e11915]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11918] [cursor=pointer]
+                      - generic "Show-350" [ref=e11920] [cursor=pointer]:
+                        - generic [ref=e11922]: Show-350
+                      - generic "Drive-in show without lighting" [ref=e11924] [cursor=pointer]:
+                        - generic [ref=e11926]: Drive-in show without lighting
+                  - row "check remove Audio-354 L-Acoustics - Kiva II Line-array" [ref=e11928]:
+                    - generic [ref=e11929]:
+                      - generic [ref=e11932] [cursor=pointer]:
+                        - checkbox [ref=e11933]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11936] [cursor=pointer]
+                      - generic "Audio-354" [ref=e11938] [cursor=pointer]:
+                        - generic [ref=e11940]: Audio-354
+                      - generic "L-Acoustics - Kiva II Line-array" [ref=e11942] [cursor=pointer]:
+                        - generic [ref=e11944]: L-Acoustics - Kiva II Line-array
+                  - row "check remove Audio-362 QSC K10.2 Kit" [ref=e11946]:
+                    - generic [ref=e11947]:
+                      - generic [ref=e11950] [cursor=pointer]:
+                        - checkbox [ref=e11951]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11954] [cursor=pointer]
+                      - generic "Audio-362" [ref=e11956] [cursor=pointer]:
+                        - generic [ref=e11958]: Audio-362
+                      - generic "QSC K10.2 Kit" [ref=e11960] [cursor=pointer]:
+                        - generic [ref=e11962]: QSC K10.2 Kit
+                  - row "check remove Audio-363 QSC K12.2 Kit" [ref=e11964]:
+                    - generic [ref=e11965]:
+                      - generic [ref=e11968] [cursor=pointer]:
+                        - checkbox [ref=e11969]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11972] [cursor=pointer]
+                      - generic "Audio-363" [ref=e11974] [cursor=pointer]:
+                        - generic [ref=e11976]: Audio-363
+                      - generic "QSC K12.2 Kit" [ref=e11978] [cursor=pointer]:
+                        - generic [ref=e11980]: QSC K12.2 Kit
+                  - row "check remove Audio-365 L-Acoustics Monitor Kit Single" [ref=e11982]:
+                    - generic [ref=e11983]:
+                      - generic [ref=e11986] [cursor=pointer]:
+                        - checkbox [ref=e11987]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e11990] [cursor=pointer]
+                      - generic "Audio-365" [ref=e11992] [cursor=pointer]:
+                        - generic [ref=e11994]: Audio-365
+                      - generic "L-Acoustics Monitor Kit Single" [ref=e11996] [cursor=pointer]:
+                        - generic [ref=e11998]: L-Acoustics Monitor Kit Single
+                  - row "check remove Audio-366 L-Acoustics Monitor Kit Band" [ref=e12000]:
+                    - generic [ref=e12001]:
+                      - generic [ref=e12004] [cursor=pointer]:
+                        - checkbox [ref=e12005]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12008] [cursor=pointer]
+                      - generic "Audio-366" [ref=e12010] [cursor=pointer]:
+                        - generic [ref=e12012]: Audio-366
+                      - generic "L-Acoustics Monitor Kit Band" [ref=e12014] [cursor=pointer]:
+                        - generic [ref=e12016]: L-Acoustics Monitor Kit Band
+                  - row "check remove Audio-369 Yamaha LS9 + Stagerack" [ref=e12018]:
+                    - generic [ref=e12019]:
+                      - generic [ref=e12022] [cursor=pointer]:
+                        - checkbox [ref=e12023]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12026] [cursor=pointer]
+                      - generic "Audio-369" [ref=e12028] [cursor=pointer]:
+                        - generic [ref=e12030]: Audio-369
+                      - generic "Yamaha LS9 + Stagerack" [ref=e12032] [cursor=pointer]:
+                        - generic [ref=e12034]: Yamaha LS9 + Stagerack
+                  - row "check remove Audio-372 Digico SD8 + D-Rack" [ref=e12036]:
+                    - generic [ref=e12037]:
+                      - generic [ref=e12040] [cursor=pointer]:
+                        - checkbox [ref=e12041]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12044] [cursor=pointer]
+                      - generic "Audio-372" [ref=e12046] [cursor=pointer]:
+                        - generic [ref=e12048]: Audio-372
+                      - generic "Digico SD8 + D-Rack" [ref=e12050] [cursor=pointer]:
+                        - generic [ref=e12052]: Digico SD8 + D-Rack
+                  - row "check remove Audio-385 Drummic kit" [ref=e12054]:
+                    - generic [ref=e12055]:
+                      - generic [ref=e12058] [cursor=pointer]:
+                        - checkbox [ref=e12059]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12062] [cursor=pointer]
+                      - generic "Audio-385" [ref=e12064] [cursor=pointer]:
+                        - generic [ref=e12066]: Audio-385
+                      - generic "Drummic kit" [ref=e12068] [cursor=pointer]:
+                        - generic [ref=e12070]: Drummic kit
+                  - row "check remove Audio-386 Bandmic kit" [ref=e12072]:
+                    - generic [ref=e12073]:
+                      - generic [ref=e12076] [cursor=pointer]:
+                        - checkbox [ref=e12077]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12080] [cursor=pointer]
+                      - generic "Audio-386" [ref=e12082] [cursor=pointer]:
+                        - generic [ref=e12084]: Audio-386
+                      - generic "Bandmic kit" [ref=e12086] [cursor=pointer]:
+                        - generic [ref=e12088]: Bandmic kit
+                  - row "check remove Audio-390 Shure UR4D kit 2x UR2/SM58 + receiver" [ref=e12090]:
+                    - generic [ref=e12091]:
+                      - generic [ref=e12094] [cursor=pointer]:
+                        - checkbox [ref=e12095]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12098] [cursor=pointer]
+                      - generic "Audio-390" [ref=e12100] [cursor=pointer]:
+                        - generic [ref=e12102]: Audio-390
+                      - generic "Shure UR4D kit 2x UR2/SM58 + receiver" [ref=e12104] [cursor=pointer]:
+                        - generic [ref=e12106]: Shure UR4D kit 2x UR2/SM58 + receiver
+                  - row "check remove Audio-391 Shure UR4D kit 2x UR2/B87 + receiver" [ref=e12108]:
+                    - generic [ref=e12109]:
+                      - generic [ref=e12112] [cursor=pointer]:
+                        - checkbox [ref=e12113]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12116] [cursor=pointer]
+                      - generic "Audio-391" [ref=e12118] [cursor=pointer]:
+                        - generic [ref=e12120]: Audio-391
+                      - generic "Shure UR4D kit 2x UR2/B87 + receiver" [ref=e12122] [cursor=pointer]:
+                        - generic [ref=e12124]: Shure UR4D kit 2x UR2/B87 + receiver
+                  - row "check remove Show-351 Drive-in show with lighting" [ref=e12126]:
+                    - generic [ref=e12127]:
+                      - generic [ref=e12130] [cursor=pointer]:
+                        - checkbox [ref=e12131]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12134] [cursor=pointer]
+                      - generic "Show-351" [ref=e12136] [cursor=pointer]:
+                        - generic [ref=e12138]: Show-351
+                      - generic "Drive-in show with lighting" [ref=e12140] [cursor=pointer]:
+                        - generic [ref=e12142]: Drive-in show with lighting
+                  - row "check remove Rigging-355 Backline Kit Band Wow" [ref=e12144]:
+                    - generic [ref=e12145]:
+                      - generic [ref=e12148] [cursor=pointer]:
+                        - checkbox [ref=e12149]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12152] [cursor=pointer]
+                      - generic "Rigging-355" [ref=e12154] [cursor=pointer]:
+                        - generic [ref=e12156]: Rigging-355
+                      - generic "Backline Kit Band Wow" [ref=e12158] [cursor=pointer]:
+                        - generic [ref=e12160]: Backline Kit Band Wow
+                  - row "check remove FX-336 Martin Atomic 3000 Strobe" [ref=e12162]:
+                    - generic [ref=e12163]:
+                      - generic [ref=e12166] [cursor=pointer]:
+                        - checkbox [ref=e12167]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12170] [cursor=pointer]
+                      - generic "FX-336" [ref=e12172] [cursor=pointer]:
+                        - generic [ref=e12174]: FX-336
+                      - generic "Martin Atomic 3000 Strobe" [ref=e12176] [cursor=pointer]:
+                        - generic [ref=e12178]: Martin Atomic 3000 Strobe
+                  - row "check remove FX-337 Blacklight 400W Gun" [ref=e12180]:
+                    - generic [ref=e12181]:
+                      - generic [ref=e12184] [cursor=pointer]:
+                        - checkbox [ref=e12185]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12188] [cursor=pointer]
+                      - generic "FX-337" [ref=e12190] [cursor=pointer]:
+                        - generic [ref=e12192]: FX-337
+                      - generic "Blacklight 400W Gun" [ref=e12194] [cursor=pointer]:
+                        - generic [ref=e12196]: Blacklight 400W Gun
+                  - row "check remove FX-338 Martin JEM ZR33 Fogmachine" [ref=e12198]:
+                    - generic [ref=e12199]:
+                      - generic [ref=e12202] [cursor=pointer]:
+                        - checkbox [ref=e12203]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12206] [cursor=pointer]
+                      - generic "FX-338" [ref=e12208] [cursor=pointer]:
+                        - generic [ref=e12210]: FX-338
+                      - generic "Martin JEM ZR33 Fogmachine" [ref=e12212] [cursor=pointer]:
+                        - generic [ref=e12214]: Martin JEM ZR33 Fogmachine
+                  - row "check remove FX-339 Martin JEM K1 Hazer" [ref=e12216]:
+                    - generic [ref=e12217]:
+                      - generic [ref=e12220] [cursor=pointer]:
+                        - checkbox [ref=e12221]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12224] [cursor=pointer]
+                      - generic "FX-339" [ref=e12226] [cursor=pointer]:
+                        - generic [ref=e12228]: FX-339
+                      - generic "Martin JEM K1 Hazer" [ref=e12230] [cursor=pointer]:
+                        - generic [ref=e12232]: Martin JEM K1 Hazer
+                  - row "check remove FX-340 Fog Juice 9,5L" [ref=e12234]:
+                    - generic [ref=e12235]:
+                      - generic [ref=e12238] [cursor=pointer]:
+                        - checkbox [ref=e12239]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12242] [cursor=pointer]
+                      - generic "FX-340" [ref=e12244] [cursor=pointer]:
+                        - generic [ref=e12246]: FX-340
+                      - generic "Fog Juice 9,5L" [ref=e12248] [cursor=pointer]:
+                        - generic [ref=e12250]: Fog Juice 9,5L
+                  - row "check remove FX-341 Haze liquid 5L" [ref=e12252]:
+                    - generic [ref=e12253]:
+                      - generic [ref=e12256] [cursor=pointer]:
+                        - checkbox [ref=e12257]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12260] [cursor=pointer]
+                      - generic "FX-341" [ref=e12262] [cursor=pointer]:
+                        - generic [ref=e12264]: FX-341
+                      - generic "Haze liquid 5L" [ref=e12266] [cursor=pointer]:
+                        - generic [ref=e12268]: Haze liquid 5L
+                  - row "check remove Light-343 Robert Juliat Cyrano Follow Spot" [ref=e12270]:
+                    - generic [ref=e12271]:
+                      - generic [ref=e12274] [cursor=pointer]:
+                        - checkbox [ref=e12275]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12278] [cursor=pointer]
+                      - generic "Light-343" [ref=e12280] [cursor=pointer]:
+                        - generic [ref=e12282]: Light-343
+                      - generic "Robert Juliat Cyrano Follow Spot" [ref=e12284] [cursor=pointer]:
+                        - generic [ref=e12286]: Robert Juliat Cyrano Follow Spot
+                  - row "check remove Audio-343 4-Port UTP Switch" [ref=e12288]:
+                    - generic [ref=e12289]:
+                      - generic [ref=e12292] [cursor=pointer]:
+                        - checkbox [ref=e12293]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12296] [cursor=pointer]
+                      - generic "Audio-343" [ref=e12298] [cursor=pointer]:
+                        - generic [ref=e12300]: Audio-343
+                      - generic "4-Port UTP Switch" [ref=e12302] [cursor=pointer]:
+                        - generic [ref=e12304]: 4-Port UTP Switch
+                  - row "check remove Audio-344 Pioneer DJM900 NXS2 DJ Mixer" [ref=e12306]:
+                    - generic [ref=e12307]:
+                      - generic [ref=e12310] [cursor=pointer]:
+                        - checkbox [ref=e12311]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12314] [cursor=pointer]
+                      - generic "Audio-344" [ref=e12316] [cursor=pointer]:
+                        - generic [ref=e12318]: Audio-344
+                      - generic "Pioneer DJM900 NXS2 DJ Mixer" [ref=e12320] [cursor=pointer]:
+                        - generic [ref=e12322]: Pioneer DJM900 NXS2 DJ Mixer
+                  - row "check remove Audio-345 Pioneer CDJ2000 NXS2 Tabletop CD Player" [ref=e12324]:
+                    - generic [ref=e12325]:
+                      - generic [ref=e12328] [cursor=pointer]:
+                        - checkbox [ref=e12329]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12332] [cursor=pointer]
+                      - generic "Audio-345" [ref=e12334] [cursor=pointer]:
+                        - generic [ref=e12336]: Audio-345
+                      - generic "Pioneer CDJ2000 NXS2 Tabletop CD Player" [ref=e12338] [cursor=pointer]:
+                        - generic [ref=e12340]: Pioneer CDJ2000 NXS2 Tabletop CD Player
+                  - row "check remove Audio-346 Shure SM58 Microphone" [ref=e12342]:
+                    - generic [ref=e12343]:
+                      - generic [ref=e12346] [cursor=pointer]:
+                        - checkbox [ref=e12347]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12350] [cursor=pointer]
+                      - generic "Audio-346" [ref=e12352] [cursor=pointer]:
+                        - generic [ref=e12354]: Audio-346
+                      - generic "Shure SM58 Microphone" [ref=e12356] [cursor=pointer]:
+                        - generic [ref=e12358]: Shure SM58 Microphone
+                  - row "check remove Audio-347 Weißes DJ Pult" [ref=e12360]:
+                    - generic [ref=e12361]:
+                      - generic [ref=e12364] [cursor=pointer]:
+                        - checkbox [ref=e12365]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12368] [cursor=pointer]
+                      - generic "Audio-347" [ref=e12370] [cursor=pointer]:
+                        - generic [ref=e12372]: Audio-347
+                      - generic "Weißes DJ Pult" [ref=e12374] [cursor=pointer]:
+                        - generic [ref=e12376]: Weißes DJ Pult
+                  - row "check remove Cons-354 Gaffer Tape 50mm Black" [ref=e12378]:
+                    - generic [ref=e12379]:
+                      - generic [ref=e12382] [cursor=pointer]:
+                        - checkbox [ref=e12383]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12386] [cursor=pointer]
+                      - generic "Cons-354" [ref=e12388] [cursor=pointer]:
+                        - generic [ref=e12390]: Cons-354
+                      - generic "Gaffer Tape 50mm Black" [ref=e12392] [cursor=pointer]:
+                        - generic [ref=e12394]: Gaffer Tape 50mm Black
+                  - row "check remove Cons-355 Gaffer Tape 50mm White" [ref=e12396]:
+                    - generic [ref=e12397]:
+                      - generic [ref=e12400] [cursor=pointer]:
+                        - checkbox [ref=e12401]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12404] [cursor=pointer]
+                      - generic "Cons-355" [ref=e12406] [cursor=pointer]:
+                        - generic [ref=e12408]: Cons-355
+                      - generic "Gaffer Tape 50mm White" [ref=e12410] [cursor=pointer]:
+                        - generic [ref=e12412]: Gaffer Tape 50mm White
+                  - row "check remove Cons-356 Cable Tape PVC Grey" [ref=e12414]:
+                    - generic [ref=e12415]:
+                      - generic [ref=e12418] [cursor=pointer]:
+                        - checkbox [ref=e12419]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12422] [cursor=pointer]
+                      - generic "Cons-356" [ref=e12424] [cursor=pointer]:
+                        - generic [ref=e12426]: Cons-356
+                      - generic "Cable Tape PVC Grey" [ref=e12428] [cursor=pointer]:
+                        - generic [ref=e12430]: Cable Tape PVC Grey
+                  - row "check remove Cons-357 Extra wide Marley Floor Gaffer tape" [ref=e12432]:
+                    - generic [ref=e12433]:
+                      - generic [ref=e12436] [cursor=pointer]:
+                        - checkbox [ref=e12437]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12440] [cursor=pointer]
+                      - generic "Cons-357" [ref=e12442] [cursor=pointer]:
+                        - generic [ref=e12444]: Cons-357
+                      - generic "Extra wide Marley Floor Gaffer tape" [ref=e12446] [cursor=pointer]:
+                        - generic [ref=e12448]: Extra wide Marley Floor Gaffer tape
+                  - row "check remove Light-342 Robert Juliat Victor Follow Spot" [ref=e12450]:
+                    - generic [ref=e12451]:
+                      - generic [ref=e12454] [cursor=pointer]:
+                        - checkbox [ref=e12455]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12458] [cursor=pointer]
+                      - generic "Light-342" [ref=e12460] [cursor=pointer]:
+                        - generic [ref=e12462]: Light-342
+                      - generic "Robert Juliat Victor Follow Spot" [ref=e12464] [cursor=pointer]:
+                        - generic [ref=e12466]: Robert Juliat Victor Follow Spot
+                  - row "check remove Light-368 Doughty T84253 Operating Pole" [ref=e12468]:
+                    - generic [ref=e12469]:
+                      - generic [ref=e12472] [cursor=pointer]:
+                        - checkbox [ref=e12473]
+                        - generic:
+                          - generic: check
+                          - generic: remove
+                      - button [ref=e12476] [cursor=pointer]
+                      - generic "Light-368" [ref=e12478] [cursor=pointer]:
+                        - generic [ref=e12480]: Light-368
+                      - generic "Doughty T84253 Operating Pole" [ref=e12482] [cursor=pointer]:
+                        - generic [ref=e12484]: Doughty T84253 Operating Pole
+            - rowgroup [ref=e12486]:
+              - row "Aktuelle Menge exkl. der für Kombinationen reservierten Menge (alle Standorte) keine Sortierung Vermietungs-/Verkaufspreis keine Sortierung Zumietungs-/Einkaufspreis keine Sortierung Materialtyp absteigend sortieren" [ref=e12491]:
+                - columnheader "Aktuelle Menge exkl. der für Kombinationen reservierten Menge (alle Standorte) keine Sortierung" [ref=e12493] [cursor=pointer]:
+                  - button "Aktuelle Menge exkl. der für Kombinationen reservierten Menge (alle Standorte)" [ref=e12494]:
+                    - generic [ref=e12495]: Aktuelle Menge exkl. der für Kombinationen reservierten Menge (alle Standorte)
+                  - text: more_vert
+                - columnheader "Vermietungs-/Verkaufspreis keine Sortierung" [ref=e12499] [cursor=pointer]:
+                  - button "Vermietungs-/Verkaufspreis" [ref=e12500]:
+                    - generic [ref=e12501]: Vermietungs-/Verkaufspreis
+                  - text: more_vert
+                - columnheader "Zumietungs-/Einkaufspreis keine Sortierung" [ref=e12505] [cursor=pointer]:
+                  - button "Zumietungs-/Einkaufspreis" [ref=e12506]:
+                    - generic [ref=e12507]: Zumietungs-/Einkaufspreis
+                  - text: more_vert
+                - columnheader "Materialtyp absteigend sortieren" [ref=e12511] [cursor=pointer]:
+                  - button "Materialtyp absteigend sortieren" [ref=e12512]:
+                    - generic [ref=e12513]: Materialtyp
+                    - generic "absteigend sortieren" [ref=e12514]:
+                      - generic [ref=e12515]: sort
+                  - text: more_vert
+            - rowgroup [ref=e12517]:
+              - generic [ref=e12518]:
+                - row "5 175,00 € 105,00 € Virtuelle Kombination" [ref=e12520]:
+                  - generic [ref=e12521]:
+                    - generic [ref=e12525] [cursor=pointer]: "5"
+                    - generic [ref=e12529] [cursor=pointer]: 175,00 €
+                    - generic [ref=e12533] [cursor=pointer]: 105,00 €
+                    - generic [ref=e12537] [cursor=pointer]: Virtuelle Kombination
+                - row "2 500,00 € 300,00 € Virtuelle Kombination" [ref=e12539]:
+                  - generic [ref=e12540]:
+                    - generic [ref=e12544] [cursor=pointer]: "2"
+                    - generic [ref=e12548] [cursor=pointer]: 500,00 €
+                    - generic [ref=e12552] [cursor=pointer]: 300,00 €
+                    - generic [ref=e12556] [cursor=pointer]: Virtuelle Kombination
+                - row "1 900,00 € 540,00 € Virtuelle Kombination" [ref=e12558]:
+                  - generic [ref=e12559]:
+                    - generic [ref=e12563] [cursor=pointer]: "1"
+                    - generic [ref=e12567] [cursor=pointer]: 900,00 €
+                    - generic [ref=e12571] [cursor=pointer]: 540,00 €
+                    - generic [ref=e12575] [cursor=pointer]: Virtuelle Kombination
+                - row "4 150,00 € 90,00 € Virtuelle Kombination" [ref=e12577]:
+                  - generic [ref=e12578]:
+                    - generic [ref=e12582] [cursor=pointer]: "4"
+                    - generic [ref=e12586] [cursor=pointer]: 150,00 €
+                    - generic [ref=e12590] [cursor=pointer]: 90,00 €
+                    - generic [ref=e12594] [cursor=pointer]: Virtuelle Kombination
+                - row "3 175,00 € 105,00 € Virtuelle Kombination" [ref=e12596]:
+                  - generic [ref=e12597]:
+                    - generic [ref=e12601] [cursor=pointer]: "3"
+                    - generic [ref=e12605] [cursor=pointer]: 175,00 €
+                    - generic [ref=e12609] [cursor=pointer]: 105,00 €
+                    - generic [ref=e12613] [cursor=pointer]: Virtuelle Kombination
+                - row "4 100,00 € 60,00 € Virtuelle Kombination" [ref=e12615]:
+                  - generic [ref=e12616]:
+                    - generic [ref=e12620] [cursor=pointer]: "4"
+                    - generic [ref=e12624] [cursor=pointer]: 100,00 €
+                    - generic [ref=e12628] [cursor=pointer]: 60,00 €
+                    - generic [ref=e12632] [cursor=pointer]: Virtuelle Kombination
+                - row "1 250,00 € 150,00 € Virtuelle Kombination" [ref=e12634]:
+                  - generic [ref=e12635]:
+                    - generic [ref=e12639] [cursor=pointer]: "1"
+                    - generic [ref=e12643] [cursor=pointer]: 250,00 €
+                    - generic [ref=e12647] [cursor=pointer]: 150,00 €
+                    - generic [ref=e12651] [cursor=pointer]: Virtuelle Kombination
+                - row "1 185,00 € 111,00 € Virtuelle Kombination" [ref=e12653]:
+                  - generic [ref=e12654]:
+                    - generic [ref=e12658] [cursor=pointer]: "1"
+                    - generic [ref=e12662] [cursor=pointer]: 185,00 €
+                    - generic [ref=e12666] [cursor=pointer]: 111,00 €
+                    - generic [ref=e12670] [cursor=pointer]: Virtuelle Kombination
+                - row "1 325,00 € 195,00 € Virtuelle Kombination" [ref=e12672]:
+                  - generic [ref=e12673]:
+                    - generic [ref=e12677] [cursor=pointer]: "1"
+                    - generic [ref=e12681] [cursor=pointer]: 325,00 €
+                    - generic [ref=e12685] [cursor=pointer]: 195,00 €
+                    - generic [ref=e12689] [cursor=pointer]: Virtuelle Kombination
+                - row "4 35,00 € 21,00 € Virtuelle Kombination" [ref=e12691]:
+                  - generic [ref=e12692]:
+                    - generic [ref=e12696] [cursor=pointer]: "4"
+                    - generic [ref=e12700] [cursor=pointer]: 35,00 €
+                    - generic [ref=e12704] [cursor=pointer]: 21,00 €
+                    - generic [ref=e12708] [cursor=pointer]: Virtuelle Kombination
+                - row "1 140,00 € 84,00 € Virtuelle Kombination" [ref=e12710]:
+                  - generic [ref=e12711]:
+                    - generic [ref=e12715] [cursor=pointer]: "1"
+                    - generic [ref=e12719] [cursor=pointer]: 140,00 €
+                    - generic [ref=e12723] [cursor=pointer]: 84,00 €
+                    - generic [ref=e12727] [cursor=pointer]: Virtuelle Kombination
+                - row "4 150,00 € 90,00 € Virtuelle Kombination" [ref=e12729]:
+                  - generic [ref=e12730]:
+                    - generic [ref=e12734] [cursor=pointer]: "4"
+                    - generic [ref=e12738] [cursor=pointer]: 150,00 €
+                    - generic [ref=e12742] [cursor=pointer]: 90,00 €
+                    - generic [ref=e12746] [cursor=pointer]: Virtuelle Kombination
+                - row "2 175,00 € 105,00 € Virtuelle Kombination" [ref=e12748]:
+                  - generic [ref=e12749]:
+                    - generic [ref=e12753] [cursor=pointer]: "2"
+                    - generic [ref=e12757] [cursor=pointer]: 175,00 €
+                    - generic [ref=e12761] [cursor=pointer]: 105,00 €
+                    - generic [ref=e12765] [cursor=pointer]: Virtuelle Kombination
+                - row "2 750,00 € 450,00 € Virtuelle Kombination" [ref=e12767]:
+                  - generic [ref=e12768]:
+                    - generic [ref=e12772] [cursor=pointer]: "2"
+                    - generic [ref=e12776] [cursor=pointer]: 750,00 €
+                    - generic [ref=e12780] [cursor=pointer]: 450,00 €
+                    - generic [ref=e12784] [cursor=pointer]: Virtuelle Kombination
+                - row "0 425,00 € 255,00 € Virtuelle Kombination" [ref=e12786]:
+                  - generic [ref=e12787]:
+                    - generic [ref=e12791] [cursor=pointer]: "0"
+                    - generic [ref=e12795] [cursor=pointer]: 425,00 €
+                    - generic [ref=e12799] [cursor=pointer]: 255,00 €
+                    - generic [ref=e12803] [cursor=pointer]: Virtuelle Kombination
+                - row "4 25,00 € 15,00 € Physischer Artikel" [ref=e12805]:
+                  - generic [ref=e12806]:
+                    - generic [ref=e12810] [cursor=pointer]: "4"
+                    - generic [ref=e12814] [cursor=pointer]: 25,00 €
+                    - generic [ref=e12818] [cursor=pointer]: 15,00 €
+                    - generic [ref=e12822] [cursor=pointer]: Physischer Artikel
+                - row "2 15,00 € 9,00 € Physischer Artikel" [ref=e12824]:
+                  - generic [ref=e12825]:
+                    - generic [ref=e12829] [cursor=pointer]: "2"
+                    - generic [ref=e12833] [cursor=pointer]: 15,00 €
+                    - generic [ref=e12837] [cursor=pointer]: 9,00 €
+                    - generic [ref=e12841] [cursor=pointer]: Physischer Artikel
+                - row "4 35,00 € 21,00 € Physischer Artikel" [ref=e12843]:
+                  - generic [ref=e12844]:
+                    - generic [ref=e12848] [cursor=pointer]: "4"
+                    - generic [ref=e12852] [cursor=pointer]: 35,00 €
+                    - generic [ref=e12856] [cursor=pointer]: 21,00 €
+                    - generic [ref=e12860] [cursor=pointer]: Physischer Artikel
+                - row "2 50,00 € 30,00 € Physischer Artikel" [ref=e12862]:
+                  - generic [ref=e12863]:
+                    - generic [ref=e12867] [cursor=pointer]: "2"
+                    - generic [ref=e12871] [cursor=pointer]: 50,00 €
+                    - generic [ref=e12875] [cursor=pointer]: 30,00 €
+                    - generic [ref=e12879] [cursor=pointer]: Physischer Artikel
+                - row "20 9,99 € 5,99 € Physischer Artikel" [ref=e12881]:
+                  - generic [ref=e12882]:
+                    - generic [ref=e12886] [cursor=pointer]: "20"
+                    - generic [ref=e12890] [cursor=pointer]: 9,99 €
+                    - generic [ref=e12894] [cursor=pointer]: 5,99 €
+                    - generic [ref=e12898] [cursor=pointer]: Physischer Artikel
+                - row "10 15,00 € 9,00 € Physischer Artikel" [ref=e12900]:
+                  - generic [ref=e12901]:
+                    - generic [ref=e12905] [cursor=pointer]: "10"
+                    - generic [ref=e12909] [cursor=pointer]: 15,00 €
+                    - generic [ref=e12913] [cursor=pointer]: 9,00 €
+                    - generic [ref=e12917] [cursor=pointer]: Physischer Artikel
+                - row "1 250,00 € 150,00 € Physischer Artikel" [ref=e12919]:
+                  - generic [ref=e12920]:
+                    - generic [ref=e12924] [cursor=pointer]: "1"
+                    - generic [ref=e12928] [cursor=pointer]: 250,00 €
+                    - generic [ref=e12932] [cursor=pointer]: 150,00 €
+                    - generic [ref=e12936] [cursor=pointer]: Physischer Artikel
+                - row "2 5,00 € 3,00 € Physischer Artikel" [ref=e12938]:
+                  - generic [ref=e12939]:
+                    - generic [ref=e12943] [cursor=pointer]: "2"
+                    - generic [ref=e12947] [cursor=pointer]: 5,00 €
+                    - generic [ref=e12951] [cursor=pointer]: 3,00 €
+                    - generic [ref=e12955] [cursor=pointer]: Physischer Artikel
+                - row "5 60,00 € 36,00 € Physischer Artikel" [ref=e12957]:
+                  - generic [ref=e12958]:
+                    - generic [ref=e12962] [cursor=pointer]: "5"
+                    - generic [ref=e12966] [cursor=pointer]: 60,00 €
+                    - generic [ref=e12970] [cursor=pointer]: 36,00 €
+                    - generic [ref=e12974] [cursor=pointer]: Physischer Artikel
+                - row "15 60,00 € 36,00 € Physischer Artikel" [ref=e12976]:
+                  - generic [ref=e12977]:
+                    - generic [ref=e12981] [cursor=pointer]: "15"
+                    - generic [ref=e12985] [cursor=pointer]: 60,00 €
+                    - generic [ref=e12989] [cursor=pointer]: 36,00 €
+                    - generic [ref=e12993] [cursor=pointer]: Physischer Artikel
+                - row "30 5,00 € 3,00 € Physischer Artikel" [ref=e12995]:
+                  - generic [ref=e12996]:
+                    - generic [ref=e13000] [cursor=pointer]: "30"
+                    - generic [ref=e13004] [cursor=pointer]: 5,00 €
+                    - generic [ref=e13008] [cursor=pointer]: 3,00 €
+                    - generic [ref=e13012] [cursor=pointer]: Physischer Artikel
+                - row "2 55,00 € 33,00 € Physischer Artikel" [ref=e13014]:
+                  - generic [ref=e13015]:
+                    - generic [ref=e13019] [cursor=pointer]: "2"
+                    - generic [ref=e13023] [cursor=pointer]: 55,00 €
+                    - generic [ref=e13027] [cursor=pointer]: 33,00 €
+                    - generic [ref=e13031] [cursor=pointer]: Physischer Artikel
+                - row "39 15,00 € 9,00 € Physischer Artikel" [ref=e13033]:
+                  - generic [ref=e13034]:
+                    - generic [ref=e13038] [cursor=pointer]: "39"
+                    - generic [ref=e13042] [cursor=pointer]: 15,00 €
+                    - generic [ref=e13046] [cursor=pointer]: 9,00 €
+                    - generic [ref=e13050] [cursor=pointer]: Physischer Artikel
+                - row "30 15,00 € 9,00 € Physischer Artikel" [ref=e13052]:
+                  - generic [ref=e13053]:
+                    - generic [ref=e13057] [cursor=pointer]: "30"
+                    - generic [ref=e13061] [cursor=pointer]: 15,00 €
+                    - generic [ref=e13065] [cursor=pointer]: 9,00 €
+                    - generic [ref=e13069] [cursor=pointer]: Physischer Artikel
+                - row "200 2,50 € 1,50 € Physischer Artikel" [ref=e13071]:
+                  - generic [ref=e13072]:
+                    - generic [ref=e13076] [cursor=pointer]: "200"
+                    - generic [ref=e13080] [cursor=pointer]: 2,50 €
+                    - generic [ref=e13084] [cursor=pointer]: 1,50 €
+                    - generic [ref=e13088] [cursor=pointer]: Physischer Artikel
+                - row "30 18,00 € 10,80 € Physischer Artikel" [ref=e13090]:
+                  - generic [ref=e13091]:
+                    - generic [ref=e13095] [cursor=pointer]: "30"
+                    - generic [ref=e13099] [cursor=pointer]: 18,00 €
+                    - generic [ref=e13103] [cursor=pointer]: 10,80 €
+                    - generic [ref=e13107] [cursor=pointer]: Physischer Artikel
+                - row "1 175,00 € 105,00 € Physischer Artikel" [ref=e13109]:
+                  - generic [ref=e13110]:
+                    - generic [ref=e13114] [cursor=pointer]: "1"
+                    - generic [ref=e13118] [cursor=pointer]: 175,00 €
+                    - generic [ref=e13122] [cursor=pointer]: 105,00 €
+                    - generic [ref=e13126] [cursor=pointer]: Physischer Artikel
+                - row "2 10,00 € 6,00 € Physischer Artikel" [ref=e13128]:
+                  - generic [ref=e13129]:
+                    - generic [ref=e13133] [cursor=pointer]: "2"
+                    - generic [ref=e13137] [cursor=pointer]: 10,00 €
+                    - generic [ref=e13141] [cursor=pointer]: 6,00 €
+                    - generic [ref=e13145] [cursor=pointer]: Physischer Artikel
+            - region [ref=e13146]
+  - iframe [ref=e497]:
+    - button "Messaging-Fenster öffnen" [ref=f16e5] [cursor=pointer]:
+      - img [ref=f16e7]
+      - img [ref=f16e10]

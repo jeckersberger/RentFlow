@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Angebot {{.QuoteNumber}}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+            color: #333333;
+            background: #ffffff;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm 25mm 25mm 25mm;
+            position: relative;
+        }
+
+        .letterhead {
+            display: table;
+            width: 100%;
+            margin-bottom: 10mm;
+        }
+        .letterhead-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .letterhead-right {
+            display: table-cell;
+            vertical-align: top;
+            width: 40%;
+            text-align: right;
+        }
+        .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 4px;
+        }
+        .company-details {
+            font-size: 9px;
+            color: #666666;
+            line-height: 1.6;
+        }
+        .logo-placeholder {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            display: inline-block;
+            text-align: center;
+            line-height: 56px;
+            font-size: 9px;
+            color: #00d4ff;
+            margin-bottom: 6px;
+        }
+
+        .sender-line {
+            font-size: 7px;
+            color: #999999;
+            border-bottom: 1px solid #cccccc;
+            padding-bottom: 2px;
+            margin-bottom: 4mm;
+        }
+
+        .document-title {
+            font-size: 26px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 6mm;
+            letter-spacing: 2px;
+        }
+
+        .meta-section {
+            display: table;
+            width: 100%;
+            margin-bottom: 8mm;
+        }
+        .client-address {
+            display: table-cell;
+            vertical-align: top;
+            width: 55%;
+        }
+        .quote-meta {
+            display: table-cell;
+            vertical-align: top;
+            width: 45%;
+        }
+        .client-address .label {
+            font-size: 8px;
+            color: #999999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+        }
+        .client-address .name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .client-address .address-line {
+            font-size: 10px;
+            color: #555555;
+            line-height: 1.6;
+        }
+
+        .quote-meta table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .quote-meta table td {
+            padding: 3px 6px;
+            font-size: 10px;
+            border: none;
+        }
+        .quote-meta table td:first-child {
+            color: #666666;
+            width: 50%;
+        }
+        .quote-meta table td:last-child {
+            font-weight: bold;
+            text-align: right;
+        }
+        .meta-highlight {
+            background-color: #f0fbff;
+        }
+
+        /* Einleitungstext */
+        .intro-text {
+            font-size: 10px;
+            color: #444444;
+            line-height: 1.6;
+            margin-bottom: 6mm;
+            padding: 8px 0;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6mm;
+        }
+        .items-table thead th {
+            background-color: #00d4ff;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 6px;
+            text-align: left;
+            border: none;
+        }
+        .items-table thead th.right {
+            text-align: right;
+        }
+        .items-table thead th.center {
+            text-align: center;
+        }
+        .items-table tbody td {
+            padding: 7px 6px;
+            font-size: 10px;
+            border-bottom: 1px solid #e8e8e8;
+            vertical-align: top;
+        }
+        .items-table tbody td.right {
+            text-align: right;
+        }
+        .items-table tbody td.center {
+            text-align: center;
+        }
+        .items-table tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        .items-table tbody tr:last-child td {
+            border-bottom: 2px solid #00d4ff;
+        }
+
+        .totals-section {
+            display: table;
+            width: 100%;
+            margin-bottom: 6mm;
+        }
+        .totals-spacer {
+            display: table-cell;
+            width: 55%;
+        }
+        .totals-box {
+            display: table-cell;
+            vertical-align: top;
+            width: 45%;
+        }
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .totals-table td {
+            padding: 4px 6px;
+            font-size: 10px;
+            border: none;
+        }
+        .totals-table td:first-child {
+            color: #666666;
+        }
+        .totals-table td:last-child {
+            text-align: right;
+            font-weight: bold;
+        }
+        .totals-table .grand-total td {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333333;
+            border-top: 2px solid #00d4ff;
+            padding-top: 8px;
+        }
+        .totals-table .grand-total td:last-child {
+            color: #00d4ff;
+        }
+
+        .validity-notice {
+            background-color: #f0fbff;
+            border: 1px solid #b3e5fc;
+            border-radius: 4px;
+            padding: 10px 14px;
+            font-size: 10px;
+            color: #444444;
+            margin-bottom: 6mm;
+            line-height: 1.5;
+        }
+        .validity-notice strong {
+            color: #00d4ff;
+        }
+
+        .notes-section {
+            margin-bottom: 6mm;
+        }
+        .notes-section .label {
+            font-size: 9px;
+            font-weight: bold;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        .notes-section .content {
+            font-size: 10px;
+            color: #555555;
+            line-height: 1.6;
+        }
+
+        /* AGB / Bedingungen */
+        .terms-section {
+            margin-bottom: 8mm;
+        }
+        .terms-section .label {
+            font-size: 9px;
+            font-weight: bold;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .terms-section .content {
+            font-size: 9px;
+            color: #555555;
+            line-height: 1.6;
+        }
+        .terms-section ol {
+            padding-left: 16px;
+        }
+        .terms-section ol li {
+            margin-bottom: 3px;
+        }
+
+        /* Annahme / Unterschrift */
+        .acceptance-section {
+            margin-top: 10mm;
+            margin-bottom: 10mm;
+        }
+        .acceptance-section .label {
+            font-size: 9px;
+            font-weight: bold;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .acceptance-text {
+            font-size: 10px;
+            color: #444444;
+            line-height: 1.6;
+            margin-bottom: 12mm;
+        }
+        .signature-area {
+            display: table;
+            width: 100%;
+        }
+        .signature-block {
+            display: table-cell;
+            width: 45%;
+            vertical-align: bottom;
+        }
+        .signature-block:last-child {
+            text-align: right;
+        }
+        .signature-line {
+            border-bottom: 1px solid #333333;
+            width: 80%;
+            margin-bottom: 4px;
+            height: 20mm;
+        }
+        .signature-label {
+            font-size: 8px;
+            color: #888888;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 25mm;
+            right: 25mm;
+            border-top: 2px solid #00d4ff;
+            padding-top: 6px;
+        }
+        .footer-content {
+            display: table;
+            width: 100%;
+        }
+        .footer-col {
+            display: table-cell;
+            vertical-align: top;
+            font-size: 7.5px;
+            color: #888888;
+            line-height: 1.6;
+        }
+        .footer-col:first-child {
+            width: 35%;
+        }
+        .footer-col:nth-child(2) {
+            width: 35%;
+        }
+        .footer-col:last-child {
+            width: 30%;
+            text-align: right;
+        }
+        .footer-col strong {
+            color: #555555;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Briefkopf -->
+    <div class="letterhead">
+        <div class="letterhead-left">
+            <div class="company-name">{{.CompanyName}}</div>
+            <div class="company-details">
+                {{.CompanyStreet}}<br>
+                {{.CompanyPostCode}} {{.CompanyCity}}<br>
+                Tel: {{.CompanyPhone}} | E-Mail: {{.CompanyEmail}}<br>
+                Web: {{.CompanyWebsite}}
+            </div>
+        </div>
+        <div class="letterhead-right">
+            {{if .LogoURL}}
+            <img src="{{.LogoURL}}" alt="Logo" style="max-width: 80px; max-height: 80px;">
+            {{else}}
+            <div class="logo-placeholder">LOGO</div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Absenderzeile -->
+    <div class="sender-line">
+        {{.CompanyName}} | {{.CompanyStreet}} | {{.CompanyPostCode}} {{.CompanyCity}}
+    </div>
+
+    <!-- Metadaten -->
+    <div class="meta-section">
+        <div class="client-address">
+            <div class="label">Angebotsempfänger</div>
+            <div class="name">{{.ClientName}}</div>
+            <div class="address-line">
+                {{.ClientStreet}}<br>
+                {{.ClientPostCode}} {{.ClientCity}}<br>
+                {{if .ClientCountry}}{{.ClientCountry}}<br>{{end}}
+                {{if .ClientEmail}}{{.ClientEmail}}{{end}}
+            </div>
+        </div>
+        <div class="quote-meta">
+            <table>
+                <tr class="meta-highlight">
+                    <td>Angebotsnummer:</td>
+                    <td>{{.QuoteNumber}}</td>
+                </tr>
+                <tr>
+                    <td>Kundennummer:</td>
+                    <td>{{.CustomerNumber}}</td>
+                </tr>
+                <tr>
+                    <td>Angebotsdatum:</td>
+                    <td>{{.IssueDate}}</td>
+                </tr>
+                <tr class="meta-highlight">
+                    <td>Gültig bis:</td>
+                    <td>{{.ValidUntil}}</td>
+                </tr>
+                {{if .ProjectReference}}
+                <tr>
+                    <td>Projektreferenz:</td>
+                    <td>{{.ProjectReference}}</td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
+    </div>
+
+    <!-- Titel -->
+    <div class="document-title">ANGEBOT</div>
+
+    <!-- Einleitungstext -->
+    <div class="intro-text">
+        {{if .IntroText}}
+        {{.IntroText}}
+        {{else}}
+        Sehr {{if .ClientSalutation}}{{.ClientSalutation}}{{else}}geehrte Damen und Herren{{end}},<br><br>
+        vielen Dank für Ihre Anfrage. Gerne unterbreiten wir Ihnen folgendes Angebot:
+        {{end}}
+    </div>
+
+    <!-- Positionstabelle -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 6%;">Pos.</th>
+                <th style="width: 40%;">Bezeichnung</th>
+                <th class="center" style="width: 12%;">Menge</th>
+                <th class="right" style="width: 14%;">Einzelpreis</th>
+                <th class="center" style="width: 10%;">MwSt.%</th>
+                <th class="right" style="width: 18%;">Gesamt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $index, $item := .Items}}
+            <tr>
+                <td>{{inc $index}}</td>
+                <td>{{$item.Description}}{{if $item.Detail}}<br><span style="font-size: 8px; color: #888;">{{$item.Detail}}</span>{{end}}</td>
+                <td class="center">{{$item.QuantityFormatted}} {{$item.Unit}}</td>
+                <td class="right">{{$item.UnitPriceFormatted}} {{$.Currency}}</td>
+                <td class="center">{{$item.TaxRateFormatted}}%</td>
+                <td class="right">{{$item.TotalPriceFormatted}} {{$.Currency}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <!-- Summen -->
+    <div class="totals-section">
+        <div class="totals-spacer"></div>
+        <div class="totals-box">
+            <table class="totals-table">
+                <tr>
+                    <td>Nettobetrag:</td>
+                    <td>{{.SubTotalFormatted}} {{.Currency}}</td>
+                </tr>
+                <tr>
+                    <td>MwSt. ({{.TaxRateFormatted}}%):</td>
+                    <td>{{.TaxAmountFormatted}} {{.Currency}}</td>
+                </tr>
+                <tr class="grand-total">
+                    <td>Gesamtbetrag:</td>
+                    <td>{{.TotalFormatted}} {{.Currency}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Gültigkeitshinweis -->
+    <div class="validity-notice">
+        <strong>Gültigkeit:</strong> Dieses Angebot ist gültig bis zum <strong>{{.ValidUntil}}</strong>.
+        Nach Ablauf dieser Frist behalten wir uns Preisänderungen vor.
+        {{if .ValidityNote}}<br>{{.ValidityNote}}{{end}}
+    </div>
+
+    <!-- Bemerkungen -->
+    {{if .Notes}}
+    <div class="notes-section">
+        <div class="label">Bemerkungen</div>
+        <div class="content">{{.Notes}}</div>
+    </div>
+    {{end}}
+
+    <!-- AGB / Bedingungen -->
+    <div class="terms-section">
+        <div class="label">Bedingungen</div>
+        <div class="content">
+            {{if .TermsText}}
+            {{.TermsText}}
+            {{else}}
+            <ol>
+                <li>Die Lieferung/Leistung erfolgt vorbehaltlich der Verfügbarkeit zum gewünschten Termin.</li>
+                <li>Preise verstehen sich zzgl. Transport- und Versicherungskosten, sofern nicht anders angegeben.</li>
+                <li>Zahlungsbedingungen: {{if .PaymentTermsText}}{{.PaymentTermsText}}{{else}}14 Tage nach Rechnungsstellung ohne Abzug.{{end}}</li>
+                <li>Es gelten unsere Allgemeinen Geschäftsbedingungen in der jeweils aktuellen Fassung.</li>
+                <li>Für die gemietete Ausrüstung haftet der Mieter ab Übergabe bis zur Rückgabe.</li>
+            </ol>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Annahme durch Unterschrift -->
+    <div class="acceptance-section">
+        <div class="label">Auftragsbestätigung</div>
+        <div class="acceptance-text">
+            Mit Ihrer Unterschrift bestätigen Sie die Annahme dieses Angebots zu den oben genannten Bedingungen.
+            Bitte senden Sie das unterschriebene Angebot an uns zurück.
+        </div>
+        <div class="signature-area">
+            <div class="signature-block">
+                <div class="signature-line"></div>
+                <div class="signature-label">Ort, Datum</div>
+            </div>
+            <div class="signature-block">
+                <div class="signature-line" style="margin-left: auto;"></div>
+                <div class="signature-label">Unterschrift Auftraggeber</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <strong>{{.CompanyName}}</strong><br>
+                {{.CompanyStreet}}<br>
+                {{.CompanyPostCode}} {{.CompanyCity}}
+            </div>
+            <div class="footer-col">
+                {{if .ManagingDirector}}Geschäftsführer: {{.ManagingDirector}}<br>{{end}}
+                {{if .TaxNumber}}Steuernummer: {{.TaxNumber}}<br>{{end}}
+                {{if .VATId}}USt-IdNr.: {{.VATId}}<br>{{end}}
+                {{if .TradeRegister}}{{.TradeRegister}}{{end}}
+            </div>
+            <div class="footer-col">
+                Tel: {{.CompanyPhone}}<br>
+                {{.CompanyEmail}}<br>
+                {{.CompanyWebsite}}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

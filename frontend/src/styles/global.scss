@@ -38,6 +38,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+
+  // Subtle background noise texture via CSS
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
 }
 
 // ============================================================================
@@ -141,8 +154,12 @@ button {
   transition: all var(--transition-fast);
 
   &:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px rgba(0, 212, 255, 0.5);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
   }
 
   &:disabled {
@@ -235,6 +252,7 @@ th {
   font-size: var(--font-size-sm);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-wide);
+  white-space: nowrap;
 }
 
 tbody tr {
@@ -242,6 +260,10 @@ tbody tr {
 
   &:hover {
     background-color: var(--color-bg-hover);
+  }
+
+  &:last-child td {
+    border-bottom: none;
   }
 }
 
@@ -260,8 +282,23 @@ img, picture, video, canvas, svg {
 // ============================================================================
 
 ::selection {
-  background-color: rgba(0, 212, 255, 0.2);
-  color: var(--color-text-primary);
+  background-color: rgba(0, 212, 255, 0.3);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: rgba(0, 212, 255, 0.3);
+  color: #ffffff;
+}
+
+:root.light-mode ::selection {
+  background-color: rgba(0, 184, 217, 0.25);
+  color: #1e293b;
+}
+
+:root.light-mode ::-moz-selection {
+  background-color: rgba(0, 184, 217, 0.25);
+  color: #1e293b;
 }
 
 // ============================================================================
@@ -284,6 +321,15 @@ img, picture, video, canvas, svg {
 // SCROLLBAR – Sleek dark style
 // ============================================================================
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-700) transparent;
+}
+
+:root.light-mode * {
+  scrollbar-color: var(--color-gray-300) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -294,21 +340,29 @@ img, picture, video, canvas, svg {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-gray-700);
+  background: rgba(0, 212, 255, 0.2);
   border-radius: var(--radius-full);
 
   &:hover {
-    background: var(--color-gray-600);
+    background: rgba(0, 212, 255, 0.4);
+  }
+}
+
+:root.light-mode ::-webkit-scrollbar-thumb {
+  background: rgba(0, 184, 217, 0.25);
+
+  &:hover {
+    background: rgba(0, 184, 217, 0.45);
   }
 }
 
 // ============================================================================
-// FOCUS VISIBLE
+// FOCUS VISIBLE – Cyan glow ring
 // ============================================================================
 
 :focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px rgba(0, 212, 255, 0.5);
 }
 
 // ============================================================================
@@ -320,4 +374,96 @@ img, picture, video, canvas, svg {
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
+}
+
+// ============================================================================
+// UTILITY CLASSES
+// ============================================================================
+
+.text-gradient {
+  background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 12px;
+}
+
+.animate-in {
+  animation: animateIn 0.4s ease-out both;
+}
+
+@keyframes animateIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================================================
+// TOUCH DEVICE OPTIMIZATIONS
+// ============================================================================
+
+@media (hover: none) and (pointer: coarse) {
+  // Minimum touch target sizes (WCAG 2.5.5)
+  button, a, [role="button"], .btn, select, input[type="checkbox"], input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  // Disable hover transform effects on touch devices
+  .card:hover,
+  .stat-card:hover,
+  .quick-action-btn:hover,
+  .upcoming-project-card:hover,
+  .welcome-step:hover,
+  .status-box:hover {
+    transform: none;
+  }
+
+  // Reduce hover-driven visual changes that don't make sense on touch
+  .widget-list__item--clickable:hover {
+    transform: none;
+  }
+}
+
+// ============================================================================
+// MOBILE RESPONSIVE PATTERNS
+// ============================================================================
+
+@media (max-width: 768px) {
+  // Global heading scale-down
+  h1 { font-size: var(--font-size-2xl); }
+  h2 { font-size: var(--font-size-xl); }
+  h3 { font-size: var(--font-size-lg); }
+
+  // Tables: enable horizontal scroll on mobile
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    thead, tbody, tfoot, tr, th, td {
+      // Keep default table display for horizontal scroll
+    }
+  }
+
+  // Forms: single column, larger touch targets
+  .form-section__grid {
+    grid-template-columns: 1fr;
+  }
+
+  input, textarea, select {
+    font-size: 16px; // Prevents iOS zoom on focus
+  }
 }

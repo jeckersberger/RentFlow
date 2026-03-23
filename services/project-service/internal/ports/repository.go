@@ -43,6 +43,15 @@ type CustomerRepository interface {
 	Search(ctx context.Context, tenantID, term string, limit, offset int) (*CustomerListResult, error)
 }
 
+type ContactRepository interface {
+	Create(ctx context.Context, contact *domain.Contact) error
+	GetByID(ctx context.Context, tenantID, contactID string) (*domain.Contact, error)
+	List(ctx context.Context, tenantID string, limit, offset int) (*ContactListResult, error)
+	Update(ctx context.Context, contact *domain.Contact) error
+	Delete(ctx context.Context, tenantID, contactID string) error
+	Search(ctx context.Context, tenantID, term string, limit, offset int) (*ContactListResult, error)
+}
+
 type ProjectListResult struct {
 	Items  []*domain.Project
 	Total  int64
@@ -59,6 +68,13 @@ type PacklistListResult struct {
 
 type CustomerListResult struct {
 	Items  []*domain.Customer
+	Total  int64
+	Limit  int
+	Offset int
+}
+
+type ContactListResult struct {
+	Items  []*domain.Contact
 	Total  int64
 	Limit  int
 	Offset int

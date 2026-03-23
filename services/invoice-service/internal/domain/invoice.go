@@ -47,33 +47,35 @@ func (s InvoiceStatus) IsValidStatus() bool {
 // Invoice represents a GoBD-compliant invoice aggregate
 type Invoice struct {
 	events.AggregateRoot
-	TenantID        string
-	InvoiceNumber   string
-	ProjectID       *string
-	ClientName      string
-	ClientAddress   Address
-	ClientEmail     string
-	ClientTaxID     string // USt-IdNr
-	Items           []InvoiceItem
-	SubTotal        float64
-	TaxRate         TaxRate // 0, 7, or 19%
-	TaxAmount       float64
-	Total           float64
-	Currency        string
-	Status          InvoiceStatus
-	IssueDate       time.Time
-	DueDate         time.Time
-	PaidDate        *time.Time
-	PaymentMethod   string
-	PaymentRef      string // Bank reference
-	PaidAmount      float64
-	RemainingAmount float64
-	Notes           string
-	InternalNotes   string
-	PDFRef          string // file reference to generated PDF
-	Hash            string // SHA-256 for GoBD immutability
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	TenantID             string
+	InvoiceNumber        string
+	ProjectID            *string
+	ClientName           string
+	ClientAddress        Address
+	ClientEmail          string
+	ClientTaxID          string // USt-IdNr
+	Items                []InvoiceItem
+	SubTotal             float64
+	TaxRate              TaxRate // 0, 7, or 19% — default for new items
+	TaxAmount            float64
+	Total                float64
+	Currency             string
+	Status               InvoiceStatus
+	IssueDate            time.Time
+	DueDate              time.Time
+	PaidDate             *time.Time
+	PaymentMethod        string
+	PaymentRef           string // Bank reference
+	PaidAmount           float64
+	RemainingAmount      float64
+	Notes                string
+	InternalNotes        string
+	PDFRef               string // file reference to generated PDF
+	Hash                 string // SHA-256 for GoBD immutability
+	IsKleinunternehmer   bool   // §19 UStG small business exemption
+	KleinunternehmerText string // Legal text for KU invoices
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
 }
 
 // InvoiceItem represents a single line item on an invoice
@@ -81,10 +83,11 @@ type InvoiceItem struct {
 	ID          string
 	Description string
 	Quantity    float64
-	Unit        string // "Stück", "Tag", "Pauschal", etc.
+	Unit        string  // "Stück", "Tag", "Pauschal", etc.
 	UnitPrice   float64
 	TotalPrice  float64
 	TaxRate     TaxRate
+	TaxAmount   float64 // per-item tax amount
 	EquipmentID *string // optional link to equipment
 }
 
@@ -125,7 +128,11 @@ func (i *Invoice) AddItem(item InvoiceItem) error {
 	}
 
 	item.TotalPrice = item.Quantity * item.UnitPrice
-	item.TaxRate = i.TaxRate
+	// Use item-level tax rate if explicitly set, otherwise fall back to invoice default
+	if item.TaxRate == 0 && i.TaxRate != 0 {
+		item.TaxRate = i.TaxRate
+	}
+	item.TaxAmount = item.TotalPrice * (float64(item.TaxRate) / 100)
 	item.ID = fmt.Sprintf("item_%d", len(i.Items)+1)
 
 	i.Items = append(i.Items, item)
@@ -157,19 +164,31 @@ func (i *Invoice) SetTaxRate(rate float64) error {
 }
 
 // CalculateTotals recalculates SubTotal, TaxAmount, and Total
-// Based on item quantities and the invoice's tax rate
+// Calculates per-item tax and sums for the invoice total.
+// When Kleinunternehmerregelung (§19 UStG) is active, all tax is zeroed.
 func (i *Invoice) CalculateTotals() error {
 	if len(i.Items) == 0 {
 		return ErrNoItems
 	}
 
-	i.SubTotal = 0
-	for _, item := range i.Items {
-		i.SubTotal += item.TotalPrice
+	// Kleinunternehmer: override all tax rates to 0
+	if i.IsKleinunternehmer {
+		for idx := range i.Items {
+			i.Items[idx].TaxRate = 0
+			i.Items[idx].TaxAmount = 0
+		}
+		i.KleinunternehmerText = "Gemäß §19 UStG wird keine Umsatzsteuer berechnet."
 	}
 
-	// Calculate tax: tax = subtotal * (rate / 100)
-	i.TaxAmount = i.SubTotal * (float64(i.TaxRate) / 100)
+	i.SubTotal = 0
+	i.TaxAmount = 0
+	for idx := range i.Items {
+		i.Items[idx].TotalPrice = i.Items[idx].Quantity * i.Items[idx].UnitPrice
+		i.Items[idx].TaxAmount = i.Items[idx].TotalPrice * (float64(i.Items[idx].TaxRate) / 100)
+		i.SubTotal += i.Items[idx].TotalPrice
+		i.TaxAmount += i.Items[idx].TaxAmount
+	}
+
 	i.Total = i.SubTotal + i.TaxAmount
 
 	if i.Total <= 0 {
@@ -360,7 +379,7 @@ func (i *Invoice) Credit(creditID string) error {
 func (i *Invoice) ComputeHash() string {
 	// Hash includes all financial data to ensure immutability
 	data := fmt.Sprintf(
-		"%s|%s|%f|%f|%f|%s|%s",
+		"%s|%s|%f|%f|%f|%s|%s|%t",
 		i.InvoiceNumber,
 		i.ClientName,
 		i.SubTotal,
@@ -368,6 +387,7 @@ func (i *Invoice) ComputeHash() string {
 		i.Total,
 		i.IssueDate.Format("2006-01-02"),
 		i.DueDate.Format("2006-01-02"),
+		i.IsKleinunternehmer,
 	)
 	hash := sha256.Sum256([]byte(data))
 	return fmt.Sprintf("%x", hash)

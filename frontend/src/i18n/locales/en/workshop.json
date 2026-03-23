@@ -1,0 +1,95 @@
+{
+  "title": "Workshop",
+  "subtitle": "Repairs, inspections, and inventory management",
+  "loading": "Loading data...",
+  "tabs": {
+    "repairs": "Repairs",
+    "inspections": "Inspections",
+    "lost": "Lost Materials",
+    "inventory": "Inventory Count"
+  },
+  "stats": {
+    "open_repairs": "Open Repairs",
+    "in_progress": "In Progress",
+    "overdue_inspections": "Overdue Inspections",
+    "lost_parts": "Lost Parts"
+  },
+  "repair": {
+    "report": "Report Repair",
+    "create": "Create Repair",
+    "status": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "done": "Done"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "table": {
+      "equipment": "Equipment",
+      "defect": "Defect Description",
+      "priority": "Priority",
+      "status": "Status",
+      "assigned_to": "Assigned To",
+      "created": "Created"
+    },
+    "empty": {
+      "title": "No Repairs",
+      "description": "All equipment is in perfect condition."
+    },
+    "form": {
+      "title": "Report Repair",
+      "equipment": "Equipment",
+      "equipment_placeholder": "Select equipment...",
+      "defect": "Defect Description",
+      "defect_placeholder": "Describe the defect...",
+      "priority": "Priority",
+      "assign_to": "Assign To",
+      "assign_placeholder": "Employee name...",
+      "cancel": "Cancel",
+      "create": "Create Repair"
+    }
+  },
+  "inspection": {
+    "plan": "+ Plan Inspection",
+    "status": {
+      "due": "Due",
+      "planned": "Planned",
+      "passed": "Passed",
+      "overdue": "Overdue"
+    },
+    "types": {
+      "dguv_v3": "DGUV V3",
+      "bgv_a3": "BGV A3",
+      "tuev": "TUV",
+      "vde": "VDE"
+    },
+    "table": {
+      "equipment": "Equipment",
+      "next_date": "Next Inspection",
+      "type": "Type",
+      "status": "Status"
+    }
+  },
+  "lost": {
+    "empty": {
+      "title": "No Lost Materials",
+      "description": "All materials are accounted for."
+    },
+    "table": {
+      "equipment": "Equipment",
+      "last_seen": "Last Seen",
+      "project": "Project",
+      "reported_by": "Reported By",
+      "reported_at": "Reported On"
+    }
+  },
+  "inventory_count": {
+    "title": "Inventory Count",
+    "description": "Start a new inventory count to reconcile your stock.",
+    "start": "Start Count"
+  },
+  "search_placeholder": "Search..."
+}

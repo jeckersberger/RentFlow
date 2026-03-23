@@ -1,21 +1,121 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { setupApi, SetupRequest } from '../../services/api'
+import { setupApi, configApi, SetupRequest } from '../../services/api'
+import {
+  Package,
+  FolderKanban,
+  Receipt,
+  Users,
+  Inbox,
+  Wrench,
+  Bot,
+  Globe,
+  type LucideIcon,
+} from 'lucide-react'
 import './SetupWizard.scss'
 
-type StepType = 'token' | 'company' | 'admin' | 'confirm'
+type StepType = 'token' | 'company' | 'admin' | 'modules' | 'confirm'
 
 interface FormData extends Partial<SetupRequest> {
   confirmPassword?: string
+  ust_id?: string
+  handelsregister?: string
+  geschaeftsfuehrer?: string
 }
+
+interface ModuleDefinition {
+  id: string
+  name: string
+  description: string
+  icon: LucideIcon
+  default: boolean
+}
+
+const MODULES: ModuleDefinition[] = [
+  {
+    id: 'warehouse',
+    name: 'Lagerverwaltung',
+    description: 'Equipment, Scanner, Lager, Labels',
+    icon: Package,
+    default: true,
+  },
+  {
+    id: 'projects',
+    name: 'Projektverwaltung',
+    description: 'Projekte, Kalender, Engpässe',
+    icon: FolderKanban,
+    default: true,
+  },
+  {
+    id: 'finance',
+    name: 'Finanzen',
+    description: 'Rechnungen, Angebote, Kontakte',
+    icon: Receipt,
+    default: true,
+  },
+  {
+    id: 'team',
+    name: 'Personalverwaltung',
+    description: 'Crew, Zeiterfassung, Transport',
+    icon: Users,
+    default: false,
+  },
+  {
+    id: 'communication',
+    name: 'Kommunikation',
+    description: 'E-Mail Posteingang & Ausgang',
+    icon: Inbox,
+    default: false,
+  },
+  {
+    id: 'workshop',
+    name: 'Werkstatt',
+    description: 'Reparaturen, Prüfungen, Bestandszählungen',
+    icon: Wrench,
+    default: false,
+  },
+  {
+    id: 'ai',
+    name: 'KI-Assistent',
+    description: 'Preis-Optimierung, Demand Forecasting',
+    icon: Bot,
+    default: false,
+  },
+  {
+    id: 'federation',
+    name: 'Federation',
+    description: 'Firmen verbinden, Equipment teilen',
+    icon: Globe,
+    default: false,
+  },
+]
 
 const STEPS: { type: StepType; label: string }[] = [
   { type: 'token', label: 'Setup Token' },
   { type: 'company', label: 'Firmenangaben' },
   { type: 'admin', label: 'Admin-Konto' },
+  { type: 'modules', label: 'Module' },
   { type: 'confirm', label: 'Bestätigung' },
 ]
+
+function getPasswordStrength(password: string): { score: number; label: string; className: string } {
+  if (!password) return { score: 0, label: '', className: '' }
+
+  let score = 0
+  if (password.length >= 8) score++
+  if (password.length >= 12) score++
+  if (password.length >= 16) score++
+  if (/[A-Z]/.test(password)) score++
+  if (/[a-z]/.test(password)) score++
+  if (/[0-9]/.test(password)) score++
+  if (/[^A-Za-z0-9]/.test(password)) score++
+
+  if (score <= 2) return { score: 1, label: 'Schwach', className: 'weak' }
+  if (score <= 4) return { score: 2, label: 'Mittel', className: 'medium' }
+  if (score <= 5) return { score: 3, label: 'Stark', className: 'strong' }
+  return { score: 4, label: 'Sehr stark', className: 'very-strong' }
+}
 
 function SetupWizard() {
   const navigate = useNavigate()
@@ -23,6 +123,9 @@ function SetupWizard() {
   const [completedSteps, setCompletedSteps] = useState<StepType[]>([])
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [selectedModules, setSelectedModules] = useState<string[]>(
+    MODULES.filter((m) => m.default).map((m) => m.id)
+  )
 
   const [formData, setFormData] = useState<FormData>({
     setup_token: '',
@@ -37,10 +140,22 @@ function SetupWizard() {
     admin_password: '',
     confirmPassword: '',
     language: 'de',
+    ust_id: '',
+    handelsregister: '',
+    geschaeftsfuehrer: '',
   })
 
   const setupMutation = useMutation({
-    mutationFn: (data: SetupRequest) => setupApi.complete(data),
+    mutationFn: async (data: SetupRequest) => {
+      const result = await setupApi.complete(data)
+      // Save selected modules to config after setup completes
+      try {
+        await configApi.set('modules.enabled', selectedModules)
+      } catch {
+        // Non-critical: modules can be configured later
+      }
+      return result
+    },
     onSuccess: () => {
       navigate('/login')
     },
@@ -75,6 +190,11 @@ function SetupWizard() {
   }, [formData.company_name, currentStep])
 
   const currentStepIndex = STEPS.findIndex((s) => s.type === currentStep)
+
+  const passwordStrength = useMemo(
+    () => getPasswordStrength(formData.admin_password || ''),
+    [formData.admin_password]
+  )
 
   const validateToken = (): boolean => {
     const errors: Record<string, string> = {}
@@ -148,6 +268,7 @@ function SetupWizard() {
     if (currentStep === 'token') isValid = validateToken()
     if (currentStep === 'company') isValid = validateCompany()
     if (currentStep === 'admin') isValid = validateAdmin()
+    if (currentStep === 'modules') isValid = true // modules step always valid
 
     if (!isValid) return
 
@@ -174,8 +295,6 @@ function SetupWizard() {
   const handleSubmit = async () => {
     setError('')
 
-    if (!validateAdmin()) return
-
     const submitData: SetupRequest = {
       setup_token: formData.setup_token!,
       company_name: formData.company_name!,
@@ -191,6 +310,14 @@ function SetupWizard() {
     }
 
     setupMutation.mutate(submitData)
+  }
+
+  const toggleModule = (moduleId: string) => {
+    setSelectedModules((prev) =>
+      prev.includes(moduleId)
+        ? prev.filter((id) => id !== moduleId)
+        : [...prev, moduleId]
+    )
   }
 
   const renderStepContent = () => {
@@ -291,6 +418,50 @@ function SetupWizard() {
                 onChange={(e) => setFormData({ ...formData, company_address: e.target.value })}
                 placeholder="Straße, Stadt, PLZ, Land"
                 rows={3}
+              />
+            </div>
+
+            <div className="setup-form__row">
+              <div className="setup-form__group">
+                <label htmlFor="geschaeftsfuehrer" className="setup-form__label">
+                  Geschäftsführer
+                </label>
+                <input
+                  id="geschaeftsfuehrer"
+                  type="text"
+                  className="setup-form__input"
+                  value={formData.geschaeftsfuehrer || ''}
+                  onChange={(e) => setFormData({ ...formData, geschaeftsfuehrer: e.target.value })}
+                  placeholder="Z. B. Max Mustermann"
+                />
+              </div>
+
+              <div className="setup-form__group">
+                <label htmlFor="ust_id" className="setup-form__label">
+                  USt-IdNr.
+                </label>
+                <input
+                  id="ust_id"
+                  type="text"
+                  className="setup-form__input"
+                  value={formData.ust_id || ''}
+                  onChange={(e) => setFormData({ ...formData, ust_id: e.target.value })}
+                  placeholder="Z. B. DE123456789"
+                />
+              </div>
+            </div>
+
+            <div className="setup-form__group">
+              <label htmlFor="handelsregister" className="setup-form__label">
+                Handelsregister
+              </label>
+              <input
+                id="handelsregister"
+                type="text"
+                className="setup-form__input"
+                value={formData.handelsregister || ''}
+                onChange={(e) => setFormData({ ...formData, handelsregister: e.target.value })}
+                placeholder="Z. B. HRB 12345, Amtsgericht München"
               />
             </div>
 
@@ -431,6 +602,19 @@ function SetupWizard() {
                 placeholder="Mindestens 12 Zeichen"
                 autoComplete="new-password"
               />
+              {formData.admin_password && (
+                <div className="password-strength">
+                  <div className="password-strength__bar">
+                    <div
+                      className={`password-strength__fill password-strength__fill--${passwordStrength.className}`}
+                      style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                    />
+                  </div>
+                  <span className={`password-strength__label password-strength__label--${passwordStrength.className}`}>
+                    {passwordStrength.label}
+                  </span>
+                </div>
+              )}
               {fieldErrors.admin_password && (
                 <p className="setup-form__error">{fieldErrors.admin_password}</p>
               )}
@@ -461,6 +645,54 @@ function SetupWizard() {
           </div>
         )
 
+      case 'modules':
+        return (
+          <div className="setup-step">
+            <h2 className="setup-step__title">Module</h2>
+            <p className="setup-step__description">
+              Welche Funktionen benötigen Sie? Wählen Sie die Module aus, die Sie nutzen möchten.
+            </p>
+
+            <div className="module-grid">
+              {MODULES.map((mod) => {
+                const isSelected = selectedModules.includes(mod.id)
+                const IconComponent = mod.icon
+                return (
+                  <div
+                    key={mod.id}
+                    className={`module-card ${isSelected ? 'module-card--active' : ''}`}
+                    onClick={() => toggleModule(mod.id)}
+                  >
+                    <div className="module-card__header">
+                      <div className="module-card__icon">
+                        <IconComponent size={20} />
+                      </div>
+                      <div
+                        className={`module-card__toggle ${isSelected ? 'module-card__toggle--on' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleModule(mod.id)
+                        }}
+                      >
+                        <div className="module-card__toggle-knob" />
+                      </div>
+                    </div>
+                    <div className="module-card__name">{mod.name}</div>
+                    <div className="module-card__description">{mod.description}</div>
+                    {mod.default && (
+                      <span className="module-card__badge">Empfohlen</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            <p className="setup-step__hint">
+              Sie können Module jederzeit in den Einstellungen aktivieren oder deaktivieren.
+            </p>
+          </div>
+        )
+
       case 'confirm':
         return (
           <div className="setup-step">
@@ -484,6 +716,24 @@ function SetupWizard() {
                   <div className="setup-summary__item">
                     <span className="setup-summary__label">Adresse:</span>
                     <span className="setup-summary__value">{formData.company_address}</span>
+                  </div>
+                )}
+                {formData.geschaeftsfuehrer && (
+                  <div className="setup-summary__item">
+                    <span className="setup-summary__label">Geschäftsführer:</span>
+                    <span className="setup-summary__value">{formData.geschaeftsfuehrer}</span>
+                  </div>
+                )}
+                {formData.ust_id && (
+                  <div className="setup-summary__item">
+                    <span className="setup-summary__label">USt-IdNr.:</span>
+                    <span className="setup-summary__value">{formData.ust_id}</span>
+                  </div>
+                )}
+                {formData.handelsregister && (
+                  <div className="setup-summary__item">
+                    <span className="setup-summary__label">Handelsregister:</span>
+                    <span className="setup-summary__value">{formData.handelsregister}</span>
                   </div>
                 )}
                 <div className="setup-summary__item">
@@ -514,6 +764,26 @@ function SetupWizard() {
                   <span className="setup-summary__label">Passwort:</span>
                   <span className="setup-summary__value">••••••••</span>
                 </div>
+              </div>
+
+              <div className="setup-summary__section">
+                <h3 className="setup-summary__heading">Aktive Module</h3>
+                <div className="setup-summary__modules">
+                  {MODULES.filter((m) => selectedModules.includes(m.id)).map((mod) => {
+                    const IconComponent = mod.icon
+                    return (
+                      <div key={mod.id} className="setup-summary__module-tag">
+                        <IconComponent size={14} />
+                        <span>{mod.name}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                {MODULES.filter((m) => !selectedModules.includes(m.id)).length > 0 && (
+                  <p className="setup-summary__module-note">
+                    {MODULES.filter((m) => !selectedModules.includes(m.id)).length} weitere Module können später aktiviert werden
+                  </p>
+                )}
               </div>
             </div>
           </div>

@@ -1,0 +1,68 @@
+{
+  "title": "Settings",
+  "subtitle": "Manage your account settings and system configuration",
+  "tabs": {
+    "company": "Company Settings",
+    "users": "User Management",
+    "categories": "Categories",
+    "notifications": "Notifications"
+  },
+  "company": {
+    "title": "Company Settings",
+    "loading": "Loading data...",
+    "error_loading": "Error loading company data",
+    "company_name": "Company Name",
+    "invoice_prefix": "Invoice Prefix",
+    "invoice_prefix_placeholder": "e.g. RF",
+    "street": "Street",
+    "zip": "ZIP Code",
+    "city": "City",
+    "country": "Country",
+    "currency": "Currency",
+    "currency_placeholder": "EUR",
+    "tax_rate": "Tax Rate (%)",
+    "tax_rate_placeholder": "19",
+    "save_error": "Error saving",
+    "save_success": "Saved successfully!",
+    "saving": "Saving...",
+    "save": "Save"
+  },
+  "users": {
+    "title": "Users",
+    "loading": "Loading users...",
+    "error_loading": "Error loading users",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "no_users": "No users found.",
+    "status_active": "Active",
+    "status_invited": "Invitation pending",
+    "status_inactive": "Disabled"
+  },
+  "categories": {
+    "title": "Equipment Categories",
+    "new_category": "+ New Category",
+    "name": "Name",
+    "name_placeholder": "e.g. Lighting",
+    "icon": "Icon (Emoji)",
+    "icon_placeholder": "e.g. 💡",
+    "color": "Color",
+    "error_creating": "Error creating",
+    "creating": "Creating...",
+    "create": "Create",
+    "cancel": "Cancel",
+    "loading": "Loading categories...",
+    "error_loading": "Error loading categories",
+    "no_categories": "No categories available."
+  },
+  "notifications": {
+    "title": "Notification Settings",
+    "new_projects": "Email notifications for new projects",
+    "maintenance_due": "Notification for equipment due for maintenance",
+    "overdue_invoices": "Overdue invoice reminders",
+    "daily_summary": "Daily summary",
+    "system_security": "System and security notifications",
+    "save": "Save"
+  }
+}

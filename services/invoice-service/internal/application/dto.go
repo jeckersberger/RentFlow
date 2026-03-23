@@ -8,34 +8,36 @@ import (
 
 // InvoiceDTO for API responses
 type InvoiceDTO struct {
-	ID              string           `json:"id"`
-	TenantID        string           `json:"tenant_id"`
-	InvoiceNumber   string           `json:"invoice_number"`
-	ProjectID       *string          `json:"project_id,omitempty"`
-	ClientName      string           `json:"client_name"`
-	ClientAddress   AddressDTO       `json:"client_address"`
-	ClientEmail     string           `json:"client_email"`
-	ClientTaxID     string           `json:"client_tax_id"`
-	Items           []InvoiceItemDTO `json:"items"`
-	SubTotal        float64          `json:"sub_total"`
-	TaxRate         float64          `json:"tax_rate"`
-	TaxAmount       float64          `json:"tax_amount"`
-	Total           float64          `json:"total"`
-	Currency        string           `json:"currency"`
-	Status          string           `json:"status"`
-	IssueDate       time.Time        `json:"issue_date"`
-	DueDate         time.Time        `json:"due_date"`
-	PaidDate        *time.Time       `json:"paid_date,omitempty"`
-	PaymentMethod   string           `json:"payment_method"`
-	PaymentRef      string           `json:"payment_ref"`
-	PaidAmount      float64          `json:"paid_amount"`
-	RemainingAmount float64          `json:"remaining_amount"`
-	Notes           string           `json:"notes"`
-	InternalNotes   string           `json:"internal_notes"`
-	PDFRef          string           `json:"pdf_ref"`
-	Hash            string           `json:"hash"`
-	CreatedAt       time.Time        `json:"created_at"`
-	UpdatedAt       time.Time        `json:"updated_at"`
+	ID                   string           `json:"id"`
+	TenantID             string           `json:"tenant_id"`
+	InvoiceNumber        string           `json:"invoice_number"`
+	ProjectID            *string          `json:"project_id,omitempty"`
+	ClientName           string           `json:"client_name"`
+	ClientAddress        AddressDTO       `json:"client_address"`
+	ClientEmail          string           `json:"client_email"`
+	ClientTaxID          string           `json:"client_tax_id"`
+	Items                []InvoiceItemDTO `json:"items"`
+	SubTotal             float64          `json:"sub_total"`
+	TaxRate              float64          `json:"tax_rate"`
+	TaxAmount            float64          `json:"tax_amount"`
+	Total                float64          `json:"total"`
+	Currency             string           `json:"currency"`
+	Status               string           `json:"status"`
+	IssueDate            time.Time        `json:"issue_date"`
+	DueDate              time.Time        `json:"due_date"`
+	PaidDate             *time.Time       `json:"paid_date,omitempty"`
+	PaymentMethod        string           `json:"payment_method"`
+	PaymentRef           string           `json:"payment_ref"`
+	PaidAmount           float64          `json:"paid_amount"`
+	RemainingAmount      float64          `json:"remaining_amount"`
+	Notes                string           `json:"notes"`
+	InternalNotes        string           `json:"internal_notes"`
+	PDFRef               string           `json:"pdf_ref"`
+	Hash                 string           `json:"hash"`
+	IsKleinunternehmer   bool             `json:"is_kleinunternehmer"`
+	KleinunternehmerText string           `json:"kleinunternehmer_text,omitempty"`
+	CreatedAt            time.Time        `json:"created_at"`
+	UpdatedAt            time.Time        `json:"updated_at"`
 }
 
 // InvoiceItemDTO represents a line item
@@ -47,6 +49,7 @@ type InvoiceItemDTO struct {
 	UnitPrice   float64 `json:"unit_price"`
 	TotalPrice  float64 `json:"total_price"`
 	TaxRate     float64 `json:"tax_rate"`
+	TaxAmount   float64 `json:"tax_amount"`
 	EquipmentID *string `json:"equipment_id,omitempty"`
 }
 
@@ -111,6 +114,7 @@ type CreditNoteItemDTO struct {
 	UnitPrice   float64 `json:"unit_price"`
 	TotalPrice  float64 `json:"total_price"`
 	TaxRate     float64 `json:"tax_rate"`
+	TaxAmount   float64 `json:"tax_amount"`
 }
 
 // DunningDTO for API responses
@@ -163,6 +167,7 @@ func InvoiceToDTO(inv *domain.Invoice) *InvoiceDTO {
 			UnitPrice:   item.UnitPrice,
 			TotalPrice:  item.TotalPrice,
 			TaxRate:     float64(item.TaxRate),
+			TaxAmount:   item.TaxAmount,
 			EquipmentID: item.EquipmentID,
 		}
 	}
@@ -179,28 +184,30 @@ func InvoiceToDTO(inv *domain.Invoice) *InvoiceDTO {
 			PostCode: inv.ClientAddress.PostCode,
 			Country:  inv.ClientAddress.Country,
 		},
-		ClientEmail:     inv.ClientEmail,
-		ClientTaxID:     inv.ClientTaxID,
-		Items:           items,
-		SubTotal:        inv.SubTotal,
-		TaxRate:         float64(inv.TaxRate),
-		TaxAmount:       inv.TaxAmount,
-		Total:           inv.Total,
-		Currency:        inv.Currency,
-		Status:          string(inv.Status),
-		IssueDate:       inv.IssueDate,
-		DueDate:         inv.DueDate,
-		PaidDate:        inv.PaidDate,
-		PaymentMethod:   inv.PaymentMethod,
-		PaymentRef:      inv.PaymentRef,
-		PaidAmount:      inv.PaidAmount,
-		RemainingAmount: inv.RemainingAmount,
-		Notes:           inv.Notes,
-		InternalNotes:   inv.InternalNotes,
-		PDFRef:          inv.PDFRef,
-		Hash:            inv.Hash,
-		CreatedAt:       inv.CreatedAt,
-		UpdatedAt:       inv.UpdatedAt,
+		ClientEmail:          inv.ClientEmail,
+		ClientTaxID:          inv.ClientTaxID,
+		Items:                items,
+		SubTotal:             inv.SubTotal,
+		TaxRate:              float64(inv.TaxRate),
+		TaxAmount:            inv.TaxAmount,
+		Total:                inv.Total,
+		Currency:             inv.Currency,
+		Status:               string(inv.Status),
+		IssueDate:            inv.IssueDate,
+		DueDate:              inv.DueDate,
+		PaidDate:             inv.PaidDate,
+		PaymentMethod:        inv.PaymentMethod,
+		PaymentRef:           inv.PaymentRef,
+		PaidAmount:           inv.PaidAmount,
+		RemainingAmount:      inv.RemainingAmount,
+		Notes:                inv.Notes,
+		InternalNotes:        inv.InternalNotes,
+		PDFRef:               inv.PDFRef,
+		Hash:                 inv.Hash,
+		IsKleinunternehmer:   inv.IsKleinunternehmer,
+		KleinunternehmerText: inv.KleinunternehmerText,
+		CreatedAt:            inv.CreatedAt,
+		UpdatedAt:            inv.UpdatedAt,
 	}
 }
 
@@ -216,6 +223,7 @@ func QuoteToDTO(quote *domain.Quote) *QuoteDTO {
 			UnitPrice:   item.UnitPrice,
 			TotalPrice:  item.TotalPrice,
 			TaxRate:     float64(item.TaxRate),
+			TaxAmount:   item.TaxAmount,
 			EquipmentID: item.EquipmentID,
 		}
 	}
@@ -259,6 +267,7 @@ func CreditNoteToDTO(cn *domain.CreditNote) *CreditNoteDTO {
 			UnitPrice:   item.UnitPrice,
 			TotalPrice:  item.TotalPrice,
 			TaxRate:     float64(item.TaxRate),
+			TaxAmount:   item.TaxAmount,
 		}
 	}
 

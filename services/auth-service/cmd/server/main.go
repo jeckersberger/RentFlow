@@ -68,6 +68,7 @@ func main() {
 	// Create repositories
 	userRepo := repositories.NewPostgresUserRepository(db, log)
 	tenantRepo := repositories.NewPostgresTenantRepository(db, log)
+	configRepo := repositories.NewPostgresConfigRepository(db, log)
 
 	// Connect to Redis (fuer Sessions und Brute-Force-Schutz)
 	redisAddr := os.Getenv("REDIS_URL")
@@ -96,6 +97,7 @@ func main() {
 	// Create services
 	userService := application.NewUserService(userRepo, tenantRepo, tokenMgr, log)
 	tenantService := application.NewTenantService(tenantRepo, log)
+	configService := application.NewConfigService(configRepo, log)
 	setupService := application.NewSetupService(db, userService, tenantService, log)
 
 	// Initialize setup state and log setup token
@@ -120,7 +122,7 @@ func main() {
 	router.HandleFunc("GET /api/v1/auth/.well-known/jwks", jwksHandler(tokenMgr, log))
 
 	// Setup API routes
-	authhttp.SetupRoutes(router, userService, tenantService, setupService, tokenMgr, sessionMgr, log)
+	authhttp.SetupRoutes(router, userService, tenantService, setupService, configService, tokenMgr, sessionMgr, log)
 
 	// Wrap router with setup guard middleware
 	setupGuardMiddleware := authhttp.SetupGuardMiddleware(setupService, log)
