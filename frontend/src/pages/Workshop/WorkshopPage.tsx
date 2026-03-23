@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { equipmentApi } from '../../services/api'
+import { equipmentApi, maintenanceApi } from '../../services/api'
 import styles from './Workshop.module.scss'
 
 type TabKey = 'repairs' | 'inspections' | 'lost' | 'inventory'
@@ -32,55 +32,103 @@ interface LostItem {
   reportedAt: string
 }
 
+const PRIORITY_MAP: Record<string, 'Hoch' | 'Mittel' | 'Niedrig'> = {
+  critical: 'Hoch',
+  high: 'Hoch',
+  medium: 'Mittel',
+  low: 'Niedrig',
+}
+
+const STATUS_MAP: Record<string, 'Offen' | 'In Arbeit' | 'Erledigt'> = {
+  pending: 'Offen',
+  planned: 'Offen',
+  overdue: 'Offen',
+  in_progress: 'In Arbeit',
+  completed: 'Erledigt',
+  cancelled: 'Erledigt',
+}
+
 function WorkshopPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('repairs')
   const [searchQuery, setSearchQuery] = useState('')
   const [showRepairModal, setShowRepairModal] = useState(false)
 
-  const { data: equipmentData, isLoading } = useQuery({
+  const { data: equipmentData, isLoading: eqLoading } = useQuery({
     queryKey: ['equipment-workshop'],
     queryFn: () => equipmentApi.list({ limit: 100 }),
     staleTime: 1000 * 60 * 5,
   })
 
+  const { data: tasksData, isLoading: tasksLoading } = useQuery({
+    queryKey: ['maintenance-tasks-workshop'],
+    queryFn: () => maintenanceApi.listTasks(),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: plansData, isLoading: plansLoading } = useQuery({
+    queryKey: ['maintenance-plans-workshop'],
+    queryFn: () => maintenanceApi.listPlans(),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const isLoading = eqLoading || tasksLoading || plansLoading
+
   const equipment = equipmentData?.data || equipmentData?.items || (Array.isArray(equipmentData) ? equipmentData : [])
+  const tasks = tasksData?.items || tasksData?.data || (Array.isArray(tasksData) ? tasksData : [])
+  const plans = plansData?.items || plansData?.data || (Array.isArray(plansData) ? plansData : [])
 
-  // Generate simulated repair data from equipment in maintenance
+  // Map maintenance tasks to repairs
   const repairs: Repair[] = useMemo(() => {
-    const inMaintenance = equipment.filter((e: any) => e.status === 'in_maintenance' || e.condition === 'damaged' || e.condition === 'fair')
-    const simulated: Repair[] = inMaintenance.map((e: any, idx: number) => ({
-      id: `rep-${e.id}`,
-      equipmentName: e.name,
-      defect: idx % 3 === 0 ? 'Defekter XLR-Anschluss' : idx % 3 === 1 ? 'Motorschaden Moving Head' : 'Kabelbruch Netzteil',
-      priority: idx % 3 === 0 ? 'Hoch' : idx % 3 === 1 ? 'Mittel' : 'Niedrig',
-      status: idx % 3 === 0 ? 'Offen' : idx % 3 === 1 ? 'In Arbeit' : 'Erledigt',
-      assignedTo: idx % 2 === 0 ? 'Thomas Müller' : 'Sarah Schmidt',
-      createdAt: new Date(Date.now() - idx * 86400000 * 3).toISOString(),
+    return tasks.map((t: any) => ({
+      id: t.id,
+      equipmentName: t.equipment_name || 'Unbekannt',
+      defect: t.plan_name || t.notes || 'Wartungsaufgabe',
+      priority: PRIORITY_MAP[t.priority] || 'Mittel',
+      status: STATUS_MAP[t.status] || 'Offen',
+      assignedTo: t.assigned_to || '',
+      createdAt: t.created_at || t.scheduled_at || '',
     }))
+  }, [tasks])
 
-    // Always have at least demo data
-    if (simulated.length === 0) {
-      return [
-        { id: 'rep-demo-1', equipmentName: 'Yamaha CL5', defect: 'Fader Kanal 12 reagiert nicht', priority: 'Hoch', status: 'Offen', assignedTo: 'Thomas Müller', createdAt: '2026-03-20T10:00:00Z' },
-        { id: 'rep-demo-2', equipmentName: 'Martin MAC Aura XB', defect: 'Pan/Tilt Motor defekt', priority: 'Mittel', status: 'In Arbeit', assignedTo: 'Sarah Schmidt', createdAt: '2026-03-18T14:00:00Z' },
-        { id: 'rep-demo-3', equipmentName: 'Shure SM58', defect: 'Kapsel locker', priority: 'Niedrig', status: 'Erledigt', assignedTo: 'Thomas Müller', createdAt: '2026-03-15T09:00:00Z' },
-      ]
-    }
-    return simulated
+  // Map maintenance plans to inspections
+  const inspections: Inspection[] = useMemo(() => {
+    const now = new Date()
+    return plans.map((p: any) => {
+      const nextDate = p.next_due_at || p.next_maintenance || ''
+      const isActive = p.is_active ?? (p.status === 'active')
+      let status: Inspection['status'] = 'Geplant'
+      if (nextDate) {
+        const due = new Date(nextDate)
+        const daysUntil = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        if (daysUntil < 0) status = 'Überfällig'
+        else if (daysUntil <= 7) status = 'Fällig'
+        else status = 'Geplant'
+      }
+      if (!isActive && p.status === 'completed') status = 'Bestanden'
+
+      return {
+        id: p.id,
+        equipmentName: p.equipment_name || p.name || 'Unbekannt',
+        nextDate: nextDate,
+        type: p.plan_type || p.frequency || 'Wartung',
+        status,
+      }
+    })
+  }, [plans])
+
+  // Lost items from equipment with status 'lost' or 'missing'
+  const lostItems: LostItem[] = useMemo(() => {
+    return equipment
+      .filter((e: any) => e.status === 'lost' || e.status === 'missing')
+      .map((e: any) => ({
+        id: e.id,
+        equipmentName: e.name,
+        lastSeen: e.location || '',
+        project: e.project_name || '',
+        reportedBy: '',
+        reportedAt: e.updated_at || e.created_at || '',
+      }))
   }, [equipment])
-
-  const inspections: Inspection[] = useMemo(() => [
-    { id: 'insp-1', equipmentName: 'Chainmaster BGV-D8+ 1t', nextDate: '2026-04-15', type: 'DGUV V3', status: 'Geplant' },
-    { id: 'insp-2', equipmentName: 'JBL VTX A12', nextDate: '2026-04-01', type: 'BGV A3', status: 'Fällig' },
-    { id: 'insp-3', equipmentName: 'Prolyte X30V Truss 3m', nextDate: '2026-03-10', type: 'DGUV V3', status: 'Überfällig' },
-    { id: 'insp-4', equipmentName: 'MA Lighting grandMA3', nextDate: '2026-05-20', type: 'BGV A3', status: 'Geplant' },
-    { id: 'insp-5', equipmentName: 'Robe MegaPointe', nextDate: '2026-06-01', type: 'DGUV V3', status: 'Bestanden' },
-  ], [])
-
-  const lostItems: LostItem[] = useMemo(() => [
-    { id: 'lost-1', equipmentName: 'Shure SM58 (RF-MIC-001)', lastSeen: 'Marienplatz, München', project: 'Stadtfest München 2026', reportedBy: 'Max Huber', reportedAt: '2026-03-19T18:00:00Z' },
-    { id: 'lost-2', equipmentName: 'XLR-Kabel 10m (x3)', lastSeen: 'Hilton Hotel, Frankfurt', project: 'Firmen-Gala TechCorp', reportedBy: 'Sarah Schmidt', reportedAt: '2026-03-21T09:00:00Z' },
-  ], [])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

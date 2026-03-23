@@ -4,81 +4,7 @@ import { auditApi } from '../../services/api'
 import type { AuditEntry, ChainValidationResult } from '../../types/audit'
 import styles from './Audit.module.scss'
 
-// Fallback mock audit entries so page is never empty
-const MOCK_AUDIT_ENTRIES: AuditEntry[] = [
-  {
-    id: 'a1', timestamp: '2026-03-23T08:15:00Z', service: 'inventory', operation: 'CREATE',
-    entity_type: 'equipment', entity_id: 'eq-11', user_id: 'u1', user_name: 'Marco Berger',
-    changes: { name: { old: null, new: 'Sennheiser EW 300 G4' }, status: { old: null, new: 'available' }, rental_price_day: { old: null, new: 65 } },
-    status: 'success', checksum: 'sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6', ip_address: '192.168.1.10',
-  },
-  {
-    id: 'a2', timestamp: '2026-03-23T09:30:00Z', service: 'project', operation: 'UPDATE',
-    entity_type: 'project', entity_id: 'prj-1', user_id: 'u1', user_name: 'Marco Berger',
-    changes: { status: { old: 'planning', new: 'active' }, budget: { old: 42000, new: 45000 } },
-    status: 'success', checksum: 'sha256:b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1', ip_address: '192.168.1.10',
-  },
-  {
-    id: 'a3', timestamp: '2026-03-22T14:45:00Z', service: 'invoice', operation: 'CREATE',
-    entity_type: 'invoice', entity_id: 'inv-6', user_id: 'u2', user_name: 'Anna Schmidt',
-    changes: { number: { old: null, new: 'RF-2026-006' }, total: { old: null, new: 17850 }, client_name: { old: null, new: 'Messe Frankfurt GmbH' } },
-    status: 'success', checksum: 'sha256:c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', ip_address: '192.168.1.15',
-  },
-  {
-    id: 'a4', timestamp: '2026-03-22T11:20:00Z', service: 'inventory', operation: 'UPDATE',
-    entity_type: 'equipment', entity_id: 'eq-3', user_id: 'u1', user_name: 'Marco Berger',
-    changes: { status: { old: 'available', new: 'checked_out' }, location_id: { old: 'loc-2', new: 'Projekt: Stadtfest Muenchen' } },
-    status: 'success', checksum: 'sha256:d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3', ip_address: '192.168.1.10',
-  },
-  {
-    id: 'a5', timestamp: '2026-03-22T10:00:00Z', service: 'auth', operation: 'LOGIN',
-    entity_type: 'user', entity_id: 'u3', user_id: 'u3', user_name: 'Tom Weber',
-    changes: { session: { old: null, new: 'sess-abc123' } },
-    status: 'success', checksum: 'sha256:e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', ip_address: '10.0.0.5',
-  },
-  {
-    id: 'a6', timestamp: '2026-03-21T16:30:00Z', service: 'inventory', operation: 'DELETE',
-    entity_type: 'equipment', entity_id: 'eq-99', user_id: 'u1', user_name: 'Marco Berger',
-    changes: { name: { old: 'Defektes Kabel 50m', new: null }, reason: { old: null, new: 'Irreparabel beschaedigt' } },
-    status: 'success', checksum: 'sha256:f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5', ip_address: '192.168.1.10',
-  },
-  {
-    id: 'a7', timestamp: '2026-03-21T14:10:00Z', service: 'project', operation: 'UPDATE',
-    entity_type: 'project', entity_id: 'prj-4', user_id: 'u2', user_name: 'Anna Schmidt',
-    changes: { status: { old: 'active', new: 'completed' }, end_date: { old: '2026-02-28', new: '2026-02-28' } },
-    status: 'success', checksum: 'sha256:a7b8c9d0e1f2a7b8c9d0e1f2a7b8c9d0e1f2', ip_address: '192.168.1.15',
-  },
-  {
-    id: 'a8', timestamp: '2026-03-21T09:00:00Z', service: 'invoice', operation: 'UPDATE',
-    entity_type: 'invoice', entity_id: 'inv-5', user_id: 'u1', user_name: 'Marco Berger',
-    changes: { status: { old: 'sent', new: 'overdue' }, dunning_level: { old: 0, new: 1 } },
-    status: 'success', checksum: 'sha256:b8c9d0e1f2a3b8c9d0e1f2a3b8c9d0e1f2a3', ip_address: '192.168.1.10',
-  },
-  {
-    id: 'a9', timestamp: '2026-03-20T17:45:00Z', service: 'inventory', operation: 'UPDATE',
-    entity_type: 'equipment', entity_id: 'eq-7', user_id: 'u2', user_name: 'Anna Schmidt',
-    changes: { status: { old: 'available', new: 'in_maintenance' }, condition: { old: 'good', new: 'fair' } },
-    status: 'success', checksum: 'sha256:c9d0e1f2a3b4c9d0e1f2a3b4c9d0e1f2a3b4', ip_address: '192.168.1.15',
-  },
-  {
-    id: 'a10', timestamp: '2026-03-20T08:30:00Z', service: 'auth', operation: 'CREATE',
-    entity_type: 'user', entity_id: 'u4', user_id: 'u1', user_name: 'Marco Berger',
-    changes: { email: { old: null, new: 'max.mueller@example.com' }, role: { old: null, new: 'Techniker' } },
-    status: 'success', checksum: 'sha256:d0e1f2a3b4c5d0e1f2a3b4c5d0e1f2a3b4c5', ip_address: '192.168.1.10',
-  },
-  {
-    id: 'a11', timestamp: '2026-03-19T15:20:00Z', service: 'project', operation: 'CREATE',
-    entity_type: 'project', entity_id: 'prj-5', user_id: 'u1', user_name: 'Marco Berger',
-    changes: { name: { old: null, new: 'Hochzeit Familie Weber' }, budget: { old: null, new: 8500 } },
-    status: 'success', checksum: 'sha256:e1f2a3b4c5d6e1f2a3b4c5d6e1f2a3b4c5d6', ip_address: '192.168.1.10',
-  },
-  {
-    id: 'a12', timestamp: '2026-03-19T11:00:00Z', service: 'inventory', operation: 'EXPORT',
-    entity_type: 'equipment', entity_id: 'export-csv-001', user_id: 'u1', user_name: 'Marco Berger',
-    changes: { format: { old: null, new: 'csv' }, items_count: { old: null, new: 10 } },
-    status: 'success', checksum: 'sha256:f2a3b4c5d6e7f2a3b4c5d6e7f2a3b4c5d6e7', ip_address: '192.168.1.10',
-  },
-]
+// No mock data - use real API only
 
 const PAGE_SIZE = 15
 
@@ -101,38 +27,37 @@ function AuditPage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  // Use API data if available, otherwise fall back to mock
+  // Use API data, handle various response formats
   const auditEntries: AuditEntry[] = useMemo(() => {
-    const apiData = rawAuditEntries as AuditEntry[] | undefined
-    if (apiData && Array.isArray(apiData) && apiData.length > 0) {
-      return apiData
-    }
-    return MOCK_AUDIT_ENTRIES
+    if (!rawAuditEntries) return []
+    const raw = rawAuditEntries as any
+    if (Array.isArray(raw)) return raw
+    if (Array.isArray(raw.data)) return raw.data
+    if (Array.isArray(raw.items)) return raw.items
+    return []
   }, [rawAuditEntries])
 
   // Verify chain mutation
   const verifyMutation = useMutation({
     mutationFn: () => auditApi.verify(),
     onSuccess: (data) => {
-      // Enhance mock response
       const result: ChainValidationResult = {
         valid: data?.valid ?? true,
-        entries_checked: data?.entries_checked || auditEntries.length,
-        invalid_entries: data?.invalid_entries || 0,
+        entries_checked: data?.entries_checked ?? auditEntries.length,
+        invalid_entries: data?.invalid_entries ?? 0,
         timestamp: data?.timestamp || new Date().toISOString(),
-        verification_hash: data?.verification_hash || `sha256:${Date.now().toString(16)}a1b2c3d4e5f6a7b8c9d0e1f2`,
+        verification_hash: data?.verification_hash || '',
       }
       setValidationResult(result)
       setShowValidation(true)
     },
-    onError: () => {
-      // Provide a realistic mock response on error
+    onError: (err: any) => {
       setValidationResult({
-        valid: true,
-        entries_checked: auditEntries.length,
+        valid: false,
+        entries_checked: 0,
         invalid_entries: 0,
         timestamp: new Date().toISOString(),
-        verification_hash: `sha256:${Date.now().toString(16)}a1b2c3d4e5f6a7b8c9d0`,
+        verification_hash: `Fehler: ${err?.message || 'Validierung fehlgeschlagen'}`,
       })
       setShowValidation(true)
     },
@@ -144,8 +69,8 @@ function AuditPage() {
     onSuccess: () => {
       alert('GoBD-Export wurde erfolgreich erstellt.')
     },
-    onError: () => {
-      alert('GoBD-Export wurde erstellt (Demo-Modus).')
+    onError: (err: any) => {
+      alert(`GoBD-Export fehlgeschlagen: ${err?.message || 'Unbekannter Fehler'}`)
     },
   })
 
@@ -450,7 +375,11 @@ function AuditPage() {
         ) : filteredEntries.length === 0 ? (
           <div className={styles.emptyState}>
             <h3 className={styles.emptyTitle}>Keine Eintraege gefunden</h3>
-            <p className={styles.emptyText}>Versuchen Sie, Ihre Suchkriterien zu aendern.</p>
+            <p className={styles.emptyText}>
+              {auditEntries.length === 0
+                ? 'Es sind noch keine Audit-Eintraege vorhanden. Eintraege werden automatisch bei Systemaktionen erstellt.'
+                : 'Versuchen Sie, Ihre Suchkriterien zu aendern.'}
+            </p>
           </div>
         ) : (
           <>

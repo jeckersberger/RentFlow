@@ -106,20 +106,178 @@ function InvoiceDetailPage() {
     },
   })
 
-  // PDF download handler
-  const handleDownloadPDF = async () => {
-    try {
-      const blob = await invoiceApi.getPDF(id!)
-      const url = window.URL.createObjectURL(new Blob([blob]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `Rechnung_${invoice?.number || id}.pdf`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-    } catch {
-      addNotification('PDF-Download nicht verfügbar. PDF-Generierung wird noch implementiert.', 'info', { title: 'Info', duration: 4000 })
+  // PDF download handler — client-side print-to-PDF
+  const handleDownloadPDF = () => {
+    if (!invoice) return
+
+    const formatDate = (d: string) => new Date(d).toLocaleDateString('de-DE')
+    const fmtCur = (v: number) =>
+      new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v)
+
+    const lineItemsRows = (invoice.line_items || [])
+      .map((item: { name?: string; description?: string; quantity: number; unit_price: number; total: number; tax_rate?: number; tax_amount?: number }, idx: number) => {
+        const taxCol = !isKleinunternehmer
+          ? `<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #e5e7eb;">${item.tax_rate != null ? `${item.tax_rate} %` : '\u2014'}</td>`
+          : ''
+        return `
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;">${idx + 1}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">
+              <strong>${item.name || item.description || ''}</strong>
+              ${item.name && item.description && item.name !== item.description ? `<br><span style="font-size:0.85em;color:#6b7280;">${item.description}</span>` : ''}
+            </td>
+            <td style="text-align:right;padding:8px 12px;border-bottom:1px solid #e5e7eb;">${item.quantity}</td>
+            <td style="text-align:right;padding:8px 12px;border-bottom:1px solid #e5e7eb;">${fmtCur(item.unit_price)}</td>
+            ${taxCol}
+            <td style="text-align:right;padding:8px 12px;border-bottom:1px solid #e5e7eb;font-weight:600;">${fmtCur(item.total)}</td>
+          </tr>`
+      })
+      .join('')
+
+    const taxHeader = !isKleinunternehmer
+      ? '<th style="text-align:right;padding:8px 12px;border-bottom:2px solid #d1d5db;font-size:0.85em;color:#6b7280;">MwSt.</th>'
+      : ''
+    const colCount = isKleinunternehmer ? 4 : 5
+
+    const taxFooterRow =
+      !isKleinunternehmer && invoice.tax_total != null && invoice.tax_total > 0
+        ? `<tr>
+            <td colspan="${colCount}" style="text-align:right;padding:6px 12px;color:#6b7280;">MwSt.:</td>
+            <td style="text-align:right;padding:6px 12px;color:#6b7280;">${fmtCur(invoice.tax_total)}</td>
+          </tr>`
+        : ''
+
+    const kleinunternehmerNote = isKleinunternehmer
+      ? `<p style="font-size:0.85em;color:#6b7280;margin-top:12px;">
+          ${invoice.kleinunternehmer_text || 'Gem\u00e4\u00df \u00a719 UStG wird keine Umsatzsteuer berechnet.'}
+        </p>`
+      : ''
+
+    const bankSection =
+      invoice.bank_account_holder || invoice.bank_iban
+        ? `<div style="margin-top:32px;padding:16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;">
+            <h3 style="margin:0 0 8px;font-size:0.95em;color:#374151;">Bankverbindung</h3>
+            ${invoice.bank_account_holder ? `<p style="margin:2px 0;font-size:0.9em;">Kontoinhaber: ${invoice.bank_account_holder}</p>` : ''}
+            ${invoice.bank_name ? `<p style="margin:2px 0;font-size:0.9em;">Bank: ${invoice.bank_name}</p>` : ''}
+            ${invoice.bank_iban ? `<p style="margin:2px 0;font-size:0.9em;font-family:monospace;">IBAN: ${invoice.bank_iban}</p>` : ''}
+            ${invoice.bank_bic ? `<p style="margin:2px 0;font-size:0.9em;font-family:monospace;">BIC: ${invoice.bank_bic}</p>` : ''}
+          </div>`
+        : ''
+
+    const notesSection = invoice.notes
+      ? `<div style="margin-top:24px;">
+          <h3 style="font-size:0.95em;color:#374151;margin:0 0 6px;">Notizen</h3>
+          <p style="font-size:0.9em;color:#6b7280;white-space:pre-line;margin:0;">${invoice.notes}</p>
+        </div>`
+      : ''
+
+    const html = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Rechnung ${invoice.number}</title>
+  <style>
+    @page { size: A4; margin: 20mm 20mm 25mm 20mm; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+           color: #1f2937; margin: 0; padding: 0; font-size: 14px; line-height: 1.5; background: #fff; }
+    table { width: 100%; border-collapse: collapse; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div style="max-width:210mm;margin:0 auto;padding:20mm;">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;">
+      <div>
+        <h1 style="margin:0;font-size:1.8em;color:#111827;">RECHNUNG</h1>
+        <p style="margin:4px 0 0;font-size:1.1em;color:#6b7280;">${invoice.number}</p>
+      </div>
+      <div style="text-align:right;font-size:0.9em;color:#6b7280;">
+        <div style="width:60px;height:60px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-left:auto;margin-bottom:8px;font-size:0.75em;color:#9ca3af;">Logo</div>
+      </div>
+    </div>
+
+    <!-- Invoice meta + Client -->
+    <div style="display:flex;justify-content:space-between;margin-bottom:32px;gap:40px;">
+      <div style="flex:1;">
+        <h3 style="margin:0 0 8px;font-size:0.85em;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Rechnungsempf\u00e4nger</h3>
+        <p style="margin:0;font-weight:600;font-size:1.05em;">${invoice.client_name || '\u2014'}</p>
+        ${invoice.client_address ? `<p style="margin:4px 0 0;white-space:pre-line;color:#4b5563;font-size:0.9em;">${invoice.client_address}</p>` : ''}
+        ${invoice.client_email ? `<p style="margin:4px 0 0;color:#4b5563;font-size:0.9em;">${invoice.client_email}</p>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <table style="width:auto;margin-left:auto;font-size:0.9em;">
+          <tr><td style="padding:3px 16px 3px 0;color:#6b7280;">Rechnungsdatum:</td><td style="padding:3px 0;font-weight:500;">${formatDate(invoice.issue_date)}</td></tr>
+          <tr><td style="padding:3px 16px 3px 0;color:#6b7280;">F\u00e4llig am:</td><td style="padding:3px 0;font-weight:500;">${formatDate(invoice.due_date)}</td></tr>
+          ${invoice.payment_terms ? `<tr><td style="padding:3px 16px 3px 0;color:#6b7280;">Zahlungsziel:</td><td style="padding:3px 0;">${invoice.payment_terms} Tage</td></tr>` : ''}
+          ${invoice.project_name ? `<tr><td style="padding:3px 16px 3px 0;color:#6b7280;">Projekt:</td><td style="padding:3px 0;">${invoice.project_name}</td></tr>` : ''}
+        </table>
+      </div>
+    </div>
+
+    <!-- Line items -->
+    <table style="margin-bottom:16px;">
+      <thead>
+        <tr style="background:#f9fafb;">
+          <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #d1d5db;font-size:0.85em;color:#6b7280;width:40px;">Pos.</th>
+          <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #d1d5db;font-size:0.85em;color:#6b7280;">Bezeichnung</th>
+          <th style="text-align:right;padding:8px 12px;border-bottom:2px solid #d1d5db;font-size:0.85em;color:#6b7280;">Menge</th>
+          <th style="text-align:right;padding:8px 12px;border-bottom:2px solid #d1d5db;font-size:0.85em;color:#6b7280;">Einzelpreis</th>
+          ${taxHeader}
+          <th style="text-align:right;padding:8px 12px;border-bottom:2px solid #d1d5db;font-size:0.85em;color:#6b7280;">Gesamt</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${lineItemsRows}
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div style="display:flex;justify-content:flex-end;">
+      <table style="width:280px;">
+        <tr>
+          <td style="padding:6px 12px;font-weight:500;">Netto:</td>
+          <td style="text-align:right;padding:6px 12px;">${fmtCur(invoice.subtotal)}</td>
+        </tr>
+        ${taxFooterRow}
+        <tr style="border-top:2px solid #1f2937;">
+          <td style="padding:10px 12px;font-weight:700;font-size:1.1em;">Brutto:</td>
+          <td style="text-align:right;padding:10px 12px;font-weight:700;font-size:1.1em;">${fmtCur(invoice.total)}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${kleinunternehmerNote}
+    ${bankSection}
+    ${notesSection}
+
+    <!-- Footer -->
+    <div style="margin-top:48px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:0.8em;color:#9ca3af;text-align:center;">
+      Rechnung erstellt am ${formatDate(invoice.issue_date)} &mdash; ${invoice.number}
+    </div>
+  </div>
+</body>
+</html>`
+
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(html)
+      printWindow.document.close()
+      // Wait for content to render, then trigger print
+      printWindow.onload = () => {
+        printWindow.focus()
+        printWindow.print()
+      }
+      // Fallback if onload doesn't fire (some browsers)
+      setTimeout(() => {
+        printWindow.focus()
+        printWindow.print()
+      }, 500)
+    } else {
+      addNotification('Popup-Blocker verhindert das Öffnen des Druckfensters. Bitte erlauben Sie Popups.', 'warning', { title: 'Hinweis', duration: 5000 })
     }
   }
 

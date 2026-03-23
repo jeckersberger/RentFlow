@@ -37,9 +37,9 @@ function ShortagesPage() {
   const equipment = equipmentData?.data || equipmentData?.items || (Array.isArray(equipmentData) ? equipmentData : [])
   const projects = projectsData?.items || projectsData?.data || (Array.isArray(projectsData) ? projectsData : [])
 
-  // Simulate shortages based on checked-out and reserved equipment
+  // Calculate real shortages based on checked-out and reserved equipment vs total available
   const shortages: Shortage[] = useMemo(() => {
-    if (!equipment.length || !projects.length) return []
+    if (!equipment.length) return []
 
     const checkedOut = equipment.filter((e: any) => e.status === 'checked_out' || e.status === 'reserved')
     const grouped: Record<string, any[]> = {}
@@ -58,43 +58,23 @@ function ShortagesPage() {
       const totalInCategory = equipment.filter((e: any) => (e.category_id || e.name) === (items[0].category_id || items[0].name)).length
       const inUse = items.length
       const available = totalInCategory - inUse
-      const requiredForUpcoming = Math.min(inUse + 2, totalInCategory + 3)
 
-      if (requiredForUpcoming > totalInCategory) {
+      // Only show as shortage if all items are in use (no available remaining)
+      if (available <= 0 && activeProjects.length > 0) {
         result.push({
           id: String(idx),
           equipmentName: items[0].name,
-          required: requiredForUpcoming,
-          available,
-          shortage: requiredForUpcoming - totalInCategory,
+          required: inUse + 1,
+          available: Math.max(0, available),
+          shortage: Math.abs(available) + 1,
           affectedProjects: projectNames.slice(0, Math.min(2, projectNames.length)),
           period: activeProjects.length > 0
             ? `${new Date(activeProjects[0].start_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} - ${new Date(activeProjects[0].end_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}`
             : 'N/A',
-          severity: requiredForUpcoming - totalInCategory > 2 ? 'critical' : 'warning',
+          severity: Math.abs(available) > 2 ? 'critical' : 'warning',
         })
       }
     })
-
-    // Always generate at least a few simulated shortages for demo purposes
-    if (result.length === 0 && equipment.length > 0) {
-      const sampleNames = ['Martin MAC Aura XB', 'JBL VTX A12', 'Chainmaster BGV-D8+']
-      sampleNames.forEach((name, idx) => {
-        const eq = equipment.find((e: any) => e.name.includes(name.split(' ')[0])) || equipment[idx]
-        if (eq) {
-          result.push({
-            id: `sim-${idx}`,
-            equipmentName: eq.name || name,
-            required: 8 + idx * 2,
-            available: 3 + idx,
-            shortage: 5 + idx,
-            affectedProjects: projectNames.slice(0, 2),
-            period: '15.04 - 18.04.26',
-            severity: idx === 0 ? 'critical' : 'warning',
-          })
-        }
-      })
-    }
 
     return result
   }, [equipment, projects])

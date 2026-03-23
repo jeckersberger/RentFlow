@@ -45,37 +45,7 @@ function mapBackendMember(dto: any): CrewMember & { skills: string[]; hourly_rat
   }
 }
 
-// Fallback mock data when backend is down
-const mockMember: CrewMember & { skills: string[]; hourly_rate: number; first_name: string; last_name: string } = {
-  id: '1',
-  name: 'Thomas Müller',
-  first_name: 'Thomas',
-  last_name: 'Müller',
-  email: 'thomas.mueller@rentflow.de',
-  phone: '+49 89 123456',
-  role: 'technician',
-  availability: 'available',
-  qualifications: [
-    { id: 'q1', type: 'IPAF', name: 'IPAF 1a/1b/3a/3b', expiry_date: '2026-12-31', is_expired: false },
-    { id: 'q2', type: 'electrical_cert', name: 'Electrical Safety', expiry_date: '2025-06-30', is_expired: false },
-    { id: 'q3', type: 'first_aid', name: 'First Aid', expiry_date: '2025-03-15', is_expired: true },
-  ],
-  hours_this_week: 32,
-  current_assignment: 'Stadtfest München 2026',
-  joined_date: '2020-01-15',
-  skills: ['Ton', 'Licht', 'Rigging'],
-  hourly_rate: 35,
-}
-
-const mockTimeRecords: TimeRecord[] = [
-  { id: 'tr1', crew_member_id: '1', start_time: '2026-03-22T08:00:00Z', end_time: '2026-03-22T16:30:00Z', project_id: 'p1', project_name: 'Stadtfest München 2026', duration_hours: 8.5, status: 'completed' },
-  { id: 'tr2', crew_member_id: '1', start_time: '2026-03-23T07:00:00Z', end_time: undefined, project_id: 'p1', project_name: 'Stadtfest München 2026', duration_hours: 2.25, status: 'active' },
-]
-
-const mockAssignments: Assignment[] = [
-  { id: 'a1', crew_member_id: '1', project_id: 'p1', project_name: 'Stadtfest München 2026', start_date: '2026-03-22', end_date: '2026-03-24', status: 'in_progress' },
-  { id: 'a2', crew_member_id: '1', project_id: 'p2', project_name: 'Firmen-Gala TechCorp', start_date: '2026-04-10', end_date: '2026-04-10', status: 'scheduled' },
-]
+// No mock data - use real API only
 
 function CrewDetail() {
   const { id } = useParams<{ id: string }>()
