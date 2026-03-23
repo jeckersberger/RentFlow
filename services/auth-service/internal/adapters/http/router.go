@@ -66,6 +66,13 @@ func SetupRoutes(
 	mux.HandleFunc("PUT /api/v1/users/{id}/roles", authMiddleware(http.HandlerFunc(handlers.AssignRole)).ServeHTTP)
 	mux.HandleFunc("DELETE /api/v1/users/{id}", authMiddleware(http.HandlerFunc(handlers.DeleteUser)).ServeHTTP)
 
+	// Invitation management (admin only, authenticated)
+	mux.HandleFunc("POST /api/v1/users/invite", authMiddleware(http.HandlerFunc(handlers.InviteUser)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/invitations", authMiddleware(http.HandlerFunc(handlers.ListInvitations)).ServeHTTP)
+
+	// Accept invitation (no auth required - public endpoint)
+	mux.HandleFunc("POST /api/v1/invitations/{token}/accept", handlers.AcceptInvitation)
+
 	// Tenant management
 	mux.HandleFunc("POST /api/v1/tenants", handlers.CreateTenant)
 	mux.HandleFunc("GET /api/v1/tenants/{id}", handlers.GetTenant)

@@ -14,11 +14,12 @@ import (
 
 // UserService handles user-related business logic
 type UserService struct {
-	userRepo    ports.UserRepository
-	tenantRepo  ports.TenantRepository
-	passwordMgr *PasswordManager
-	tokenMgr    *TokenManager
-	logger      logger.Logger
+	userRepo       ports.UserRepository
+	tenantRepo     ports.TenantRepository
+	invitationRepo ports.InvitationRepository
+	passwordMgr    *PasswordManager
+	tokenMgr       *TokenManager
+	logger         logger.Logger
 }
 
 // NewUserService creates a new user service
@@ -35,6 +36,11 @@ func NewUserService(
 		tokenMgr:    tokenMgr,
 		logger:      log,
 	}
+}
+
+// SetInvitationRepo sets the invitation repository (optional dependency)
+func (s *UserService) SetInvitationRepo(repo ports.InvitationRepository) {
+	s.invitationRepo = repo
 }
 
 // Register registers a new user
@@ -412,6 +418,141 @@ func (s *UserService) toUserDTO(user *domain.User) *UserDTO {
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 	}
+}
+
+// InviteUser creates an invitation for a new employee
+func (s *UserService) InviteUser(ctx context.Context, cmd InviteUserCommand) (*InvitationDTO, error) {
+	if s.invitationRepo == nil {
+		return nil, fmt.Errorf("invitation system not configured")
+	}
+
+	// Check if user already exists
+	existing, _ := s.userRepo.FindByEmail(ctx, cmd.TenantID, cmd.Email)
+	if existing != nil {
+		return nil, fmt.Errorf("user with this email already exists")
+	}
+
+	// Check for existing pending invitation
+	existingInv, _ := s.invitationRepo.FindByEmail(ctx, cmd.TenantID, cmd.Email)
+	if existingInv != nil {
+		return nil, fmt.Errorf("invitation already pending for this email")
+	}
+
+	// Generate invitation token
+	tokenBytes := make([]byte, 32)
+	rand.Read(tokenBytes)
+	token := hex.EncodeToString(tokenBytes)
+
+	role := cmd.Role
+	if role == "" {
+		role = "readonly"
+	}
+
+	inv := &ports.Invitation{
+		ID:        generateID(),
+		TenantID:  cmd.TenantID,
+		Email:     cmd.Email,
+		Role:      role,
+		Token:     token,
+		Status:    "pending",
+		InvitedBy: cmd.InvitedBy,
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour), // 7 days
+		CreatedAt: time.Now(),
+	}
+
+	if err := s.invitationRepo.Save(ctx, inv); err != nil {
+		s.logger.Error("failed to save invitation", err, "email", cmd.Email)
+		return nil, err
+	}
+
+	s.logger.Info("user invited", "email", cmd.Email, "role", role, "tenantID", cmd.TenantID)
+
+	return &InvitationDTO{
+		ID:        inv.ID,
+		Email:     inv.Email,
+		Role:      inv.Role,
+		Status:    inv.Status,
+		InvitedBy: inv.InvitedBy,
+		ExpiresAt: inv.ExpiresAt.Format(time.RFC3339),
+		CreatedAt: inv.CreatedAt.Format(time.RFC3339),
+	}, nil
+}
+
+// AcceptInvitation allows a user to accept an invitation and set their password
+func (s *UserService) AcceptInvitation(ctx context.Context, cmd AcceptInvitationCommand) (*UserDTO, error) {
+	if s.invitationRepo == nil {
+		return nil, fmt.Errorf("invitation system not configured")
+	}
+
+	inv, err := s.invitationRepo.FindByToken(ctx, cmd.Token)
+	if err != nil || inv == nil {
+		return nil, fmt.Errorf("invalid or expired invitation")
+	}
+
+	if inv.Status != "pending" {
+		return nil, fmt.Errorf("invitation already used")
+	}
+
+	if time.Now().After(inv.ExpiresAt) {
+		return nil, fmt.Errorf("invitation expired")
+	}
+
+	// Register the user
+	userDTO, err := s.Register(ctx, RegisterUserCommand{
+		Email:     inv.Email,
+		Password:  cmd.Password,
+		FirstName: cmd.FirstName,
+		LastName:  cmd.LastName,
+		TenantID:  inv.TenantID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Assign the invited role
+	if inv.Role != "readonly" {
+		s.AssignRole(ctx, AssignRoleCommand{
+			UserID:   userDTO.ID,
+			Role:     inv.Role,
+			TenantID: inv.TenantID,
+		})
+	}
+
+	// Mark invitation as accepted
+	now := time.Now()
+	inv.Status = "accepted"
+	inv.ClaimedAt = &now
+	s.invitationRepo.Save(ctx, inv)
+
+	s.logger.Info("invitation accepted", "email", inv.Email, "userID", userDTO.ID)
+
+	return userDTO, nil
+}
+
+// ListInvitations lists all invitations for a tenant
+func (s *UserService) ListInvitations(ctx context.Context, tenantID string) ([]InvitationDTO, error) {
+	if s.invitationRepo == nil {
+		return []InvitationDTO{}, nil
+	}
+
+	invitations, err := s.invitationRepo.ListByTenant(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	dtos := make([]InvitationDTO, len(invitations))
+	for i, inv := range invitations {
+		dtos[i] = InvitationDTO{
+			ID:        inv.ID,
+			Email:     inv.Email,
+			Role:      inv.Role,
+			Status:    inv.Status,
+			InvitedBy: inv.InvitedBy,
+			ExpiresAt: inv.ExpiresAt.Format(time.RFC3339),
+			CreatedAt: inv.CreatedAt.Format(time.RFC3339),
+		}
+	}
+	return dtos, nil
 }
 
 // generateID generates a random ID

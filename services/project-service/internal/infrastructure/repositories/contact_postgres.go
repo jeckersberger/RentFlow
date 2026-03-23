@@ -19,6 +19,41 @@ func NewContactPostgres(db *database.PostgresPool) *ContactPostgres {
 	return &ContactPostgres{db: db}
 }
 
+const contactSelectColumns = `id, tenant_id, type,
+		       COALESCE(company_name, '') as company_name,
+		       COALESCE(first_name, '') as first_name,
+		       COALESCE(last_name, '') as last_name,
+		       COALESCE(email, '') as email,
+		       COALESCE(phone, '') as phone,
+		       COALESCE(mobile, '') as mobile,
+		       COALESCE(website, '') as website,
+		       COALESCE(street, '') as street,
+		       COALESCE(house_number, '') as house_number,
+		       COALESCE(zip, '') as zip,
+		       COALESCE(city, '') as city,
+		       COALESCE(country, '') as country,
+		       COALESCE(vat_id, '') as vat_id,
+		       COALESCE(notes, '') as notes,
+		       tags, created_at, updated_at, created_by`
+
+func (r *ContactPostgres) scanContact(scanner interface{ Scan(...interface{}) error }) (*domain.Contact, error) {
+	c := &domain.Contact{}
+	var createdBy sql.NullString
+	err := scanner.Scan(
+		&c.ID, &c.TenantID, &c.Type, &c.CompanyName, &c.FirstName, &c.LastName,
+		&c.Email, &c.Phone, &c.Mobile, &c.Website, &c.Street, &c.HouseNumber,
+		&c.Zip, &c.City, &c.Country, &c.VatID, &c.Notes, pq.Array(&c.Tags),
+		&c.CreatedAt, &c.UpdatedAt, &createdBy,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if createdBy.Valid {
+		c.CreatedBy = createdBy.String
+	}
+	return c, nil
+}
+
 func (r *ContactPostgres) Create(ctx context.Context, contact *domain.Contact) error {
 	query := `
 		INSERT INTO projects.contacts (
@@ -48,31 +83,16 @@ func (r *ContactPostgres) Create(ctx context.Context, contact *domain.Contact) e
 }
 
 func (r *ContactPostgres) GetByID(ctx context.Context, tenantID, contactID string) (*domain.Contact, error) {
-	query := `
-		SELECT id, tenant_id, type, company_name, first_name, last_name, email, phone,
-		       mobile, website, street, house_number, zip, city, country, vat_id,
-		       notes, tags, created_at, updated_at, created_by
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM projects.contacts
 		WHERE id = $1 AND tenant_id = $2
-	`
+	`, contactSelectColumns)
 
-	c := &domain.Contact{}
-	var tags pq.StringArray
-	var createdBy sql.NullString
-	err := r.db.QueryRow(ctx, query, contactID, tenantID).Scan(
-		&c.ID, &c.TenantID, &c.Type, &c.CompanyName, &c.FirstName, &c.LastName,
-		&c.Email, &c.Phone, &c.Mobile, &c.Website, &c.Street, &c.HouseNumber,
-		&c.Zip, &c.City, &c.Country, &c.VatID, &c.Notes, &tags,
-		&c.CreatedAt, &c.UpdatedAt, &createdBy,
-	)
-
+	row := r.db.QueryRow(ctx, query, contactID, tenantID)
+	c, err := r.scanContact(row)
 	if err != nil {
 		return nil, err
-	}
-
-	c.Tags = []string(tags)
-	if createdBy.Valid {
-		c.CreatedBy = createdBy.String
 	}
 
 	return c, nil
@@ -85,15 +105,13 @@ func (r *ContactPostgres) List(ctx context.Context, tenantID string, limit, offs
 		return nil, fmt.Errorf("failed to count contacts: %w", err)
 	}
 
-	query := `
-		SELECT id, tenant_id, type, company_name, first_name, last_name, email, phone,
-		       mobile, website, street, house_number, zip, city, country, vat_id,
-		       notes, tags, created_at, updated_at, created_by
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM projects.contacts
 		WHERE tenant_id = $1
 		ORDER BY updated_at DESC
 		LIMIT $2 OFFSET $3
-	`
+	`, contactSelectColumns)
 
 	rows, err := r.db.Query(ctx, query, tenantID, limit, offset)
 	if err != nil {
@@ -103,20 +121,9 @@ func (r *ContactPostgres) List(ctx context.Context, tenantID string, limit, offs
 
 	var contacts []*domain.Contact
 	for rows.Next() {
-		c := &domain.Contact{}
-		var tags pq.StringArray
-		var createdBy sql.NullString
-		if err := rows.Scan(
-			&c.ID, &c.TenantID, &c.Type, &c.CompanyName, &c.FirstName, &c.LastName,
-			&c.Email, &c.Phone, &c.Mobile, &c.Website, &c.Street, &c.HouseNumber,
-			&c.Zip, &c.City, &c.Country, &c.VatID, &c.Notes, &tags,
-			&c.CreatedAt, &c.UpdatedAt, &createdBy,
-		); err != nil {
+		c, err := r.scanContact(rows)
+		if err != nil {
 			return nil, fmt.Errorf("failed to scan contact: %w", err)
-		}
-		c.Tags = []string(tags)
-		if createdBy.Valid {
-			c.CreatedBy = createdBy.String
 		}
 		contacts = append(contacts, c)
 	}
@@ -198,10 +205,8 @@ func (r *ContactPostgres) Search(ctx context.Context, tenantID, term string, lim
 		return nil, fmt.Errorf("failed to count search results: %w", err)
 	}
 
-	query := `
-		SELECT id, tenant_id, type, company_name, first_name, last_name, email, phone,
-		       mobile, website, street, house_number, zip, city, country, vat_id,
-		       notes, tags, created_at, updated_at, created_by
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM projects.contacts
 		WHERE tenant_id = $1 AND (
 			company_name ILIKE $2 OR first_name ILIKE $2 OR last_name ILIKE $2 OR
@@ -209,7 +214,7 @@ func (r *ContactPostgres) Search(ctx context.Context, tenantID, term string, lim
 		)
 		ORDER BY updated_at DESC
 		LIMIT $3 OFFSET $4
-	`
+	`, contactSelectColumns)
 
 	rows, err := r.db.Query(ctx, query, tenantID, searchPattern, limit, offset)
 	if err != nil {
@@ -219,20 +224,9 @@ func (r *ContactPostgres) Search(ctx context.Context, tenantID, term string, lim
 
 	var contacts []*domain.Contact
 	for rows.Next() {
-		c := &domain.Contact{}
-		var tags pq.StringArray
-		var createdBy sql.NullString
-		if err := rows.Scan(
-			&c.ID, &c.TenantID, &c.Type, &c.CompanyName, &c.FirstName, &c.LastName,
-			&c.Email, &c.Phone, &c.Mobile, &c.Website, &c.Street, &c.HouseNumber,
-			&c.Zip, &c.City, &c.Country, &c.VatID, &c.Notes, &tags,
-			&c.CreatedAt, &c.UpdatedAt, &createdBy,
-		); err != nil {
+		c, err := r.scanContact(rows)
+		if err != nil {
 			return nil, fmt.Errorf("failed to scan contact: %w", err)
-		}
-		c.Tags = []string(tags)
-		if createdBy.Valid {
-			c.CreatedBy = createdBy.String
 		}
 		contacts = append(contacts, c)
 	}

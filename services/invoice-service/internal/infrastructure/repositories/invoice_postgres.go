@@ -66,21 +66,21 @@ func (r *InvoicePostgres) Create(ctx context.Context, inv *domain.Invoice) error
 	return nil
 }
 
-func (r *InvoicePostgres) GetByID(ctx context.Context, tenantID, invoiceID string) (*domain.Invoice, error) {
-	query := `
-		SELECT id, tenant_id, invoice_number, project_id, client_name, client_address_street,
+// invoiceSelectColumns returns the SELECT column list with COALESCE for nullable string fields
+const invoiceSelectColumns = `id, tenant_id, invoice_number, project_id, client_name, client_address_street,
 		       client_address_city, client_address_postcode, client_address_country,
 		       client_email, client_tax_id, sub_total, tax_rate, tax_amount, total,
-		       currency, status, issue_date, due_date, paid_date, payment_method,
-		       payment_ref, notes, internal_notes, pdf_ref, hash, created_at, updated_at
-		FROM invoice.invoices
-		WHERE id = $1 AND tenant_id = $2
-	`
+		       currency, status, issue_date, due_date, paid_date,
+		       COALESCE(payment_method, '') as payment_method,
+		       COALESCE(payment_ref, '') as payment_ref,
+		       COALESCE(notes, '') as notes,
+		       COALESCE(internal_notes, '') as internal_notes,
+		       COALESCE(pdf_ref, '') as pdf_ref,
+		       hash, created_at, updated_at`
 
-	row := r.db.QueryRow(ctx, query, invoiceID, tenantID)
-
+func (r *InvoicePostgres) scanInvoice(scanner interface{ Scan(...interface{}) error }) (*domain.Invoice, error) {
 	inv := &domain.Invoice{}
-	err := row.Scan(
+	err := scanner.Scan(
 		&inv.ID, &inv.TenantID, &inv.InvoiceNumber, &inv.ProjectID, &inv.ClientName,
 		&inv.ClientAddress.Street, &inv.ClientAddress.City, &inv.ClientAddress.PostCode,
 		&inv.ClientAddress.Country, &inv.ClientEmail, &inv.ClientTaxID,
@@ -89,7 +89,19 @@ func (r *InvoicePostgres) GetByID(ctx context.Context, tenantID, invoiceID strin
 		&inv.PaymentMethod, &inv.PaymentRef, &inv.Notes, &inv.InternalNotes,
 		&inv.PDFRef, &inv.Hash, &inv.CreatedAt, &inv.UpdatedAt,
 	)
+	return inv, err
+}
 
+func (r *InvoicePostgres) GetByID(ctx context.Context, tenantID, invoiceID string) (*domain.Invoice, error) {
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM invoice.invoices
+		WHERE id = $1 AND tenant_id = $2
+	`, invoiceSelectColumns)
+
+	row := r.db.QueryRow(ctx, query, invoiceID, tenantID)
+
+	inv, err := r.scanInvoice(row)
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrInvoiceNotFound
 	}
@@ -108,29 +120,15 @@ func (r *InvoicePostgres) GetByID(ctx context.Context, tenantID, invoiceID strin
 }
 
 func (r *InvoicePostgres) GetByNumber(ctx context.Context, tenantID, invoiceNumber string) (*domain.Invoice, error) {
-	query := `
-		SELECT id, tenant_id, invoice_number, project_id, client_name, client_address_street,
-		       client_address_city, client_address_postcode, client_address_country,
-		       client_email, client_tax_id, sub_total, tax_rate, tax_amount, total,
-		       currency, status, issue_date, due_date, paid_date, payment_method,
-		       payment_ref, notes, internal_notes, pdf_ref, hash, created_at, updated_at
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM invoice.invoices
 		WHERE invoice_number = $1 AND tenant_id = $2
-	`
+	`, invoiceSelectColumns)
 
 	row := r.db.QueryRow(ctx, query, invoiceNumber, tenantID)
 
-	inv := &domain.Invoice{}
-	err := row.Scan(
-		&inv.ID, &inv.TenantID, &inv.InvoiceNumber, &inv.ProjectID, &inv.ClientName,
-		&inv.ClientAddress.Street, &inv.ClientAddress.City, &inv.ClientAddress.PostCode,
-		&inv.ClientAddress.Country, &inv.ClientEmail, &inv.ClientTaxID,
-		&inv.SubTotal, &inv.TaxRate, &inv.TaxAmount, &inv.Total, &inv.Currency,
-		&inv.Status, &inv.IssueDate, &inv.DueDate, &inv.PaidDate,
-		&inv.PaymentMethod, &inv.PaymentRef, &inv.Notes, &inv.InternalNotes,
-		&inv.PDFRef, &inv.Hash, &inv.CreatedAt, &inv.UpdatedAt,
-	)
-
+	inv, err := r.scanInvoice(row)
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrInvoiceNotFound
 	}
@@ -192,16 +190,12 @@ func (r *InvoicePostgres) List(ctx context.Context, query *ports.InvoiceListQuer
 
 	// List query
 	listQuery := fmt.Sprintf(`
-		SELECT id, tenant_id, invoice_number, project_id, client_name, client_address_street,
-		       client_address_city, client_address_postcode, client_address_country,
-		       client_email, client_tax_id, sub_total, tax_rate, tax_amount, total,
-		       currency, status, issue_date, due_date, paid_date, payment_method,
-		       payment_ref, notes, internal_notes, pdf_ref, hash, created_at, updated_at
+		SELECT %s
 		FROM invoice.invoices
 		WHERE %s
 		ORDER BY created_at DESC
 		LIMIT $%d OFFSET $%d
-	`, whereClause, argCount, argCount+1)
+	`, invoiceSelectColumns, whereClause, argCount, argCount+1)
 
 	args = append(args, query.Limit, query.Offset)
 
@@ -213,16 +207,7 @@ func (r *InvoicePostgres) List(ctx context.Context, query *ports.InvoiceListQuer
 
 	var invoices []*domain.Invoice
 	for rows.Next() {
-		inv := &domain.Invoice{}
-		err := rows.Scan(
-			&inv.ID, &inv.TenantID, &inv.InvoiceNumber, &inv.ProjectID, &inv.ClientName,
-			&inv.ClientAddress.Street, &inv.ClientAddress.City, &inv.ClientAddress.PostCode,
-			&inv.ClientAddress.Country, &inv.ClientEmail, &inv.ClientTaxID,
-			&inv.SubTotal, &inv.TaxRate, &inv.TaxAmount, &inv.Total, &inv.Currency,
-			&inv.Status, &inv.IssueDate, &inv.DueDate, &inv.PaidDate,
-			&inv.PaymentMethod, &inv.PaymentRef, &inv.Notes, &inv.InternalNotes,
-			&inv.PDFRef, &inv.Hash, &inv.CreatedAt, &inv.UpdatedAt,
-		)
+		inv, err := r.scanInvoice(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan invoice: %w", err)
 		}
@@ -366,16 +351,12 @@ func (r *InvoicePostgres) GetNextSequenceNumber(ctx context.Context, tenantID st
 }
 
 func (r *InvoicePostgres) GetOverdueInvoices(ctx context.Context, tenantID string) ([]*domain.Invoice, error) {
-	query := `
-		SELECT id, tenant_id, invoice_number, project_id, client_name, client_address_street,
-		       client_address_city, client_address_postcode, client_address_country,
-		       client_email, client_tax_id, sub_total, tax_rate, tax_amount, total,
-		       currency, status, issue_date, due_date, paid_date, payment_method,
-		       payment_ref, notes, internal_notes, pdf_ref, hash, created_at, updated_at
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM invoice.invoices
 		WHERE tenant_id = $1 AND status IN ('sent', 'overdue')
 		ORDER BY due_date ASC
-	`
+	`, invoiceSelectColumns)
 
 	rows, err := r.db.Query(ctx, query, tenantID)
 	if err != nil {
@@ -385,16 +366,7 @@ func (r *InvoicePostgres) GetOverdueInvoices(ctx context.Context, tenantID strin
 
 	invoices := make([]*domain.Invoice, 0)
 	for rows.Next() {
-		inv := &domain.Invoice{}
-		err := rows.Scan(
-			&inv.ID, &inv.TenantID, &inv.InvoiceNumber, &inv.ProjectID, &inv.ClientName,
-			&inv.ClientAddress.Street, &inv.ClientAddress.City, &inv.ClientAddress.PostCode,
-			&inv.ClientAddress.Country, &inv.ClientEmail, &inv.ClientTaxID,
-			&inv.SubTotal, &inv.TaxRate, &inv.TaxAmount, &inv.Total, &inv.Currency,
-			&inv.Status, &inv.IssueDate, &inv.DueDate, &inv.PaidDate,
-			&inv.PaymentMethod, &inv.PaymentRef, &inv.Notes, &inv.InternalNotes,
-			&inv.PDFRef, &inv.Hash, &inv.CreatedAt, &inv.UpdatedAt,
-		)
+		inv, err := r.scanInvoice(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan invoice: %w", err)
 		}

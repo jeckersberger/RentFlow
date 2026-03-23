@@ -539,6 +539,98 @@ func (h *Handlers) UpdateTenant(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// InviteUser handles employee invitation
+func (h *Handlers) InviteUser(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantIDFromClaims(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	if tenantID == "" || userID == "" {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated")
+		return
+	}
+
+	var req struct {
+		Email string `json:"email"`
+		Role  string `json:"role"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	if req.Email == "" {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Email is required")
+		return
+	}
+
+	cmd := application.InviteUserCommand{
+		TenantID:  tenantID,
+		Email:     req.Email,
+		Role:      req.Role,
+		InvitedBy: userID,
+	}
+
+	result, err := h.userService.InviteUser(r.Context(), cmd)
+	if err != nil {
+		h.logger.Error("failed to invite user", err, "email", req.Email)
+		writeError(w, http.StatusBadRequest, "INVITATION_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, result)
+}
+
+// AcceptInvitation handles accepting an invitation (no auth required)
+func (h *Handlers) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+	if token == "" {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Token is required")
+		return
+	}
+
+	var req struct {
+		Password  string `json:"password"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	cmd := application.AcceptInvitationCommand{
+		Token:     token,
+		Password:  req.Password,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+	}
+
+	user, err := h.userService.AcceptInvitation(r.Context(), cmd)
+	if err != nil {
+		h.logger.Error("failed to accept invitation", err)
+		writeError(w, http.StatusBadRequest, "INVITATION_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, user)
+}
+
+// ListInvitations lists all invitations for the tenant
+func (h *Handlers) ListInvitations(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantIDFromClaims(r.Context())
+	if tenantID == "" {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated")
+		return
+	}
+
+	invitations, err := h.userService.ListInvitations(r.Context(), tenantID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to list invitations")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, invitations)
+}
+
 // Helper functions
 
 func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {

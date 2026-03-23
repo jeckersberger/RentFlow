@@ -44,6 +44,17 @@ type PaginatedResult struct {
 	TotalPages int         `json:"total_pages"`
 }
 
+// InvitationDTO represents an invitation in responses
+type InvitationDTO struct {
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	Status    string `json:"status"`
+	InvitedBy string `json:"invited_by"`
+	ExpiresAt string `json:"expires_at"`
+	CreatedAt string `json:"created_at"`
+}
+
 // ErrorResponse represents an error response
 type ErrorResponse struct {
 	Code    string `json:"code"`

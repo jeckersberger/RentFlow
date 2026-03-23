@@ -65,6 +65,22 @@ type CreateTenantCommand struct {
 	InvoicePrefix   string  `json:"invoice_prefix"`
 }
 
+// InviteUserCommand represents an employee invitation command
+type InviteUserCommand struct {
+	TenantID  string `json:"tenant_id"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	InvitedBy string `json:"invited_by"`
+}
+
+// AcceptInvitationCommand represents accepting an invitation
+type AcceptInvitationCommand struct {
+	Token     string `json:"token"`
+	Password  string `json:"password"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
 // UpdateTenantCommand represents a tenant update command
 type UpdateTenantCommand struct {
 	TenantID        string  `json:"tenant_id"`

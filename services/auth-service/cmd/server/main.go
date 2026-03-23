@@ -94,8 +94,12 @@ func main() {
 	// Create session manager
 	sessionMgr := application.NewSessionManager(redisCache, log)
 
+	// Create invitation repository
+	invitationRepo := repositories.NewPostgresInvitationRepository(db, log)
+
 	// Create services
 	userService := application.NewUserService(userRepo, tenantRepo, tokenMgr, log)
+	userService.SetInvitationRepo(invitationRepo)
 	tenantService := application.NewTenantService(tenantRepo, log)
 	configService := application.NewConfigService(configRepo, log)
 	setupService := application.NewSetupService(db, userService, tenantService, log)
