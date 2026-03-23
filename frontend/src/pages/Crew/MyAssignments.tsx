@@ -1,82 +1,32 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { crewApi } from '../../services/api'
 import type { Assignment, TimeRecord } from '../../types/crew'
 import './Crew.scss'
-
-const mockAssignments: Assignment[] = [
-  {
-    id: 'a1',
-    crew_member_id: 'current-user',
-    project_id: 'p1',
-    project_name: 'Stadtfest München 2026',
-    start_date: '2026-03-25',
-    end_date: '2026-03-27',
-    status: 'in_progress',
-  },
-  {
-    id: 'a2',
-    crew_member_id: 'current-user',
-    project_id: 'p2',
-    project_name: 'Corporate Event TechCorp',
-    start_date: '2026-03-28',
-    end_date: '2026-03-29',
-    status: 'scheduled',
-  },
-  {
-    id: 'a3',
-    crew_member_id: 'current-user',
-    project_id: 'p3',
-    project_name: 'Open Air Festival Bodensee',
-    start_date: '2026-04-05',
-    end_date: '2026-04-07',
-    status: 'scheduled',
-  },
-  {
-    id: 'a4',
-    crew_member_id: 'current-user',
-    project_id: 'p4',
-    project_name: 'Wedding Reception Setup',
-    start_date: '2026-04-10',
-    end_date: '2026-04-10',
-    status: 'scheduled',
-  },
-]
-
-const mockTimeRecords: TimeRecord[] = [
-  {
-    id: 'tr1',
-    crew_member_id: 'current-user',
-    start_time: '2026-03-22T08:00:00Z',
-    end_time: undefined,
-    project_id: 'p1',
-    project_name: 'Stadtfest München 2026',
-    duration_hours: 0,
-    status: 'active',
-  },
-  {
-    id: 'tr2',
-    crew_member_id: 'current-user',
-    start_time: '2026-03-21T07:00:00Z',
-    end_time: '2026-03-21T15:30:00Z',
-    project_id: 'p1',
-    project_name: 'Stadtfest München 2026',
-    duration_hours: 8.5,
-    status: 'completed',
-  },
-]
 
 function MyAssignments() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
-  const { data: assignments = mockAssignments } = useQuery({
+  const { data: assignments = [] } = useQuery<Assignment[]>({
     queryKey: ['my-assignments'],
-    queryFn: async () => mockAssignments,
+    queryFn: async () => {
+      try {
+        const result = await crewApi.listAssignments({ page: 1, per_page: 50 })
+        const items = Array.isArray(result) ? result : (result?.data || [])
+        return items
+      } catch {
+        return []
+      }
+    },
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: timeRecords = mockTimeRecords } = useQuery({
+  const { data: timeRecords = [] } = useQuery<TimeRecord[]>({
     queryKey: ['my-time-records'],
-    queryFn: async () => mockTimeRecords,
+    queryFn: async () => {
+      // TODO: connect to real time records API when available
+      return []
+    },
     staleTime: 1000 * 60 * 1,
   })
 

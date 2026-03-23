@@ -56,35 +56,33 @@ function CrewDetail() {
   const { data: rawMember, isLoading, error } = useQuery({
     queryKey: ['crew', id],
     queryFn: async () => {
-      try {
-        const result = await crewApi.getMember(id!)
-        return result ? mapBackendMember(result) : null
-      } catch {
-        return null
-      }
+      const result = await crewApi.getMember(id!)
+      return result ? mapBackendMember(result) : null
     },
     staleTime: 1000 * 60 * 5,
     enabled: !!id,
   })
 
-  // Fall back to mock if API returns null
-  const member = rawMember || mockMember
+  const member = rawMember
 
-  const { data: timeRecords = mockTimeRecords } = useQuery({
+  const { data: timeRecords = [] } = useQuery<TimeRecord[]>({
     queryKey: ['timeRecords', id],
-    queryFn: async () => mockTimeRecords,
+    queryFn: async () => {
+      // TODO: connect to real time records API when available
+      return []
+    },
     staleTime: 1000 * 60,
   })
 
-  const { data: assignments = mockAssignments } = useQuery({
+  const { data: assignments = [] } = useQuery<Assignment[]>({
     queryKey: ['assignments', id],
     queryFn: async () => {
       try {
         const result = await crewApi.listAssignments({ page: 1, per_page: 50 })
-        const items = Array.isArray(result) ? result : (result.data || [])
-        return items.length > 0 ? items : mockAssignments
+        const items = Array.isArray(result) ? result : (result?.data || [])
+        return items
       } catch {
-        return mockAssignments
+        return []
       }
     },
     staleTime: 1000 * 60 * 5,
@@ -123,7 +121,7 @@ function CrewDetail() {
     )
   }
 
-  if (error && !member) {
+  if (error || (!isLoading && !member)) {
     return (
       <div className="crew-detail-page">
         <div className="page-header">
@@ -137,10 +135,14 @@ function CrewDetail() {
         <div className="empty-state">
           <div className="empty-state__icon">&#x26A0;</div>
           <h3 className="empty-state__title">Daten konnten nicht geladen werden</h3>
-          <p className="empty-state__description">{String(error)}</p>
+          <p className="empty-state__description">{error ? String(error) : 'Mitarbeiter wurde nicht gefunden.'}</p>
         </div>
       </div>
     )
+  }
+
+  if (!member) {
+    return null
   }
 
   const formatTime = (seconds: number) => {
