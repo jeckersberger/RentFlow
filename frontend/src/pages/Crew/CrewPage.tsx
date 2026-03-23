@@ -88,10 +88,13 @@ function CrewPage() {
     queryKey: ['crew'],
     queryFn: async () => {
       const result = await crewApi.listMembers({ page: 1, per_page: 100 })
+      if (!result) return []
       const items = Array.isArray(result) ? result : (result.data || [])
+      if (!Array.isArray(items) || items.length === 0) return []
       return items.map(mapBackendCrewMember)
     },
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 
   const createMutation = useMutation({

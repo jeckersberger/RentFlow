@@ -167,7 +167,7 @@ function LoginPage() {
             <button
               type="button"
               className="login-form__forgot"
-              onClick={() => {/* Future: password reset flow */}}
+              onClick={() => navigate('/forgot-password')}
               disabled={isLoading}
             >
               Passwort vergessen?

@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -20,6 +21,7 @@ type UserService struct {
 	passwordMgr    *PasswordManager
 	tokenMgr       *TokenManager
 	logger         logger.Logger
+	db             *sql.DB
 }
 
 // NewUserService creates a new user service
@@ -401,6 +403,128 @@ func (s *UserService) UpdateProfile(ctx context.Context, cmd UpdateProfileComman
 	}
 
 	s.logger.Info("profile updated", "id", cmd.UserID)
+	return nil
+}
+
+// SetDB sets the database connection for password reset queries
+func (s *UserService) SetDB(db *sql.DB) {
+	s.db = db
+}
+
+// ForgotPassword generates a password reset token for the given email
+func (s *UserService) ForgotPassword(ctx context.Context, cmd ForgotPasswordCommand) (string, error) {
+	// Find user by email (search across all tenants)
+	user, err := s.userRepo.FindByEmail(ctx, "", cmd.Email)
+	if err != nil || user == nil {
+		// Don't reveal whether the email exists
+		s.logger.Info("forgot password request for unknown email", "email", cmd.Email)
+		return "", nil
+	}
+
+	if s.db == nil {
+		return "", fmt.Errorf("database not configured for password resets")
+	}
+
+	// Generate reset token (32 bytes = 64 hex chars)
+	tokenBytes := make([]byte, 32)
+	rand.Read(tokenBytes)
+	token := hex.EncodeToString(tokenBytes)
+
+	// Save to DB
+	id := generateID()
+	expiresAt := time.Now().Add(1 * time.Hour)
+	_, err = s.db.ExecContext(ctx,
+		`INSERT INTO auth.password_resets (id, user_id, token, expires_at, created_at)
+		 VALUES ($1, $2, $3, $4, $5)`,
+		id, user.ID, token, expiresAt, time.Now(),
+	)
+	if err != nil {
+		s.logger.Error("failed to save password reset token", err, "userID", user.ID)
+		return "", err
+	}
+
+	// In production this would send an email. For now, log the token.
+	s.logger.Info("password reset token generated",
+		"userID", user.ID,
+		"email", user.Email,
+		"token", token,
+		"expiresAt", expiresAt.Format(time.RFC3339),
+	)
+
+	return token, nil
+}
+
+// ResetPassword validates a reset token and sets a new password
+func (s *UserService) ResetPassword(ctx context.Context, cmd ResetPasswordCommand) error {
+	if s.db == nil {
+		return fmt.Errorf("database not configured for password resets")
+	}
+
+	// Look up the token
+	var id, userID string
+	var expiresAt time.Time
+	var usedAt sql.NullTime
+
+	err := s.db.QueryRowContext(ctx,
+		`SELECT id, user_id, expires_at, used_at
+		 FROM auth.password_resets
+		 WHERE token = $1`,
+		cmd.Token,
+	).Scan(&id, &userID, &expiresAt, &usedAt)
+
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("invalid or expired reset token")
+	}
+	if err != nil {
+		s.logger.Error("failed to look up reset token", err)
+		return fmt.Errorf("invalid or expired reset token")
+	}
+
+	// Check if already used
+	if usedAt.Valid {
+		return fmt.Errorf("reset token has already been used")
+	}
+
+	// Check expiry
+	if time.Now().After(expiresAt) {
+		return fmt.Errorf("reset token has expired")
+	}
+
+	// Validate new password
+	if err := s.passwordMgr.ValidatePassword(cmd.NewPassword); err != nil {
+		return err
+	}
+
+	// Hash new password
+	newHash, err := s.passwordMgr.HashPassword(cmd.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	// Get user and update password
+	user, err := s.userRepo.FindByID(ctx, userID)
+	if err != nil || user == nil {
+		return domain.ErrUserNotFound
+	}
+
+	user.ChangePassword(newHash)
+	if err := s.userRepo.Save(ctx, user); err != nil {
+		s.logger.Error("failed to save user after password reset", err, "userID", userID)
+		return err
+	}
+
+	// Mark token as used
+	now := time.Now()
+	_, err = s.db.ExecContext(ctx,
+		`UPDATE auth.password_resets SET used_at = $1 WHERE id = $2`,
+		now, id,
+	)
+	if err != nil {
+		s.logger.Error("failed to mark reset token as used", err, "id", id)
+		// Don't fail the reset — password was already changed
+	}
+
+	s.logger.Info("password reset completed", "userID", userID)
 	return nil
 }
 

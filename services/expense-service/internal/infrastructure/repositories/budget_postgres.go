@@ -40,7 +40,7 @@ func (r *BudgetPostgres) CreateBudget(ctx context.Context, budget *domain.Budget
 
 func (r *BudgetPostgres) GetBudget(ctx context.Context, tenantID, budgetID string) (*domain.Budget, error) {
 	query := `
-		SELECT id, tenant_id, category_id, project_id, period, amount, spent, created_at, updated_at
+		SELECT id, tenant_id, COALESCE(category_id, ''), COALESCE(project_id, ''), period, amount, spent, created_at, updated_at
 		FROM expenses.budgets
 		WHERE id = $1 AND tenant_id = $2
 	`
@@ -73,7 +73,7 @@ func (r *BudgetPostgres) ListBudgets(ctx context.Context, tenantID string, limit
 	}
 
 	query := `
-		SELECT id, tenant_id, category_id, project_id, period, amount, spent, created_at, updated_at
+		SELECT id, tenant_id, COALESCE(category_id, ''), COALESCE(project_id, ''), period, amount, spent, created_at, updated_at
 		FROM expenses.budgets
 		WHERE tenant_id = $1
 		ORDER BY created_at DESC
@@ -112,7 +112,7 @@ func (r *BudgetPostgres) ListBudgets(ctx context.Context, tenantID string, limit
 
 func (r *BudgetPostgres) GetByCategory(ctx context.Context, tenantID, categoryID, period string) (*domain.Budget, error) {
 	query := `
-		SELECT id, tenant_id, category_id, project_id, period, amount, spent, created_at, updated_at
+		SELECT id, tenant_id, COALESCE(category_id, ''), COALESCE(project_id, ''), period, amount, spent, created_at, updated_at
 		FROM expenses.budgets
 		WHERE tenant_id = $1 AND category_id = $2 AND period = $3
 		LIMIT 1

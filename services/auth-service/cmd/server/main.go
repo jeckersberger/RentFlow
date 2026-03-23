@@ -100,6 +100,7 @@ func main() {
 	// Create services
 	userService := application.NewUserService(userRepo, tenantRepo, tokenMgr, log)
 	userService.SetInvitationRepo(invitationRepo)
+	userService.SetDB(db)
 	tenantService := application.NewTenantService(tenantRepo, log)
 	configService := application.NewConfigService(configRepo, log)
 	setupService := application.NewSetupService(db, userService, tenantService, log)

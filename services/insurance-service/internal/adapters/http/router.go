@@ -34,6 +34,24 @@ func RegisterRoutes(mux *http.ServeMux, handler *Handler) {
 	// Dashboard routes
 	mux.HandleFunc("GET /api/v1/insurance/dashboard", handler.GetDashboard)
 
+	// Alias routes (without /insurance prefix) for frontend proxy compatibility
+	mux.HandleFunc("POST /api/v1/policies", handler.CreatePolicy)
+	mux.HandleFunc("GET /api/v1/policies", handler.GetTenantPolicies)
+	mux.HandleFunc("GET /api/v1/policies/active", handler.GetActivePolicies)
+	mux.HandleFunc("GET /api/v1/policies/{id}", handler.GetPolicy)
+	mux.HandleFunc("PUT /api/v1/policies/{id}", handler.UpdatePolicy)
+
+	mux.HandleFunc("POST /api/v1/claims", handler.CreateClaim)
+	mux.HandleFunc("GET /api/v1/claims", handler.GetTenantClaims)
+	mux.HandleFunc("GET /api/v1/claims/{id}", handler.GetClaim)
+	mux.HandleFunc("PUT /api/v1/claims/{id}", handler.UpdateClaim)
+	mux.HandleFunc("POST /api/v1/claims/{id}/submit", handler.SubmitClaim)
+	mux.HandleFunc("POST /api/v1/claims/{id}/approve", handler.ApproveClaim)
+	mux.HandleFunc("POST /api/v1/claims/{id}/reject", handler.RejectClaim)
+	mux.HandleFunc("POST /api/v1/claims/{id}/settle", handler.SettleClaim)
+	mux.HandleFunc("GET /api/v1/claims/{id}/items", handler.GetClaimItems)
+	mux.HandleFunc("POST /api/v1/claims/{id}/items", handler.CreateClaimItem)
+
 	// Health routes
 	mux.HandleFunc("GET /health", handler.Health)
 	mux.HandleFunc("GET /ready", handler.Ready)

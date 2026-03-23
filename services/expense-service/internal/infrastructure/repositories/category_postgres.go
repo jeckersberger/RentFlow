@@ -66,7 +66,7 @@ func (r *CategoryPostgres) UpdateCategory(ctx context.Context, cat *domain.Expen
 
 func (r *CategoryPostgres) GetCategory(ctx context.Context, tenantID, categoryID string) (*domain.ExpenseCategory, error) {
 	query := `
-		SELECT id, tenant_id, name, skr03_code, skr04_code, is_default, created_at, updated_at
+		SELECT id, tenant_id, name, COALESCE(skr03_code, ''), COALESCE(skr04_code, ''), is_default, created_at, updated_at
 		FROM expenses.expense_categories
 		WHERE id = $1 AND tenant_id = $2
 	`
@@ -96,7 +96,7 @@ func (r *CategoryPostgres) ListCategories(ctx context.Context, tenantID string, 
 	}
 
 	query := `
-		SELECT id, tenant_id, name, skr03_code, skr04_code, is_default, created_at, updated_at
+		SELECT id, tenant_id, name, COALESCE(skr03_code, ''), COALESCE(skr04_code, ''), is_default, created_at, updated_at
 		FROM expenses.expense_categories
 		WHERE tenant_id = $1
 		ORDER BY created_at DESC

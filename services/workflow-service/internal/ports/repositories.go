@@ -62,7 +62,7 @@ func (r *postgresWorkflowDefinitionRepository) Create(ctx context.Context, wd *d
 
 func (r *postgresWorkflowDefinitionRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.WorkflowDefinition, error) {
 	query := `
-		SELECT id, tenant_id, name, description, trigger_type, trigger_config, is_active, is_template, template_category, version, created_at, updated_at
+		SELECT id, tenant_id, name, COALESCE(description, ''), trigger_type, COALESCE(trigger_config, '{}'::jsonb), is_active, COALESCE(is_template, false), COALESCE(template_category, ''), COALESCE(version, 1), created_at, updated_at
 		FROM workflow_definitions WHERE id = $1
 	`
 	wd := &domain.WorkflowDefinition{}
@@ -77,7 +77,7 @@ func (r *postgresWorkflowDefinitionRepository) GetByID(ctx context.Context, id u
 
 func (r *postgresWorkflowDefinitionRepository) ListByTenant(ctx context.Context, tenantID uuid.UUID) ([]*domain.WorkflowDefinition, error) {
 	query := `
-		SELECT id, tenant_id, name, description, trigger_type, trigger_config, is_active, is_template, template_category, version, created_at, updated_at
+		SELECT id, tenant_id, name, COALESCE(description, ''), trigger_type, COALESCE(trigger_config, '{}'::jsonb), is_active, COALESCE(is_template, false), COALESCE(template_category, ''), COALESCE(version, 1), created_at, updated_at
 		FROM workflow_definitions WHERE tenant_id = $1 ORDER BY created_at DESC
 	`
 	rows, err := r.db.QueryContext(ctx, query, tenantID)
@@ -101,7 +101,7 @@ func (r *postgresWorkflowDefinitionRepository) ListByTenant(ctx context.Context,
 
 func (r *postgresWorkflowDefinitionRepository) ListTemplates(ctx context.Context) ([]*domain.WorkflowDefinition, error) {
 	query := `
-		SELECT id, tenant_id, name, description, trigger_type, trigger_config, is_active, is_template, template_category, version, created_at, updated_at
+		SELECT id, tenant_id, name, COALESCE(description, ''), trigger_type, COALESCE(trigger_config, '{}'::jsonb), is_active, COALESCE(is_template, false), COALESCE(template_category, ''), COALESCE(version, 1), created_at, updated_at
 		FROM workflow_definitions WHERE is_template = true AND is_active = true ORDER BY template_category, name
 	`
 	rows, err := r.db.QueryContext(ctx, query)
@@ -161,7 +161,7 @@ func (r *postgresWorkflowInstanceRepository) Create(ctx context.Context, wi *dom
 
 func (r *postgresWorkflowInstanceRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.WorkflowInstance, error) {
 	query := `
-		SELECT id, tenant_id, definition_id, status, trigger_data, context_data, current_step_index, started_at, completed_at, error_message
+		SELECT id, tenant_id, definition_id, status, COALESCE(trigger_data, '{}'::jsonb), COALESCE(context_data, '{}'::jsonb), COALESCE(current_step_index, 0), started_at, completed_at, COALESCE(error_message, '')
 		FROM workflow_instances WHERE id = $1
 	`
 	wi := &domain.WorkflowInstance{}
@@ -176,7 +176,7 @@ func (r *postgresWorkflowInstanceRepository) GetByID(ctx context.Context, id uui
 
 func (r *postgresWorkflowInstanceRepository) ListByTenant(ctx context.Context, tenantID uuid.UUID) ([]*domain.WorkflowInstance, error) {
 	query := `
-		SELECT id, tenant_id, definition_id, status, trigger_data, context_data, current_step_index, started_at, completed_at, error_message
+		SELECT id, tenant_id, definition_id, status, COALESCE(trigger_data, '{}'::jsonb), COALESCE(context_data, '{}'::jsonb), COALESCE(current_step_index, 0), started_at, completed_at, COALESCE(error_message, '')
 		FROM workflow_instances WHERE tenant_id = $1 ORDER BY started_at DESC LIMIT 100
 	`
 	rows, err := r.db.QueryContext(ctx, query, tenantID)
@@ -200,7 +200,7 @@ func (r *postgresWorkflowInstanceRepository) ListByTenant(ctx context.Context, t
 
 func (r *postgresWorkflowInstanceRepository) ListByDefinition(ctx context.Context, definitionID uuid.UUID) ([]*domain.WorkflowInstance, error) {
 	query := `
-		SELECT id, tenant_id, definition_id, status, trigger_data, context_data, current_step_index, started_at, completed_at, error_message
+		SELECT id, tenant_id, definition_id, status, COALESCE(trigger_data, '{}'::jsonb), COALESCE(context_data, '{}'::jsonb), COALESCE(current_step_index, 0), started_at, completed_at, COALESCE(error_message, '')
 		FROM workflow_instances WHERE definition_id = $1 ORDER BY started_at DESC LIMIT 100
 	`
 	rows, err := r.db.QueryContext(ctx, query, definitionID)

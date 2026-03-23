@@ -78,9 +78,9 @@ func (r *ExpensePostgres) UpdateExpense(ctx context.Context, exp *domain.Expense
 
 func (r *ExpensePostgres) GetExpense(ctx context.Context, tenantID, expenseID string) (*domain.Expense, error) {
 	query := `
-		SELECT id, tenant_id, vendor, amount, currency, tax_rate, tax_amount, net_amount,
-		       category_code, date, payment_method, receipt_ref, ocr_data, status, project_id,
-		       approved_by, notes, created_at, updated_at
+		SELECT id, tenant_id, COALESCE(vendor, ''), amount, COALESCE(currency, 'EUR'), tax_rate, tax_amount, net_amount,
+		       COALESCE(category_code, ''), date, COALESCE(payment_method, ''), COALESCE(receipt_ref, ''), ocr_data, COALESCE(status, 'draft'), COALESCE(project_id, ''),
+		       COALESCE(approved_by, ''), COALESCE(notes, ''), created_at, updated_at
 		FROM expenses.expenses
 		WHERE id = $1 AND tenant_id = $2
 	`
@@ -115,9 +115,9 @@ func (r *ExpensePostgres) ListExpenses(ctx context.Context, tenantID string, lim
 	}
 
 	query := `
-		SELECT id, tenant_id, vendor, amount, currency, tax_rate, tax_amount, net_amount,
-		       category_code, date, payment_method, receipt_ref, ocr_data, status, project_id,
-		       approved_by, notes, created_at, updated_at
+		SELECT id, tenant_id, COALESCE(vendor, ''), amount, COALESCE(currency, 'EUR'), tax_rate, tax_amount, net_amount,
+		       COALESCE(category_code, ''), date, COALESCE(payment_method, ''), COALESCE(receipt_ref, ''), ocr_data, COALESCE(status, 'draft'), COALESCE(project_id, ''),
+		       COALESCE(approved_by, ''), COALESCE(notes, ''), created_at, updated_at
 		FROM expenses.expenses
 		WHERE tenant_id = $1
 		ORDER BY date DESC

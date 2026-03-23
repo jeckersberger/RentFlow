@@ -26,4 +26,8 @@ func SetupRoutes(
 	router.HandleFunc("GET /api/v1/audit/exports", handler.ListExports)
 	router.HandleFunc("GET /api/v1/audit/exports/{id}", handler.GetExport)
 	router.HandleFunc("GET /api/v1/audit/dashboard", handler.GetDashboard)
+
+	// Alias routes for frontend compatibility
+	router.HandleFunc("GET /api/v1/audit/logs", handler.ListEntries)
+	router.HandleFunc("POST /api/v1/audit/verify-chain", handler.VerifyChain)
 }

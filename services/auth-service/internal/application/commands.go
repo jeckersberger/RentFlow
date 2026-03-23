@@ -81,6 +81,17 @@ type AcceptInvitationCommand struct {
 	LastName  string `json:"last_name"`
 }
 
+// ForgotPasswordCommand represents a forgot password request
+type ForgotPasswordCommand struct {
+	Email string `json:"email"`
+}
+
+// ResetPasswordCommand represents a password reset using a token
+type ResetPasswordCommand struct {
+	Token       string `json:"token"`
+	NewPassword string `json:"new_password"`
+}
+
 // UpdateTenantCommand represents a tenant update command
 type UpdateTenantCommand struct {
 	TenantID        string  `json:"tenant_id"`

@@ -107,6 +107,16 @@ export const authApi = {
       ? mockDelay({ success: true })
       : api.put('/api/v1/auth/password', data).then(res => res.data),
 
+  forgotPassword: (email: string) =>
+    MOCK_MODE
+      ? mockDelay({ message: 'Reset link generated' })
+      : api.post('/api/v1/auth/forgot-password', { email }).then(res => res.data),
+
+  resetPassword: (token: string, new_password: string) =>
+    MOCK_MODE
+      ? mockDelay({ message: 'Password reset successfully' })
+      : api.post('/api/v1/auth/reset-password', { token, new_password }).then(res => res.data),
+
   getSessions: () =>
     MOCK_MODE
       ? mockDelay([
@@ -358,12 +368,32 @@ export const invoiceApi = {
   list: (page = 1, limit = 50) =>
     MOCK_MODE
       ? mockDelay({ data: mockInvoices.slice((page - 1) * limit, page * limit), total: mockInvoices.length, page, limit })
-      : api.get('/api/v1/invoices', { params: { page, limit } }).then(res => res.data),
+      : api.get('/api/v1/invoices', { params: { page, limit } }).then(res => {
+          const result = res.data
+          // Map backend DTO field names to frontend Invoice type
+          if (result && Array.isArray(result.data)) {
+            result.data = result.data.map((inv: any) => ({
+              ...inv,
+              number: inv.number || inv.invoice_number || '',
+              subtotal: inv.subtotal ?? inv.sub_total ?? 0,
+              tax_total: inv.tax_total ?? inv.tax_amount ?? 0,
+            }))
+          }
+          return result
+        }),
 
   getById: (id: string) =>
     MOCK_MODE
       ? mockDelay(mockInvoices.find(i => i.id === id) || mockInvoices[0])
-      : api.get(`/api/v1/invoices/${id}`).then(res => res.data),
+      : api.get(`/api/v1/invoices/${id}`).then(res => {
+          const inv = res.data
+          if (inv && typeof inv === 'object') {
+            inv.number = inv.number || inv.invoice_number || ''
+            inv.subtotal = inv.subtotal ?? inv.sub_total ?? 0
+            inv.tax_total = inv.tax_total ?? inv.tax_amount ?? 0
+          }
+          return inv
+        }),
 
   create: (data: object) =>
     MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()) }) : api.post('/api/v1/invoices', data).then(res => res.data),

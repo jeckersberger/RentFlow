@@ -76,18 +76,18 @@ func NewTourPostgres(db *database.PostgresPool) *TourPostgres {
 
 func (r *TourPostgres) Create(ctx context.Context, tour *domain.Tour) error {
 	query := `
-		INSERT INTO tours (id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, notes, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		INSERT INTO tours (id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, fuel_cost, delivery_note_number, delivery_note_generated_at, notes, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	`
-	_, err := r.db.Exec(ctx, query, tour.ID, tour.TenantID, tour.ProjectID, tour.VehicleID, tour.DriverID, tour.Status, tour.DepartureAt, tour.ArrivalAt, tour.KmStart, tour.KmEnd, tour.TotalCost, tour.Notes, tour.CreatedAt, tour.UpdatedAt)
+	_, err := r.db.Exec(ctx, query, tour.ID, tour.TenantID, tour.ProjectID, tour.VehicleID, tour.DriverID, tour.Status, tour.DepartureAt, tour.ArrivalAt, tour.KmStart, tour.KmEnd, tour.TotalCost, tour.FuelCost, tour.DeliveryNoteNumber, tour.DeliveryNoteGeneratedAt, tour.Notes, tour.CreatedAt, tour.UpdatedAt)
 	return err
 }
 
 func (r *TourPostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.Tour, error) {
-	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, notes, created_at, updated_at FROM tours WHERE id = $1 AND tenant_id = $2`
+	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, fuel_cost, delivery_note_number, delivery_note_generated_at, notes, created_at, updated_at FROM tours WHERE id = $1 AND tenant_id = $2`
 	row := r.db.QueryRow(ctx, query, id, tenantID)
 	tour := &domain.Tour{}
-	err := row.Scan(&tour.ID, &tour.TenantID, &tour.ProjectID, &tour.VehicleID, &tour.DriverID, &tour.Status, &tour.DepartureAt, &tour.ArrivalAt, &tour.KmStart, &tour.KmEnd, &tour.TotalCost, &tour.Notes, &tour.CreatedAt, &tour.UpdatedAt)
+	err := row.Scan(&tour.ID, &tour.TenantID, &tour.ProjectID, &tour.VehicleID, &tour.DriverID, &tour.Status, &tour.DepartureAt, &tour.ArrivalAt, &tour.KmStart, &tour.KmEnd, &tour.TotalCost, &tour.FuelCost, &tour.DeliveryNoteNumber, &tour.DeliveryNoteGeneratedAt, &tour.Notes, &tour.CreatedAt, &tour.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (r *TourPostgres) GetByID(ctx context.Context, tenantID, id string) (*domai
 }
 
 func (r *TourPostgres) ListByTenant(ctx context.Context, tenantID string) ([]*domain.Tour, error) {
-	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, notes, created_at, updated_at FROM tours WHERE tenant_id = $1 ORDER BY created_at DESC`
+	query := `SELECT id, tenant_id, project_id, vehicle_id, driver_id, status, departure_at, arrival_at, km_start, km_end, total_cost, fuel_cost, delivery_note_number, delivery_note_generated_at, notes, created_at, updated_at FROM tours WHERE tenant_id = $1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query, tenantID)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (r *TourPostgres) ListByTenant(ctx context.Context, tenantID string) ([]*do
 	var tours []*domain.Tour
 	for rows.Next() {
 		t := &domain.Tour{}
-		if err := rows.Scan(&t.ID, &t.TenantID, &t.ProjectID, &t.VehicleID, &t.DriverID, &t.Status, &t.DepartureAt, &t.ArrivalAt, &t.KmStart, &t.KmEnd, &t.TotalCost, &t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.TenantID, &t.ProjectID, &t.VehicleID, &t.DriverID, &t.Status, &t.DepartureAt, &t.ArrivalAt, &t.KmStart, &t.KmEnd, &t.TotalCost, &t.FuelCost, &t.DeliveryNoteNumber, &t.DeliveryNoteGeneratedAt, &t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, err
 		}
 		tours = append(tours, t)
@@ -114,8 +114,8 @@ func (r *TourPostgres) ListByTenant(ctx context.Context, tenantID string) ([]*do
 }
 
 func (r *TourPostgres) Update(ctx context.Context, tour *domain.Tour) error {
-	query := `UPDATE tours SET status = $1, departure_at = $2, arrival_at = $3, km_start = $4, km_end = $5, total_cost = $6, notes = $7, updated_at = $8 WHERE id = $9 AND tenant_id = $10`
-	_, err := r.db.Exec(ctx, query, tour.Status, tour.DepartureAt, tour.ArrivalAt, tour.KmStart, tour.KmEnd, tour.TotalCost, tour.Notes, tour.UpdatedAt, tour.ID, tour.TenantID)
+	query := `UPDATE tours SET status = $1, departure_at = $2, arrival_at = $3, km_start = $4, km_end = $5, total_cost = $6, fuel_cost = $7, delivery_note_number = $8, delivery_note_generated_at = $9, notes = $10, updated_at = $11 WHERE id = $12 AND tenant_id = $13`
+	_, err := r.db.Exec(ctx, query, tour.Status, tour.DepartureAt, tour.ArrivalAt, tour.KmStart, tour.KmEnd, tour.TotalCost, tour.FuelCost, tour.DeliveryNoteNumber, tour.DeliveryNoteGeneratedAt, tour.Notes, tour.UpdatedAt, tour.ID, tour.TenantID)
 	return err
 }
 
@@ -196,18 +196,18 @@ func NewDriverLogPostgres(db *database.PostgresPool) *DriverLogPostgres {
 
 func (r *DriverLogPostgres) Create(ctx context.Context, log *domain.DriverLog) error {
 	query := `
-		INSERT INTO driver_logs (id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, notes, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO driver_logs (id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, activity_type, rest_minutes, location_start, location_end, notes, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	`
-	_, err := r.db.Exec(ctx, query, log.ID, log.TourID, log.DriverID, log.StartTime, log.EndTime, log.BreakMinutes, log.KmDriven, log.Notes, log.CreatedAt, log.UpdatedAt)
+	_, err := r.db.Exec(ctx, query, log.ID, log.TourID, log.DriverID, log.StartTime, log.EndTime, log.BreakMinutes, log.KmDriven, log.ActivityType, log.RestMinutes, log.LocationStart, log.LocationEnd, log.Notes, log.CreatedAt, log.UpdatedAt)
 	return err
 }
 
 func (r *DriverLogPostgres) GetByID(ctx context.Context, id string) (*domain.DriverLog, error) {
-	query := `SELECT id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, notes, created_at, updated_at FROM driver_logs WHERE id = $1`
+	query := `SELECT id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, activity_type, rest_minutes, location_start, location_end, notes, created_at, updated_at FROM driver_logs WHERE id = $1`
 	row := r.db.QueryRow(ctx, query, id)
 	log := &domain.DriverLog{}
-	err := row.Scan(&log.ID, &log.TourID, &log.DriverID, &log.StartTime, &log.EndTime, &log.BreakMinutes, &log.KmDriven, &log.Notes, &log.CreatedAt, &log.UpdatedAt)
+	err := row.Scan(&log.ID, &log.TourID, &log.DriverID, &log.StartTime, &log.EndTime, &log.BreakMinutes, &log.KmDriven, &log.ActivityType, &log.RestMinutes, &log.LocationStart, &log.LocationEnd, &log.Notes, &log.CreatedAt, &log.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (r *DriverLogPostgres) GetByID(ctx context.Context, id string) (*domain.Dri
 }
 
 func (r *DriverLogPostgres) ListByTour(ctx context.Context, tourID string) ([]*domain.DriverLog, error) {
-	query := `SELECT id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, notes, created_at, updated_at FROM driver_logs WHERE tour_id = $1 ORDER BY start_time ASC`
+	query := `SELECT id, tour_id, driver_id, start_time, end_time, break_minutes, km_driven, activity_type, rest_minutes, location_start, location_end, notes, created_at, updated_at FROM driver_logs WHERE tour_id = $1 ORDER BY start_time ASC`
 	rows, err := r.db.Query(ctx, query, tourID)
 	if err != nil {
 		return nil, err
@@ -225,7 +225,7 @@ func (r *DriverLogPostgres) ListByTour(ctx context.Context, tourID string) ([]*d
 	var logs []*domain.DriverLog
 	for rows.Next() {
 		l := &domain.DriverLog{}
-		if err := rows.Scan(&l.ID, &l.TourID, &l.DriverID, &l.StartTime, &l.EndTime, &l.BreakMinutes, &l.KmDriven, &l.Notes, &l.CreatedAt, &l.UpdatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.TourID, &l.DriverID, &l.StartTime, &l.EndTime, &l.BreakMinutes, &l.KmDriven, &l.ActivityType, &l.RestMinutes, &l.LocationStart, &l.LocationEnd, &l.Notes, &l.CreatedAt, &l.UpdatedAt); err != nil {
 			return nil, err
 		}
 		logs = append(logs, l)
@@ -234,7 +234,7 @@ func (r *DriverLogPostgres) ListByTour(ctx context.Context, tourID string) ([]*d
 }
 
 func (r *DriverLogPostgres) Update(ctx context.Context, log *domain.DriverLog) error {
-	query := `UPDATE driver_logs SET end_time = $1, break_minutes = $2, km_driven = $3, notes = $4, updated_at = $5 WHERE id = $6`
-	_, err := r.db.Exec(ctx, query, log.EndTime, log.BreakMinutes, log.KmDriven, log.Notes, log.UpdatedAt, log.ID)
+	query := `UPDATE driver_logs SET end_time = $1, break_minutes = $2, km_driven = $3, activity_type = $4, rest_minutes = $5, location_start = $6, location_end = $7, notes = $8, updated_at = $9 WHERE id = $10`
+	_, err := r.db.Exec(ctx, query, log.EndTime, log.BreakMinutes, log.KmDriven, log.ActivityType, log.RestMinutes, log.LocationStart, log.LocationEnd, log.Notes, log.UpdatedAt, log.ID)
 	return err
 }

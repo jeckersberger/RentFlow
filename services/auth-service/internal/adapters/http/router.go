@@ -48,6 +48,8 @@ func SetupRoutes(
 
 	mux.HandleFunc("POST /api/v1/auth/register", handlers.Register)
 	mux.HandleFunc("POST /api/v1/auth/refresh", handlers.Refresh)
+	mux.HandleFunc("POST /api/v1/auth/forgot-password", handlers.ForgotPassword)
+	mux.HandleFunc("POST /api/v1/auth/reset-password", handlers.ResetPassword)
 
 	// Authenticated routes - use a wrapper that supports RS256
 	authMiddleware := createRS256Middleware(tokenMgr.PublicKeyPEM(), log)

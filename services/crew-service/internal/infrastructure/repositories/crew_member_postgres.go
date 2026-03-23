@@ -25,8 +25,8 @@ func NewPostgresCrewMemberRepository(db *sql.DB, log logger.Logger) *PostgresCre
 // FindByID retrieves a crew member by ID
 func (r *PostgresCrewMemberRepository) FindByID(ctx context.Context, id string) (*domain.CrewMember, error) {
 	query := `
-		SELECT id, tenant_id, first_name, last_name, email, phone, role, status,
-		       hourly_rate, daily_rate, preferred_vehicle_id, emergency_contact, notes,
+		SELECT id, tenant_id, first_name, last_name, email, COALESCE(phone, ''), role, status,
+		       hourly_rate, daily_rate, preferred_vehicle_id, COALESCE(emergency_contact, ''), COALESCE(notes, ''),
 		       created_at, updated_at
 		FROM crew_members
 		WHERE id = $1
@@ -55,8 +55,8 @@ func (r *PostgresCrewMemberRepository) FindByID(ctx context.Context, id string) 
 // FindByEmail retrieves a crew member by email within a tenant
 func (r *PostgresCrewMemberRepository) FindByEmail(ctx context.Context, tenantID, email string) (*domain.CrewMember, error) {
 	query := `
-		SELECT id, tenant_id, first_name, last_name, email, phone, role, status,
-		       hourly_rate, daily_rate, preferred_vehicle_id, emergency_contact, notes,
+		SELECT id, tenant_id, first_name, last_name, email, COALESCE(phone, ''), role, status,
+		       hourly_rate, daily_rate, preferred_vehicle_id, COALESCE(emergency_contact, ''), COALESCE(notes, ''),
 		       created_at, updated_at
 		FROM crew_members
 		WHERE tenant_id = $1 AND email = $2
@@ -96,8 +96,8 @@ func (r *PostgresCrewMemberRepository) List(ctx context.Context, tenantID string
 
 	// Get paginated results
 	query := `
-		SELECT id, tenant_id, first_name, last_name, email, phone, role, status,
-		       hourly_rate, daily_rate, preferred_vehicle_id, emergency_contact, notes,
+		SELECT id, tenant_id, first_name, last_name, email, COALESCE(phone, ''), role, status,
+		       hourly_rate, daily_rate, preferred_vehicle_id, COALESCE(emergency_contact, ''), COALESCE(notes, ''),
 		       created_at, updated_at
 		FROM crew_members
 		WHERE tenant_id = $1

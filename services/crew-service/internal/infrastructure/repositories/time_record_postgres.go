@@ -26,7 +26,7 @@ func NewPostgresTimeRecordRepository(db *sql.DB, log logger.Logger) *PostgresTim
 func (r *PostgresTimeRecordRepository) FindByID(ctx context.Context, id string) (*domain.TimeRecord, error) {
 	query := `
 		SELECT id, tenant_id, crew_member_id, assignment_id, date, start_time,
-		       end_time, break_minutes, overtime_minutes, status, notes, created_at, updated_at
+		       end_time, COALESCE(break_minutes, 0), COALESCE(overtime_minutes, 0), status, COALESCE(notes, ''), created_at, updated_at
 		FROM time_records
 		WHERE id = $1
 	`
@@ -54,7 +54,7 @@ func (r *PostgresTimeRecordRepository) FindByID(ctx context.Context, id string) 
 func (r *PostgresTimeRecordRepository) ListByCrewMember(ctx context.Context, crewMemberID string) ([]*domain.TimeRecord, error) {
 	query := `
 		SELECT id, tenant_id, crew_member_id, assignment_id, date, start_time,
-		       end_time, break_minutes, overtime_minutes, status, notes, created_at, updated_at
+		       end_time, COALESCE(break_minutes, 0), COALESCE(overtime_minutes, 0), status, COALESCE(notes, ''), created_at, updated_at
 		FROM time_records
 		WHERE crew_member_id = $1
 		ORDER BY date DESC, start_time DESC
@@ -94,7 +94,7 @@ func (r *PostgresTimeRecordRepository) ListByCrewMember(ctx context.Context, cre
 func (r *PostgresTimeRecordRepository) ListByCrewMemberAndDate(ctx context.Context, crewMemberID string, date interface{}) ([]*domain.TimeRecord, error) {
 	query := `
 		SELECT id, tenant_id, crew_member_id, assignment_id, date, start_time,
-		       end_time, break_minutes, overtime_minutes, status, notes, created_at, updated_at
+		       end_time, COALESCE(break_minutes, 0), COALESCE(overtime_minutes, 0), status, COALESCE(notes, ''), created_at, updated_at
 		FROM time_records
 		WHERE crew_member_id = $1 AND date = $2
 		ORDER BY start_time DESC

@@ -16,6 +16,8 @@ import { CommandPalette } from './components/CommandPalette/CommandPalette'
 import { ShortcutsHelp } from './components/ShortcutsHelp/ShortcutsHelp'
 import { KeyboardShortcutsProvider } from './components/KeyboardShortcutsProvider'
 import LoginPage from './pages/Login'
+import ForgotPasswordPage from './pages/ForgotPassword'
+import ResetPasswordPage from './pages/ResetPassword'
 import SetupWizard from './pages/Setup/SetupWizard'
 import DashboardPage from './pages/Dashboard'
 
@@ -205,6 +207,8 @@ function App() {
           <Routes>
           <Route path="/setup" element={<SetupWizard />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
           <Route
             path="/*"

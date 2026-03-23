@@ -28,4 +28,7 @@ func SetupRoutes(mux *http.ServeMux, reportService *application.ReportService, k
 	mux.HandleFunc("GET /api/v1/reports/kpi/dashboard-by-role", handler.GetKPIDashboardByRole)
 	mux.HandleFunc("GET /api/v1/reports/kpi/trends", handler.GetKPITrends)
 	mux.HandleFunc("GET /api/v1/reports/kpi/snapshot", handler.GetKPISnapshot)
+
+	// Alias route for frontend compatibility
+	mux.HandleFunc("GET /api/v1/reports/revenue", handler.GetKPIDashboard)
 }

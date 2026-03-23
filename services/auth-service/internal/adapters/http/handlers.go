@@ -631,6 +631,59 @@ func (h *Handlers) ListInvitations(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, invitations)
 }
 
+// ForgotPassword handles forgot password requests
+func (h *Handlers) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	var cmd application.ForgotPasswordCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	// Always return success to avoid email enumeration
+	_, err := h.userService.ForgotPassword(r.Context(), cmd)
+	if err != nil {
+		h.logger.Error("forgot password error", err)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "If an account with that email exists, a password reset link has been generated. Check the server logs.",
+	})
+}
+
+// ResetPassword handles password reset with token
+func (h *Handlers) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	var cmd application.ResetPasswordCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	if cmd.Token == "" || cmd.NewPassword == "" {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Token and new password are required")
+		return
+	}
+
+	if err := h.userService.ResetPassword(r.Context(), cmd); err != nil {
+		h.logger.Warn("reset password error", "error", err.Error())
+		writeError(w, http.StatusBadRequest, "RESET_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Password has been reset successfully",
+	})
+}
+
 // Helper functions
 
 func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {

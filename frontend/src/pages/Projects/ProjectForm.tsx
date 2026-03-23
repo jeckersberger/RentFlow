@@ -81,10 +81,16 @@ function ProjectFormPage() {
 
   const { mutate: saveProject, isPending } = useMutation({
     mutationFn: async () => {
+      // Convert date strings to ISO 8601 for Go backend
+      const payload = {
+        ...formData,
+        start_date: formData.start_date ? new Date(formData.start_date).toISOString() : undefined,
+        end_date: formData.end_date ? new Date(formData.end_date).toISOString() : undefined,
+      }
       if (isEditing && id) {
-        return projectApi.update(id, formData)
+        return projectApi.update(id, payload)
       } else {
-        return projectApi.create(formData)
+        return projectApi.create(payload)
       }
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

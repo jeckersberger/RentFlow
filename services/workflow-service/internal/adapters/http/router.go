@@ -35,4 +35,10 @@ func SetupRoutes(
 	// Trigger & Dashboard
 	router.HandleFunc("POST /api/v1/workflows/trigger", h.TriggerWorkflow)
 	router.HandleFunc("GET /api/v1/workflows/dashboard", h.GetDashboard)
+
+	// Alias routes for frontend compatibility (without /definitions sub-path)
+	router.HandleFunc("GET /api/v1/workflows", h.ListDefinitions)
+	router.HandleFunc("POST /api/v1/workflows", h.CreateDefinition)
+	router.HandleFunc("GET /api/v1/workflows/{id}", h.GetDefinition)
+	router.HandleFunc("POST /api/v1/workflows/{id}/execute", h.InstantiateWorkflow)
 }
