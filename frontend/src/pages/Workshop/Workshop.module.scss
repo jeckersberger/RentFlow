@@ -492,3 +492,142 @@
   transition: all var(--transition-fast);
   &:hover { background: rgba(0, 212, 255, 0.06); border-color: rgba(0, 212, 255, 0.3); color: var(--color-primary); }
 }
+
+// Section headers within tabs
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-4) var(--spacing-4) var(--spacing-2) var(--spacing-4);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.btnSmallPrimary {
+  background: linear-gradient(135deg, #00d4ff 0%, #8b5cf6 100%);
+  color: #0a0f1a;
+  border: none;
+  border-radius: var(--radius-button);
+  padding: var(--spacing-1) var(--spacing-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  &:hover { box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3); transform: translateY(-1px); }
+}
+
+.btnSmallSecondary {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  &:hover { background: rgba(0, 212, 255, 0.06); border-color: rgba(0, 212, 255, 0.3); color: var(--color-primary); }
+}
+
+.emptyStateCompact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-6) var(--spacing-4);
+}
+
+// Wide modal for E-Check form
+.modalWide {
+  @include card-glass;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-modal);
+  animation: slideUp 0.2s ease;
+}
+
+// Form layout helpers
+.formRow {
+  display: flex;
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
+  > * { flex: 1; min-width: 180px; }
+}
+
+.formSectionLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  padding-top: var(--spacing-2);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+// Radio group for E-Check result
+.radioGroup {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  &:hover { border-color: rgba(0, 212, 255, 0.3); }
+}
+
+.radioLabelActive {
+  border-color: var(--color-primary);
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--color-primary);
+}
+
+.radioInput {
+  accent-color: var(--color-primary);
+}
+
+// Checkbox
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.checkboxInput {
+  accent-color: var(--color-primary);
+  width: 16px;
+  height: 16px;
+}
+
+// Measurement display in table
+.measurementCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.measurement {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-family: monospace;
+  white-space: nowrap;
+}

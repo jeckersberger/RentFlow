@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { equipmentApi, categoryApi } from '../../services/api'
+import { equipmentApi, categoryApi, maintenanceApi } from '../../services/api'
+import type { ElectricalTest } from '../../types/maintenance'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
@@ -254,6 +255,15 @@ function EquipmentDetailPage() {
     queryFn: () => categoryApi.list() as Promise<Category[]>,
     staleTime: 1000 * 60 * 10,
   })
+
+  const { data: eTestsData } = useQuery({
+    queryKey: ['electrical-tests', id],
+    queryFn: () => maintenanceApi.listElectricalTests(1, 50, id!),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const electricalTests: ElectricalTest[] = eTestsData?.items || eTestsData?.data || (Array.isArray(eTestsData) ? eTestsData : [])
 
   const { mutate: changeStatus, isPending } = useMutation<unknown, unknown, string, { previous: unknown }>({
     mutationFn: async (status) => {
@@ -729,6 +739,73 @@ function EquipmentDetailPage() {
           {id && <AvailabilityCalendar equipmentId={id} />}
         </div>
       </div>
+
+      {/* E-Check / DGUV V3 Historie */}
+      {electricalTests.length > 0 && (
+        <div className="detail-card" style={{ marginTop: 'var(--spacing-4)' }}>
+          <h2 className="detail-card__title">E-Check / DGUV V3 Historie</h2>
+          <div className="detail-card__content">
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)' }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', fontWeight: 600, color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-border)' }}>Prüfdatum</th>
+                  <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', fontWeight: 600, color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-border)' }}>Norm</th>
+                  <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', fontWeight: 600, color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-border)' }}>Ergebnis</th>
+                  <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', fontWeight: 600, color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-border)' }}>Messwerte</th>
+                  <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', fontWeight: 600, color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-border)' }}>Prüfer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {electricalTests.map((test: ElectricalTest) => {
+                  const resultLabel = test.result === 'passed' ? 'Bestanden' : test.result === 'failed' ? 'Nicht bestanden' : 'Bedingt bestanden'
+                  const resultColor = test.result === 'passed' ? 'var(--color-success)' : test.result === 'failed' ? 'var(--color-danger)' : 'var(--color-warning)'
+                  const resultBg = test.result === 'passed' ? 'rgba(16, 185, 129, 0.15)' : test.result === 'failed' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)'
+                  return (
+                    <tr key={test.id} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
+                      <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-primary)' }}>
+                        {new Date(test.test_date).toLocaleDateString('de-DE')}
+                        {test.next_test_date && (
+                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                            Nächste: {new Date(test.next_test_date).toLocaleDateString('de-DE')}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-secondary)' }}>
+                        {test.test_type === 'vde_0701' ? 'VDE 0701' : 'VDE 0702'}
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2) var(--spacing-3)' }}>
+                        <span style={{
+                          display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px',
+                          fontSize: 'var(--font-size-xs)', fontWeight: 600, color: resultColor, background: resultBg,
+                        }}>
+                          {resultLabel}
+                        </span>
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', fontFamily: 'monospace', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                        {test.insulation_resistance_mohm != null && <div>Iso: {test.insulation_resistance_mohm} MOhm</div>}
+                        {test.protective_conductor_resistance_ohm != null && <div>SL: {test.protective_conductor_resistance_ohm} Ohm</div>}
+                        {test.leakage_current_ma != null && <div>Abl: {test.leakage_current_ma} mA</div>}
+                        {test.insulation_resistance_mohm == null && test.protective_conductor_resistance_ohm == null && test.leakage_current_ma == null && '—'}
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-secondary)' }}>
+                        {test.tester_id}
+                        {test.certificate_number && (
+                          <div style={{ fontSize: 'var(--font-size-xs)', fontFamily: 'monospace' }}>{test.certificate_number}</div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            {electricalTests[0]?.notes && (
+              <div style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', borderTop: '1px solid var(--color-border-subtle)' }}>
+                Letzte Bemerkung: {electricalTests[0].notes}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Status Change Modal */}
       <Modal

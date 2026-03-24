@@ -218,6 +218,7 @@ export default defineConfig({
       // Insurance → insurance-service
       '/api/v1/policies': { target: 'http://localhost:8012', changeOrigin: true },
       '/api/v1/claims': { target: 'http://localhost:8012', changeOrigin: true },
+      '/api/v1/insurance': { target: 'http://localhost:8012', changeOrigin: true },
       // Workflows → workflow-service
       '/api/v1/workflows': { target: 'http://localhost:8013', changeOrigin: true },
       // AI → ai-service

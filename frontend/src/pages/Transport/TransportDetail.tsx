@@ -87,6 +87,7 @@ function TransportDetailPage() {
     queryFn: () => transportApi.getVehicle(id!),
     enabled: isVehicleDetail && !!id,
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 
   // Vehicle Tours Query
@@ -95,6 +96,7 @@ function TransportDetailPage() {
     queryFn: () => transportApi.listTours(),
     enabled: isVehicleDetail && !!id,
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 
   // Tour Detail Query
@@ -109,6 +111,7 @@ function TransportDetailPage() {
       }
     },
     enabled: !isVehicleDetail && !!id,
+    retry: 1,
   })
 
   // Vehicle Detail View
