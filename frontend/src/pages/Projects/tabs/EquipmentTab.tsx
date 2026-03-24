@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
-import { api, reservationApi } from '../../../services/api'
+import { api, equipmentApi, reservationApi } from '../../../services/api'
 import { getStatusLabel } from '../../../utils/statusLabels'
 import { PackingListTab } from './PackingListTab'
 import styles from '../ProjectDetail.module.scss'
@@ -34,16 +34,57 @@ interface ConflictInfo {
   status: string
 }
 
+interface EquipmentItem {
+  id: string
+  name: string
+  sku?: string
+  category_name?: string
+  category_id?: string
+  status?: string
+  daily_rate?: number
+  replacement_cost?: number
+}
+
 export function EquipmentTab({ project }: EquipmentTabProps) {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [showPackingList, setShowPackingList] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [addEquipmentId, setAddEquipmentId] = useState('')
+  const [addQuantity, setAddQuantity] = useState(1)
+  const [equipmentSearch, setEquipmentSearch] = useState('')
   const [isCheckingConflicts, setIsCheckingConflicts] = useState(false)
   const [conflicts, setConflicts] = useState<ConflictInfo[]>([])
   const [showConflictWarning, setShowConflictWarning] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
+
+  // Fetch all equipment for the picker
+  const { data: allEquipmentRaw } = useQuery({
+    queryKey: ['equipment-for-picker'],
+    queryFn: () => equipmentApi.list({ limit: 200 }),
+    enabled: showAddModal,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const allEquipment: EquipmentItem[] = useMemo(() => {
+    if (!allEquipmentRaw) return []
+    const raw = allEquipmentRaw?.data || allEquipmentRaw?.items || allEquipmentRaw
+    return Array.isArray(raw) ? raw : []
+  }, [allEquipmentRaw])
+
+  const filteredEquipment = useMemo(() => {
+    if (!equipmentSearch.trim()) return allEquipment
+    const q = equipmentSearch.toLowerCase()
+    return allEquipment.filter((e) =>
+      (e.name || '').toLowerCase().includes(q) ||
+      (e.sku || '').toLowerCase().includes(q) ||
+      (e.category_name || '').toLowerCase().includes(q)
+    )
+  }, [allEquipment, equipmentSearch])
+
+  const selectedEquipment = useMemo(() => {
+    return allEquipment.find((e) => e.id === addEquipmentId)
+  }, [allEquipment, addEquipmentId])
 
   const { data: reservations = [], isLoading, error } = useQuery({
     queryKey: ['project-reservations', project.id],
@@ -145,6 +186,8 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
   const handleCloseModal = () => {
     setShowAddModal(false)
     setAddEquipmentId('')
+    setAddQuantity(1)
+    setEquipmentSearch('')
     setConflicts([])
     setShowConflictWarning(false)
   }
@@ -209,35 +252,142 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
               background: 'var(--color-bg-secondary, #1a1a2e)',
               borderRadius: 'var(--radius-lg, 12px)',
               padding: 'var(--spacing-6, 1.5rem)',
-              minWidth: '400px',
-              maxWidth: '500px',
+              minWidth: '500px',
+              maxWidth: '650px',
+              maxHeight: '80vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
               border: '1px solid rgba(255,255,255,0.1)',
             }}
           >
             <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Equipment hinzufuegen</h3>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                Equipment-ID
-              </label>
+            {/* Search input */}
+            <div style={{ marginBottom: '0.75rem' }}>
               <input
                 type="text"
-                value={addEquipmentId}
-                onChange={(e) => setAddEquipmentId(e.target.value)}
-                placeholder="z.B. eq-123 oder Equipment-ID eingeben"
+                value={equipmentSearch}
+                onChange={(e) => setEquipmentSearch(e.target.value)}
+                placeholder="Equipment suchen (Name, SKU, Kategorie)..."
+                autoFocus
                 style={{
                   width: '100%',
-                  padding: '0.5rem',
+                  padding: '0.6rem 0.75rem',
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: '6px',
                   color: 'inherit',
                   boxSizing: 'border-box',
+                  fontSize: '0.9rem',
                 }}
               />
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
+            {/* Equipment list */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              maxHeight: '300px',
+              marginBottom: '0.75rem',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '6px',
+            }}>
+              {filteredEquipment.length === 0 ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                  {allEquipment.length === 0 ? 'Equipment wird geladen...' : 'Kein Equipment gefunden'}
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'sticky', top: 0, background: 'var(--color-bg-secondary, #1a1a2e)' }}>
+                      <th style={{ padding: '0.5rem 0.5rem', textAlign: 'left', fontWeight: 600 }}>Name</th>
+                      <th style={{ padding: '0.5rem 0.5rem', textAlign: 'left', fontWeight: 600 }}>SKU</th>
+                      <th style={{ padding: '0.5rem 0.5rem', textAlign: 'left', fontWeight: 600 }}>Kategorie</th>
+                      <th style={{ padding: '0.5rem 0.5rem', textAlign: 'center', fontWeight: 600 }}>Status</th>
+                      <th style={{ padding: '0.5rem 0.5rem', textAlign: 'right', fontWeight: 600 }}>Tagespreis</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEquipment.map((eq) => (
+                      <tr
+                        key={eq.id}
+                        onClick={() => setAddEquipmentId(eq.id)}
+                        style={{
+                          cursor: 'pointer',
+                          borderBottom: '1px solid rgba(255,255,255,0.04)',
+                          background: addEquipmentId === eq.id ? 'rgba(0, 212, 255, 0.12)' : 'transparent',
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={(e) => { if (addEquipmentId !== eq.id) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                        onMouseLeave={(e) => { if (addEquipmentId !== eq.id) e.currentTarget.style.background = 'transparent' }}
+                      >
+                        <td style={{ padding: '0.45rem 0.5rem', fontWeight: addEquipmentId === eq.id ? 600 : 400 }}>{eq.name}</td>
+                        <td style={{ padding: '0.45rem 0.5rem', color: 'var(--color-text-muted)', fontFamily: 'monospace', fontSize: '0.78rem' }}>{eq.sku || '\u2014'}</td>
+                        <td style={{ padding: '0.45rem 0.5rem', color: 'var(--color-text-secondary)' }}>{eq.category_name || '\u2014'}</td>
+                        <td style={{ padding: '0.45rem 0.5rem', textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '2px 8px',
+                            borderRadius: '999px',
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                            background: eq.status === 'available' ? 'rgba(16,185,129,0.15)' : eq.status === 'rented' ? 'rgba(245,158,11,0.15)' : 'rgba(0,212,255,0.1)',
+                            color: eq.status === 'available' ? 'var(--color-success, #10b981)' : eq.status === 'rented' ? '#f59e0b' : 'var(--color-primary, #00d4ff)',
+                          }}>
+                            {getStatusLabel(eq.status || 'available')}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right' }}>
+                          {eq.daily_rate ? `\u20AC${eq.daily_rate.toFixed(2)}` : '\u2014'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Selected equipment info & quantity */}
+            {selectedEquipment && (
+              <div style={{
+                marginBottom: '0.75rem',
+                padding: '0.6rem 0.75rem',
+                background: 'rgba(0, 212, 255, 0.08)',
+                borderRadius: '6px',
+                border: '1px solid rgba(0, 212, 255, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+              }}>
+                <div style={{ fontSize: '0.85rem' }}>
+                  <strong>{selectedEquipment.name}</strong>
+                  {selectedEquipment.sku && <span style={{ marginLeft: '0.5rem', color: 'var(--color-text-muted)', fontFamily: 'monospace', fontSize: '0.78rem' }}>{selectedEquipment.sku}</span>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>Menge:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={addQuantity}
+                    onChange={(e) => setAddQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    style={{
+                      width: '60px',
+                      padding: '0.3rem 0.4rem',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '4px',
+                      color: 'inherit',
+                      textAlign: 'center',
+                      fontSize: '0.85rem',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: '0.75rem' }}>
               <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
                 Zeitraum
               </label>

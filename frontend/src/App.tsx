@@ -102,8 +102,12 @@ const ReportsPage = lazy(() => import('./pages/Reports/ReportsPage'))
 // Contacts Pages
 const ContactsPage = lazy(() => import('./pages/Contacts/ContactsPage'))
 
+// Expenses Pages
+const ExpensesPage = lazy(() => import('./pages/Expenses/ExpensesPage'))
+
 // Quotes Pages
 const QuotesPage = lazy(() => import('./pages/Quotes/QuotesPage'))
+const QuoteNewPage = lazy(() => import('./pages/Quotes/QuoteNew'))
 const QuoteDetailPage = lazy(() => import('./pages/Quotes/QuoteDetail'))
 
 // Real Pages (formerly placeholders)
@@ -261,10 +265,14 @@ function App() {
 
             {/* Quotes */}
             <Route path="quotes" element={<QuotesPage />} />
+            <Route path="quotes/new" element={<QuoteNewPage />} />
             <Route path="quotes/:id" element={<QuoteDetailPage />} />
 
             {/* Contacts */}
             <Route path="contacts" element={<ContactsPage />} />
+
+            {/* Expenses */}
+            <Route path="expenses" element={<ExpensesPage />} />
 
             {/* Transport Routes */}
             <Route path="transport" element={<TransportPage />} />

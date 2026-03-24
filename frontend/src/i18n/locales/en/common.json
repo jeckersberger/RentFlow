@@ -56,6 +56,7 @@
     "transport": "Transport",
     "quotes": "Quotes",
     "invoices": "Invoices",
+    "expenses": "Expenses",
     "contacts": "Contacts",
     "compose": "Compose",
     "inbox": "Inbox",

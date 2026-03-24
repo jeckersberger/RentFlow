@@ -18,6 +18,7 @@ import {
   Truck,
   FileText,
   Receipt,
+  CreditCard,
   Contact,
   Inbox,
   Send,
@@ -86,6 +87,7 @@ const navGroups: NavGroup[] = [
     items: [
       { labelKey: 'nav.quotes', href: '/quotes', icon: FileText },
       { labelKey: 'nav.invoices', href: '/invoices', icon: Receipt },
+      { labelKey: 'nav.expenses', href: '/expenses', icon: CreditCard },
       { labelKey: 'nav.contacts', href: '/contacts', icon: Contact },
     ],
   },
@@ -118,7 +120,7 @@ const navGroups: NavGroup[] = [
 const MODULE_NAV_PATHS: Record<string, string[]> = {
   warehouse: ['/', '/equipment', '/scanner', '/warehouse'],
   projects: ['/projects', '/calendar', '/shortages'],
-  finance: ['/invoices', '/quotes', '/contacts'],
+  finance: ['/invoices', '/quotes', '/contacts', '/expenses'],
   team: ['/crew', '/time-tracking', '/transport'],
   communication: ['/mail/compose', '/mail/inbox', '/mail/sent'],
   workshop: ['/workshop'],
