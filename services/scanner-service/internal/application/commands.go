@@ -60,6 +60,13 @@ type ProcessSessionScanCommand struct {
 	Notes       string
 }
 
+type AdhocBookingCommand struct {
+	TenantID    string
+	EquipmentID string
+	ProjectID   string
+	Notes       string
+}
+
 type SyncOfflineQueueCommand struct {
 	TenantID string
 	Items    []struct {

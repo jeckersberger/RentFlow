@@ -71,6 +71,15 @@ type BulkAction struct {
 	Timestamp        string                        `json:"timestamp,omitempty"`
 }
 
+// AdhocBookingResult is the response for POST /api/v1/scanner/adhoc-booking
+type AdhocBookingResult struct {
+	Success     bool   `json:"success"`
+	EquipmentID string `json:"equipment_id"`
+	ProjectID   string `json:"project_id"`
+	CheckedOut  int    `json:"checked_out"`
+	Notes       string `json:"notes"`
+}
+
 // BulkResult is the response for POST /api/v1/scanner/bulk
 type BulkResult struct {
 	Processed int               `json:"processed"`

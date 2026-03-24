@@ -155,7 +155,14 @@ func (s *ProjectService) ListProjects(ctx context.Context, query ListProjectsQue
 		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
 	}
 
-	result, err := s.repo.List(ctx, query.TenantID, query.Limit, query.Offset)
+	var result *ports.ProjectListResult
+	var err error
+
+	if query.Filter != "" {
+		result, err = s.repo.ListWithFilter(ctx, query.TenantID, query.Filter, query.Limit, query.Offset)
+	} else {
+		result, err = s.repo.List(ctx, query.TenantID, query.Limit, query.Offset)
+	}
 	if err != nil {
 		return nil, domain.NewDomainError("QUERY_ERROR", "failed to list projects", err)
 	}
@@ -423,6 +430,55 @@ func (s *ProjectService) GeneratePackingListHTML(ctx context.Context, tenantID, 
 
 	html := buildPackingListHTML(project, packlists)
 	return html, nil
+}
+
+// GetProjectEquipment returns the equipment list (Soll-Liste) for a project based on packlist items.
+func (s *ProjectService) GetProjectEquipment(ctx context.Context, tenantID, projectID string) (*ProjectEquipmentDTO, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	_, err := s.repo.GetByID(ctx, tenantID, projectID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "project not found", err)
+	}
+
+	var items []ProjectEquipmentItemDTO
+
+	if s.packlistRepo != nil {
+		result, err := s.packlistRepo.ListByProjectID(ctx, tenantID, projectID, 1000, 0)
+		if err != nil {
+			s.logger.Warn("Failed to fetch packlists for equipment list", "error", err)
+		} else {
+			// Aggregate items across all packlists by equipment_id
+			equipmentMap := make(map[string]*ProjectEquipmentItemDTO)
+			for _, packlist := range result.Items {
+				for _, item := range packlist.Items {
+					if existing, ok := equipmentMap[item.EquipmentID]; ok {
+						existing.Quantity += item.Quantity
+						existing.CheckedOut += item.QuantityPacked
+					} else {
+						equipmentMap[item.EquipmentID] = &ProjectEquipmentItemDTO{
+							ID:         item.EquipmentID,
+							Name:       item.EquipmentName,
+							SKU:        "", // SKU not stored in packlist items
+							Quantity:   item.Quantity,
+							CheckedOut: item.QuantityPacked,
+						}
+					}
+				}
+			}
+			for _, v := range equipmentMap {
+				items = append(items, *v)
+			}
+		}
+	}
+
+	if items == nil {
+		items = []ProjectEquipmentItemDTO{}
+	}
+
+	return &ProjectEquipmentDTO{Items: items}, nil
 }
 
 func (s *ProjectService) sendStatusChangeNotification(project *domain.Project, oldStatus string) {

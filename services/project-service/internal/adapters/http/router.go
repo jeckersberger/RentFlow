@@ -29,6 +29,7 @@ func NewRouter(
 	router.HandleFunc("GET /api/v1/projects/search", handler.SearchProjects)
 	router.HandleFunc("GET /api/v1/projects/{id}", handler.GetProject)
 	router.HandleFunc("POST /api/v1/projects/{id}/copy", handler.CopyProject)
+	router.HandleFunc("GET /api/v1/projects/{id}/equipment", handler.GetProjectEquipment)
 	router.HandleFunc("GET /api/v1/projects/{id}/packing-list", handler.GetPackingListJSON)
 	router.HandleFunc("GET /api/v1/projects/{id}/packing-list/html", handler.GetPackingListHTML)
 	router.HandleFunc("PUT /api/v1/projects/{id}", handler.UpdateProject)

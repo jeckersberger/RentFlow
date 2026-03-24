@@ -7,6 +7,7 @@ import "time"
 type ListProjectsQuery struct {
 	TenantID string
 	Status   *string
+	Filter   string // "returning_today", "checked_out", or empty
 	Limit    int
 	Offset   int
 }

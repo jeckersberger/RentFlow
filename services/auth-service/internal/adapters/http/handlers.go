@@ -769,6 +769,33 @@ func (h *Handlers) QRLogin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GenerateQRToken generates a one-time QR login token (authenticated endpoint)
+func (h *Handlers) GenerateQRToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	tenantID := middleware.GetTenantIDFromClaims(r.Context())
+	if userID == "" || tenantID == "" {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated")
+		return
+	}
+
+	token, expiresAt, err := h.userService.GenerateQRToken(r.Context(), userID, tenantID)
+	if err != nil {
+		h.logger.Error("failed to generate QR token", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"qr_token":   token,
+		"expires_at": expiresAt.Format(time.RFC3339),
+	})
+}
+
 // GetSystemVersion returns current and latest version info
 func (h *Handlers) GetSystemVersion(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

@@ -98,6 +98,20 @@ type PackingListItemDTO struct {
 	PacklistName   string `json:"packlist_name,omitempty"`
 }
 
+// ProjectEquipmentDTO is the response for GET /api/v1/projects/{id}/equipment
+type ProjectEquipmentDTO struct {
+	Items []ProjectEquipmentItemDTO `json:"items"`
+}
+
+// ProjectEquipmentItemDTO represents a single equipment item in the Soll-Liste
+type ProjectEquipmentItemDTO struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	SKU        string `json:"sku"`
+	Quantity   int    `json:"quantity"`
+	CheckedOut int    `json:"checked_out"`
+}
+
 type ReservationConflictDTO struct {
 	ReservationID string    `json:"reservation_id"`
 	ProjectID     string    `json:"project_id"`

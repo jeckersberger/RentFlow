@@ -11,10 +11,11 @@ import (
 )
 
 type ScanService struct {
-	scanRepo     ports.ScanEventRepository
-	deviceRepo   ports.DeviceRepository
-	inventorySvc ports.InventoryServiceClient
-	logger       logger.Logger
+	scanRepo          ports.ScanEventRepository
+	deviceRepo        ports.DeviceRepository
+	scannerDeviceRepo ports.ScannerDeviceRepository
+	inventorySvc      ports.InventoryServiceClient
+	logger            logger.Logger
 }
 
 func NewScanService(
@@ -29,6 +30,11 @@ func NewScanService(
 		inventorySvc: inventorySvc,
 		logger:       logger,
 	}
+}
+
+// SetScannerDeviceRepo sets the scanner device repository (optional dependency)
+func (s *ScanService) SetScannerDeviceRepo(repo ports.ScannerDeviceRepository) {
+	s.scannerDeviceRepo = repo
 }
 
 func (s *ScanService) ProcessScan(ctx context.Context, cmd ProcessScanCommand) (*ScanEventDTO, error) {
@@ -372,6 +378,153 @@ func (s *ScanService) ProcessBulkActions(ctx context.Context, tenantID string, a
 	}
 
 	return result, nil
+}
+
+// AdhocBooking creates a reservation on-the-fly from the scanner.
+// Implements POST /api/v1/scanner/adhoc-booking business logic.
+func (s *ScanService) AdhocBooking(ctx context.Context, cmd AdhocBookingCommand) (*AdhocBookingResult, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if cmd.EquipmentID == "" {
+		return nil, domain.NewDomainError("INVALID_INPUT", "equipment_id is required", nil)
+	}
+	if cmd.ProjectID == "" {
+		return nil, domain.NewDomainError("INVALID_INPUT", "project_id is required", nil)
+	}
+	if s.inventorySvc == nil {
+		return nil, domain.NewDomainError("SERVICE_UNAVAILABLE", "inventory service not available", nil)
+	}
+
+	// Use checkout to create the ad-hoc assignment
+	coResult, err := s.inventorySvc.CheckOutEquipment(ctx, cmd.TenantID, []string{cmd.EquipmentID}, cmd.ProjectID, cmd.Notes)
+	if err != nil {
+		return nil, domain.NewDomainError("CHECKOUT_ERROR", "failed to create ad-hoc booking", err)
+	}
+
+	s.logger.Info("Ad-hoc booking created", "equipment_id", cmd.EquipmentID, "project_id", cmd.ProjectID)
+
+	return &AdhocBookingResult{
+		Success:     true,
+		EquipmentID: cmd.EquipmentID,
+		ProjectID:   cmd.ProjectID,
+		CheckedOut:  coResult.CheckedOut,
+		Notes:       cmd.Notes,
+	}, nil
+}
+
+// =====================================================
+// Scanner Device Management ("Find My Scanner")
+// =====================================================
+
+// RegisterScannerDevice registers or updates a scanner device
+func (s *ScanService) RegisterScannerDevice(ctx context.Context, tenantID, deviceID, deviceName, fcmToken string) (*ports.ScannerDevice, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if deviceID == "" {
+		return nil, domain.NewDomainError("INVALID_INPUT", "device_id is required", nil)
+	}
+	if deviceName == "" {
+		return nil, domain.NewDomainError("INVALID_INPUT", "device_name is required", nil)
+	}
+	if s.scannerDeviceRepo == nil {
+		return nil, domain.NewDomainError("SERVICE_UNAVAILABLE", "scanner device management not available", nil)
+	}
+
+	var fcmPtr *string
+	if fcmToken != "" {
+		fcmPtr = &fcmToken
+	}
+
+	device := &ports.ScannerDevice{
+		TenantID:   tenantID,
+		DeviceID:   deviceID,
+		DeviceName: deviceName,
+		DeviceType: "handheld",
+		FCMToken:   fcmPtr,
+	}
+
+	if err := s.scannerDeviceRepo.Upsert(ctx, device); err != nil {
+		return nil, domain.NewDomainError("CREATE_ERROR", "failed to register scanner device", err)
+	}
+
+	s.logger.Info("Scanner device registered", "device_id", deviceID, "name", deviceName)
+	return device, nil
+}
+
+// ListScannerDevices returns all registered scanner devices for a tenant
+func (s *ScanService) ListScannerDevices(ctx context.Context, tenantID string) ([]*ports.ScannerDevice, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if s.scannerDeviceRepo == nil {
+		return nil, domain.NewDomainError("SERVICE_UNAVAILABLE", "scanner device management not available", nil)
+	}
+
+	devices, err := s.scannerDeviceRepo.List(ctx, tenantID)
+	if err != nil {
+		return nil, domain.NewDomainError("QUERY_ERROR", "failed to list scanner devices", err)
+	}
+
+	if devices == nil {
+		devices = []*ports.ScannerDevice{}
+	}
+
+	return devices, nil
+}
+
+// RingScannerDevice sets ring_requested=true for a device (webapp triggers)
+func (s *ScanService) RingScannerDevice(ctx context.Context, id string) error {
+	if id == "" {
+		return domain.NewDomainError("INVALID_INPUT", "device id is required", nil)
+	}
+	if s.scannerDeviceRepo == nil {
+		return domain.NewDomainError("SERVICE_UNAVAILABLE", "scanner device management not available", nil)
+	}
+
+	if err := s.scannerDeviceRepo.SetRingRequested(ctx, id, true); err != nil {
+		return domain.NewDomainError("UPDATE_ERROR", "failed to set ring request", err)
+	}
+
+	s.logger.Info("Ring requested for scanner device", "id", id)
+	return nil
+}
+
+// CheckRingRequest checks if ring is requested for a device (app polls this)
+func (s *ScanService) CheckRingRequest(ctx context.Context, tenantID, deviceID string) (bool, error) {
+	if s.scannerDeviceRepo == nil {
+		return false, domain.NewDomainError("SERVICE_UNAVAILABLE", "scanner device management not available", nil)
+	}
+
+	// Also update last_seen
+	_ = s.scannerDeviceRepo.UpdateLastSeen(ctx, tenantID, deviceID)
+
+	device, err := s.scannerDeviceRepo.GetByDeviceID(ctx, tenantID, deviceID)
+	if err != nil {
+		return false, domain.NewDomainError("NOT_FOUND", "scanner device not found", err)
+	}
+
+	return device.RingRequested, nil
+}
+
+// AckRing acknowledges the ring request (app sends after playing sound)
+func (s *ScanService) AckRing(ctx context.Context, tenantID, deviceID string) error {
+	if s.scannerDeviceRepo == nil {
+		return domain.NewDomainError("SERVICE_UNAVAILABLE", "scanner device management not available", nil)
+	}
+
+	device, err := s.scannerDeviceRepo.GetByDeviceID(ctx, tenantID, deviceID)
+	if err != nil {
+		return domain.NewDomainError("NOT_FOUND", "scanner device not found", err)
+	}
+
+	if err := s.scannerDeviceRepo.SetRingRequested(ctx, device.ID, false); err != nil {
+		return domain.NewDomainError("UPDATE_ERROR", "failed to acknowledge ring", err)
+	}
+
+	s.logger.Info("Ring acknowledged for scanner device", "device_id", deviceID)
+	return nil
 }
 
 func hashString(s string) int64 {

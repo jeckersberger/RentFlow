@@ -103,8 +103,11 @@ func (h *Handler) ListProjects(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	filter := r.URL.Query().Get("filter")
+
 	query := application.ListProjectsQuery{
 		TenantID: tenantID,
+		Filter:   filter,
 		Limit:    limit,
 		Offset:   offset,
 	}
@@ -891,6 +894,24 @@ func (h *Handler) DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// GetProjectEquipment returns the equipment list (Soll-Liste) for a project
+func (h *Handler) GetProjectEquipment(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dto, err := h.projectSvc.GetProjectEquipment(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
 }
 
 // Calendar and Project Extended Handlers

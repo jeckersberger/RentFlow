@@ -55,6 +55,9 @@ func SetupRoutes(
 	// Authenticated routes - use a wrapper that supports RS256
 	authMiddleware := createRS256Middleware(tokenMgr.PublicKeyPEM(), log)
 
+	// QR token generation (authenticated)
+	mux.HandleFunc("POST /api/v1/auth/qr-token", authMiddleware(http.HandlerFunc(handlers.GenerateQRToken)).ServeHTTP)
+
 	// Logout (authenticated)
 	mux.HandleFunc("POST /api/v1/auth/logout", authMiddleware(http.HandlerFunc(handlers.Logout)).ServeHTTP)
 

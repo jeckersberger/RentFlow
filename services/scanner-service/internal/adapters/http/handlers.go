@@ -326,6 +326,133 @@ func (h *Handler) RegisterDevice(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusCreated, dto)
 }
 
+// =====================================================
+// Scanner Device Management handlers ("Find My Scanner")
+// =====================================================
+
+// RegisterScannerDevice handles POST /api/v1/scanner/devices/register
+func (h *Handler) RegisterScannerDevice(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		DeviceID   string `json:"device_id"`
+		DeviceName string `json:"device_name"`
+		FCMToken   string `json:"fcm_token"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.DeviceID == "" {
+		h.respondError(w, http.StatusBadRequest, "device_id is required")
+		return
+	}
+	if payload.DeviceName == "" {
+		h.respondError(w, http.StatusBadRequest, "device_name is required")
+		return
+	}
+
+	device, err := h.scanSvc.RegisterScannerDevice(r.Context(), tenantID, payload.DeviceID, payload.DeviceName, payload.FCMToken)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, device)
+}
+
+// ListScannerDevices handles GET /api/v1/scanner/devices
+func (h *Handler) ListScannerDevices(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	devices, err := h.scanSvc.ListScannerDevices(r.Context(), tenantID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"devices": devices,
+	})
+}
+
+// RingScannerDevice handles POST /api/v1/scanner/devices/{id}/ring
+func (h *Handler) RingScannerDevice(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		h.respondError(w, http.StatusBadRequest, "device id required")
+		return
+	}
+
+	if err := h.scanSvc.RingScannerDevice(r.Context(), id); err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "ring requested",
+	})
+}
+
+// CheckRingRequest handles GET /api/v1/scanner/devices/{device_id}/ring
+func (h *Handler) CheckRingRequest(w http.ResponseWriter, r *http.Request) {
+	deviceID := r.PathValue("device_id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+	if deviceID == "" {
+		h.respondError(w, http.StatusBadRequest, "device_id required")
+		return
+	}
+
+	ringRequested, err := h.scanSvc.CheckRingRequest(r.Context(), tenantID, deviceID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"ring_requested": ringRequested,
+	})
+}
+
+// AckRing handles POST /api/v1/scanner/devices/{device_id}/ring-ack
+func (h *Handler) AckRing(w http.ResponseWriter, r *http.Request) {
+	deviceID := r.PathValue("device_id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+	if deviceID == "" {
+		h.respondError(w, http.StatusBadRequest, "device_id required")
+		return
+	}
+
+	if err := h.scanSvc.AckRing(r.Context(), tenantID, deviceID); err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "ring acknowledged",
+	})
+}
+
 // Helper methods
 
 func (h *Handler) respondJSON(w http.ResponseWriter, statusCode int, data interface{}) {
@@ -522,6 +649,51 @@ func (h *Handler) ScannerBulk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.respondJSON(w, http.StatusOK, result)
+}
+
+// AdhocBooking handles POST /api/v1/scanner/adhoc-booking
+// Creates a reservation on-the-fly from the scanner app.
+func (h *Handler) AdhocBooking(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		EquipmentID string `json:"equipment_id"`
+		ProjectID   string `json:"project_id"`
+		Notes       string `json:"notes"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.EquipmentID == "" {
+		h.respondError(w, http.StatusBadRequest, "equipment_id is required")
+		return
+	}
+	if payload.ProjectID == "" {
+		h.respondError(w, http.StatusBadRequest, "project_id is required")
+		return
+	}
+
+	cmd := application.AdhocBookingCommand{
+		TenantID:    tenantID,
+		EquipmentID: payload.EquipmentID,
+		ProjectID:   payload.ProjectID,
+		Notes:       payload.Notes,
+	}
+
+	result, err := h.scanSvc.AdhocBooking(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, result)
 }
 
 // Session handlers

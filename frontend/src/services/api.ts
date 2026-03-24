@@ -1151,6 +1151,30 @@ export const warehouseApi = {
 }
 
 // ============================================================================
+// SCANNER DEVICE MANAGEMENT API endpoints
+// ============================================================================
+export const scannerDeviceApi = {
+  list: () =>
+    MOCK_MODE
+      ? mockDelay([
+          { id: '1', name: 'Lager-Scanner 1', device_id: 'RF-SC-001', type: 'Handheld', is_online: true, last_seen: new Date().toISOString() },
+          { id: '2', name: 'Lager-Scanner 2', device_id: 'RF-SC-002', type: 'Handheld', is_online: false, last_seen: '2026-03-23T14:30:00Z' },
+          { id: '3', name: 'Tablet Laderampe', device_id: 'RF-TB-001', type: 'Tablet', is_online: true, last_seen: new Date().toISOString() },
+        ])
+      : api.get('/api/v1/scanner/devices').then(r => r.data),
+
+  ring: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, device_id: id, acknowledged: true }, 1500)
+      : api.post(`/api/v1/scanner/devices/${id}/ring`).then(r => r.data),
+
+  generateQRToken: () =>
+    MOCK_MODE
+      ? mockDelay({ token: `rf-qr-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, expires_in: 300 })
+      : api.post('/api/v1/auth/qr-token').then(r => r.data),
+}
+
+// ============================================================================
 // SCANNER API endpoints
 // ============================================================================
 export const scannerApi = {

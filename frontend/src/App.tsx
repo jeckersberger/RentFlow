@@ -70,6 +70,7 @@ import ModulesPage from './pages/Settings/pages/ModulesPage'
 import LabelSettingsPage from './pages/Settings/pages/LabelSettingsPage'
 import EmailAccountsPage from './pages/Settings/pages/EmailAccountsPage'
 import NotificationSettingsPage from './pages/Settings/pages/NotificationSettingsPage'
+import ScannerDevicesPage from './pages/Settings/pages/ScannerDevicesPage'
 
 // Transport Pages
 import TransportPage from './pages/Transport/TransportPage'
@@ -333,6 +334,7 @@ function App() {
               <Route path="labels" element={<LabelSettingsPage />} />
               <Route path="email-accounts" element={<EmailAccountsPage />} />
               <Route path="notifications" element={<NotificationSettingsPage />} />
+              <Route path="scanner-devices" element={<ScannerDevicesPage />} />
             </Route>
 
             {/* Phase 4 Routes */}

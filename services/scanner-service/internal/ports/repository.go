@@ -57,6 +57,30 @@ type OfflineQueueRepository interface {
 	GetCount(ctx context.Context, tenantID string, status string) (int, error)
 }
 
+// ScannerDeviceRepository manages scanner devices for the "Find My Scanner" feature.
+// Uses the scanner_devices table (separate from the legacy devices table).
+type ScannerDeviceRepository interface {
+	Upsert(ctx context.Context, device *ScannerDevice) error
+	List(ctx context.Context, tenantID string) ([]*ScannerDevice, error)
+	GetByDeviceID(ctx context.Context, tenantID, deviceID string) (*ScannerDevice, error)
+	GetByID(ctx context.Context, id string) (*ScannerDevice, error)
+	SetRingRequested(ctx context.Context, id string, requested bool) error
+	UpdateLastSeen(ctx context.Context, tenantID, deviceID string) error
+}
+
+// ScannerDevice represents a registered scanner device (app instance)
+type ScannerDevice struct {
+	ID            string  `json:"id"`
+	TenantID      string  `json:"tenant_id"`
+	DeviceID      string  `json:"device_id"`
+	DeviceName    string  `json:"device_name"`
+	DeviceType    string  `json:"device_type"`
+	FCMToken      *string `json:"fcm_token"`
+	RingRequested bool    `json:"ring_requested"`
+	LastSeen      *string `json:"last_seen"`
+	CreatedAt     string  `json:"created_at"`
+}
+
 type InventoryServiceClient interface {
 	ResolveBarcode(ctx context.Context, tenantID, barcode string) (string, error)
 	UpdateEquipmentStatus(ctx context.Context, tenantID, equipmentID, status string) error

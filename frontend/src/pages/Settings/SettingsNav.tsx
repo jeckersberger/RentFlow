@@ -21,6 +21,7 @@ import {
   ScrollText,
   Blocks,
   QrCode,
+  Smartphone,
   type LucideIcon,
 } from 'lucide-react'
 import './Settings.scss'
@@ -57,6 +58,7 @@ const settingsNavGroups: SettingsNavGroup[] = [
       { label: 'Kategorien', href: '/settings/categories', icon: Tags },
       { label: 'Eigene Felder', href: '/settings/custom-fields', icon: SlidersHorizontal },
       { label: 'Labels & QR-Codes', href: '/settings/labels', icon: QrCode },
+      { label: 'Scanner-Geraete', href: '/settings/scanner-devices', icon: Smartphone },
     ],
   },
   {

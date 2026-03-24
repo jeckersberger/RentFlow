@@ -632,6 +632,34 @@ func (s *UserService) QRLogin(ctx context.Context, qrToken string) (*TokenPair, 
 	return tokens, s.toUserDTO(user), nil
 }
 
+// GenerateQRToken creates a one-time QR login token for the Scanner App
+func (s *UserService) GenerateQRToken(ctx context.Context, userID, tenantID string) (string, time.Time, error) {
+	if s.db == nil {
+		return "", time.Time{}, fmt.Errorf("database not configured for QR tokens")
+	}
+
+	// Generate 32-byte hex token
+	tokenBytes := make([]byte, 32)
+	rand.Read(tokenBytes)
+	token := hex.EncodeToString(tokenBytes)
+
+	id := generateID()
+	expiresAt := time.Now().Add(5 * time.Minute)
+
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO auth.qr_login_tokens (id, token, user_id, tenant_id, expires_at, created_at)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		id, token, userID, tenantID, expiresAt, time.Now(),
+	)
+	if err != nil {
+		s.logger.Error("failed to create QR login token", err, "userID", userID)
+		return "", time.Time{}, err
+	}
+
+	s.logger.Info("QR login token generated", "userID", userID, "expiresAt", expiresAt.Format(time.RFC3339))
+	return token, expiresAt, nil
+}
+
 // Helper functions
 
 func (s *UserService) toUserDTO(user *domain.User) *UserDTO {

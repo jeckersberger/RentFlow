@@ -31,6 +31,14 @@ func NewRouter(scanSvc *application.ScanService, sessionSvc *application.Session
 	router.HandleFunc("POST /api/v1/scanner/checkout", handler.ScannerCheckout)
 	router.HandleFunc("POST /api/v1/scanner/checkin", handler.ScannerCheckin)
 	router.HandleFunc("POST /api/v1/scanner/bulk", handler.ScannerBulk)
+	router.HandleFunc("POST /api/v1/scanner/adhoc-booking", handler.AdhocBooking)
+
+	// Scanner Device Management ("Find My Scanner")
+	router.HandleFunc("POST /api/v1/scanner/devices/register", handler.RegisterScannerDevice)
+	router.HandleFunc("GET /api/v1/scanner/devices", handler.ListScannerDevices)
+	router.HandleFunc("POST /api/v1/scanner/devices/{id}/ring", handler.RingScannerDevice)
+	router.HandleFunc("GET /api/v1/scanner/devices/{device_id}/ring", handler.CheckRingRequest)
+	router.HandleFunc("POST /api/v1/scanner/devices/{device_id}/ring-ack", handler.AckRing)
 
 	// Session routes (M2.2)
 	router.HandleFunc("POST /api/v1/scanner/sessions", handler.StartSession)

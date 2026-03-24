@@ -11,6 +11,7 @@ type ProjectRepository interface {
 	Update(ctx context.Context, project *domain.Project) error
 	GetByID(ctx context.Context, tenantID, projectID string) (*domain.Project, error)
 	List(ctx context.Context, tenantID string, limit, offset int) (*ProjectListResult, error)
+	ListWithFilter(ctx context.Context, tenantID, filter string, limit, offset int) (*ProjectListResult, error)
 	Delete(ctx context.Context, tenantID, projectID string) error
 	Search(ctx context.Context, tenantID, term string, limit, offset int) (*ProjectListResult, error)
 	ListByDateRange(ctx context.Context, tenantID, startDate, endDate string) ([]*domain.Project, error)

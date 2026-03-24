@@ -201,6 +201,64 @@ func (r *ProjectPostgres) List(ctx context.Context, tenantID string, limit, offs
 	}, nil
 }
 
+func (r *ProjectPostgres) ListWithFilter(ctx context.Context, tenantID, filter string, limit, offset int) (*ports.ProjectListResult, error) {
+	var whereClause string
+	today := "CURRENT_DATE"
+
+	switch filter {
+	case "returning_today":
+		// Projects whose end_date is today (equipment due back)
+		whereClause = fmt.Sprintf("AND end_date::date = %s", today)
+	case "checked_out":
+		// Projects with status 'in_progress' (equipment currently checked out)
+		whereClause = "AND status = 'in_progress'"
+	default:
+		whereClause = ""
+	}
+
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM projects.projects
+		WHERE tenant_id = $1 %s
+		ORDER BY start_date ASC
+		LIMIT $2 OFFSET $3
+	`, projectSelectColumns, whereClause)
+
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM projects.projects WHERE tenant_id = $1 %s`, whereClause)
+
+	var count int64
+	err := r.db.QueryRow(ctx, countQuery, tenantID).Scan(&count)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count filtered projects: %w", err)
+	}
+
+	rows, err := r.db.Query(ctx, query, tenantID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list filtered projects: %w", err)
+	}
+	defer rows.Close()
+
+	projects := make([]*domain.Project, 0)
+	for rows.Next() {
+		p, err := r.scanProject(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan project: %w", err)
+		}
+		projects = append(projects, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating projects: %w", err)
+	}
+
+	return &ports.ProjectListResult{
+		Items:  projects,
+		Total:  count,
+		Limit:  limit,
+		Offset: offset,
+	}, nil
+}
+
 func (r *ProjectPostgres) Search(ctx context.Context, tenantID, term string, limit, offset int) (*ports.ProjectListResult, error) {
 	query := fmt.Sprintf(`
 		SELECT %s

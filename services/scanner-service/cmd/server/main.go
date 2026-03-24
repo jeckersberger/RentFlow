@@ -58,8 +58,13 @@ func main() {
 	inventoryClient := clients.NewInventoryHTTPClient(inventoryURL)
 	log.Info("Inventory service client initialized", "url", inventoryURL)
 
+	// Initialize scanner device repository
+	scannerDeviceRepo := repositories.NewScannerDevicePostgres(dbPool)
+	log.Info("Scanner device repository initialized")
+
 	// Initialize services
 	scanSvc := application.NewScanService(scanEventRepo, deviceRepo, inventoryClient, log)
+	scanSvc.SetScannerDeviceRepo(scannerDeviceRepo)
 	sessionSvc := application.NewSessionService(sessionRepo, scanEventRepo, queueRepo, deviceRepo, inventoryClient, log)
 
 	log.Info("Services initialized")
