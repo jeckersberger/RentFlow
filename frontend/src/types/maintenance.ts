@@ -124,3 +124,20 @@ export interface CreateMaintenanceTaskDTO {
   scheduled_at: string
   notes?: string
 }
+
+export interface CreateElectricalTestDTO {
+  equipment_id: string
+  tester_id: string
+  test_type: 'vde_0701' | 'vde_0702'
+  test_date: string
+  result: TestResult
+  insulation_resistance_mohm?: number
+  protective_conductor_resistance_ohm?: number
+  leakage_current_ma?: number
+  visual_inspection_ok: boolean
+  functional_test_ok: boolean
+  test_device_id?: string
+  test_device_name?: string
+  certificate_number?: string
+  notes?: string
+}

@@ -124,11 +124,12 @@ type DeletePacklistCommand struct {
 // Reservation Commands
 
 type CreateReservationCommand struct {
-	TenantID    string
-	ProjectID   string
-	EquipmentID string
-	StartDate   time.Time
-	EndDate     time.Time
+	TenantID    string    `json:"tenant_id"`
+	ProjectID   string    `json:"project_id"`
+	EquipmentID string    `json:"equipment_id"`
+	StartDate   time.Time `json:"start_date"`
+	EndDate     time.Time `json:"end_date"`
+	Force       bool      `json:"force"`
 }
 
 type ConfirmReservationCommand struct {

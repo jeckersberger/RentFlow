@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
 import { documentApi } from '../../../services/api'
+import { getStatusLabel } from '../../../utils/statusLabels'
 import styles from '../ProjectDetail.module.scss'
 
 interface DocumentsTabProps {
@@ -138,7 +139,7 @@ export function DocumentsTab({ project }: DocumentsTabProps) {
                             color: 'var(--color-primary)',
                           }}
                         >
-                          {doc.status}
+                          {getStatusLabel(doc.status)}
                         </span>
                       )}
                     </td>

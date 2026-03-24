@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
+import { priorityLabel } from '../../utils/statusLabels'
 import './Maintenance.scss'
 
 interface CheckItem {
@@ -157,7 +158,7 @@ function MaintenanceDetailPage() {
                       color: getPriorityColor(task.priority),
                     }}
                   >
-                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                    {priorityLabel(task.priority)}
                   </span>
                 </div>
               </div>

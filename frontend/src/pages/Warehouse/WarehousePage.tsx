@@ -454,6 +454,12 @@ function WarehousePage() {
           )}
           <button
             className="wh-btn wh-btn--accent"
+            onClick={() => navigate('/inventory')}
+          >
+            Inventur starten
+          </button>
+          <button
+            className="wh-btn wh-btn--accent"
             onClick={() => navigate('/scanner')}
           >
             <span className="wh-btn__icon">{'\u21A9'}</span>

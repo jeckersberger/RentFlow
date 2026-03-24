@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { equipmentApi, categoryApi } from '../../services/api'
@@ -9,6 +9,201 @@ import { Select } from '../../components/Form/Select'
 import { Input } from '../../components/Form/Input'
 import { EquipmentStatus, Category, PriceResult } from '../../types/equipment'
 import './Equipment.scss'
+
+// ---------------------------------------------------------------------------
+// Availability Calendar sub-component
+// ---------------------------------------------------------------------------
+interface Reservation {
+  id: string
+  project_id: string
+  project_name?: string
+  equipment_id: string
+  start_date: string
+  end_date: string
+}
+
+const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+const MONTH_LABELS = [
+  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+]
+
+function AvailabilityCalendar({ equipmentId }: { equipmentId: string }) {
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), 1)
+  })
+  const [hoveredDay, setHoveredDay] = useState<{ date: string; reservation: Reservation } | null>(null)
+
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+
+  // Fetch reservations for a 3-month window around the current month
+  const rangeStart = `${year}-${String(month).padStart(2, '0')}-01`
+  const rangeEndDate = new Date(year, month + 2, 0)
+  const rangeEnd = `${rangeEndDate.getFullYear()}-${String(rangeEndDate.getMonth() + 1).padStart(2, '0')}-${String(rangeEndDate.getDate()).padStart(2, '0')}`
+
+  const { data: reservations } = useQuery({
+    queryKey: ['equipment-reservations', equipmentId, rangeStart, rangeEnd],
+    queryFn: async () => {
+      try {
+        const data = await equipmentApi.listReservations(equipmentId)
+        return (Array.isArray(data) ? data : []) as Reservation[]
+      } catch {
+        return [] as Reservation[]
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const bookedDays = useMemo(() => {
+    const map = new Map<string, Reservation>()
+    if (!reservations) return map
+    for (const res of reservations) {
+      const start = new Date(res.start_date)
+      const end = new Date(res.end_date)
+      const cur = new Date(start)
+      while (cur <= end) {
+        const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`
+        map.set(key, res)
+        cur.setDate(cur.getDate() + 1)
+      }
+    }
+    return map
+  }, [reservations])
+
+  // Build calendar grid
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const firstDayOfWeek = (new Date(year, month, 1).getDay() + 6) % 7 // Mon=0
+  const today = new Date()
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+  const cells: Array<{ day: number; key: string } | null> = []
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    cells.push({ day: d, key })
+  }
+
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1))
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1))
+
+  return (
+    <div className="detail-card" style={{ marginTop: 'var(--spacing-4)' }}>
+      <h2 className="detail-card__title">Verfügbarkeit</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-3)' }}>
+        <button type="button" className="btn btn--secondary btn--sm" onClick={prevMonth}>&lt;</button>
+        <span style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>
+          {MONTH_LABELS[month]} {year}
+        </span>
+        <button type="button" className="btn btn--secondary btn--sm" onClick={nextMonth}>&gt;</button>
+      </div>
+
+      {/* Weekday headers */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        gap: '2px',
+        textAlign: 'center',
+        marginBottom: '4px',
+      }}>
+        {WEEKDAY_LABELS.map((wd) => (
+          <div key={wd} style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontWeight: 600, padding: '4px 0' }}>
+            {wd}
+          </div>
+        ))}
+      </div>
+
+      {/* Day grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        gap: '2px',
+        position: 'relative',
+      }}>
+        {cells.map((cell, idx) => {
+          if (!cell) {
+            return <div key={`empty-${idx}`} style={{ aspectRatio: '1', minHeight: '32px' }} />
+          }
+          const isBooked = bookedDays.has(cell.key)
+          const isToday = cell.key === todayKey
+          const isPast = cell.key < todayKey
+          const reservation = bookedDays.get(cell.key)
+
+          return (
+            <div
+              key={cell.key}
+              onMouseEnter={() => isBooked && reservation ? setHoveredDay({ date: cell.key, reservation }) : setHoveredDay(null)}
+              onMouseLeave={() => setHoveredDay(null)}
+              style={{
+                aspectRatio: '1',
+                minHeight: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 'var(--font-size-xs)',
+                fontWeight: isToday ? 700 : 400,
+                cursor: isBooked ? 'pointer' : 'default',
+                backgroundColor: isBooked
+                  ? 'rgba(239, 68, 68, 0.2)'
+                  : isPast
+                    ? 'transparent'
+                    : 'rgba(16, 185, 129, 0.12)',
+                border: isToday
+                  ? '2px solid var(--color-primary)'
+                  : isBooked
+                    ? '1px solid rgba(239, 68, 68, 0.35)'
+                    : '1px solid transparent',
+                color: isBooked
+                  ? 'var(--color-danger-light, #f87171)'
+                  : isPast
+                    ? 'var(--color-text-secondary)'
+                    : 'var(--color-success, #10b981)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {cell.day}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Tooltip for hovered booked day */}
+      {hoveredDay && (
+        <div style={{
+          marginTop: 'var(--spacing-3)',
+          padding: 'var(--spacing-2) var(--spacing-3)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          borderRadius: 'var(--radius-md)',
+          fontSize: 'var(--font-size-xs)',
+          color: 'var(--color-text-primary)',
+        }}>
+          <strong>Gebucht am {hoveredDay.date.split('-').reverse().join('.')}</strong>
+          <br />
+          {hoveredDay.reservation.project_name || `Projekt ${hoveredDay.reservation.project_id}`}
+          <br />
+          <span style={{ color: 'var(--color-text-secondary)' }}>
+            {new Date(hoveredDay.reservation.start_date).toLocaleDateString('de-DE')} &ndash; {new Date(hoveredDay.reservation.end_date).toLocaleDateString('de-DE')}
+          </span>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 'var(--spacing-4)', marginTop: 'var(--spacing-3)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)' }}>
+          <span style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: 'rgba(16, 185, 129, 0.25)', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'inline-block' }} />
+          Verfügbar
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)' }}>
+          <span style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: 'rgba(239, 68, 68, 0.25)', border: '1px solid rgba(239, 68, 68, 0.4)', display: 'inline-block' }} />
+          Gebucht
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'available', label: 'Verfügbar' },
@@ -309,6 +504,24 @@ function EquipmentDetailPage() {
       <div className="detail-grid">
         <div className="detail-card">
           <h2 className="detail-card__title">Ausrüstungsdetails</h2>
+
+          {/* Equipment Image */}
+          {equipment.image_url && (
+            <div style={{ marginBottom: 'var(--spacing-4)' }}>
+              <img
+                src={equipment.image_url}
+                alt={equipment.name}
+                style={{
+                  width: '100%',
+                  maxHeight: '300px',
+                  objectFit: 'cover',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border)',
+                }}
+              />
+            </div>
+          )}
+
           <div className="detail-card__content">
             <div className="detail-card__row">
               <span className="detail-card__row-label">Status</span>
@@ -511,6 +724,9 @@ function EquipmentDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Availability Calendar */}
+          {id && <AvailabilityCalendar equipmentId={id} />}
         </div>
       </div>
 

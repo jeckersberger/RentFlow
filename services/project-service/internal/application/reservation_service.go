@@ -33,11 +33,22 @@ func (s *ReservationService) CreateReservation(ctx context.Context, cmd CreateRe
 		return nil, domain.NewDomainError("EQUIPMENT_REQUIRED", "equipment ID is required", nil)
 	}
 
-	// Check for conflicts
-	conflicts, err := s.repo.ListByEquipmentID(ctx, cmd.TenantID, cmd.EquipmentID,
-		cmd.StartDate.Format(time.RFC3339), cmd.EndDate.Format(time.RFC3339))
-	if err == nil && len(conflicts) > 0 {
-		return nil, domain.NewDomainError("CONFLICT", "equipment has conflicting reservations", nil)
+	// Check for conflicts (skip if force flag is set - user already confirmed)
+	if !cmd.Force {
+		conflicts, err := s.repo.ListByEquipmentID(ctx, cmd.TenantID, cmd.EquipmentID,
+			cmd.StartDate.Format(time.RFC3339), cmd.EndDate.Format(time.RFC3339))
+		if err == nil && len(conflicts) > 0 {
+			// Filter out cancelled reservations
+			activeConflicts := make([]*domain.Reservation, 0)
+			for _, c := range conflicts {
+				if c.Status != domain.ReservationCancelled {
+					activeConflicts = append(activeConflicts, c)
+				}
+			}
+			if len(activeConflicts) > 0 {
+				return nil, domain.NewDomainError("CONFLICT", "equipment has conflicting reservations", nil)
+			}
+		}
 	}
 
 	reservationID := fmt.Sprintf("resv_%d", hashString(cmd.TenantID+cmd.EquipmentID+cmd.StartDate.String()))

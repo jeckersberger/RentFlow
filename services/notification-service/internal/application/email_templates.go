@@ -86,7 +86,7 @@ const bookingRequestContent = `
 <p style="margin:0 0 20px;color:#475569;font-size:15px;line-height:1.6;">
   {{.SenderName}} hat Sie fuer das folgende Projekt angefragt:
 </p>
-<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;margin-bottom:24px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;margin-bottom:24px;">
   <tr>
     <td style="padding:20px;">
       <p style="margin:0 0 8px;color:#0f766e;font-size:16px;font-weight:600;">{{.ProjectName}}</p>
@@ -149,7 +149,7 @@ const passwordResetContent = `
 <p style="margin:0 0 16px;color:#94a3b8;font-size:13px;text-align:center;">
   Oder kopieren Sie diesen Link: <a href="{{.Link}}" style="color:#0891b2;">{{.Link}}</a>
 </p>
-<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background-color:#fef3c7;border:1px solid #fde68a;border-radius:8px;margin-top:20px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef3c7;border:1px solid #fde68a;border-radius:8px;margin-top:20px;">
   <tr>
     <td style="padding:16px;">
       <p style="margin:0;color:#92400e;font-size:13px;line-height:1.5;">

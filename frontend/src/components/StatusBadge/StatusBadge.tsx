@@ -1,44 +1,10 @@
+import { getStatusLabel } from '../../utils/statusLabels'
 import './StatusBadge.scss'
 
 interface StatusBadgeProps {
   status: string
   label?: string
   size?: 'sm' | 'md' | 'lg'
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  available: 'Verfügbar',
-  reserved: 'Reserviert',
-  checked_out: 'Vermietet',
-  rented: 'Vermietet',
-  in_maintenance: 'In Wartung',
-  maintenance: 'In Wartung',
-  damaged: 'Beschädigt',
-  retired: 'Ausgemustert',
-  lost: 'Verloren',
-  confirmed: 'Bestätigt',
-  paid: 'Bezahlt',
-  draft: 'Entwurf',
-  quoted: 'Angebot',
-  in_progress: 'In Bearbeitung',
-  completed: 'Abgeschlossen',
-  invoiced: 'Abgerechnet',
-  sent: 'Gesendet',
-  overdue: 'Überfällig',
-  cancelled: 'Storniert',
-  partial: 'Teilweise bezahlt',
-  active: 'Aktiv',
-  planning: 'In Planung',
-  // Transport statuses
-  in_use: 'Im Einsatz',
-  planned: 'Geplant',
-  loading: 'Beladung',
-  in_transit: 'Unterwegs',
-  delivered: 'Geliefert',
-  // Crew statuses
-  busy: 'Beschäftigt',
-  on_leave: 'Urlaub',
-  sick: 'Krank',
 }
 
 export function StatusBadge({ status, label, size = 'md' }: StatusBadgeProps) {
@@ -89,7 +55,7 @@ export function StatusBadge({ status, label, size = 'md' }: StatusBadgeProps) {
   }
 
   const color = getStatusColor(status)
-  const displayLabel = label || STATUS_LABELS[status] || status.replace(/_/g, ' ')
+  const displayLabel = label || getStatusLabel(status) || status.replace(/_/g, ' ')
 
   return (
     <span className={`status-badge status-badge--${color} status-badge--${size}`}>

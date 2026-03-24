@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { maintenanceApi } from '../../services/api'
+import { priorityLabel } from '../../utils/statusLabels'
 import { SkeletonKPI, SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import './Maintenance.scss'
 
@@ -111,9 +112,9 @@ function MaintenancePage() {
   }
 
   const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'N/A'
+    if (!dateString) return 'k.A.'
     const date = new Date(dateString)
-    return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    return isNaN(date.getTime()) ? 'k.A.' : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
   }
 
   if (isLoading) {
@@ -244,7 +245,7 @@ function MaintenancePage() {
                 </div>
                 <div className="task-item__badges">
                   <span className={`priority-badge priority-badge--${getPriorityColor(task.priority)}`}>
-                    {task.priority.toUpperCase()}
+                    {priorityLabel(task.priority)}
                   </span>
                 </div>
               </div>
@@ -396,7 +397,7 @@ function MaintenancePage() {
                 </div>
                 <div className="task-item__badges">
                   <span className={`priority-badge priority-badge--${getPriorityColor(task.priority)}`}>
-                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                    {priorityLabel(task.priority)}
                   </span>
                   <StatusBadge status={task.status} />
                   <span style={{ marginLeft: 'var(--spacing-2)' }}>

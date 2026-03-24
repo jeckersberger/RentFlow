@@ -133,7 +133,7 @@ function WorkshopPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    return isNaN(date.getTime()) ? 'k.A.' : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
   }
 
   const tabs: { key: TabKey; label: string; count: number }[] = [

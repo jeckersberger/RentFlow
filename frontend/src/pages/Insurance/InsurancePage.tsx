@@ -1,219 +1,209 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import type { InsurancePolicy, InsuranceClaim } from '../../types/insurance'
+import { insuranceApi } from '../../services/api'
+import { useNotificationStore } from '../../stores/notificationStore'
 import './Insurance.scss'
 
-const mockPolicies: InsurancePolicy[] = [
-  {
-    id: '1',
-    policy_number: 'LV-2024-001',
-    type: 'liability',
-    provider: 'Allianz Versicherung',
-    coverage_amount: 1000000,
-    premium_annual: 2500,
-    start_date: '2024-01-01',
-    end_date: '2026-12-31',
-    is_active: true,
-    deductible: 500,
-  },
-  {
-    id: '2',
-    policy_number: 'EQ-2024-002',
-    type: 'equipment',
-    provider: 'AXA Versicherung',
-    coverage_amount: 500000,
-    premium_annual: 3800,
-    start_date: '2024-03-01',
-    end_date: '2027-02-28',
-    is_active: true,
-    deductible: 1000,
-  },
-  {
-    id: '3',
-    policy_number: 'VH-2024-003',
-    type: 'vehicle',
-    provider: 'Ergo Versicherung',
-    coverage_amount: 750000,
-    premium_annual: 4200,
-    start_date: '2024-06-01',
-    end_date: '2026-05-31',
-    is_active: true,
-    deductible: 750,
-  },
-  {
-    id: '4',
-    policy_number: 'UV-2024-004',
-    type: 'workers_comp',
-    provider: 'HDI Versicherung',
-    coverage_amount: 2000000,
-    premium_annual: 5600,
-    start_date: '2024-01-01',
-    end_date: '2025-12-31',
-    is_active: false,
-    deductible: 250,
-  },
-]
+// Backend response types (matching Go DTOs)
+interface PolicyResponse {
+  id: string
+  tenant_id: string
+  policy_number: string
+  policy_type: string
+  provider: string
+  coverage_amount: number
+  deductible: number
+  premium_annual: number
+  premium_monthly: number
+  start_date: string
+  end_date: string
+  status: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
 
-const mockClaims: InsuranceClaim[] = [
-  {
-    id: 'c1',
-    claim_number: 'SCH-2026-001',
-    policy_id: '1',
-    status: 'approved',
-    reported_date: '2026-03-15',
-    incident_date: '2026-03-14',
-    description: 'Beschaedigung an Ausruestung waehrend Transport',
-    total_claimed: 5000,
-    total_approved: 4500,
-    total_settled: 4500,
-    items: [
-      {
-        id: 'i1',
-        description: 'Beschaedigte Stahlkonstruktion',
-        claimed_amount: 3000,
-        approved_amount: 3000,
-        cost_category: 'equipment',
-      },
-      {
-        id: 'i2',
-        description: 'Reparaturbericht und Inspektionen',
-        claimed_amount: 2000,
-        approved_amount: 1500,
-        cost_category: 'labor',
-      },
-    ],
-    photos: [],
-    assigned_adjuster: 'Hans Mueller',
-  },
-  {
-    id: 'c2',
-    claim_number: 'SCH-2026-002',
-    policy_id: '2',
-    status: 'submitted',
-    reported_date: '2026-03-20',
-    incident_date: '2026-03-19',
-    description: 'Diebstahl von Ausruestung von der Baustelle',
-    total_claimed: 8500,
-    items: [
-      {
-        id: 'i3',
-        description: 'Hochwertige Beleuchtungsanlage',
-        claimed_amount: 5000,
-        cost_category: 'equipment',
-      },
-      {
-        id: 'i4',
-        description: 'Diverse Kleinteile und Zubehoer',
-        claimed_amount: 3500,
-        cost_category: 'equipment',
-      },
-    ],
-    photos: [],
-    assigned_adjuster: 'Sarah Wagner',
-  },
-  {
-    id: 'c3',
-    claim_number: 'SCH-2025-045',
-    policy_id: '3',
-    status: 'settled',
-    reported_date: '2025-11-10',
-    incident_date: '2025-11-09',
-    description: 'Fahrzeugkollision bei Anlieferung',
-    total_claimed: 12000,
-    total_approved: 11500,
-    total_settled: 11500,
-    items: [
-      {
-        id: 'i5',
-        description: 'Fahrzeugschadensatz und Reparatur',
-        claimed_amount: 12000,
-        approved_amount: 11500,
-        cost_category: 'vehicle',
-      },
-    ],
-    photos: [],
-    assigned_adjuster: 'Klaus Schmidt',
-  },
-  {
-    id: 'c4',
-    claim_number: 'SCH-2025-038',
-    policy_id: '1',
-    status: 'rejected',
-    reported_date: '2025-09-05',
-    incident_date: '2025-09-04',
-    description: 'Wasserschaden an Mischpult - unsachgemaesse Lagerung',
-    total_claimed: 3200,
-    items: [
-      {
-        id: 'i6',
-        description: 'Digitales Mischpult Yamaha CL5',
-        claimed_amount: 3200,
-        cost_category: 'equipment',
-      },
-    ],
-    photos: [],
-    assigned_adjuster: 'Hans Mueller',
-  },
-  {
-    id: 'c5',
-    claim_number: 'SCH-2026-003',
-    policy_id: '2',
-    status: 'reported',
-    reported_date: '2026-03-22',
-    incident_date: '2026-03-21',
-    description: 'Sturz eines Scheinwerfers waehrend Aufbau',
-    total_claimed: 2800,
-    items: [
-      {
-        id: 'i7',
-        description: 'Moving Head Robe T1 Profile',
-        claimed_amount: 2800,
-        cost_category: 'equipment',
-      },
-    ],
-    photos: [],
-  },
-]
+interface ClaimResponse {
+  id: string
+  tenant_id: string
+  policy_id: string
+  claim_number: string
+  equipment_id?: string
+  project_id?: string
+  incident_date: string
+  reported_date: string
+  description: string
+  damage_type: string
+  status: string
+  claimed_amount: number
+  approved_amount?: number
+  settled_amount?: number
+  adjuster_notes?: string
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+// Adapter: map backend policy to a common shape for the UI
+interface UIPolicy {
+  id: string
+  policy_number: string
+  type: string
+  provider: string
+  coverage_amount: number
+  premium_annual: number
+  start_date: string
+  end_date: string
+  is_active: boolean
+  deductible: number
+}
+
+interface UIClaim {
+  id: string
+  claim_number: string
+  policy_id: string
+  status: string
+  reported_date: string
+  incident_date: string
+  description: string
+  damage_type: string
+  total_claimed: number
+  total_approved?: number
+  total_settled?: number
+  adjuster_notes?: string
+}
+
+function mapPolicy(p: PolicyResponse): UIPolicy {
+  return {
+    id: p.id,
+    policy_number: p.policy_number,
+    type: p.policy_type,
+    provider: p.provider,
+    coverage_amount: p.coverage_amount,
+    premium_annual: p.premium_annual,
+    start_date: p.start_date,
+    end_date: p.end_date,
+    is_active: p.status === 'active',
+    deductible: p.deductible,
+  }
+}
+
+function mapClaim(c: ClaimResponse): UIClaim {
+  return {
+    id: c.id,
+    claim_number: c.claim_number,
+    policy_id: c.policy_id,
+    status: c.status,
+    reported_date: c.reported_date,
+    incident_date: c.incident_date,
+    description: c.description,
+    damage_type: c.damage_type,
+    total_claimed: c.claimed_amount,
+    total_approved: c.approved_amount,
+    total_settled: c.settled_amount,
+    adjuster_notes: c.adjuster_notes,
+  }
+}
+
+interface NewPolicyFormData {
+  policy_number: string
+  policy_type: string
+  provider: string
+  coverage_amount: string
+  deductible: string
+  premium_annual: string
+  start_date: string
+  end_date: string
+  notes: string
+}
 
 interface NewClaimFormData {
   policy_id: string
   incident_date: string
   description: string
-  affected_equipment: string
-  estimated_damage: string
+  damage_type: string
+  claimed_amount: string
+}
+
+const emptyPolicyForm: NewPolicyFormData = {
+  policy_number: '',
+  policy_type: 'liability',
+  provider: '',
+  coverage_amount: '',
+  deductible: '',
+  premium_annual: '',
+  start_date: '',
+  end_date: '',
+  notes: '',
+}
+
+const emptyClaimForm: NewClaimFormData = {
+  policy_id: '',
+  incident_date: '',
+  description: '',
+  damage_type: 'damage',
+  claimed_amount: '',
 }
 
 function InsurancePage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { addNotification } = useNotificationStore()
   const [activeTab, setActiveTab] = useState<'policies' | 'open_claims' | 'settled'>('policies')
+  const [showNewPolicyModal, setShowNewPolicyModal] = useState(false)
   const [showNewClaimModal, setShowNewClaimModal] = useState(false)
-  const [newClaimForm, setNewClaimForm] = useState<NewClaimFormData>({
-    policy_id: '',
-    incident_date: '',
-    description: '',
-    affected_equipment: '',
-    estimated_damage: '',
-  })
-  const [claimSubmitted, setClaimSubmitted] = useState(false)
+  const [policyForm, setPolicyForm] = useState<NewPolicyFormData>(emptyPolicyForm)
+  const [claimForm, setClaimForm] = useState<NewClaimFormData>(emptyClaimForm)
 
-  const { data: policies = [], isLoading: policiesLoading, error: policiesError } = useQuery({
+  const { data: policiesRaw, isLoading: policiesLoading, error: policiesError } = useQuery({
     queryKey: ['insurance-policies'],
-    queryFn: async () => {
-      return mockPolicies
-    },
+    queryFn: () => insuranceApi.listPolicies(),
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 
-  const { data: claims = [], isLoading: claimsLoading } = useQuery({
+  const { data: claimsRaw, isLoading: claimsLoading, error: claimsError } = useQuery({
     queryKey: ['insurance-claims'],
-    queryFn: async () => {
-      return mockClaims
-    },
+    queryFn: () => insuranceApi.listClaims(),
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 
-  const isLoading = policiesLoading || claimsLoading
+  const createPolicyMutation = useMutation({
+    mutationFn: (data: object) => insuranceApi.createPolicy(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['insurance-policies'] })
+      setShowNewPolicyModal(false)
+      setPolicyForm(emptyPolicyForm)
+      addNotification('Die Police wurde erfolgreich angelegt.', 'success', { title: 'Police erstellt' })
+    },
+    onError: (err: any) => {
+      addNotification(`Police konnte nicht erstellt werden: ${err.message || 'Unbekannter Fehler'}`, 'error', { title: 'Fehler' })
+    },
+  })
+
+  const createClaimMutation = useMutation({
+    mutationFn: (data: object) => insuranceApi.createClaim(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['insurance-claims'] })
+      setShowNewClaimModal(false)
+      setClaimForm(emptyClaimForm)
+      addNotification('Der Schadensfall wurde erfolgreich gemeldet.', 'success', { title: 'Schadensfall erstellt' })
+    },
+    onError: (err: any) => {
+      addNotification(`Schadensfall konnte nicht erstellt werden: ${err.message || 'Unbekannter Fehler'}`, 'error', { title: 'Fehler' })
+    },
+  })
+
+  // Normalize API responses to arrays
+  const policiesArray: PolicyResponse[] = Array.isArray(policiesRaw) ? policiesRaw : (policiesRaw?.data || policiesRaw?.items || [])
+  const claimsArray: ClaimResponse[] = Array.isArray(claimsRaw) ? claimsRaw : (claimsRaw?.data || claimsRaw?.items || [])
+
+  const policies: UIPolicy[] = policiesArray.map(mapPolicy)
+  const claims: UIClaim[] = claimsArray.map(mapClaim)
+
+  const isLoading = (policiesLoading && !policiesError) || (claimsLoading && !claimsError)
 
   const openClaims = claims.filter(c => ['reported', 'documented', 'submitted', 'approved'].includes(c.status))
   const settledClaims = claims.filter(c => ['settled', 'rejected'].includes(c.status))
@@ -255,28 +245,43 @@ function InsurancePage() {
     return labels[status] || status
   }
 
-  const handleNewClaimSubmit = () => {
-    if (!newClaimForm.policy_id || !newClaimForm.incident_date || !newClaimForm.description) {
-      return
-    }
-    setClaimSubmitted(true)
-    setTimeout(() => {
-      setShowNewClaimModal(false)
-      setClaimSubmitted(false)
-      setNewClaimForm({
-        policy_id: '',
-        incident_date: '',
-        description: '',
-        affected_equipment: '',
-        estimated_damage: '',
-      })
-    }, 2000)
-  }
-
   const getDaysUntilExpiry = (endDate: string): number => {
     const end = new Date(endDate)
     const now = new Date()
     return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  const handleNewPolicySubmit = () => {
+    if (!policyForm.policy_number.trim() || !policyForm.provider.trim() || !policyForm.start_date || !policyForm.end_date) {
+      addNotification('Policennummer, Versicherer, Start- und Enddatum sind Pflichtfelder.', 'error', { title: 'Fehler' })
+      return
+    }
+    createPolicyMutation.mutate({
+      policy_number: policyForm.policy_number,
+      policy_type: policyForm.policy_type,
+      provider: policyForm.provider,
+      coverage_amount: policyForm.coverage_amount ? parseFloat(policyForm.coverage_amount) : 0,
+      deductible: policyForm.deductible ? parseFloat(policyForm.deductible) : 0,
+      premium_annual: policyForm.premium_annual ? parseFloat(policyForm.premium_annual) : 0,
+      premium_monthly: policyForm.premium_annual ? parseFloat(policyForm.premium_annual) / 12 : 0,
+      start_date: policyForm.start_date,
+      end_date: policyForm.end_date,
+      notes: policyForm.notes || undefined,
+    })
+  }
+
+  const handleNewClaimSubmit = () => {
+    if (!claimForm.policy_id || !claimForm.incident_date || !claimForm.description) {
+      addNotification('Police, Schadendatum und Beschreibung sind Pflichtfelder.', 'error', { title: 'Fehler' })
+      return
+    }
+    createClaimMutation.mutate({
+      policy_id: claimForm.policy_id,
+      incident_date: claimForm.incident_date,
+      description: claimForm.description,
+      damage_type: claimForm.damage_type,
+      claimed_amount: claimForm.claimed_amount ? parseFloat(claimForm.claimed_amount) : 0,
+    })
   }
 
   if (isLoading) {
@@ -300,7 +305,7 @@ function InsurancePage() {
     )
   }
 
-  if (policiesError) {
+  if (policiesError && claimsError) {
     return (
       <div className="insurance-page">
         <div className="page-header">
@@ -325,13 +330,22 @@ function InsurancePage() {
           <h1 className="page-title">Versicherung</h1>
           <p className="page-subtitle">Verwaltung von Versicherungspolicen und Schadenfaellen</p>
         </div>
-        <button
-          className="btn btn--primary"
-          onClick={() => setShowNewClaimModal(true)}
-          style={{ padding: 'var(--spacing-3) var(--spacing-5)' }}
-        >
-          + Neuer Schadensfall
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+          <button
+            className="btn btn--primary"
+            onClick={() => setShowNewPolicyModal(true)}
+            style={{ padding: 'var(--spacing-3) var(--spacing-5)' }}
+          >
+            + Neue Police
+          </button>
+          <button
+            className="btn btn--secondary"
+            onClick={() => setShowNewClaimModal(true)}
+            style={{ padding: 'var(--spacing-3) var(--spacing-5)' }}
+          >
+            + Neuer Schadensfall
+          </button>
+        </div>
       </div>
 
       {/* KPI Stats Grid */}
@@ -392,75 +406,91 @@ function InsurancePage() {
 
       {/* Active Policies */}
       {activeTab === 'policies' && (
-        <div className="policies-grid">
-          {policies.map(policy => {
-            const daysLeft = getDaysUntilExpiry(policy.end_date)
-            const isExpiringSoon = daysLeft > 0 && daysLeft <= 90
-            const isExpired = daysLeft <= 0
+        <>
+          {policies.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state__icon">{'\u{1F6E1}'}</div>
+              <h3 className="empty-state__title">Keine Policen vorhanden</h3>
+              <p className="empty-state__description">Legen Sie Ihre erste Versicherungspolice an, um loszulegen.</p>
+              <button className="btn btn--primary" onClick={() => setShowNewPolicyModal(true)}>
+                + Neue Police
+              </button>
+            </div>
+          ) : (
+            <div className="policies-grid">
+              {policies.map(policy => {
+                const daysLeft = getDaysUntilExpiry(policy.end_date)
+                const isExpiringSoon = daysLeft > 0 && daysLeft <= 90
+                const isExpired = daysLeft <= 0
 
-            return (
-              <div key={policy.id} className={`policy-card ${isExpired ? 'policy-card--expired' : ''} ${isExpiringSoon ? 'policy-card--expiring' : ''}`}>
-                <div className="policy-card__header">
-                  <div className="policy-card__provider">
-                    <span className="policy-card__type-icon">{getPolicyTypeIcon(policy.type)}</span>
-                    <h3 className="policy-card__title">{policy.provider}</h3>
-                  </div>
-                  <span className={`policy-status ${policy.is_active ? 'policy-status--active' : 'policy-status--inactive'}`}>
-                    {policy.is_active ? 'Aktiv' : 'Inaktiv'}
-                  </span>
-                </div>
+                return (
+                  <div key={policy.id} className={`policy-card ${isExpired ? 'policy-card--expired' : ''} ${isExpiringSoon ? 'policy-card--expiring' : ''}`}>
+                    <div className="policy-card__header">
+                      <div className="policy-card__provider">
+                        <span className="policy-card__type-icon">{getPolicyTypeIcon(policy.type)}</span>
+                        <h3 className="policy-card__title">{policy.provider}</h3>
+                      </div>
+                      <span className={`policy-status ${policy.is_active ? 'policy-status--active' : 'policy-status--inactive'}`}>
+                        {policy.is_active ? 'Aktiv' : 'Inaktiv'}
+                      </span>
+                    </div>
 
-                <div className="policy-card__type">
-                  <span className="policy-type-badge">{getPolicyTypeLabel(policy.type)}</span>
-                  {isExpiringSoon && (
-                    <span className="policy-type-badge policy-type-badge--warning">
-                      {daysLeft} Tage verbleibend
-                    </span>
-                  )}
-                  {isExpired && (
-                    <span className="policy-type-badge policy-type-badge--danger">
-                      Abgelaufen
-                    </span>
-                  )}
-                </div>
+                    <div className="policy-card__type">
+                      <span className="policy-type-badge">{getPolicyTypeLabel(policy.type)}</span>
+                      {isExpiringSoon && (
+                        <span className="policy-type-badge policy-type-badge--warning">
+                          {daysLeft} Tage verbleibend
+                        </span>
+                      )}
+                      {isExpired && (
+                        <span className="policy-type-badge policy-type-badge--danger">
+                          Abgelaufen
+                        </span>
+                      )}
+                    </div>
 
-                <div className="policy-card__details">
-                  <div className="detail-row">
-                    <span className="detail-label">Police Nr.:</span>
-                    <span className="detail-value">{policy.policy_number}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Deckungssumme:</span>
-                    <span className="detail-value">{'\u20AC'}{policy.coverage_amount.toLocaleString('de-DE')}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Jahrespraemie:</span>
-                    <span className="detail-value">{'\u20AC'}{policy.premium_annual.toLocaleString('de-DE')}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Selbstbeteiligung:</span>
-                    <span className="detail-value">{'\u20AC'}{policy.deductible.toLocaleString('de-DE')}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Gueltig bis:</span>
-                    <span className={`detail-value ${isExpiringSoon ? 'detail-value--warning' : ''} ${isExpired ? 'detail-value--danger' : ''}`}>
-                      {new Date(policy.end_date).toLocaleDateString('de-DE')}
-                    </span>
-                  </div>
-                </div>
+                    <div className="policy-card__details">
+                      <div className="detail-row">
+                        <span className="detail-label">Police Nr.:</span>
+                        <span className="detail-value">{policy.policy_number}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Deckungssumme:</span>
+                        <span className="detail-value">{'\u20AC'}{policy.coverage_amount.toLocaleString('de-DE')}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Jahrespraemie:</span>
+                        <span className="detail-value">{'\u20AC'}{policy.premium_annual.toLocaleString('de-DE')}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Selbstbeteiligung:</span>
+                        <span className="detail-value">{'\u20AC'}{policy.deductible.toLocaleString('de-DE')}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Gueltig bis:</span>
+                        <span className={`detail-value ${isExpiringSoon ? 'detail-value--warning' : ''} ${isExpired ? 'detail-value--danger' : ''}`}>
+                          {new Date(policy.end_date).toLocaleDateString('de-DE')}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="policy-card__footer">
-                  <button
-                    className="btn btn--sm btn--secondary"
-                    onClick={() => setShowNewClaimModal(true)}
-                  >
-                    Schadensfall melden
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                    <div className="policy-card__footer">
+                      <button
+                        className="btn btn--sm btn--secondary"
+                        onClick={() => {
+                          setClaimForm({ ...emptyClaimForm, policy_id: policy.id })
+                          setShowNewClaimModal(true)
+                        }}
+                      >
+                        Schadensfall melden
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* Open Claims */}
@@ -503,7 +533,7 @@ function InsurancePage() {
                       <span className="amount-label">Gefordert:</span>
                       <span className="amount-value">{'\u20AC'}{claim.total_claimed.toLocaleString('de-DE')}</span>
                     </div>
-                    {claim.total_approved && (
+                    {claim.total_approved != null && (
                       <div className="amount-item">
                         <span className="amount-label">Genehmigt:</span>
                         <span className="amount-value" style={{ color: 'var(--color-success)' }}>
@@ -534,14 +564,6 @@ function InsurancePage() {
                   <div className="claim-card__meta">
                     <p>
                       <strong>Schadendatum:</strong> {new Date(claim.incident_date).toLocaleDateString('de-DE')}
-                    </p>
-                    {claim.assigned_adjuster && (
-                      <p>
-                        <strong>Sachbearbeiter:</strong> {claim.assigned_adjuster}
-                      </p>
-                    )}
-                    <p>
-                      <strong>Posten:</strong> {claim.items.length}
                     </p>
                   </div>
 
@@ -592,7 +614,7 @@ function InsurancePage() {
                     <span className="amount-label">Gefordert:</span>
                     <span className="amount-value">{'\u20AC'}{claim.total_claimed.toLocaleString('de-DE')}</span>
                   </div>
-                  {claim.total_settled && (
+                  {claim.total_settled != null && (
                     <div className="amount-item">
                       <span className="amount-label">Abgewickelt:</span>
                       <span className="amount-value" style={{ color: 'var(--color-success)' }}>
@@ -614,11 +636,6 @@ function InsurancePage() {
                   <p>
                     <strong>Schadendatum:</strong> {new Date(claim.incident_date).toLocaleDateString('de-DE')}
                   </p>
-                  {claim.assigned_adjuster && (
-                    <p>
-                      <strong>Sachbearbeiter:</strong> {claim.assigned_adjuster}
-                    </p>
-                  )}
                 </div>
               </div>
             ))
@@ -626,122 +643,266 @@ function InsurancePage() {
         </div>
       )}
 
+      {/* New Policy Modal */}
+      {showNewPolicyModal && (
+        <div className="modal-overlay" onClick={() => setShowNewPolicyModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal__header">
+              <h2 className="modal__title">Neue Versicherungspolice</h2>
+              <button
+                className="modal__close"
+                onClick={() => setShowNewPolicyModal(false)}
+              >
+                {'\u2715'}
+              </button>
+            </div>
+
+            <div className="modal__body">
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-number">Policennummer *</label>
+                <input
+                  id="policy-number"
+                  type="text"
+                  className="form-input"
+                  placeholder="z.B. LV-2026-001"
+                  value={policyForm.policy_number}
+                  onChange={(e) => setPolicyForm({ ...policyForm, policy_number: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-type">Typ</label>
+                <select
+                  id="policy-type"
+                  className="form-select"
+                  value={policyForm.policy_type}
+                  onChange={(e) => setPolicyForm({ ...policyForm, policy_type: e.target.value })}
+                >
+                  <option value="liability">Haftpflicht</option>
+                  <option value="equipment">Ausruestung</option>
+                  <option value="vehicle">Fahrzeuge</option>
+                  <option value="workers_comp">Unfallversicherung</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-provider">Versicherer *</label>
+                <input
+                  id="policy-provider"
+                  type="text"
+                  className="form-input"
+                  placeholder="z.B. Allianz Versicherung"
+                  value={policyForm.provider}
+                  onChange={(e) => setPolicyForm({ ...policyForm, provider: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-coverage">Deckungssumme ({'\u20AC'})</label>
+                <input
+                  id="policy-coverage"
+                  type="number"
+                  className="form-input"
+                  placeholder="0"
+                  min="0"
+                  value={policyForm.coverage_amount}
+                  onChange={(e) => setPolicyForm({ ...policyForm, coverage_amount: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-deductible">Selbstbeteiligung ({'\u20AC'})</label>
+                <input
+                  id="policy-deductible"
+                  type="number"
+                  className="form-input"
+                  placeholder="0"
+                  min="0"
+                  value={policyForm.deductible}
+                  onChange={(e) => setPolicyForm({ ...policyForm, deductible: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-premium">Jahrespraemie ({'\u20AC'})</label>
+                <input
+                  id="policy-premium"
+                  type="number"
+                  className="form-input"
+                  placeholder="0"
+                  min="0"
+                  value={policyForm.premium_annual}
+                  onChange={(e) => setPolicyForm({ ...policyForm, premium_annual: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-start">Startdatum *</label>
+                <input
+                  id="policy-start"
+                  type="date"
+                  className="form-input"
+                  value={policyForm.start_date}
+                  onChange={(e) => setPolicyForm({ ...policyForm, start_date: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-end">Enddatum *</label>
+                <input
+                  id="policy-end"
+                  type="date"
+                  className="form-input"
+                  value={policyForm.end_date}
+                  onChange={(e) => setPolicyForm({ ...policyForm, end_date: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="policy-notes">Notizen</label>
+                <textarea
+                  id="policy-notes"
+                  className="form-textarea"
+                  rows={3}
+                  placeholder="Optionale Notizen..."
+                  value={policyForm.notes}
+                  onChange={(e) => setPolicyForm({ ...policyForm, notes: e.target.value })}
+                />
+              </div>
+
+              <div className="modal__footer">
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => { setShowNewPolicyModal(false); setPolicyForm(emptyPolicyForm) }}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  className="btn btn--primary"
+                  onClick={handleNewPolicySubmit}
+                  disabled={createPolicyMutation.isPending}
+                >
+                  {createPolicyMutation.isPending ? 'Speichern...' : 'Police anlegen'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* New Claim Modal */}
       {showNewClaimModal && (
-        <div className="modal-overlay" onClick={() => !claimSubmitted && setShowNewClaimModal(false)}>
+        <div className="modal-overlay" onClick={() => setShowNewClaimModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal__header">
               <h2 className="modal__title">Neuer Schadensfall</h2>
               <button
                 className="modal__close"
                 onClick={() => setShowNewClaimModal(false)}
-                disabled={claimSubmitted}
               >
                 {'\u2715'}
               </button>
             </div>
 
-            {claimSubmitted ? (
-              <div className="modal__success">
-                <div className="modal__success-icon">{'\u2713'}</div>
-                <h3>Schadensfall erfolgreich gemeldet</h3>
-                <p>Ihre Schadenmeldung wird bearbeitet. Sie erhalten in Kuerze eine Bestaetigung.</p>
+            <div className="modal__body">
+              <div className="form-group">
+                <label className="form-label" htmlFor="claim-policy">Versicherungspolice *</label>
+                <select
+                  id="claim-policy"
+                  className="form-select"
+                  value={claimForm.policy_id}
+                  onChange={(e) => setClaimForm({ ...claimForm, policy_id: e.target.value })}
+                >
+                  <option value="">Police auswaehlen...</option>
+                  {policies.filter(p => p.is_active).map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.provider} - {getPolicyTypeLabel(p.type)} ({p.policy_number})
+                    </option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              <div className="modal__body">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="claim-policy">Versicherungspolice *</label>
-                  <select
-                    id="claim-policy"
-                    className="form-select"
-                    value={newClaimForm.policy_id}
-                    onChange={(e) => setNewClaimForm({ ...newClaimForm, policy_id: e.target.value })}
-                  >
-                    <option value="">Police auswaehlen...</option>
-                    {policies.filter(p => p.is_active).map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.provider} - {getPolicyTypeLabel(p.type)} ({p.policy_number})
-                      </option>
-                    ))}
-                  </select>
-                </div>
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="claim-date">Schadendatum *</label>
-                  <input
-                    id="claim-date"
-                    type="date"
-                    className="form-input"
-                    value={newClaimForm.incident_date}
-                    onChange={(e) => setNewClaimForm({ ...newClaimForm, incident_date: e.target.value })}
-                    max={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="claim-date">Schadendatum *</label>
+                <input
+                  id="claim-date"
+                  type="date"
+                  className="form-input"
+                  value={claimForm.incident_date}
+                  onChange={(e) => setClaimForm({ ...claimForm, incident_date: e.target.value })}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="claim-description">Beschreibung des Schadensfalls *</label>
-                  <textarea
-                    id="claim-description"
-                    className="form-textarea"
-                    rows={4}
-                    placeholder="Beschreiben Sie den Vorfall detailliert..."
-                    value={newClaimForm.description}
-                    onChange={(e) => setNewClaimForm({ ...newClaimForm, description: e.target.value })}
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="claim-damage-type">Schadensart</label>
+                <select
+                  id="claim-damage-type"
+                  className="form-select"
+                  value={claimForm.damage_type}
+                  onChange={(e) => setClaimForm({ ...claimForm, damage_type: e.target.value })}
+                >
+                  <option value="damage">Beschaedigung</option>
+                  <option value="theft">Diebstahl</option>
+                  <option value="loss">Verlust</option>
+                  <option value="accident">Unfall</option>
+                  <option value="water_damage">Wasserschaden</option>
+                  <option value="fire">Brandschaden</option>
+                  <option value="other">Sonstiges</option>
+                </select>
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="claim-equipment">Betroffenes Equipment</label>
-                  <input
-                    id="claim-equipment"
-                    type="text"
-                    className="form-input"
-                    placeholder="z.B. Moving Head Robe T1, Mischpult..."
-                    value={newClaimForm.affected_equipment}
-                    onChange={(e) => setNewClaimForm({ ...newClaimForm, affected_equipment: e.target.value })}
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="claim-description">Beschreibung des Schadensfalls *</label>
+                <textarea
+                  id="claim-description"
+                  className="form-textarea"
+                  rows={4}
+                  placeholder="Beschreiben Sie den Vorfall detailliert..."
+                  value={claimForm.description}
+                  onChange={(e) => setClaimForm({ ...claimForm, description: e.target.value })}
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="claim-damage">Geschaetzter Schaden ({'\u20AC'})</label>
-                  <input
-                    id="claim-damage"
-                    type="number"
-                    className="form-input"
-                    placeholder="0,00"
-                    min="0"
-                    step="0.01"
-                    value={newClaimForm.estimated_damage}
-                    onChange={(e) => setNewClaimForm({ ...newClaimForm, estimated_damage: e.target.value })}
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="claim-amount">Geschaetzter Schaden ({'\u20AC'})</label>
+                <input
+                  id="claim-amount"
+                  type="number"
+                  className="form-input"
+                  placeholder="0,00"
+                  min="0"
+                  step="0.01"
+                  value={claimForm.claimed_amount}
+                  onChange={(e) => setClaimForm({ ...claimForm, claimed_amount: e.target.value })}
+                />
+              </div>
 
-                {newClaimForm.policy_id && (
-                  <div className="form-info">
-                    <div className="form-info__title">Selbstbeteiligung</div>
-                    <div className="form-info__value">
-                      {'\u20AC'}{policies.find(p => p.id === newClaimForm.policy_id)?.deductible.toLocaleString('de-DE') || '0'}
-                    </div>
+              {claimForm.policy_id && (
+                <div className="form-info">
+                  <div className="form-info__title">Selbstbeteiligung</div>
+                  <div className="form-info__value">
+                    {'\u20AC'}{policies.find(p => p.id === claimForm.policy_id)?.deductible.toLocaleString('de-DE') || '0'}
                   </div>
-                )}
-
-                <div className="modal__footer">
-                  <button
-                    className="btn btn--secondary"
-                    onClick={() => setShowNewClaimModal(false)}
-                  >
-                    Abbrechen
-                  </button>
-                  <button
-                    className="btn btn--primary"
-                    onClick={handleNewClaimSubmit}
-                    disabled={!newClaimForm.policy_id || !newClaimForm.incident_date || !newClaimForm.description}
-                  >
-                    Schadensfall melden
-                  </button>
                 </div>
+              )}
+
+              <div className="modal__footer">
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => { setShowNewClaimModal(false); setClaimForm(emptyClaimForm) }}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  className="btn btn--primary"
+                  onClick={handleNewClaimSubmit}
+                  disabled={!claimForm.policy_id || !claimForm.incident_date || !claimForm.description || createClaimMutation.isPending}
+                >
+                  {createClaimMutation.isPending ? 'Melden...' : 'Schadensfall melden'}
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}

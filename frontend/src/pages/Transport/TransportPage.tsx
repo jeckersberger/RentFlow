@@ -108,12 +108,14 @@ function TransportPage() {
     queryKey: ['vehicles'],
     queryFn: () => transportApi.listVehicles(),
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 
   const { data: toursData, isLoading: toursLoading, error: toursError } = useQuery({
     queryKey: ['tours'],
     queryFn: () => transportApi.listTours(),
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 
   const createVehicleMutation = useMutation({
@@ -131,7 +133,7 @@ function TransportPage() {
 
   const vehicles: Vehicle[] = vehiclesData?.items || vehiclesData?.data || (Array.isArray(vehiclesData) ? vehiclesData : [])
   const tours: Tour[] = toursData?.items || toursData?.data || (Array.isArray(toursData) ? toursData : [])
-  const isLoading = vehiclesLoading || toursLoading
+  const isLoading = (vehiclesLoading && !vehiclesError) || (toursLoading && !toursError)
   const hasError = vehiclesError || toursError
 
   const activeTours = tours.filter(t => ['planned', 'loading', 'in_transit'].includes(t.status))
@@ -424,7 +426,7 @@ function TransportPage() {
                         <StatusBadge status={tour.status} label={TOUR_STATUS_LABELS[tour.status]} />
                       </div>
                       <div className="tour-card__meta">
-                        <p><strong>Fahrzeug:</strong> {vehicle?.name || 'N/A'}</p>
+                        <p><strong>Fahrzeug:</strong> {vehicle?.name || 'k.A.'}</p>
                         {(tour.driver || tour.driver_id) && (
                           <p><strong>Fahrer:</strong> {tour.driver || tour.driver_id}</p>
                         )}
@@ -479,7 +481,7 @@ function TransportPage() {
                         </div>
 
                         <div className="tour-card__meta">
-                          <p><strong>Fahrzeug:</strong> {vehicle?.name || 'N/A'}</p>
+                          <p><strong>Fahrzeug:</strong> {vehicle?.name || 'k.A.'}</p>
                           {(tour.driver || tour.driver_id) && (
                             <p><strong>Fahrer:</strong> {tour.driver || tour.driver_id}</p>
                           )}
@@ -550,7 +552,7 @@ function TransportPage() {
                             <StatusBadge status="completed" label="Abgeschlossen" />
                           </div>
                           <div className="tour-card__meta">
-                            <p><strong>Fahrzeug:</strong> {vehicle?.name || 'N/A'}</p>
+                            <p><strong>Fahrzeug:</strong> {vehicle?.name || 'k.A.'}</p>
                             {km > 0 && <p><strong>Strecke:</strong> {km.toLocaleString('de-DE')} km</p>}
                           </div>
                         </div>

@@ -476,3 +476,80 @@
     padding: var(--spacing-3);
   }
 }
+
+// ============================================================================
+// PRINT STYLES (PDF Export)
+// ============================================================================
+
+@media print {
+  // Hide everything outside the reports page
+  body > *:not(#root),
+  nav,
+  .sidebar,
+  .no-print,
+  .page-header__actions,
+  .period-selector {
+    display: none !important;
+  }
+
+  .reports-page {
+    padding: 0;
+    gap: 12pt;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .page-title {
+    color: #000 !important;
+    font-size: 18pt;
+  }
+
+  .page-subtitle {
+    color: #333 !important;
+    font-size: 10pt;
+  }
+
+  .section-title {
+    color: #000 !important;
+    font-size: 14pt;
+    page-break-after: avoid;
+  }
+
+  .kpi-card,
+  .chart-container,
+  .runs-table {
+    border: 1px solid #ccc !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .kpi-card__label {
+    color: #333 !important;
+  }
+
+  .kpi-card__value {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .table-header {
+    background: #f0f0f0 !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .table-cell {
+    color: #000 !important;
+  }
+
+  .chart-section {
+    page-break-inside: avoid;
+  }
+
+  .recent-runs-section {
+    page-break-before: auto;
+  }
+}

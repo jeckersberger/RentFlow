@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { projectApi } from '../../../services/api'
+import { projectStatusLabel } from '../../../utils/statusLabels'
 
 interface UpcomingProject {
   id: string
@@ -58,7 +59,7 @@ export function TodayWarehouseWidget() {
             </p>
           </div>
           <span className={`widget-list__badge widget-list__badge--${project.status}`}>
-            {project.status === 'active' ? 'Aktiv' : project.status === 'planning' ? 'Planung' : project.status}
+            {projectStatusLabel(project.status)}
           </span>
         </div>
       ))}

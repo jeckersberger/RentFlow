@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
 import { api, reservationApi } from '../../../services/api'
+import { getStatusLabel } from '../../../utils/statusLabels'
 import { PackingListTab } from './PackingListTab'
 import styles from '../ProjectDetail.module.scss'
 
@@ -39,7 +40,6 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
   const [showPackingList, setShowPackingList] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [addEquipmentId, setAddEquipmentId] = useState('')
-  const [addEquipmentName, setAddEquipmentName] = useState('')
   const [isCheckingConflicts, setIsCheckingConflicts] = useState(false)
   const [conflicts, setConflicts] = useState<ConflictInfo[]>([])
   const [showConflictWarning, setShowConflictWarning] = useState(false)
@@ -112,7 +112,7 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
     }
   }, [addEquipmentId, project.start_date, project.end_date, project.id])
 
-  const addEquipmentToProject = useCallback(async () => {
+  const addEquipmentToProject = useCallback(async (force = false) => {
     setIsAdding(true)
     try {
       await reservationApi.create({
@@ -120,12 +120,13 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
         equipment_id: addEquipmentId,
         start_date: project.start_date,
         end_date: project.end_date,
+        ...(force ? { force: true } : {}),
       })
       queryClient.invalidateQueries({ queryKey: ['project-reservations', project.id] })
       // Reset modal state
       setShowAddModal(false)
       setAddEquipmentId('')
-      setAddEquipmentName('')
+
       setConflicts([])
       setShowConflictWarning(false)
     } catch {
@@ -138,7 +139,7 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
   const handleForceAdd = useCallback(async () => {
     // User confirmed they want to add despite conflicts
     setShowConflictWarning(false)
-    await addEquipmentToProject()
+    await addEquipmentToProject(true)
   }, [addEquipmentToProject])
 
   const handleCloseModal = () => {
@@ -268,7 +269,7 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
                     <li key={c.reservation_id}>
                       <strong>{c.project_name || c.project_id}</strong>
                       {' '}({formatDate(c.start_date)} &ndash; {formatDate(c.end_date)})
-                      {' '}<span style={{ color: 'var(--color-text-muted)' }}>- {c.status}</span>
+                      {' '}<span style={{ color: 'var(--color-text-muted)' }}>- {getStatusLabel(c.status)}</span>
                     </li>
                   ))}
                 </ul>

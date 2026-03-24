@@ -45,6 +45,7 @@ import ScannerPage from './pages/Scanner/ScannerPage'
 
 // Warehouse Page
 import WarehouseViewPage from './pages/Warehouse/WarehousePage'
+import InventoryPage from './pages/Warehouse/InventoryPage'
 
 // Settings Pages
 import SettingsLayout from './pages/Settings/SettingsLayout'
@@ -306,6 +307,7 @@ function App() {
             {/* Scanner & Warehouse */}
             <Route path="scanner" element={<ScannerPage />} />
             <Route path="warehouse" element={<WarehouseViewPage />} />
+            <Route path="inventory" element={<InventoryPage />} />
 
             {/* Settings - Nested Routes */}
             <Route path="settings" element={<SettingsLayout />}>

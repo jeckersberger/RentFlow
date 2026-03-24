@@ -382,7 +382,7 @@ export const reservationApi = {
   list: (projectId: string) =>
     api.get('/api/v1/reservations', { params: { project_id: projectId } }).then(res => res.data),
 
-  create: (data: { project_id: string; equipment_id: string; start_date: string; end_date: string }) =>
+  create: (data: { project_id: string; equipment_id: string; start_date: string; end_date: string; force?: boolean }) =>
     api.post('/api/v1/reservations', data).then(res => res.data),
 
   delete: (id: string) =>
@@ -751,6 +751,69 @@ export const transportApi = {
 }
 
 // ============================================================================
+// INSURANCE API endpoints
+// ============================================================================
+
+// Helper to get current tenant ID for insurance service (uses query params)
+const getInsuranceTenantId = (): string => {
+  return useAuthStore.getState().tenantId || ''
+}
+
+export const insuranceApi = {
+  // Policies
+  listPolicies: () =>
+    api.get('/api/v1/policies', { params: { tenant_id: getInsuranceTenantId() } }).then(res => res.data),
+
+  getPolicy: (id: string) =>
+    api.get(`/api/v1/policies/${id}`).then(res => res.data),
+
+  createPolicy: (data: object) =>
+    api.post('/api/v1/policies', { ...data, tenant_id: getInsuranceTenantId() }).then(res => res.data),
+
+  updatePolicy: (id: string, data: object) =>
+    api.put(`/api/v1/policies/${id}`, data).then(res => res.data),
+
+  getActivePolicies: () =>
+    api.get('/api/v1/policies/active', { params: { tenant_id: getInsuranceTenantId() } }).then(res => res.data),
+
+  // Claims
+  listClaims: () =>
+    api.get('/api/v1/claims', { params: { tenant_id: getInsuranceTenantId() } }).then(res => res.data),
+
+  getClaim: (id: string) =>
+    api.get(`/api/v1/claims/${id}`).then(res => res.data),
+
+  createClaim: (data: object) =>
+    api.post('/api/v1/claims', { ...data, tenant_id: getInsuranceTenantId() }).then(res => res.data),
+
+  updateClaim: (id: string, data: object) =>
+    api.put(`/api/v1/claims/${id}`, data).then(res => res.data),
+
+  submitClaim: (id: string) =>
+    api.post(`/api/v1/claims/${id}/submit`).then(res => res.data),
+
+  approveClaim: (id: string, data?: object) =>
+    api.post(`/api/v1/claims/${id}/approve`, data).then(res => res.data),
+
+  rejectClaim: (id: string, data?: object) =>
+    api.post(`/api/v1/claims/${id}/reject`, data).then(res => res.data),
+
+  settleClaim: (id: string, data?: object) =>
+    api.post(`/api/v1/claims/${id}/settle`, data).then(res => res.data),
+
+  // Claim Items
+  getClaimItems: (claimId: string) =>
+    api.get(`/api/v1/claims/${claimId}/items`).then(res => res.data),
+
+  createClaimItem: (claimId: string, data: object) =>
+    api.post(`/api/v1/claims/${claimId}/items`, data).then(res => res.data),
+
+  // Dashboard
+  getDashboard: () =>
+    api.get('/api/v1/insurance/dashboard', { params: { tenant_id: getInsuranceTenantId() } }).then(res => res.data),
+}
+
+// ============================================================================
 // MAINTENANCE API endpoints
 // ============================================================================
 export const maintenanceApi = {
@@ -822,14 +885,14 @@ export const maintenanceApi = {
   createChecklist: (data: object) =>
     MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()), version: 1 }) : api.post('/api/v1/maintenance/checklists', data).then(res => res.data),
 
-  // Electrical Tests (VDE)
+  // Electrical Tests (VDE / DGUV V3)
   createElectricalTest: (data: object) =>
-    MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()) }) : api.post('/api/v1/maintenance/electrical-tests', data).then(res => res.data),
+    MOCK_MODE ? mockDelay({ ...data, id: String(Date.now()), certificate_number: `VDE-RF-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}` }) : api.post('/api/v1/maintenance/electrical-tests', data).then(res => res.data),
 
-  listElectricalTests: (page = 1, limit = 50) =>
+  listElectricalTests: (page = 1, limit = 50, equipmentId?: string) =>
     MOCK_MODE
-      ? mockDelay({ items: mockElectricalTests.slice((page - 1) * limit, page * limit), total: mockElectricalTests.length, page, limit })
-      : api.get('/api/v1/maintenance/electrical-tests', { params: { page, limit } }).then(res => res.data),
+      ? mockDelay({ items: (equipmentId ? mockElectricalTests.filter(t => t.equipment_id === equipmentId) : mockElectricalTests).slice((page - 1) * limit, page * limit), total: mockElectricalTests.length, page, limit })
+      : api.get('/api/v1/maintenance/electrical-tests', { params: { page, limit, ...(equipmentId ? { equipment_id: equipmentId } : {}) } }).then(res => res.data),
 
   // Izytron XML Import
   importIzytronXML: (file: File) => {
@@ -1250,16 +1313,33 @@ export interface NotificationPreference {
   digest_mode?: string
 }
 
+// The notification-service returns PascalCase (domain struct without json tags).
+// Normalise to snake_case so the frontend can work with a consistent interface.
+function normalisePref(raw: any): NotificationPreference {
+  return {
+    id: raw.ID ?? raw.id,
+    event_type: raw.EventType ?? raw.event_type ?? '',
+    channels: raw.Channels ?? raw.channels ?? [],
+    is_enabled: raw.IsEnabled ?? raw.is_enabled ?? false,
+    quiet_hours_start: raw.QuietHoursStart ?? raw.quiet_hours_start ?? null,
+    quiet_hours_end: raw.QuietHoursEnd ?? raw.quiet_hours_end ?? null,
+    digest_mode: raw.DigestMode ?? raw.digest_mode ?? '',
+  }
+}
+
 export const notificationPreferencesApi = {
   list: (): Promise<NotificationPreference[]> =>
     MOCK_MODE
       ? mockDelay([])
-      : api.get('/api/v1/notifications/preferences').then(res => Array.isArray(res.data) ? res.data : res.data ?? []),
+      : api.get('/api/v1/notifications/preferences').then(res => {
+          const raw = Array.isArray(res.data) ? res.data : res.data ?? []
+          return raw.map(normalisePref)
+        }),
 
   update: (pref: NotificationPreference): Promise<NotificationPreference> =>
     MOCK_MODE
       ? mockDelay(pref)
-      : api.put('/api/v1/notifications/preferences', pref).then(res => res.data),
+      : api.put('/api/v1/notifications/preferences', pref).then(res => normalisePref(res.data)),
 }
 
 // ============================================================================

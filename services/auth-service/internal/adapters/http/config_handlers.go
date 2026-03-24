@@ -188,30 +188,36 @@ func (h *ConfigHandlers) TestSMTP(w http.ResponseWriter, r *http.Request) {
 			conn.Close()
 		}
 	} else {
-		// STARTTLS or plain — use net/smtp
-		client, err := smtp.Dial(addr)
-		if err != nil {
-			dialErr = fmt.Errorf("SMTP dial failed: %w", err)
+		// STARTTLS or plain
+		conn, connErr := net.DialTimeout("tcp", addr, 10*time.Second)
+		if connErr != nil {
+			dialErr = fmt.Errorf("TCP connect failed: %w", connErr)
 		} else {
-			defer client.Close()
+			client, clientErr := smtp.NewClient(conn, smtpConfig.Host)
+			if clientErr != nil {
+				conn.Close()
+				dialErr = fmt.Errorf("SMTP client failed: %w", clientErr)
+			} else {
+				defer client.Close()
 
-			// Try STARTTLS if enabled
-			if smtpConfig.TLS {
-				tlsConfig := &tls.Config{ServerName: smtpConfig.Host}
-				if err := client.StartTLS(tlsConfig); err != nil {
-					dialErr = fmt.Errorf("STARTTLS failed: %w", err)
+				// Try STARTTLS if enabled
+				if smtpConfig.TLS {
+					tlsConfig := &tls.Config{ServerName: smtpConfig.Host}
+					if tlsErr := client.StartTLS(tlsConfig); tlsErr != nil {
+						dialErr = fmt.Errorf("STARTTLS failed: %w", tlsErr)
+					}
 				}
-			}
 
-			// Try authentication if credentials provided
-			if dialErr == nil && smtpConfig.Username != "" && smtpConfig.Password != "" {
-				auth := smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host)
-				if err := client.Auth(auth); err != nil {
-					dialErr = fmt.Errorf("SMTP auth failed: %w", err)
+				// Try authentication if credentials provided
+				if dialErr == nil && smtpConfig.Username != "" && smtpConfig.Password != "" {
+					auth := smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host)
+					if authErr := client.Auth(auth); authErr != nil {
+						dialErr = fmt.Errorf("SMTP auth failed: %w", authErr)
+					}
 				}
-			}
 
-			client.Quit()
+				client.Quit()
+			}
 		}
 	}
 

@@ -148,6 +148,10 @@ function EquipmentFormPage() {
         condition: equipment.condition || 'good',
       })
     }
+    // Show existing image if available
+    if (equipment.image_url) {
+      setImagePreview(equipment.image_url)
+    }
   }, [equipment, isEditing])
 
   const validateForm = () => {
@@ -549,12 +553,87 @@ function EquipmentFormPage() {
           </div>
         </div>
 
-        <FileUpload
-          label="Bilder"
-          accept="image/*"
-          multiple={true}
-          onChange={() => {}}
-        />
+        <div className="form-group">
+          <label className="form-label">Bild</label>
+          {imagePreview ? (
+            <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+              <img
+                src={imagePreview}
+                alt="Vorschau"
+                style={{
+                  width: '100%',
+                  maxHeight: '300px',
+                  objectFit: 'cover',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'rgba(0, 0, 0, 0.6)',
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: 'var(--radius-full)',
+                  width: '28px',
+                  height: '28px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              >
+                x
+              </button>
+              {imageFile && (
+                <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                  {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
+                </p>
+              )}
+            </div>
+          ) : (
+            <div
+              onClick={() => imageInputRef.current?.click()}
+              onDrop={handleImageDrop}
+              onDragOver={handleImageDragOver}
+              onDragLeave={handleImageDragLeave}
+              style={{
+                width: '100%',
+                maxWidth: '400px',
+                height: '160px',
+                border: `2px dashed ${isDragging ? 'var(--color-primary)' : 'rgba(0, 212, 255, 0.3)'}`,
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                backgroundColor: isDragging ? 'rgba(0, 212, 255, 0.08)' : 'rgba(0, 212, 255, 0.03)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span style={{ fontSize: '2rem', marginBottom: 'var(--spacing-2)', opacity: 0.5 }}>+</span>
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                Bild hierher ziehen oder klicken
+              </span>
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', marginTop: 'var(--spacing-1)' }}>
+                Max. 10 MB (JPG, PNG, WebP)
+              </span>
+            </div>
+          )}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleImageInputChange}
+          />
+        </div>
 
         <div className="form-section__footer">
           <button

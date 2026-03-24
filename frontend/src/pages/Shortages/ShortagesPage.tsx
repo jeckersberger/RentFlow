@@ -70,7 +70,7 @@ function ShortagesPage() {
           affectedProjects: projectNames.slice(0, Math.min(2, projectNames.length)),
           period: activeProjects.length > 0
             ? `${new Date(activeProjects[0].start_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} - ${new Date(activeProjects[0].end_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}`
-            : 'N/A',
+            : 'k.A.',
           severity: Math.abs(available) > 2 ? 'critical' : 'warning',
         })
       }
