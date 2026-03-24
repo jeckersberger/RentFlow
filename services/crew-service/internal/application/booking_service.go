@@ -15,10 +15,11 @@ import (
 
 // BookingService handles booking request business logic
 type BookingService struct {
-	db             *sql.DB
-	assignmentRepo ports.CrewAssignmentRepository
-	crewRepo       ports.CrewMemberRepository
-	logger         logger.Logger
+	db              *sql.DB
+	assignmentRepo  ports.CrewAssignmentRepository
+	crewRepo        ports.CrewMemberRepository
+	logger          logger.Logger
+	notificationURL string
 }
 
 // NewBookingService creates a new booking service
@@ -34,6 +35,11 @@ func NewBookingService(
 		crewRepo:       crewRepo,
 		logger:         log,
 	}
+}
+
+// SetNotificationURL sets the notification-service base URL for sending emails
+func (s *BookingService) SetNotificationURL(url string) {
+	s.notificationURL = url
 }
 
 // generateToken creates a cryptographically secure 32-byte hex token
@@ -98,7 +104,7 @@ func (s *BookingService) CreateBookingRequest(ctx context.Context, cmd CreateBoo
 		return nil, err
 	}
 
-	return &BookingRequestDTO{
+	dto := &BookingRequestDTO{
 		ID:             id,
 		AssignmentID:   cmd.AssignmentID,
 		CrewMemberID:   assignment.CrewMemberID,
@@ -107,7 +113,24 @@ func (s *BookingService) CreateBookingRequest(ctx context.Context, cmd CreateBoo
 		Token:          token,
 		Status:         "pending",
 		CreatedAt:      now.Format(time.RFC3339),
-	}, nil
+	}
+
+	// Send booking request email asynchronously (fire-and-forget)
+	if s.notificationURL != "" && member.Email != "" {
+		projectDates := ""
+		if !assignment.StartDate.IsZero() && !assignment.EndDate.IsZero() {
+			projectDates = assignment.StartDate.Format("02.01.2006") + " - " + assignment.EndDate.Format("02.01.2006")
+		}
+		sendEmailAsync(s.notificationURL, "/api/v1/notifications/send-email/booking-request", map[string]string{
+			"to":             member.Email,
+			"recipient_name": member.FirstName + " " + member.LastName,
+			"project_name":   "Projekt " + projectID,
+			"dates":          projectDates,
+			"link":           "http://localhost:3000/booking/" + token,
+		}, s.logger)
+	}
+
+	return dto, nil
 }
 
 // GetBookingDetails retrieves booking details by token (public, no auth)

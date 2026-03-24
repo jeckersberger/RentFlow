@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
@@ -54,6 +55,12 @@ func (h *Handler) CreateInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cmd.TenantID = tenantID
+
+	// Basic input validation
+	if strings.TrimSpace(cmd.ClientName) == "" {
+		h.respondError(w, http.StatusBadRequest, "client name is required")
+		return
+	}
 
 	dto, err := h.invoiceSvc.CreateInvoice(r.Context(), cmd)
 	if err != nil {

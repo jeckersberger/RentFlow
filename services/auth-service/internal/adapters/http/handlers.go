@@ -81,6 +81,12 @@ func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Basic email validation
+	if cmd.Email == "" || !strings.Contains(cmd.Email, "@") {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid email format")
+		return
+	}
+
 	user, err := h.userService.Register(r.Context(), cmd)
 	if err != nil {
 		switch err {
@@ -111,6 +117,12 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 	var cmd application.LoginCommand
 	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	// Basic email validation
+	if cmd.Email == "" || !strings.Contains(cmd.Email, "@") {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid email format")
 		return
 	}
 

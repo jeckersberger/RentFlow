@@ -15,13 +15,14 @@ import (
 
 // UserService handles user-related business logic
 type UserService struct {
-	userRepo       ports.UserRepository
-	tenantRepo     ports.TenantRepository
-	invitationRepo ports.InvitationRepository
-	passwordMgr    *PasswordManager
-	tokenMgr       *TokenManager
-	logger         logger.Logger
-	db             *sql.DB
+	userRepo            ports.UserRepository
+	tenantRepo          ports.TenantRepository
+	invitationRepo      ports.InvitationRepository
+	passwordMgr         *PasswordManager
+	tokenMgr            *TokenManager
+	logger              logger.Logger
+	db                  *sql.DB
+	notificationURL     string
 }
 
 // NewUserService creates a new user service
@@ -411,6 +412,11 @@ func (s *UserService) SetDB(db *sql.DB) {
 	s.db = db
 }
 
+// SetNotificationURL sets the notification-service base URL for sending emails
+func (s *UserService) SetNotificationURL(url string) {
+	s.notificationURL = url
+}
+
 // ForgotPassword generates a password reset token for the given email
 func (s *UserService) ForgotPassword(ctx context.Context, cmd ForgotPasswordCommand) (string, error) {
 	// Find user by email (search across all tenants)
@@ -443,7 +449,14 @@ func (s *UserService) ForgotPassword(ctx context.Context, cmd ForgotPasswordComm
 		return "", err
 	}
 
-	// In production this would send an email. For now, log the token.
+	// Send password reset email asynchronously (fire-and-forget)
+	if s.notificationURL != "" {
+		sendEmailAsync(s.notificationURL, "/api/v1/notifications/send-email/password-reset", map[string]string{
+			"to":   user.Email,
+			"link": "http://localhost:3000/reset-password/" + token,
+		}, s.logger)
+	}
+
 	s.logger.Info("password reset token generated",
 		"userID", user.ID,
 		"email", user.Email,
@@ -719,6 +732,15 @@ func (s *UserService) InviteUser(ctx context.Context, cmd InviteUserCommand) (*I
 	if err := s.invitationRepo.Save(ctx, inv); err != nil {
 		s.logger.Error("failed to save invitation", err, "email", cmd.Email)
 		return nil, err
+	}
+
+	// Send invitation email asynchronously (fire-and-forget)
+	if s.notificationURL != "" {
+		sendEmailAsync(s.notificationURL, "/api/v1/notifications/send-email/invitation", map[string]string{
+			"to":           inv.Email,
+			"inviter_name": "Admin",
+			"link":         "http://localhost:3000/register?token=" + inv.Token,
+		}, s.logger)
 	}
 
 	s.logger.Info("user invited", "email", cmd.Email, "role", role, "tenantID", cmd.TenantID)

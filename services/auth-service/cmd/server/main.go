@@ -101,6 +101,14 @@ func main() {
 	userService := application.NewUserService(userRepo, tenantRepo, tokenMgr, log)
 	userService.SetInvitationRepo(invitationRepo)
 	userService.SetDB(db)
+
+	// Configure notification-service URL for email sending
+	notificationURL := os.Getenv("NOTIFICATION_SERVICE_URL")
+	if notificationURL == "" {
+		notificationURL = "http://localhost:8015"
+	}
+	userService.SetNotificationURL(notificationURL)
+	log.Info("Notification service configured", "url", notificationURL)
 	tenantService := application.NewTenantService(tenantRepo, log)
 	configService := application.NewConfigService(configRepo, log)
 	setupService := application.NewSetupService(db, userService, tenantService, log)

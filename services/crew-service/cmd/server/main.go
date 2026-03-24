@@ -57,6 +57,14 @@ func main() {
 	timeRecordService := application.NewTimeRecordService(timeRecordRepo, crewRepo, log)
 	bookingService := application.NewBookingService(db, assignmentRepo, crewRepo, log)
 
+	// Configure notification-service URL for email sending
+	notificationURL := os.Getenv("NOTIFICATION_SERVICE_URL")
+	if notificationURL == "" {
+		notificationURL = "http://localhost:8015"
+	}
+	bookingService.SetNotificationURL(notificationURL)
+	log.Info("Notification service configured", "url", notificationURL)
+
 	// Setup router
 	router := nethttp.NewServeMux()
 

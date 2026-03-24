@@ -1,595 +1,36 @@
+# =============================================================================
+# RentFlow Production Overrides
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# =============================================================================
+#
+# This file overrides docker-compose.yml for production:
+# - Resource limits (memory, CPU)
+# - No exposed ports except 80/443 (Traefik handles routing)
+# - Security hardening (read-only FS, dropped capabilities)
+# - JSON log rotation
+# - Health checks with start_period
+# =============================================================================
+
 version: '3.8'
 
 services:
-  # Go Microservices - Production Overrides
-  auth-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  inventory-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  invoice-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  project-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  crew-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  transport-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  warehouse-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8007/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  scanner-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  maintenance-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8009/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  document-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  notification-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8011/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  reporting-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8012/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  expense-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8013/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  insurance-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8014/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  ai-service:
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8015/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  federation-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8016/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  audit-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8017/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  workflow-service:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      LOG_LEVEL: warn
-      GIN_MODE: release
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: true
-    tmpfs:
-      - /tmp
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8018/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    ports: []
-
-  # Infrastructure Services - Production Overrides
-  postgres:
-    restart: unless-stopped
-    mem_limit: 1g
-    cpus: '0.5'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - SETGID
-      - SETUID
-      - DAC_OVERRIDE
-
-  eventstore:
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-
-  redis:
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    healthcheck:
-      test: ["CMD", "redis-cli", "PING"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+  # ============================================================================
+  # INFRASTRUCTURE
+  # ============================================================================
 
   traefik:
     restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      # Dashboard NOT exposed in production (access via internal network only)
     mem_limit: 256m
     cpus: '0.25'
     logging:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "5"
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -601,69 +42,495 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 15s
 
-  prometheus:
+  kurrentdb:
     restart: unless-stopped
+    ports: []
     mem_limit: 512m
-    cpus: '0.25'
+    cpus: '0.5'
     logging:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "5"
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
-    read_only: true
-    tmpfs:
-      - /prometheus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
-  grafana:
+  postgres:
     restart: unless-stopped
-    mem_limit: 256m
-    cpus: '0.25'
+    ports: []
+    mem_limit: 1g
+    cpus: '1.0'
     logging:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "5"
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     cap_add:
-      - CHOWN
-      - SETUID
       - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rentflow}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
-  loki:
+  redis:
     restart: unless-stopped
+    ports: []
     mem_limit: 256m
     cpus: '0.25'
     logging:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  prometheus:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 512m
+    cpus: '0.5'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
 
-  alertmanager:
+  # ============================================================================
+  # MICROSERVICES -- Production Overrides
+  # All services: no exposed ports, resource limits, security hardening
+  # ============================================================================
+
+  auth-service:
     restart: unless-stopped
-    mem_limit: 128m
-    cpus: '0.1'
-    logging:
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: &service-logging
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-    security_opt:
+    environment:
+      LOG_LEVEL: warn
+    security_opt: &service-security
       - no-new-privileges:true
-    cap_drop:
+    cap_drop: &cap-drop-all
       - ALL
+    cap_add: &cap-add-net
+      - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /alertmanager
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  inventory-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  project-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  scanner-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  warehouse-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  invoice-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  document-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  crew-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  federation-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  maintenance-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  transport-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  insurance-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  workflow-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ai-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 512m
+    cpus: '0.5'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  notification-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8015/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  reporting-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8016/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  audit-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8017/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  expense-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 256m
+    cpus: '0.25'
+    logging: *service-logging
+    environment:
+      LOG_LEVEL: warn
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8018/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================================
+  # FRONTEND
+  # ============================================================================
+
+  frontend:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 128m
+    cpus: '0.25'
+    logging: *service-logging
+    security_opt: *service-security
+    cap_drop: *cap-drop-all
+    cap_add: *cap-add-net
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
