@@ -116,7 +116,6 @@ const MailSentPage = lazy(() => import('./pages/Mail/MailSentPage'))
 const MailComposePage = lazy(() => import('./pages/Mail/MailComposePage'))
 
 // Remaining Placeholder Pages — lazy-loaded as a single chunk
-const PlaceholderPages = lazy(() => import('./pages/PlaceholderPages'))
 const NewTourPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewTourPage })))
 const NewVehiclePage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewVehiclePage })))
 const VehicleDetailPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.VehicleDetailPage })))

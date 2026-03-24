@@ -238,5 +238,15 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          query: ['@tanstack/react-query'],
+          ui: ['lucide-react'],
+          radix: ['@radix-ui/themes'],
+        },
+      },
+    },
   },
 })
