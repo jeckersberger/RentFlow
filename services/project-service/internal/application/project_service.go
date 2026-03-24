@@ -42,10 +42,6 @@ func (s *ProjectService) CreateProject(ctx context.Context, cmd CreateProjectCom
 	if cmd.Name == "" {
 		return nil, domain.NewDomainError("NAME_REQUIRED", "project name is required", nil)
 	}
-	if cmd.ClientName == "" {
-		return nil, domain.NewDomainError("CLIENT_REQUIRED", "client name is required", nil)
-	}
-
 	projectID := fmt.Sprintf("proj_%d", hashString(cmd.TenantID+cmd.Name))
 
 	project := domain.NewProject(projectID, cmd.TenantID, cmd.Name, cmd.ClientName, cmd.CreatedByUserID)

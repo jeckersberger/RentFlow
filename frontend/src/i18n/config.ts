@@ -38,6 +38,9 @@ import deReports from './locales/de/reports.json'
 import deAi from './locales/de/ai.json'
 import deMail from './locales/de/mail.json'
 
+import frCommon from './locales/fr/common.json'
+import nlCommon from './locales/nl/common.json'
+
 const resources = {
   en: {
     common: enCommon,
@@ -74,6 +77,12 @@ const resources = {
     reports: deReports,
     ai: deAi,
     mail: deMail,
+  },
+  fr: {
+    common: frCommon,
+  },
+  nl: {
+    common: nlCommon,
   },
 }
 

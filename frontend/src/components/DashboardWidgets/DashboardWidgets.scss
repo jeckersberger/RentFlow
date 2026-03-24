@@ -147,7 +147,7 @@
   border-radius: var(--radius-card);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 
   &:hover {
     border-color: rgba(0, 212, 255, 0.15);

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
 import { crewApi, bookingApi } from '../../../services/api'
+import { Modal } from '../../../components/Modal/Modal'
 import styles from '../ProjectDetail.module.scss'
 
 interface CrewTabProps {
@@ -46,6 +47,29 @@ interface CrewConflict {
   role?: string
 }
 
+interface CrewMember {
+  id: string
+  first_name: string
+  last_name: string
+  email?: string
+  role?: string
+  status?: string
+}
+
+const CREW_ROLES = [
+  'Tontechniker',
+  'Lichttechniker',
+  'Videotechniker',
+  'Rigger',
+  'Stagehand',
+  'Projektleiter',
+  'FOH-Techniker',
+  'Monitor-Techniker',
+  'Buehnentechniker',
+  'Fahrer',
+  'Sonstige',
+]
+
 const bookingStatusConfig: Record<string, { label: string; bg: string; color: string }> = {
   pending: { label: 'Anfrage offen', bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' },
   accepted: { label: 'Zugesagt', bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981' },
@@ -58,6 +82,13 @@ export function CrewTab({ project }: CrewTabProps) {
   const [sendingBooking, setSendingBooking] = useState<string | null>(null)
   const [bookingMessage, setBookingMessage] = useState('')
   const [showMessageFor, setShowMessageFor] = useState<string | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addForm, setAddForm] = useState({
+    crew_member_id: '',
+    role: '',
+    start_date: project.start_date?.split('T')[0] || '',
+    end_date: project.end_date?.split('T')[0] || '',
+  })
 
   // Crew conflict detection state
   const [checkingConflictFor, setCheckingConflictFor] = useState<string | null>(null)
@@ -72,6 +103,31 @@ export function CrewTab({ project }: CrewTabProps) {
   const { data: bookingsRaw } = useQuery({
     queryKey: ['booking-requests'],
     queryFn: () => bookingApi.list(),
+  })
+
+  const { data: membersData } = useQuery({
+    queryKey: ['crew-members-all'],
+    queryFn: () => crewApi.listMembers({ per_page: 200 }),
+    enabled: showAddModal,
+  })
+
+  const crewMembers: CrewMember[] = Array.isArray(membersData)
+    ? membersData
+    : membersData?.data ?? membersData?.items ?? []
+
+  const createAssignmentMutation = useMutation({
+    mutationFn: (data: { project_id: string; crew_member_id: string; role: string; start_date?: string; end_date?: string }) =>
+      crewApi.createAssignment(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-crew-assignments', project.id] })
+      setShowAddModal(false)
+      setAddForm({
+        crew_member_id: '',
+        role: '',
+        start_date: project.start_date?.split('T')[0] || '',
+        end_date: project.end_date?.split('T')[0] || '',
+      })
+    },
   })
 
   // Handle different response shapes
@@ -162,6 +218,17 @@ export function CrewTab({ project }: CrewTabProps) {
     setShowMessageFor(assignmentId)
   }
 
+  const handleAddSubmit = () => {
+    if (!addForm.crew_member_id || !addForm.role) return
+    createAssignmentMutation.mutate({
+      project_id: project.id,
+      crew_member_id: addForm.crew_member_id,
+      role: addForm.role,
+      start_date: addForm.start_date || undefined,
+      end_date: addForm.end_date || undefined,
+    })
+  }
+
   return (
     <div>
       <div className={styles.sectionHeader}>
@@ -169,7 +236,7 @@ export function CrewTab({ project }: CrewTabProps) {
           Crew & Team
           {!isLoading && ` (${assignments.length})`}
         </h3>
-        <button className="btn btn--primary" disabled>
+        <button className="btn btn--primary" onClick={() => setShowAddModal(true)}>
           + Position hinzufuegen
         </button>
       </div>
@@ -426,6 +493,99 @@ export function CrewTab({ project }: CrewTabProps) {
           </div>
         </>
       )}
+
+      {/* Add Crew Position Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Crew-Position hinzufuegen"
+        size="md"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-3)', justifyContent: 'flex-end' }}>
+            <button className="btn btn--secondary" onClick={() => setShowAddModal(false)}>
+              Abbrechen
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={handleAddSubmit}
+              disabled={!addForm.crew_member_id || !addForm.role || createAssignmentMutation.isPending}
+            >
+              {createAssignmentMutation.isPending ? 'Speichern...' : 'Hinzufuegen'}
+            </button>
+          </div>
+        }
+      >
+        <div className="form-grid" style={{ display: 'grid', gap: '1rem' }}>
+          {createAssignmentMutation.isError && (
+            <div style={{
+              padding: '0.75rem',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '6px',
+              color: '#ef4444',
+              fontSize: '0.85rem',
+            }}>
+              Fehler beim Hinzufuegen. Bitte versuchen Sie es erneut.
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label">Crew-Mitglied *</label>
+            <select
+              className="form-input"
+              value={addForm.crew_member_id}
+              onChange={(e) => setAddForm(prev => ({ ...prev, crew_member_id: e.target.value }))}
+            >
+              <option value="">-- Mitglied waehlen --</option>
+              {crewMembers.map(m => (
+                <option key={m.id} value={m.id}>
+                  {m.first_name} {m.last_name}{m.role ? ` (${m.role})` : ''}
+                </option>
+              ))}
+            </select>
+            {crewMembers.length === 0 && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'block' }}>
+                Noch keine Crew-Mitglieder angelegt. Erstellen Sie zuerst ein Mitglied unter Crew.
+              </span>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Rolle / Position *</label>
+            <select
+              className="form-input"
+              value={addForm.role}
+              onChange={(e) => setAddForm(prev => ({ ...prev, role: e.target.value }))}
+            >
+              <option value="">-- Rolle waehlen --</option>
+              {CREW_ROLES.map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label">Startdatum</label>
+              <input
+                type="date"
+                className="form-input"
+                value={addForm.start_date}
+                onChange={(e) => setAddForm(prev => ({ ...prev, start_date: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Enddatum</label>
+              <input
+                type="date"
+                className="form-input"
+                value={addForm.end_date}
+                onChange={(e) => setAddForm(prev => ({ ...prev, end_date: e.target.value }))}
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

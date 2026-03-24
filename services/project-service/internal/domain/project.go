@@ -201,8 +201,6 @@ func (p *Project) Validate() error {
 	if p.Name == "" {
 		return fmt.Errorf("project name cannot be empty")
 	}
-	if p.ClientName == "" {
-		return fmt.Errorf("client name cannot be empty")
-	}
+	// client_name is optional — projects can be created without a customer
 	return nil
 }

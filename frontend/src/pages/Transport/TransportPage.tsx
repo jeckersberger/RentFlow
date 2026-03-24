@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
 import { Input } from '../../components/Form/Input'
-import { transportApi } from '../../services/api'
+import { transportApi, projectApi, crewApi } from '../../services/api'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { SkeletonKPI, SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import './Transport.scss'
@@ -94,6 +94,24 @@ const emptyVehicleForm: VehicleForm = {
   license_class: 'B',
 }
 
+interface TourForm {
+  vehicle_id: string
+  project_id: string
+  driver_id: string
+  start_date: string
+  end_date: string
+  notes: string
+}
+
+const emptyTourForm: TourForm = {
+  vehicle_id: '',
+  project_id: '',
+  driver_id: '',
+  start_date: '',
+  end_date: '',
+  notes: '',
+}
+
 function TransportPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -103,6 +121,8 @@ function TransportPage() {
   const [filterTourStatus, setFilterTourStatus] = useState<string>('all')
   const [showVehicleModal, setShowVehicleModal] = useState(false)
   const [vehicleForm, setVehicleForm] = useState<VehicleForm>(emptyVehicleForm)
+  const [showTourModal, setShowTourModal] = useState(false)
+  const [tourForm, setTourForm] = useState<TourForm>(emptyTourForm)
 
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useQuery({
     queryKey: ['vehicles'],
@@ -116,6 +136,39 @@ function TransportPage() {
     queryFn: () => transportApi.listTours(),
     staleTime: 1000 * 60 * 5,
     retry: 1,
+  })
+
+  const { data: projectsData } = useQuery({
+    queryKey: ['projects-for-tour'],
+    queryFn: () => projectApi.list(1, 200),
+    enabled: showTourModal,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: driversData } = useQuery({
+    queryKey: ['crew-drivers'],
+    queryFn: () => crewApi.listMembers({ per_page: 200 }),
+    enabled: showTourModal,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const projectsList: { id: string; name: string }[] =
+    projectsData?.items || projectsData?.data || (Array.isArray(projectsData) ? projectsData : [])
+
+  const driversList: { id: string; first_name: string; last_name: string }[] =
+    driversData?.data || driversData?.items || (Array.isArray(driversData) ? driversData : [])
+
+  const createTourMutation = useMutation({
+    mutationFn: (data: any) => transportApi.createTour(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tours'] })
+      setShowTourModal(false)
+      setTourForm(emptyTourForm)
+      addNotification('Der Transport wurde erfolgreich angelegt.', 'success', { title: 'Transport erstellt' })
+    },
+    onError: (err: any) => {
+      addNotification(`Transport konnte nicht erstellt werden: ${err.message || 'Unbekannter Fehler'}`, 'error', { title: 'Fehler' })
+    },
   })
 
   const createVehicleMutation = useMutation({
@@ -158,6 +211,24 @@ function TransportPage() {
     if (percentage <= 70) return 'ok'
     if (percentage <= 90) return 'warning'
     return 'danger'
+  }
+
+  const handleTourSubmit = () => {
+    if (!tourForm.vehicle_id) {
+      addNotification('Bitte waehlen Sie ein Fahrzeug aus.', 'error', { title: 'Fehler' })
+      return
+    }
+    createTourMutation.mutate({
+      vehicle_id: tourForm.vehicle_id,
+      project_id: tourForm.project_id || undefined,
+      driver_id: tourForm.driver_id || undefined,
+      departure_at: tourForm.start_date || undefined,
+      arrival_at: tourForm.end_date || undefined,
+      start_date: tourForm.start_date || undefined,
+      end_date: tourForm.end_date || undefined,
+      notes: tourForm.notes || undefined,
+      status: 'planned',
+    })
   }
 
   const handleVehicleSubmit = () => {
@@ -239,7 +310,7 @@ function TransportPage() {
           </button>
           <button
             className="btn btn--secondary"
-            onClick={() => navigate('/transport/new-tour')}
+            onClick={() => setShowTourModal(true)}
             style={{ padding: 'var(--spacing-3) var(--spacing-5)' }}
           >
             + Neuer Transport
@@ -672,6 +743,93 @@ function TransportPage() {
               />
             </div>
           </div>
+        </div>
+      </Modal>
+
+      {/* New Tour Modal */}
+      <Modal
+        isOpen={showTourModal}
+        onClose={() => { setShowTourModal(false); setTourForm(emptyTourForm) }}
+        title="Neuer Transport"
+        size="lg"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-3)', justifyContent: 'flex-end' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => { setShowTourModal(false); setTourForm(emptyTourForm) }}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={handleTourSubmit}
+              disabled={createTourMutation.isPending}
+            >
+              {createTourMutation.isPending ? 'Speichern...' : 'Transport anlegen'}
+            </button>
+          </div>
+        }
+      >
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="form-label">Fahrzeug *</label>
+            <select
+              className="form-input"
+              value={tourForm.vehicle_id}
+              onChange={(e) => setTourForm(prev => ({ ...prev, vehicle_id: e.target.value }))}
+            >
+              <option value="">-- Fahrzeug waehlen --</option>
+              {vehicles.map(v => (
+                <option key={v.id} value={v.id}>
+                  {v.name} ({v.license_plate}) {v.status !== 'available' ? `[${VEHICLE_STATUS_LABELS[v.status] || v.status}]` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Projekt</label>
+            <select
+              className="form-input"
+              value={tourForm.project_id}
+              onChange={(e) => setTourForm(prev => ({ ...prev, project_id: e.target.value }))}
+            >
+              <option value="">-- Projekt waehlen (optional) --</option>
+              {projectsList.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          <Input
+            label="Abfahrt (Datum/Uhrzeit)"
+            type="datetime-local"
+            value={tourForm.start_date}
+            onChange={(e) => setTourForm(prev => ({ ...prev, start_date: e.target.value }))}
+          />
+          <Input
+            label="Ankunft (Datum/Uhrzeit)"
+            type="datetime-local"
+            value={tourForm.end_date}
+            onChange={(e) => setTourForm(prev => ({ ...prev, end_date: e.target.value }))}
+          />
+          <div className="form-group">
+            <label className="form-label">Fahrer</label>
+            <select
+              className="form-input"
+              value={tourForm.driver_id}
+              onChange={(e) => setTourForm(prev => ({ ...prev, driver_id: e.target.value }))}
+            >
+              <option value="">-- Fahrer waehlen (optional) --</option>
+              {driversList.map(d => (
+                <option key={d.id} value={d.id}>{d.first_name} {d.last_name}</option>
+              ))}
+            </select>
+          </div>
+          <Input
+            label="Bemerkungen"
+            value={tourForm.notes}
+            onChange={(e) => setTourForm(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="z.B. Anlieferung Halle 3"
+          />
         </div>
       </Modal>
     </div>

@@ -106,7 +106,7 @@ function QuotesPage() {
         </div>
         <button
           className={styles.btn + ' ' + styles['btn--primary']}
-          onClick={() => navigate('/invoices/new')}
+          onClick={() => navigate('/quotes/new')}
         >
           + Angebot erstellen
         </button>
@@ -161,7 +161,7 @@ function QuotesPage() {
             {!searchQuery && !selectedStatus && (
               <button
                 className={styles.btn + ' ' + styles['btn--primary']}
-                onClick={() => navigate('/invoices/new')}
+                onClick={() => navigate('/quotes/new')}
                 style={{ marginTop: 'var(--spacing-3)' }}
               >
                 + Angebot erstellen

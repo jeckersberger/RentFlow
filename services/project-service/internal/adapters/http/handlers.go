@@ -765,10 +765,13 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 		switch domainErr.Code {
 		case "NOT_FOUND":
 			h.respondError(w, http.StatusNotFound, domainErr.Message)
-		case "VALIDATION_ERROR", "INVALID_STATUS", "INVALID_INPUT":
+		case "VALIDATION_ERROR", "INVALID_STATUS", "INVALID_INPUT", "INVALID_DATE":
 			h.respondError(w, http.StatusBadRequest, domainErr.Message)
-		case "TENANT_REQUIRED", "NAME_REQUIRED", "PROJECT_REQUIRED", "EQUIPMENT_REQUIRED":
+		case "TENANT_REQUIRED", "NAME_REQUIRED", "CLIENT_REQUIRED", "PROJECT_REQUIRED", "EQUIPMENT_REQUIRED":
 			h.respondError(w, http.StatusBadRequest, domainErr.Message)
+		case "CREATE_ERROR", "UPDATE_ERROR", "DELETE_ERROR", "QUERY_ERROR", "SEARCH_ERROR":
+			h.logger.Error("Database operation failed", domainErr.Err)
+			h.respondError(w, http.StatusInternalServerError, domainErr.Message)
 		case "UNAUTHORIZED":
 			h.respondError(w, http.StatusUnauthorized, domainErr.Message)
 		case "CONFLICT":

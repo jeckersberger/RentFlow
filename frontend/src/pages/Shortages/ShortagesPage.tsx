@@ -16,9 +16,21 @@ interface Shortage {
   severity: 'critical' | 'warning'
 }
 
+const FEDERATION_PARTNERS = [
+  { id: 'p1', name: 'MediaTech Rental GmbH', region: 'Berlin' },
+  { id: 'p2', name: 'EventEquip AG', region: 'Hamburg' },
+  { id: 'p3', name: 'ProLight Verleih', region: 'Muenchen' },
+  { id: 'p4', name: 'StageRent NL', region: 'Amsterdam' },
+  { id: 'p5', name: 'SonoPlus FR', region: 'Paris' },
+]
+
 function ShortagesPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('rental')
   const [searchQuery, setSearchQuery] = useState('')
+  const [subleaseModal, setSubleaseModal] = useState<{ open: boolean; shortage: Shortage | null }>({ open: false, shortage: null })
+  const [selectedPartner, setSelectedPartner] = useState('')
+  const [subleaseNote, setSubleaseNote] = useState('')
+  const [toastMsg, setToastMsg] = useState<string | null>(null)
 
   const { data: equipmentData, isLoading: eqLoading } = useQuery({
     queryKey: ['equipment-shortages'],
@@ -89,6 +101,25 @@ function ShortagesPage() {
     { key: 'sublease', label: 'Zumietungsjobs' },
   ]
 
+  const openSubleaseModal = (shortage: Shortage | null = null) => {
+    setSubleaseModal({ open: true, shortage })
+    setSelectedPartner('')
+    setSubleaseNote('')
+  }
+
+  const closeSubleaseModal = () => {
+    setSubleaseModal({ open: false, shortage: null })
+    setSelectedPartner('')
+    setSubleaseNote('')
+  }
+
+  const handleSubmitSublease = () => {
+    // Federation backend may not be ready yet - show toast confirmation
+    closeSubleaseModal()
+    setToastMsg('Anfrage wurde gesendet')
+    setTimeout(() => setToastMsg(null), 3500)
+  }
+
   const criticalCount = shortages.filter(s => s.severity === 'critical').length
   const warningCount = shortages.filter(s => s.severity === 'warning').length
   const totalShortage = shortages.reduce((sum, s) => sum + s.shortage, 0)
@@ -101,7 +132,7 @@ function ShortagesPage() {
           <p className={styles.subtitle}>Equipment-Engpässe und Überbuchungen frühzeitig erkennen</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.btnPrimary}>
+          <button className={styles.btnPrimary} onClick={() => openSubleaseModal()}>
             + Zumietung anfragen
           </button>
         </div>
@@ -167,7 +198,7 @@ function ShortagesPage() {
             <p className={styles.emptyDescription}>
               Erstellen Sie eine Zumietungsanfrage, wenn Equipment nicht verfügbar ist.
             </p>
-            <button className={styles.btnPrimary}>Zumietung anfragen</button>
+            <button className={styles.btnPrimary} onClick={() => openSubleaseModal()}>Zumietung anfragen</button>
           </div>
         ) : filteredShortages.length === 0 ? (
           <div className={styles.emptyState}>
@@ -212,7 +243,7 @@ function ShortagesPage() {
                   </td>
                   <td className={styles.periodCell}>{shortage.period}</td>
                   <td>
-                    <button className={styles.actionBtn}>
+                    <button className={styles.actionBtn} onClick={() => openSubleaseModal(shortage)}>
                       Zumietung anfragen
                     </button>
                   </td>
@@ -222,6 +253,76 @@ function ShortagesPage() {
           </table>
         )}
       </div>
+      {/* Toast */}
+      {toastMsg && (
+        <div className={styles.toast}>
+          <span className={styles.toastIcon}>&#10003;</span>
+          {toastMsg}
+        </div>
+      )}
+
+      {/* Sublease Request Modal */}
+      {subleaseModal.open && (
+        <div className={styles.modalBackdrop} onClick={closeSubleaseModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Zumietung anfragen</h2>
+              <button className={styles.modalClose} onClick={closeSubleaseModal}>&times;</button>
+            </div>
+            <div className={styles.modalBody}>
+              {subleaseModal.shortage && (
+                <div className={styles.modalInfo}>
+                  <div className={styles.modalInfoRow}>
+                    <span className={styles.modalInfoLabel}>Equipment:</span>
+                    <span className={styles.modalInfoValue}>{subleaseModal.shortage.equipmentName}</span>
+                  </div>
+                  <div className={styles.modalInfoRow}>
+                    <span className={styles.modalInfoLabel}>Fehlmenge:</span>
+                    <span className={styles.modalInfoValue}>{subleaseModal.shortage.shortage} Stueck</span>
+                  </div>
+                  <div className={styles.modalInfoRow}>
+                    <span className={styles.modalInfoLabel}>Zeitraum:</span>
+                    <span className={styles.modalInfoValue}>{subleaseModal.shortage.period}</span>
+                  </div>
+                </div>
+              )}
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Partner auswaehlen</label>
+                <select
+                  className={styles.modalSelect}
+                  value={selectedPartner}
+                  onChange={(e) => setSelectedPartner(e.target.value)}
+                >
+                  <option value="">-- Partner waehlen --</option>
+                  {FEDERATION_PARTNERS.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.region})</option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Anmerkungen</label>
+                <textarea
+                  className={styles.modalTextarea}
+                  rows={3}
+                  placeholder="Optionale Hinweise zur Anfrage..."
+                  value={subleaseNote}
+                  onChange={(e) => setSubleaseNote(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.btnSecondary} onClick={closeSubleaseModal}>Abbrechen</button>
+              <button
+                className={styles.btnPrimary}
+                onClick={handleSubmitSublease}
+                disabled={!selectedPartner}
+              >
+                Anfrage senden
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

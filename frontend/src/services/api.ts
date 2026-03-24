@@ -1491,6 +1491,17 @@ export const crewApi = {
           const data = res.data
           return Array.isArray(data) ? data : (data?.data ?? data?.items ?? [])
         }),
+
+  createAssignment: (data: {
+    project_id: string
+    crew_member_id: string
+    role: string
+    start_date?: string
+    end_date?: string
+  }) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/crew/assignments', data).then(res => res.data),
 }
 
 // ============================================================================
@@ -1749,4 +1760,54 @@ export const systemApi = {
           checked_at: new Date().toISOString(),
         })
       : api.get('/api/v1/system/version').then(r => r.data),
+}
+
+// ============================================================================
+// Expense API (port 8018)
+// ============================================================================
+export const expenseApi = {
+  list: (params: { page?: number; limit?: number; project_id?: string; category?: string } = {}) =>
+    MOCK_MODE
+      ? mockDelay({ items: [], total: 0 })
+      : api.get('/api/v1/expenses', { params }).then(res => res.data),
+
+  getById: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.get(`/api/v1/expenses/${id}`).then(res => res.data),
+
+  create: (data: {
+    date: string
+    description: string
+    amount: number
+    vat_rate: number
+    category: string
+    project_id?: string
+    notes?: string
+  }) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()), created_at: new Date().toISOString() })
+      : api.post('/api/v1/expenses', data).then(res => res.data),
+
+  update: (id: string, data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id })
+      : api.put(`/api/v1/expenses/${id}`, data).then(res => res.data),
+
+  delete: (id: string) =>
+    MOCK_MODE
+      ? mockDelay(undefined)
+      : api.delete(`/api/v1/expenses/${id}`).then(() => undefined),
+
+  uploadReceipt: (id: string, formData: FormData) =>
+    MOCK_MODE
+      ? mockDelay(null)
+      : api.post(`/api/v1/expenses/${id}/receipt`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }).then(res => res.data),
+
+  getSummary: (params: { year?: number; quarter?: number } = {}) =>
+    MOCK_MODE
+      ? mockDelay({ income: 0, expenses: 0, profit: 0, by_month: [] })
+      : api.get('/api/v1/expenses/summary', { params }).then(res => res.data),
 }
