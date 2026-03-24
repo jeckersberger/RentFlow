@@ -1003,6 +1003,31 @@ export const federationApi = {
 }
 
 // ============================================================================
+// Time Tracking API (crew-service port 8008)
+// ============================================================================
+export const timeTrackingApi = {
+  listEntries: (params?: any) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/time-entries', { params }).then(res => res.data),
+
+  createEntry: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/time-entries', data).then(res => res.data),
+
+  listAbsences: (params?: any) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/absences', { params }).then(res => res.data),
+
+  createAbsence: (data: any) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/absences', data).then(res => res.data),
+}
+
+// ============================================================================
 // Crew Service (port 8008)
 // ============================================================================
 export const crewApi = {

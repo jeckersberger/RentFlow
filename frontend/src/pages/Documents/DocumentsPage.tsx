@@ -29,94 +29,6 @@ function mapBackendDocument(dto: any): Document {
   }
 }
 
-// Demo data for when API returns no results
-const demoDocuments: Document[] = [
-  {
-    id: 'demo-1',
-    number: 'ANG-2026-001',
-    type: 'offer',
-    title: 'Angebot Buehnenbeleuchtung Festival',
-    status: 'sent',
-    signature_status: 'pending',
-    created_date: '2026-03-15',
-    recipient: 'Eventhaus GmbH',
-    project_name: 'Sommerfestival 2026',
-    generated_by: 'System',
-  },
-  {
-    id: 'demo-2',
-    number: 'RE-2026-042',
-    type: 'invoice',
-    title: 'Rechnung Tontechnik Messe Duesseldorf',
-    status: 'sent',
-    signature_status: 'signed',
-    created_date: '2026-03-10',
-    sent_date: '2026-03-11',
-    signed_date: '2026-03-14',
-    recipient: 'MesseProfi AG',
-    project_name: 'TechExpo 2026',
-    generated_by: 'System',
-  },
-  {
-    id: 'demo-3',
-    number: 'LS-2026-018',
-    type: 'delivery_note',
-    title: 'Lieferschein LED-Wand Aufbau',
-    status: 'generated',
-    signature_status: 'pending',
-    created_date: '2026-03-20',
-    recipient: 'StageDesign OHG',
-    project_name: 'Corporate Event BMW',
-    generated_by: 'System',
-  },
-  {
-    id: 'demo-4',
-    number: 'VT-2026-005',
-    type: 'contract',
-    title: 'Rahmenvertrag Ausruestungsverleih 2026',
-    status: 'signed',
-    signature_status: 'signed',
-    created_date: '2026-01-15',
-    sent_date: '2026-01-16',
-    signed_date: '2026-01-20',
-    recipient: 'LiveNation DE',
-    generated_by: 'System',
-  },
-  {
-    id: 'demo-5',
-    number: 'ANG-2026-002',
-    type: 'offer',
-    title: 'Angebot Komplettpaket Hochzeit Schloss Benrath',
-    status: 'draft',
-    signature_status: 'pending',
-    created_date: '2026-03-22',
-    recipient: 'Privatkunde Mueller',
-    generated_by: 'System',
-  },
-  {
-    id: 'demo-6',
-    number: 'RE-2026-043',
-    type: 'invoice',
-    title: 'Rechnung Verlaengerung Moving Heads',
-    status: 'archived',
-    signature_status: 'signed',
-    created_date: '2026-02-28',
-    recipient: 'Lichtwerk Berlin',
-    project_name: 'Theatersaison Fruehjahr',
-    generated_by: 'System',
-  },
-  {
-    id: 'demo-7',
-    number: 'RE-2026-044',
-    type: 'invoice',
-    title: 'Rechnung Kabeltrommel-Set und Zubehoer',
-    status: 'sent',
-    signature_status: 'pending',
-    created_date: '2026-03-18',
-    recipient: 'Soundcheck Studios',
-    generated_by: 'System',
-  },
-]
 
 function DocumentsPage() {
   const navigate = useNavigate()
@@ -142,17 +54,11 @@ function DocumentsPage() {
   const { data: documents = [], isLoading, error } = useQuery({
     queryKey: ['documents'],
     queryFn: async () => {
-      try {
-        const result = await documentApi.list()
-        const items = Array.isArray(result) ? result : (result.data || [])
-        const mapped = items.map(mapBackendDocument)
-        // If API returns empty, use demo data
-        return mapped.length > 0 ? mapped : demoDocuments
-      } catch {
-        // On error, fallback to demo data
-        return demoDocuments
-      }
+      const result = await documentApi.list()
+      const items = Array.isArray(result) ? result : (result.data || [])
+      return items.map(mapBackendDocument)
     },
+    retry: 1,
     staleTime: 1000 * 60 * 5,
   })
 

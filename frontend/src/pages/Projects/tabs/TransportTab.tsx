@@ -1,97 +1,162 @@
+import { useQuery } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
+import { transportApi } from '../../../services/api'
 import styles from '../ProjectDetail.module.scss'
 
 interface TransportTabProps {
   project: Project
 }
 
-interface VehicleAssignment {
+interface Tour {
   id: string
-  name: string
-  type: string
-  capacity: string
-  driver: string
-  departure_time: string
-  return_time: string
-  distance_km: number
-  travel_time_min: number
-  equipment_items: string[]
+  vehicle_id: string
+  project_id: string
+  driver_id?: string
+  status: string
+  departure_at?: string
+  arrival_at?: string
+  km_start?: number
+  km_end?: number
+  total_cost?: number
+  notes?: string
+  created_at?: string
 }
 
-export function TransportTab({ project: _project }: TransportTabProps) {
-  // Placeholder: no transport data from API yet
-  const vehicles: VehicleAssignment[] = []
+const STATUS_LABELS: Record<string, string> = {
+  planned: 'Geplant',
+  in_transit: 'Unterwegs',
+  completed: 'Abgeschlossen',
+  cancelled: 'Storniert',
+}
+
+const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  planned: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' },
+  in_transit: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' },
+  completed: { bg: 'rgba(16, 185, 129, 0.15)', color: 'var(--color-success)' },
+  cancelled: { bg: 'rgba(107, 114, 128, 0.15)', color: 'var(--color-text-muted)' },
+}
+
+export function TransportTab({ project }: TransportTabProps) {
+  const { data: toursData, isLoading, error } = useQuery({
+    queryKey: ['project-tours', project.id],
+    queryFn: () => transportApi.listTours(1, 50),
+  })
+
+  // Filter tours for this project
+  const allTours: Tour[] = Array.isArray(toursData)
+    ? toursData
+    : toursData?.data ?? toursData?.items ?? []
+
+  const projectTours = allTours.filter((t) => t.project_id === project.id)
+
+  const formatDateTime = (d?: string) =>
+    d ? new Date(d).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : '\u2014'
 
   return (
     <div>
       <div className={styles.sectionHeader}>
-        <h3 className={styles.sectionTitle}>Transport</h3>
+        <h3 className={styles.sectionTitle}>
+          Transport
+          {!isLoading && ` (${projectTours.length})`}
+        </h3>
         <button className="btn btn--primary" disabled>
           + Fahrzeug zuweisen
         </button>
       </div>
 
-      {vehicles.length === 0 ? (
+      {isLoading ? (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyStateText}>Transport-Daten werden geladen...</p>
+        </div>
+      ) : error ? (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyStateIcon}>{'\u26A0\uFE0F'}</div>
+          <h4 className={styles.emptyStateTitle}>Fehler beim Laden</h4>
+          <p className={styles.emptyStateText}>
+            Transport-Daten konnten nicht geladen werden.
+          </p>
+        </div>
+      ) : projectTours.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyStateIcon}>{'\u{1F69A}'}</div>
           <h4 className={styles.emptyStateTitle}>Keine Fahrzeuge zugewiesen</h4>
           <p className={styles.emptyStateText}>
-            Weisen Sie Fahrzeuge zu und planen Sie den Transport für dieses Projekt.
+            Weisen Sie Fahrzeuge zu und planen Sie den Transport fuer dieses Projekt.
           </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-          {vehicles.map((vehicle) => (
-            <div key={vehicle.id} className={styles.glassCard}>
-              <div className={styles.glassCardTitle}>
-                {vehicle.name} &mdash; {vehicle.type}
+          {projectTours.map((tour) => {
+            const sc = STATUS_COLORS[tour.status] || STATUS_COLORS.planned
+            const distanceKm = (tour.km_end && tour.km_start)
+              ? tour.km_end - tour.km_start
+              : null
+            return (
+              <div key={tour.id} className={styles.glassCard}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
+                  <div className={styles.glassCardTitle} style={{ margin: 0 }}>
+                    Tour #{tour.id.slice(0, 8)}
+                  </div>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: 'var(--spacing-1) var(--spacing-3)',
+                      borderRadius: 'var(--radius-full)',
+                      fontSize: 'var(--font-size-xs)',
+                      fontWeight: 'var(--font-weight-medium)',
+                      background: sc.bg,
+                      color: sc.color,
+                    }}
+                  >
+                    {STATUS_LABELS[tour.status] || tour.status}
+                  </span>
+                </div>
+                <div className={styles.overviewGrid} style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                  <div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Fahrzeug</span>
+                      <span className={styles.infoValue}>{tour.vehicle_id}</span>
+                    </div>
+                    {tour.driver_id && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Fahrer</span>
+                        <span className={styles.infoValue}>{tour.driver_id}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Abfahrt</span>
+                      <span className={styles.infoValue}>{formatDateTime(tour.departure_at)}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Ankunft</span>
+                      <span className={styles.infoValue}>{formatDateTime(tour.arrival_at)}</span>
+                    </div>
+                  </div>
+                  <div>
+                    {distanceKm !== null && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Entfernung</span>
+                        <span className={styles.infoValue}>{distanceKm} km</span>
+                      </div>
+                    )}
+                    {tour.total_cost != null && tour.total_cost > 0 && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Kosten</span>
+                        <span className={styles.infoValue}>{'\u20AC'}{tour.total_cost.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {tour.notes && (
+                  <div style={{ marginTop: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                    {tour.notes}
+                  </div>
+                )}
               </div>
-              <div className={styles.overviewGrid} style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                <div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Kapazität</span>
-                    <span className={styles.infoValue}>{vehicle.capacity}</span>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Fahrer</span>
-                    <span className={styles.infoValue}>{vehicle.driver}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Abfahrt</span>
-                    <span className={styles.infoValue}>{vehicle.departure_time}</span>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Rückkehr</span>
-                    <span className={styles.infoValue}>{vehicle.return_time}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Entfernung</span>
-                    <span className={styles.infoValue}>{vehicle.distance_km} km</span>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Fahrzeit</span>
-                    <span className={styles.infoValue}>{vehicle.travel_time_min} min</span>
-                  </div>
-                </div>
-              </div>
-              {vehicle.equipment_items.length > 0 && (
-                <div style={{ marginTop: 'var(--spacing-3)' }}>
-                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--spacing-2)', textTransform: 'uppercase', letterSpacing: 'var(--letter-spacing-wide)' }}>
-                    Ladeliste
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                    {vehicle.equipment_items.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

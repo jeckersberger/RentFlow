@@ -36,6 +36,7 @@ func NewRouter(
 	router.HandleFunc("POST /api/v1/equipment/{id}/check-out", handler.CheckOutEquipment)
 	router.HandleFunc("POST /api/v1/equipment/{id}/check-in", handler.CheckInEquipment)
 	router.HandleFunc("PATCH /api/v1/equipment/{id}/rfid", handler.AssignRfidTag)
+	router.HandleFunc("PUT /api/v1/equipment/{id}/rfid", handler.AssignRfidTagPut)
 	router.HandleFunc("DELETE /api/v1/equipment/{id}", handler.DeleteEquipment)
 	router.HandleFunc("GET /api/v1/equipment/{id}/price", handler.GetEquipmentPrice)
 	router.HandleFunc("GET /api/v1/equipment/{id}/availability", handler.CheckEquipmentAvailability)

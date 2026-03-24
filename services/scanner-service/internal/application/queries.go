@@ -53,3 +53,35 @@ type DeviceDTO struct {
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
+
+// ConditionRatingPayload is the JSON payload for per-equipment condition during checkin
+type ConditionRatingPayload struct {
+	Rating         int    `json:"rating"`
+	Notes          string `json:"notes"`
+	DamageReported bool   `json:"damage_reported"`
+}
+
+// BulkAction represents a single action inside POST /api/v1/scanner/bulk
+type BulkAction struct {
+	Type             string                        `json:"type"` // "checkout" or "checkin"
+	EquipmentIDs     []string                      `json:"equipment_ids"`
+	ProjectID        string                        `json:"project_id,omitempty"`
+	Notes            string                        `json:"notes,omitempty"`
+	ConditionRatings map[string]ConditionRatingPayload `json:"condition_ratings,omitempty"`
+	Timestamp        string                        `json:"timestamp,omitempty"`
+}
+
+// BulkResult is the response for POST /api/v1/scanner/bulk
+type BulkResult struct {
+	Processed int               `json:"processed"`
+	Failed    int               `json:"failed"`
+	Results   []BulkActionResult `json:"results"`
+}
+
+// BulkActionResult is the per-action result inside BulkResult
+type BulkActionResult struct {
+	Type    string      `json:"type"`
+	Success bool        `json:"success"`
+	Error   string      `json:"error,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+}

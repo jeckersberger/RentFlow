@@ -4,65 +4,6 @@ import { federationApi } from '../../services/api'
 import type { Partner, EquipmentAvailability, SubRentalRequest } from '../../types/federation'
 import styles from './Federation.module.scss'
 
-// Demo data for when API returns empty
-const demoPartners: Partner[] = [
-  {
-    id: 'p1',
-    name: 'Thomas Becker',
-    company: 'StageTech Berlin GmbH',
-    email: 'becker@stagetech-berlin.de',
-    phone: '+49 30 1234567',
-    country: 'Deutschland',
-    trust_level: 'verified',
-    equipment_availability: 45,
-    certificate_status: 'valid',
-    certificate_expiry: '2027-06-30',
-    joined_date: '2024-01-15',
-    rating: 4.8,
-  },
-  {
-    id: 'p2',
-    name: 'Lisa Hoffmann',
-    company: 'EventPro Muenchen',
-    email: 'hoffmann@eventpro-muc.de',
-    phone: '+49 89 9876543',
-    country: 'Deutschland',
-    trust_level: 'trusted',
-    equipment_availability: 28,
-    certificate_status: 'valid',
-    certificate_expiry: '2026-12-31',
-    joined_date: '2024-06-01',
-    rating: 4.5,
-  },
-  {
-    id: 'p3',
-    name: 'Marco Rossi',
-    company: 'LightWorks Austria',
-    email: 'rossi@lightworks.at',
-    phone: '+43 1 5551234',
-    country: 'Oesterreich',
-    trust_level: 'provisional',
-    equipment_availability: 12,
-    certificate_status: 'expiring',
-    certificate_expiry: '2026-04-30',
-    joined_date: '2025-09-01',
-    rating: 4.2,
-  },
-]
-
-const demoEquipment: EquipmentAvailability[] = [
-  { partner_id: 'p1', partner_name: 'StageTech Berlin', equipment_type: 'Moving Head Robe T1', quantity_available: 8, location: 'Berlin', delivery_days: 1, price_per_day: 45 },
-  { partner_id: 'p1', partner_name: 'StageTech Berlin', equipment_type: 'LED-Wand 3x3m', quantity_available: 4, location: 'Berlin', delivery_days: 2, price_per_day: 180 },
-  { partner_id: 'p2', partner_name: 'EventPro Muenchen', equipment_type: 'Line Array JBL VTX', quantity_available: 6, location: 'Muenchen', delivery_days: 2, price_per_day: 120 },
-  { partner_id: 'p2', partner_name: 'EventPro Muenchen', equipment_type: 'Mischpult Yamaha CL5', quantity_available: 2, location: 'Muenchen', delivery_days: 2, price_per_day: 95 },
-  { partner_id: 'p3', partner_name: 'LightWorks Austria', equipment_type: 'Followspot Robert Juliat', quantity_available: 3, location: 'Wien', delivery_days: 3, price_per_day: 65 },
-]
-
-const demoSubRentals: SubRentalRequest[] = [
-  { id: 'sr1', partner_id: 'p1', partner_name: 'StageTech Berlin', equipment: 'Moving Head Robe T1', quantity: 4, start_date: '2026-04-01', end_date: '2026-04-05', status: 'pending', requested_at: '2026-03-20T10:00:00Z' },
-  { id: 'sr2', partner_id: 'p2', partner_name: 'EventPro Muenchen', equipment: 'Line Array JBL VTX', quantity: 6, start_date: '2026-04-10', end_date: '2026-04-12', status: 'approved', requested_at: '2026-03-18T14:30:00Z' },
-  { id: 'sr3', partner_id: 'p1', partner_name: 'StageTech Berlin', equipment: 'LED-Wand 3x3m', quantity: 2, start_date: '2026-03-01', end_date: '2026-03-03', status: 'completed', requested_at: '2026-02-25T09:00:00Z' },
-]
 
 function FederationPage() {
   const [filterTrust, setFilterTrust] = useState<string>('all')
@@ -77,14 +18,10 @@ function FederationPage() {
   const { data: rawPartners = [], isLoading: isLoadingPartners } = useQuery({
     queryKey: ['federation-partners'],
     queryFn: async () => {
-      try {
-        const result = await federationApi.partners()
-        const items = Array.isArray(result) ? result : []
-        return items.length > 0 ? items : demoPartners
-      } catch {
-        return demoPartners
-      }
+      const result = await federationApi.partners()
+      return Array.isArray(result) ? result : []
     },
+    retry: 1,
     staleTime: 1000 * 60 * 5,
   })
   const partners = rawPartners as Partner[]
@@ -92,14 +29,10 @@ function FederationPage() {
   const { data: rawEquipment = [], isLoading: isLoadingEquipment } = useQuery({
     queryKey: ['equipment-availability'],
     queryFn: async () => {
-      try {
-        const result = await federationApi.equipment('all')
-        const items = Array.isArray(result) ? result : []
-        return items.length > 0 ? items : demoEquipment
-      } catch {
-        return demoEquipment
-      }
+      const result = await federationApi.equipment('all')
+      return Array.isArray(result) ? result : []
     },
+    retry: 1,
     staleTime: 1000 * 60 * 5,
   })
   const equipmentAvailability = rawEquipment as EquipmentAvailability[]
@@ -107,14 +40,10 @@ function FederationPage() {
   const { data: rawSubRentals = [], isLoading: isLoadingSubRentals } = useQuery({
     queryKey: ['sub-rental-requests'],
     queryFn: async () => {
-      try {
-        const result = await federationApi.subRentals()
-        const items = Array.isArray(result) ? result : []
-        return items.length > 0 ? items : demoSubRentals
-      } catch {
-        return demoSubRentals
-      }
+      const result = await federationApi.subRentals()
+      return Array.isArray(result) ? result : []
     },
+    retry: 1,
     staleTime: 1000 * 60 * 5,
   })
   const subRentalRequests = rawSubRentals as SubRentalRequest[]

@@ -52,6 +52,12 @@ func NewRouter(
 	// Zone routes
 	router.HandleFunc("POST /api/v1/zones", handler.CreateZone)
 
+	// Scanner App contract: warehouse zones for inventory
+	router.HandleFunc("GET /api/v1/warehouse/zones", handler.GetWarehouseZones)
+
+	// Scanner App contract: submit inventory count
+	router.HandleFunc("POST /api/v1/warehouse/inventory", handler.SubmitInventoryCount)
+
 	// Rack routes
 	router.HandleFunc("POST /api/v1/racks", handler.CreateRack)
 

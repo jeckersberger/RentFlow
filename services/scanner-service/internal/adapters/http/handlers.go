@@ -355,6 +355,10 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 			h.respondError(w, http.StatusConflict, domainErr.Message)
 		case "SERVICE_UNAVAILABLE":
 			h.respondError(w, http.StatusServiceUnavailable, domainErr.Message)
+		case "CHECKOUT_ERROR", "CHECKIN_ERROR":
+			h.respondError(w, http.StatusUnprocessableEntity, domainErr.Message)
+		case "QUEUE_FULL":
+			h.respondError(w, http.StatusTooManyRequests, domainErr.Message)
 		default:
 			h.respondError(w, http.StatusInternalServerError, "internal server error")
 		}
@@ -362,6 +366,162 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 	}
 
 	h.respondError(w, http.StatusInternalServerError, "internal server error")
+}
+
+// =====================================================
+// Scanner App API contract handlers
+// =====================================================
+
+// ScannerScan handles POST /api/v1/scanner/scan
+// Resolves a barcode/RFID to full equipment detail.
+func (h *Handler) ScannerScan(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		Code      string `json:"code"`
+		ScanType  string `json:"scan_type"`
+		Timestamp string `json:"timestamp"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.Code == "" {
+		h.respondError(w, http.StatusBadRequest, "code is required")
+		return
+	}
+	if payload.ScanType == "" {
+		payload.ScanType = "barcode"
+	}
+
+	equipment, err := h.scanSvc.ResolveEquipment(r.Context(), tenantID, payload.Code, payload.ScanType)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"equipment": equipment,
+	})
+}
+
+// ScannerCheckout handles POST /api/v1/scanner/checkout
+// Checks out equipment to a project.
+func (h *Handler) ScannerCheckout(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		EquipmentIDs []string `json:"equipment_ids"`
+		ProjectID    string   `json:"project_id"`
+		Notes        string   `json:"notes"`
+		Timestamp    string   `json:"timestamp"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if len(payload.EquipmentIDs) == 0 {
+		h.respondError(w, http.StatusBadRequest, "equipment_ids is required")
+		return
+	}
+	if payload.ProjectID == "" {
+		h.respondError(w, http.StatusBadRequest, "project_id is required")
+		return
+	}
+
+	result, err := h.scanSvc.CheckOutEquipment(r.Context(), tenantID, payload.EquipmentIDs, payload.ProjectID, payload.Notes)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success":     true,
+		"checked_out": result.CheckedOut,
+		"project":     result.Project,
+	})
+}
+
+// ScannerCheckin handles POST /api/v1/scanner/checkin
+// Checks in equipment with condition ratings.
+func (h *Handler) ScannerCheckin(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		EquipmentIDs     []string                            `json:"equipment_ids"`
+		ConditionRatings map[string]application.ConditionRatingPayload `json:"condition_ratings"`
+		Timestamp        string                              `json:"timestamp"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if len(payload.EquipmentIDs) == 0 {
+		h.respondError(w, http.StatusBadRequest, "equipment_ids is required")
+		return
+	}
+
+	result, err := h.scanSvc.CheckInEquipment(r.Context(), tenantID, payload.EquipmentIDs, payload.ConditionRatings)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success":        true,
+		"checked_in":     result.CheckedIn,
+		"damage_reports": result.DamageReports,
+	})
+}
+
+// ScannerBulk handles POST /api/v1/scanner/bulk
+// Processes batch offline actions idempotently.
+func (h *Handler) ScannerBulk(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		Actions []application.BulkAction `json:"actions"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if len(payload.Actions) == 0 {
+		h.respondError(w, http.StatusBadRequest, "actions array is required")
+		return
+	}
+
+	result, err := h.scanSvc.ProcessBulkActions(r.Context(), tenantID, payload.Actions)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
 }
 
 // Session handlers

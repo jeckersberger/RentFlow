@@ -11,6 +11,7 @@ const (
 	InventoryCheckTypeFull      InventoryCheckType = "full"
 	InventoryCheckTypeCycle     InventoryCheckType = "cycle"
 	InventoryCheckTypeSpotCheck InventoryCheckType = "spot_check"
+	InventoryCheckTypeZone      InventoryCheckType = "zone"
 )
 
 type InventoryCheckStatus string

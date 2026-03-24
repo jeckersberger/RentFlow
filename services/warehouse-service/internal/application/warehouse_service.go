@@ -310,4 +310,18 @@ func (s *WarehouseService) ListBaysInRack(ctx context.Context, tenantID, rackID 
 	}, nil
 }
 
+// Raw listing methods for Scanner App API handlers (return domain objects directly)
+
+func (s *WarehouseService) ListWarehousesRaw(ctx context.Context, tenantID string, limit, offset int) ([]*domain.Warehouse, int, error) {
+	return s.warehouseRepo.List(ctx, tenantID, limit, offset)
+}
+
+func (s *WarehouseService) ListZonesRaw(ctx context.Context, tenantID, warehouseID string, limit, offset int) ([]*domain.Zone, int, error) {
+	return s.zoneRepo.ListByWarehouse(ctx, tenantID, warehouseID, limit, offset)
+}
+
+func (s *WarehouseService) ListRacksRaw(ctx context.Context, tenantID, zoneID string, limit, offset int) ([]*domain.Rack, int, error) {
+	return s.rackRepo.ListByZone(ctx, tenantID, zoneID, limit, offset)
+}
+
 // hashString is defined in movement_service.go

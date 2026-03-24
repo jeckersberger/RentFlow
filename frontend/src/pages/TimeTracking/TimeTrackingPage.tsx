@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { timeTrackingApi } from '../../services/api'
 import styles from './TimeTracking.module.scss'
 
 type TabKey = 'hours' | 'activities' | 'absence'
@@ -25,30 +27,75 @@ interface AbsenceEntry {
   status: 'Genehmigt' | 'Ausstehend' | 'Abgelehnt'
 }
 
-const DEMO_ENTRIES: TimeEntry[] = [
-  { id: '1', date: '2026-03-23', employee: 'Thomas Müller', project: 'Stadtfest München 2026', activity: 'Aufbau', start: '07:00', end: '16:00', duration: '9:00', status: 'Offen' },
-  { id: '2', date: '2026-03-23', employee: 'Sarah Schmidt', project: 'Stadtfest München 2026', activity: 'Licht-Programmierung', start: '08:00', end: '17:30', duration: '9:30', status: 'Offen' },
-  { id: '3', date: '2026-03-22', employee: 'Thomas Müller', project: 'Firmen-Gala TechCorp', activity: 'Planung', start: '09:00', end: '13:00', duration: '4:00', status: 'Genehmigt' },
-  { id: '4', date: '2026-03-22', employee: 'Max Huber', project: 'Stadtfest München 2026', activity: 'Transport', start: '06:00', end: '14:00', duration: '8:00', status: 'Genehmigt' },
-  { id: '5', date: '2026-03-21', employee: 'Sarah Schmidt', project: 'Open Air Festival Bodensee', activity: 'Vorbereitung', start: '10:00', end: '18:00', duration: '8:00', status: 'Genehmigt' },
-  { id: '6', date: '2026-03-21', employee: 'Max Huber', project: 'Stadtfest München 2026', activity: 'Aufbau', start: '07:30', end: '16:30', duration: '9:00', status: 'Genehmigt' },
-  { id: '7', date: '2026-03-20', employee: 'Thomas Müller', project: 'Stadtfest München 2026', activity: 'Aufbau', start: '07:00', end: '17:00', duration: '10:00', status: 'Genehmigt' },
-]
-
-const DEMO_ABSENCES: AbsenceEntry[] = [
-  { id: 'abs-1', employee: 'Max Huber', type: 'Urlaub', from: '2026-04-01', to: '2026-04-10', days: 8, status: 'Genehmigt' },
-  { id: 'abs-2', employee: 'Sarah Schmidt', type: 'Krank', from: '2026-03-25', to: '2026-03-26', days: 2, status: 'Genehmigt' },
-  { id: 'abs-3', employee: 'Thomas Müller', type: 'Fortbildung', from: '2026-04-15', to: '2026-04-17', days: 3, status: 'Ausstehend' },
-]
-
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+
+function mapTimeEntry(dto: any): TimeEntry {
+  const start = dto.start_time || dto.start || ''
+  const end = dto.end_time || dto.end || ''
+  const duration = dto.duration || ''
+  const statusMap: Record<string, TimeEntry['status']> = {
+    open: 'Offen',
+    pending: 'Offen',
+    approved: 'Genehmigt',
+  }
+  return {
+    id: dto.id,
+    date: dto.date || (dto.start_time ? dto.start_time.split('T')[0] : ''),
+    employee: dto.employee_name || dto.employee || '',
+    project: dto.project_name || dto.project || '',
+    activity: dto.activity || dto.description || '',
+    start: start.includes('T') ? start.split('T')[1]?.substring(0, 5) : start,
+    end: end.includes('T') ? end.split('T')[1]?.substring(0, 5) : end,
+    duration,
+    status: statusMap[dto.status] || 'Offen',
+  }
+}
+
+function mapAbsenceEntry(dto: any): AbsenceEntry {
+  const statusMap: Record<string, AbsenceEntry['status']> = {
+    approved: 'Genehmigt',
+    pending: 'Ausstehend',
+    rejected: 'Abgelehnt',
+  }
+  return {
+    id: dto.id,
+    employee: dto.employee_name || dto.employee || '',
+    type: dto.type || dto.absence_type || '',
+    from: dto.start_date || dto.from || '',
+    to: dto.end_date || dto.to || '',
+    days: dto.days || dto.duration_days || 0,
+    status: statusMap[dto.status] || 'Ausstehend',
+  }
+}
 
 function TimeTrackingPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('hours')
   const [searchQuery, setSearchQuery] = useState('')
   const [showModal, setShowModal] = useState(false)
 
-  const filteredEntries = DEMO_ENTRIES.filter(e =>
+  const { data: timeEntries = [], isLoading: isLoadingEntries } = useQuery({
+    queryKey: ['time-entries'],
+    queryFn: async () => {
+      const result = await timeTrackingApi.listEntries()
+      const items = Array.isArray(result) ? result : (result.data || [])
+      return items.map(mapTimeEntry)
+    },
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: absences = [], isLoading: isLoadingAbsences } = useQuery({
+    queryKey: ['absences'],
+    queryFn: async () => {
+      const result = await timeTrackingApi.listAbsences()
+      const items = Array.isArray(result) ? result : (result.data || [])
+      return items.map(mapAbsenceEntry)
+    },
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const filteredEntries = timeEntries.filter((e: TimeEntry) =>
     e.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.project.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -64,10 +111,10 @@ function TimeTrackingPage() {
       day.setDate(monday.getDate() + idx)
       const dateStr = day.toISOString().split('T')[0]
 
-      const dayEntries = DEMO_ENTRIES.filter(e => e.date === dateStr)
-      const totalMinutes = dayEntries.reduce((sum, e) => {
+      const dayEntries = timeEntries.filter((e: TimeEntry) => e.date === dateStr)
+      const totalMinutes = dayEntries.reduce((sum: number, e: TimeEntry) => {
         const [h, m] = e.duration.split(':').map(Number)
-        return sum + h * 60 + m
+        return sum + (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m)
       }, 0)
 
       return {
@@ -78,12 +125,12 @@ function TimeTrackingPage() {
         totalMinutes,
       }
     })
-  }, [])
+  }, [timeEntries])
 
   const maxMinutes = Math.max(...weeklySummary.map(d => d.totalMinutes), 1)
 
   const totalWeekHours = weeklySummary.reduce((s, d) => s + d.totalMinutes, 0)
-  const openCount = DEMO_ENTRIES.filter(e => e.status === 'Offen').length
+  const openCount = timeEntries.filter((e: TimeEntry) => e.status === 'Offen').length
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'hours', label: 'Stundenerfassung' },
@@ -107,7 +154,7 @@ function TimeTrackingPage() {
   }
 
   // Extract unique activities
-  const activities = [...new Set(DEMO_ENTRIES.map(e => e.activity))]
+  const activities: string[] = Array.from(new Set(timeEntries.map((e: TimeEntry) => e.activity))) as string[]
 
   return (
     <div className={styles.page}>
@@ -135,11 +182,11 @@ function TimeTrackingPage() {
         </div>
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Mitarbeiter aktiv</div>
-          <div className={styles.statValue}>{[...new Set(DEMO_ENTRIES.map(e => e.employee))].length}</div>
+          <div className={styles.statValue}>{[...new Set(timeEntries.map((e: TimeEntry) => e.employee))].length}</div>
         </div>
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Projekte diese Woche</div>
-          <div className={styles.statValue}>{[...new Set(DEMO_ENTRIES.map(e => e.project))].length}</div>
+          <div className={styles.statValue}>{[...new Set(timeEntries.map((e: TimeEntry) => e.project))].length}</div>
         </div>
       </div>
 
@@ -191,12 +238,19 @@ function TimeTrackingPage() {
       {/* Content */}
       <div className={styles.tableCard}>
         {activeTab === 'hours' ? (
-          filteredEntries.length === 0 ? (
+          isLoadingEntries ? (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>⏰</div>
-              <h3 className={styles.emptyTitle}>Keine Zeiteinträge</h3>
-              <p className={styles.emptyDescription}>Erfassen Sie Arbeitszeiten für Ihr Team.</p>
-              <button className={styles.btnPrimary} onClick={() => setShowModal(true)}>Zeit erfassen</button>
+              <h3 className={styles.emptyTitle}>Laden...</h3>
+              <p className={styles.emptyDescription}>Zeiteintraege werden geladen.</p>
+            </div>
+          ) : filteredEntries.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>{'⏰'}</div>
+              <h3 className={styles.emptyTitle}>Keine Zeiteintraege</h3>
+              <p className={styles.emptyDescription}>
+                {searchQuery ? 'Keine Eintraege gefunden. Versuchen Sie eine andere Suche.' : 'Erfassen Sie Arbeitszeiten fuer Ihr Team.'}
+              </p>
+              {!searchQuery && <button className={styles.btnPrimary} onClick={() => setShowModal(true)}>Zeit erfassen</button>}
             </div>
           ) : (
             <table className={styles.table}>
@@ -213,7 +267,7 @@ function TimeTrackingPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredEntries.map(entry => (
+                {filteredEntries.map((entry: TimeEntry) => (
                   <tr key={entry.id}>
                     <td className={styles.dateCell}>{formatDate(entry.date)}</td>
                     <td className={styles.employeeName}>{entry.employee}</td>
@@ -229,13 +283,26 @@ function TimeTrackingPage() {
             </table>
           )
         ) : activeTab === 'activities' ? (
+          isLoadingEntries ? (
+            <div className={styles.emptyState}>
+              <h3 className={styles.emptyTitle}>Laden...</h3>
+              <p className={styles.emptyDescription}>Aktivitaeten werden geladen.</p>
+            </div>
+          ) : activities.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>{'📊'}</div>
+              <h3 className={styles.emptyTitle}>Keine Aktivitaeten</h3>
+              <p className={styles.emptyDescription}>Aktivitaeten werden angezeigt, sobald Zeiteintraege erfasst werden.</p>
+            </div>
+          ) : (
           <div className={styles.activitiesList}>
             {activities.map((act, idx) => {
-              const actEntries = DEMO_ENTRIES.filter(e => e.activity === act)
-              const totalMins = actEntries.reduce((sum, e) => {
+              const actEntries = timeEntries.filter((e: TimeEntry) => e.activity === act)
+              const totalMins = actEntries.reduce((sum: number, e: TimeEntry) => {
                 const [h, m] = e.duration.split(':').map(Number)
-                return sum + h * 60 + m
+                return sum + (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m)
               }, 0)
+              const maxMins = Math.max(...activities.map(a => timeEntries.filter((e: TimeEntry) => e.activity === a).reduce((s: number, e: TimeEntry) => { const [h, m] = e.duration.split(':').map(Number); return s + (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m); }, 0)), 1)
               return (
                 <div key={idx} className={styles.activityItem}>
                   <div className={styles.activityName}>{act}</div>
@@ -245,19 +312,25 @@ function TimeTrackingPage() {
                   <div className={styles.activityBar}>
                     <div
                       className={styles.activityBarFill}
-                      style={{ width: `${(totalMins / Math.max(...activities.map(a => DEMO_ENTRIES.filter(e => e.activity === a).reduce((s, e) => { const [h, m] = e.duration.split(':').map(Number); return s + h * 60 + m; }, 0)))) * 100}%` }}
+                      style={{ width: `${(totalMins / maxMins) * 100}%` }}
                     />
                   </div>
                 </div>
               )
             })}
           </div>
+          )
         ) : (
-          DEMO_ABSENCES.length === 0 ? (
+          isLoadingAbsences ? (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📅</div>
+              <h3 className={styles.emptyTitle}>Laden...</h3>
+              <p className={styles.emptyDescription}>Abwesenheiten werden geladen.</p>
+            </div>
+          ) : absences.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>{'📅'}</div>
               <h3 className={styles.emptyTitle}>Keine Abwesenheiten</h3>
-              <p className={styles.emptyDescription}>Abwesenheiten werden hier angezeigt.</p>
+              <p className={styles.emptyDescription}>Abwesenheiten werden hier angezeigt, sobald sie erfasst werden.</p>
             </div>
           ) : (
             <table className={styles.table}>
@@ -272,7 +345,7 @@ function TimeTrackingPage() {
                 </tr>
               </thead>
               <tbody>
-                {DEMO_ABSENCES.map(abs => (
+                {absences.map((abs: AbsenceEntry) => (
                   <tr key={abs.id}>
                     <td className={styles.employeeName}>{abs.employee}</td>
                     <td>{abs.type}</td>

@@ -749,6 +749,104 @@ func (h *Handler) CreateBay(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusCreated, dto)
 }
 
+// =====================================================
+// Scanner App API contract handlers
+// =====================================================
+
+// GetWarehouseZones handles GET /api/v1/warehouse/zones
+// Returns zones with shelves (racks) for the Scanner App inventory workflow.
+func (h *Handler) GetWarehouseZones(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	// Get all warehouses for tenant
+	warehouses, _, err := h.warehouseSvc.ListWarehousesRaw(r.Context(), tenantID, 100, 0)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	type ShelfEntry struct {
+		ID            string `json:"id"`
+		Name          string `json:"name"`
+		ExpectedCount int    `json:"expected_count"`
+	}
+	type ZoneEntry struct {
+		ID      string       `json:"id"`
+		Name    string       `json:"name"`
+		Shelves []ShelfEntry `json:"shelves"`
+	}
+
+	zones := make([]ZoneEntry, 0)
+
+	for _, wh := range warehouses {
+		zoneList, _, err := h.warehouseSvc.ListZonesRaw(r.Context(), tenantID, wh.ID, 100, 0)
+		if err != nil {
+			h.logger.Warn("failed to list zones for warehouse", "warehouse_id", wh.ID, "error", err)
+			continue
+		}
+		for _, z := range zoneList {
+			entry := ZoneEntry{
+				ID:      z.ID,
+				Name:    z.Name,
+				Shelves: make([]ShelfEntry, 0),
+			}
+			racks, _, err := h.warehouseSvc.ListRacksRaw(r.Context(), tenantID, z.ID, 100, 0)
+			if err == nil {
+				for _, rack := range racks {
+					entry.Shelves = append(entry.Shelves, ShelfEntry{
+						ID:            rack.ID,
+						Name:          rack.Name,
+						ExpectedCount: rack.Capacity,
+					})
+				}
+			}
+			zones = append(zones, entry)
+		}
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"zones": zones,
+	})
+}
+
+// SubmitInventoryCount handles POST /api/v1/warehouse/inventory
+// Accepts a scanned inventory count for a zone and returns diff.
+func (h *Handler) SubmitInventoryCount(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		ZoneID       string   `json:"zone_id"`
+		ScannedItems []string `json:"scanned_items"`
+		Timestamp    string   `json:"timestamp"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.ZoneID == "" {
+		h.respondError(w, http.StatusBadRequest, "zone_id is required")
+		return
+	}
+
+	result, err := h.inventoryCheckSvc.SubmitInventoryCount(r.Context(), tenantID, payload.ZoneID, payload.ScannedItems)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
 // Helper methods
 
 func (h *Handler) respondJSON(w http.ResponseWriter, statusCode int, data interface{}) {

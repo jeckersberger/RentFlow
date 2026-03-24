@@ -528,6 +528,110 @@ func (s *UserService) ResetPassword(ctx context.Context, cmd ResetPasswordComman
 	return nil
 }
 
+// GetUserByEmail finds a user by email across all tenants and returns a DTO
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*UserDTO, error) {
+	user, err := s.userRepo.FindByEmail(ctx, "", email)
+	if err != nil || user == nil {
+		return nil, domain.ErrUserNotFound
+	}
+	return s.toUserDTO(user), nil
+}
+
+// QRLogin validates a QR token and returns tokens + user (Scanner App contract)
+func (s *UserService) QRLogin(ctx context.Context, qrToken string) (*TokenPair, *UserDTO, error) {
+	if qrToken == "" {
+		return nil, nil, fmt.Errorf("qr_token is required")
+	}
+
+	if s.db == nil {
+		return nil, nil, fmt.Errorf("database not configured for QR login")
+	}
+
+	// Look up the QR token
+	var userID string
+	var expiresAt time.Time
+	var usedAt sql.NullTime
+
+	err := s.db.QueryRowContext(ctx,
+		`SELECT user_id, expires_at, used_at
+		 FROM auth.qr_login_tokens
+		 WHERE token = $1`,
+		qrToken,
+	).Scan(&userID, &expiresAt, &usedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, nil, domain.ErrInvalidCredentials
+	}
+	if err != nil {
+		s.logger.Error("failed to look up QR token", err)
+		return nil, nil, domain.ErrInvalidCredentials
+	}
+
+	// Check if already used
+	if usedAt.Valid {
+		return nil, nil, fmt.Errorf("QR token already used")
+	}
+
+	// Check expiry
+	if time.Now().After(expiresAt) {
+		return nil, nil, fmt.Errorf("QR token expired")
+	}
+
+	// Mark token as used
+	now := time.Now()
+	_, _ = s.db.ExecContext(ctx,
+		`UPDATE auth.qr_login_tokens SET used_at = $1 WHERE token = $2`,
+		now, qrToken,
+	)
+
+	// Get user
+	user, err := s.userRepo.FindByID(ctx, userID)
+	if err != nil || user == nil {
+		return nil, nil, domain.ErrUserNotFound
+	}
+
+	if user.Status != domain.UserStatusActive {
+		return nil, nil, domain.ErrInvalidCredentials
+	}
+
+	// Record login
+	user.RecordLogin()
+	_ = s.userRepo.Save(ctx, user)
+
+	// Generate tokens
+	jti := generateID()
+	accessToken, err := s.tokenMgr.CreateAccessToken(
+		user.ID,
+		user.TenantID,
+		user.Email,
+		fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+		user.Roles,
+		jti,
+		"",
+		"",
+		jti,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	refreshToken, err := s.tokenMgr.CreateRefreshToken(user.ID, user.TenantID, user.Email, jti)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	s.logger.Info("QR login successful", "id", user.ID, "email", user.Email)
+
+	tokens := &TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(s.tokenMgr.GetAccessTokenExpiry().Seconds()),
+		TokenType:    "Bearer",
+	}
+
+	return tokens, s.toUserDTO(user), nil
+}
+
 // Helper functions
 
 func (s *UserService) toUserDTO(user *domain.User) *UserDTO {

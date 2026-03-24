@@ -26,6 +26,12 @@ func NewRouter(scanSvc *application.ScanService, sessionSvc *application.Session
 	router.HandleFunc("POST /api/v1/scan/devices", handler.RegisterDevice)
 	router.HandleFunc("GET /api/v1/scan/devices", handler.ListDevices)
 
+	// Scanner App API contract endpoints
+	router.HandleFunc("POST /api/v1/scanner/scan", handler.ScannerScan)
+	router.HandleFunc("POST /api/v1/scanner/checkout", handler.ScannerCheckout)
+	router.HandleFunc("POST /api/v1/scanner/checkin", handler.ScannerCheckin)
+	router.HandleFunc("POST /api/v1/scanner/bulk", handler.ScannerBulk)
+
 	// Session routes (M2.2)
 	router.HandleFunc("POST /api/v1/scanner/sessions", handler.StartSession)
 	router.HandleFunc("PUT /api/v1/scanner/sessions/{id}/end", handler.EndSession)

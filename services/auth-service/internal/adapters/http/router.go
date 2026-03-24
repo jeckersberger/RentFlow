@@ -48,6 +48,7 @@ func SetupRoutes(
 
 	mux.HandleFunc("POST /api/v1/auth/register", handlers.Register)
 	mux.HandleFunc("POST /api/v1/auth/refresh", handlers.Refresh)
+	mux.HandleFunc("POST /api/v1/auth/qr-login", handlers.QRLogin)
 	mux.HandleFunc("POST /api/v1/auth/forgot-password", handlers.ForgotPassword)
 	mux.HandleFunc("POST /api/v1/auth/reset-password", handlers.ResetPassword)
 

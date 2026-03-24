@@ -15,15 +15,6 @@ interface SentEmail {
   project?: string
 }
 
-const DEMO_SENT: SentEmail[] = [
-  { id: 's1', to: 'Stadt München - Kulturamt', subject: 'Aufbauplanung Stadtfest 2026', preview: 'Sehr geehrte Damen und Herren, anbei senden wir Ihnen den aktualisierten Aufbauplan für das Stadtfest...', date: '2026-03-23T08:00:00Z', status: 'Zugestellt', project: 'Stadtfest München 2026' },
-  { id: 's2', to: 'TechCorp GmbH - Events', subject: 'Angebot Firmen-Gala - V2', preview: 'Sehr geehrte Frau Meier, im Anhang finden Sie das überarbeitete Angebot mit den gewünschten Änderungen...', date: '2026-03-22T15:30:00Z', status: 'Geöffnet', project: 'Firmen-Gala TechCorp' },
-  { id: 's3', to: 'Festival GmbH', subject: 'RE: Open Air Bodensee - Bühnenplanung', preview: 'Vielen Dank für die Pläne. Wir haben die Maße geprüft und haben folgende Anmerkungen...', date: '2026-03-22T12:00:00Z', status: 'Geöffnet', project: 'Open Air Festival Bodensee' },
-  { id: 's4', to: 'JBL Professional', subject: 'Bestellung VTX Zubehör', preview: 'Hiermit bestellen wir folgende Artikel: 8x VTX AF Frame, 4x VTX S28 Subwoofer...', date: '2026-03-21T10:00:00Z', status: 'Zugestellt' },
-  { id: 's5', to: 'DGUV Prüfservice', subject: 'Terminanfrage E-Check April 2026', preview: 'Wir möchten gerne einen Termin für die elektrische Prüfung von 15 Geräten vereinbaren...', date: '2026-03-20T14:00:00Z', status: 'Fehler' },
-  { id: 's6', to: 'Familie Weber', subject: 'Rechnung Hochzeit Weber', preview: 'Sehr geehrte Familie Weber, anbei die Rechnung für die Veranstaltungstechnik Ihrer Hochzeitsfeier...', date: '2026-03-19T09:00:00Z', status: 'Geöffnet' },
-]
-
 const STATUS_MAP: Record<string, SentEmail['status']> = {
   delivered: 'Zugestellt',
   opened: 'Geöffnet',
@@ -37,18 +28,18 @@ function MailSentPage() {
   const navigate = useNavigate()
   const [selectedEmail, setSelectedEmail] = useState<SentEmail | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [sentEmails, setSentEmails] = useState<SentEmail[]>(DEMO_SENT)
+  const [sentEmails, setSentEmails] = useState<SentEmail[]>([])
 
   // Fetch sent mails from API
-  const { data: apiSentMails } = useQuery({
+  const { data: apiSentMails, isLoading } = useQuery({
     queryKey: ['mails', 'outbound'],
     queryFn: () => mailApi.list({ direction: 'outbound' }),
     retry: 1,
   })
 
-  // Merge API data with demo fallback
+  // Map API data to local state
   useEffect(() => {
-    if (apiSentMails && Array.isArray(apiSentMails) && apiSentMails.length > 0) {
+    if (apiSentMails && Array.isArray(apiSentMails)) {
       const mapped: SentEmail[] = apiSentMails.map((m: any) => ({
         id: m.id,
         to: m.to_address || m.to || '',
@@ -61,7 +52,7 @@ function MailSentPage() {
       }))
       setSentEmails(mapped)
     } else {
-      setSentEmails(DEMO_SENT)
+      setSentEmails([])
     }
   }, [apiSentMails])
 
@@ -117,11 +108,18 @@ function MailSentPage() {
       <div className={styles.mailLayout}>
         {/* Email List */}
         <div className={styles.mailList}>
-          {filteredEmails.length === 0 ? (
+          {isLoading ? (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📤</div>
+              <h3 className={styles.emptyTitle}>Laden...</h3>
+              <p className={styles.emptyDescription}>Gesendete E-Mails werden geladen.</p>
+            </div>
+          ) : filteredEmails.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>{'📤'}</div>
               <h3 className={styles.emptyTitle}>Keine gesendeten E-Mails</h3>
-              <p className={styles.emptyDescription}>Sie haben noch keine E-Mails gesendet.</p>
+              <p className={styles.emptyDescription}>
+                {searchQuery ? 'Keine E-Mails gefunden. Versuchen Sie eine andere Suche.' : 'Sie haben noch keine E-Mails gesendet.'}
+              </p>
             </div>
           ) : (
             filteredEmails.map(email => (

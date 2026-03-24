@@ -20,17 +20,6 @@ interface Email {
   tab: TabKey
 }
 
-const DEMO_EMAILS: Email[] = [
-  { id: '1', from: 'Stadt München - Kulturamt', subject: 'Genehmigung Stadtfest 2026 - Aufbauzeiten', preview: 'Sehr geehrter Herr Berger, hiermit bestätigen wir die Aufbauzeiten für das Stadtfest am Marienplatz. Der Aufbau kann ab...', date: '2026-03-23T09:30:00Z', isRead: false, project: 'Stadtfest München 2026', project_id: '1', ai_confidence: 0.95, tab: 'general' },
-  { id: '2', from: 'TechCorp GmbH - Events', subject: 'RE: Angebot Firmen-Gala - Änderungswünsche', preview: 'Vielen Dank für das ausführliche Angebot. Wir hätten noch einige Anpassungswünsche bezüglich der Lichtplanung...', date: '2026-03-23T08:15:00Z', isRead: false, project: 'Firmen-Gala TechCorp', project_id: '2', ai_confidence: 0.88, tab: 'general' },
-  { id: '3', from: 'JBL Professional', subject: 'Rechnung #INV-2026-0847 - VTX Lautsprecher', preview: 'Anbei finden Sie die Rechnung für die Lieferung von 4x JBL VTX A12 Line Array Systemen. Zahlungsziel: 30 Tage...', date: '2026-03-22T16:00:00Z', isRead: true, tab: 'invoices' },
-  { id: '4', from: 'Martin Professional', subject: 'Rechnung #MP-2026-1234', preview: 'Invoice for 6x MAC Aura XB units delivered on March 15th...', date: '2026-03-22T14:30:00Z', isRead: true, tab: 'invoices' },
-  { id: '5', from: 'Festival GmbH', subject: 'Open Air Bodensee - Bühnenplanung', preview: 'Hallo zusammen, anbei die aktualisierten Bühnenpläne für das Festival im Juli. Bitte prüfen Sie die Maße...', date: '2026-03-22T11:00:00Z', isRead: true, project: 'Open Air Festival Bodensee', project_id: '3', ai_confidence: 0.92, tab: 'general' },
-  { id: '6', from: 'Sarah Schmidt', subject: 'Urlaubsantrag KW 16', preview: 'Hallo Marco, ich wollte für die KW 16 Urlaub beantragen. Könntest du das bitte genehmigen?', date: '2026-03-21T17:00:00Z', isRead: true, tab: 'personal' },
-  { id: '7', from: 'DGUV Prüfservice', subject: 'Erinnerung: E-Check fällig - 3 Geräte', preview: 'Für folgende Geräte steht die nächste elektrische Sicherheitsprüfung an: Chainmaster BGV-D8+, JBL VTX...', date: '2026-03-21T10:00:00Z', isRead: true, tab: 'general' },
-  { id: '8', from: 'Thomas Müller', subject: 'Werkstattbericht KW 12', preview: 'Hier der Werkstattbericht für diese Woche. Yamaha CL5 Fader-Reparatur abgeschlossen, Martin MAC Aura noch in Arbeit...', date: '2026-03-20T18:00:00Z', isRead: true, tab: 'personal' },
-]
-
 const TAB_MAILBOX_MAP: Record<TabKey, string> = {
   general: 'general',
   invoices: 'invoices',
@@ -43,7 +32,7 @@ function MailInboxPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('general')
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [emails, setEmails] = useState<Email[]>(DEMO_EMAILS)
+  const [emails, setEmails] = useState<Email[]>([])
   const [assigningProject, setAssigningProject] = useState(false)
 
   // Fetch mails from API
@@ -61,9 +50,9 @@ function MailInboxPage() {
 
   const projects = projectsData?.items || projectsData?.data || []
 
-  // Merge API data with demo fallback
+  // Map API data to local state
   useEffect(() => {
-    if (apiMails && Array.isArray(apiMails) && apiMails.length > 0) {
+    if (apiMails && Array.isArray(apiMails)) {
       const mapped: Email[] = apiMails.map((m: any) => ({
         id: m.id,
         from: m.from_address || m.from || '',
@@ -79,7 +68,7 @@ function MailInboxPage() {
       }))
       setEmails(mapped)
     } else {
-      setEmails(DEMO_EMAILS)
+      setEmails([])
     }
   }, [apiMails, activeTab])
 

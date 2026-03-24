@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
+import { auditApi } from '../../../services/api'
 import styles from '../ProjectDetail.module.scss'
 
 interface HistoryTabProps {
@@ -9,9 +11,15 @@ interface HistoryTabProps {
 interface AuditEntry {
   id: string
   timestamp: string
-  user_name: string
-  action_type: 'created' | 'status_changed' | 'equipment_added' | 'equipment_removed' | 'crew_assigned' | 'edited' | 'other'
-  description: string
+  user_name?: string
+  user_id?: string
+  action_type?: string
+  action?: string
+  entity_type?: string
+  entity_id?: string
+  description?: string
+  details?: string
+  changes?: any
 }
 
 const ACTION_ICONS: Record<string, string> = {
@@ -21,6 +29,8 @@ const ACTION_ICONS: Record<string, string> = {
   equipment_removed: '\u{2796}',
   crew_assigned: '\u{1F465}',
   edited: '\u{270F}\u{FE0F}',
+  updated: '\u{270F}\u{FE0F}',
+  deleted: '\u{1F5D1}\u{FE0F}',
   other: '\u{1F4CC}',
 }
 
@@ -31,6 +41,8 @@ const ACTION_LABELS: Record<string, string> = {
   equipment_removed: 'Equipment',
   crew_assigned: 'Crew',
   edited: 'Bearbeitet',
+  updated: 'Bearbeitet',
+  deleted: 'Geloescht',
   other: 'Sonstig',
 }
 
@@ -46,25 +58,54 @@ const FILTER_OPTIONS = [
 export function HistoryTab({ project }: HistoryTabProps) {
   const [filter, setFilter] = useState('')
 
-  // Auto-generate a creation entry from project data
-  const auditEntries: AuditEntry[] = [
-    {
-      id: 'auto-created',
-      timestamp: project.created_at,
-      user_name: 'System',
-      action_type: 'created',
-      description: `Projekt "${project.name}" erstellt`,
-    },
-  ]
+  // Try to fetch audit logs for this project
+  const { data: auditData } = useQuery({
+    queryKey: ['project-audit', project.id],
+    queryFn: () => auditApi.logs({ entity_type: 'project', entity_id: project.id }),
+    retry: false,
+  })
+
+  // Parse audit entries from API or fall back to auto-generated
+  const apiEntries: AuditEntry[] = Array.isArray(auditData)
+    ? auditData
+    : auditData?.data ?? auditData?.items ?? []
+
+  // Always include auto-generated creation entry
+  const creationEntry: AuditEntry = {
+    id: 'auto-created',
+    timestamp: project.created_at,
+    user_name: 'System',
+    action_type: 'created',
+    description: `Projekt "${project.name}" erstellt`,
+  }
+
+  // Merge: API entries + creation entry (avoid duplicate)
+  const hasCreationFromApi = apiEntries.some(
+    (e) => (e.action_type === 'created' || e.action === 'created') && e.entity_id === project.id,
+  )
+  const auditEntries = hasCreationFromApi
+    ? apiEntries
+    : [...apiEntries, creationEntry]
+
+  // Normalize action_type
+  const normalizedEntries = auditEntries.map((e) => ({
+    ...e,
+    action_type: e.action_type || e.action || 'other',
+  }))
+
+  // Sort newest first
+  normalizedEntries.sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  )
 
   const filtered = filter
-    ? auditEntries.filter((e) => e.action_type === filter)
-    : auditEntries
+    ? normalizedEntries.filter((e) => e.action_type === filter)
+    : normalizedEntries
 
   return (
     <div>
       <div className={styles.sectionHeader}>
-        <h3 className={styles.sectionTitle}>Verlauf</h3>
+        <h3 className={styles.sectionTitle}>Verlauf ({filtered.length})</h3>
       </div>
 
       <div className={styles.filterBar}>
@@ -84,7 +125,7 @@ export function HistoryTab({ project }: HistoryTabProps) {
           <div className={styles.emptyStateIcon}>{'\u{1F4DC}'}</div>
           <h4 className={styles.emptyStateTitle}>Kein Verlauf</h4>
           <p className={styles.emptyStateText}>
-            Es wurden noch keine Aktivitäten für dieses Projekt erfasst.
+            Es wurden noch keine Aktivitaeten fuer dieses Projekt erfasst.
           </p>
         </div>
       ) : (
@@ -92,11 +133,13 @@ export function HistoryTab({ project }: HistoryTabProps) {
           {filtered.map((entry) => (
             <div key={entry.id} className={styles.timelineItem}>
               <div className={styles.timelineIcon}>
-                {ACTION_ICONS[entry.action_type] || ACTION_ICONS.other}
+                {ACTION_ICONS[entry.action_type!] || ACTION_ICONS.other}
               </div>
               <div className={styles.timelineContent}>
                 <div className={styles.timelineHeader}>
-                  <span className={styles.timelineUser}>{entry.user_name}</span>
+                  <span className={styles.timelineUser}>
+                    {entry.user_name || entry.user_id || 'System'}
+                  </span>
                   <span style={{
                     fontSize: 'var(--font-size-xs)',
                     padding: 'var(--spacing-1) var(--spacing-2)',
@@ -104,13 +147,15 @@ export function HistoryTab({ project }: HistoryTabProps) {
                     borderRadius: 'var(--radius-full)',
                     color: 'var(--color-primary)',
                   }}>
-                    {ACTION_LABELS[entry.action_type] || 'Sonstig'}
+                    {ACTION_LABELS[entry.action_type!] || 'Sonstig'}
                   </span>
                   <span className={styles.timelineTime}>
                     {new Date(entry.timestamp).toLocaleString('de-DE')}
                   </span>
                 </div>
-                <div className={styles.timelineDescription}>{entry.description}</div>
+                <div className={styles.timelineDescription}>
+                  {entry.description || entry.details || `${entry.action_type} auf ${entry.entity_type || 'Projekt'}`}
+                </div>
               </div>
             </div>
           ))}

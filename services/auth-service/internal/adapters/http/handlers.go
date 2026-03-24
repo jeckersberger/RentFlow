@@ -121,12 +121,16 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   7 * 24 * 60 * 60, // 7 days
 	})
 
+	// Fetch user object for the Scanner App contract
+	user, _ := h.userService.GetUserByEmail(r.Context(), cmd.Email)
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"data": map[string]interface{}{
 			"access_token":  tokens.AccessToken,
 			"refresh_token": tokens.RefreshToken,
 			"expires_in":    tokens.ExpiresIn,
 			"token_type":    tokens.TokenType,
+			"user":          user,
 		},
 		"message": "Login successful",
 	})
@@ -681,6 +685,56 @@ func (h *Handlers) ResetPassword(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "Password has been reset successfully",
+	})
+}
+
+// QRLogin handles QR code quick login for the Scanner App
+func (h *Handlers) QRLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	var req struct {
+		QRToken string `json:"qr_token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid JSON")
+		return
+	}
+
+	if req.QRToken == "" {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "qr_token is required")
+		return
+	}
+
+	tokens, user, err := h.userService.QRLogin(r.Context(), req.QRToken)
+	if err != nil {
+		h.logger.Warn("QR login failed", "error", err.Error())
+		writeError(w, http.StatusUnauthorized, "INVALID_QR_TOKEN", "Invalid or expired QR token")
+		return
+	}
+
+	// Set refresh token cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    tokens.RefreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   7 * 24 * 60 * 60,
+	})
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data": map[string]interface{}{
+			"access_token":  tokens.AccessToken,
+			"refresh_token": tokens.RefreshToken,
+			"expires_in":    tokens.ExpiresIn,
+			"token_type":    tokens.TokenType,
+			"user":          user,
+		},
+		"message": "QR login successful",
 	})
 }
 

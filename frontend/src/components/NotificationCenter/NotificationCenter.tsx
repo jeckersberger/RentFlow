@@ -3,43 +3,7 @@ import { Bell, CheckCircle, XCircle, AlertTriangle, Info, Check } from 'lucide-r
 import { useNotificationStore, type Notification, type NotificationType } from '../../stores/notificationStore'
 import styles from './NotificationCenter.module.scss'
 
-// Demo notifications seeded on mount
-const DEMO_NOTIFICATIONS: Array<{
-  message: string
-  type: NotificationType
-  title: string
-  minutesAgo: number
-  read: boolean
-}> = [
-  {
-    title: 'Rechnung überfällig',
-    message: 'Rechnung RE-2024-001 ist überfällig (3 Tage)',
-    type: 'warning',
-    minutesAgo: 25,
-    read: false,
-  },
-  {
-    title: 'Projekt bestätigt',
-    message: "Projekt 'Konzert im Park' wurde bestätigt",
-    type: 'success',
-    minutesAgo: 120,
-    read: false,
-  },
-  {
-    title: 'Wartung fällig',
-    message: 'Wartung fällig: JBL VTX A12',
-    type: 'info',
-    minutesAgo: 300,
-    read: true,
-  },
-  {
-    title: 'Neuer Kontakt',
-    message: 'Neuer Kontakt angelegt: Festival GmbH',
-    type: 'info',
-    minutesAgo: 1440,
-    read: true,
-  },
-]
+// No more demo notifications — real notifications come from the notification-service API
 
 function formatRelativeTime(timestamp: number): string {
   const now = Date.now()
@@ -93,46 +57,19 @@ function NotificationItem({ notification, onMarkRead }: NotificationItemProps) {
   )
 }
 
-// Store ref to track if demo notifications have been seeded
-let demoSeeded = false
-
 export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
-  const { notifications, markAsRead, markAllRead, addNotification } = useNotificationStore()
+  const { notifications, markAsRead, markAllRead } = useNotificationStore()
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  // Seed demo notifications once
+  // No demo seeding — real notifications are added by the app when events occur
   useEffect(() => {
-    if (demoSeeded) return
-    demoSeeded = true
-
-    DEMO_NOTIFICATIONS.forEach((demo) => {
-      const id = addNotification(demo.message, demo.type, {
-        title: demo.title,
-        duration: null, // persistent - these are center notifications, not toasts
-      })
-
-      // Set the correct timestamp and read state
-      const store = useNotificationStore.getState()
-      const notif = store.notifications.find((n: Notification) => n.id === id)
-      if (notif) {
-        useNotificationStore.setState({
-          notifications: store.notifications.map((n: Notification) =>
-            n.id === id
-              ? {
-                  ...n,
-                  timestamp: Date.now() - demo.minutesAgo * 60000,
-                  read: demo.read,
-                }
-              : n
-          ),
-        })
-      }
-    })
-  }, [addNotification])
+    // TODO: Fetch real notifications from /api/v1/notifications when available
+    // For now, notification center starts empty
+  }, [])
 
   // Close on outside click
   useEffect(() => {

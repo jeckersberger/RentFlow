@@ -237,6 +237,143 @@ func (s *ScanService) ListDevices(ctx context.Context, tenantID string, limit, o
 	}, nil
 }
 
+// =====================================================
+// Scanner App API contract service methods
+// =====================================================
+
+// ResolveEquipment resolves a barcode/RFID code to full equipment detail.
+// Implements POST /api/v1/scanner/scan business logic.
+func (s *ScanService) ResolveEquipment(ctx context.Context, tenantID, code, scanType string) (*ports.EquipmentDetail, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if code == "" {
+		return nil, domain.NewDomainError("BARCODE_REQUIRED", "code is required", nil)
+	}
+	if s.inventorySvc == nil {
+		return nil, domain.NewDomainError("SERVICE_UNAVAILABLE", "inventory service not available", nil)
+	}
+
+	equipment, err := s.inventorySvc.ResolveEquipment(ctx, tenantID, code, scanType)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "equipment not found for given code", err)
+	}
+
+	return equipment, nil
+}
+
+// CheckOutEquipment checks out equipment to a project.
+// Implements POST /api/v1/scanner/checkout business logic.
+func (s *ScanService) CheckOutEquipment(ctx context.Context, tenantID string, equipmentIDs []string, projectID, notes string) (*ports.CheckoutResult, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if len(equipmentIDs) == 0 {
+		return nil, domain.NewDomainError("INVALID_INPUT", "equipment_ids is required", nil)
+	}
+	if projectID == "" {
+		return nil, domain.NewDomainError("INVALID_INPUT", "project_id is required", nil)
+	}
+	if s.inventorySvc == nil {
+		return nil, domain.NewDomainError("SERVICE_UNAVAILABLE", "inventory service not available", nil)
+	}
+
+	result, err := s.inventorySvc.CheckOutEquipment(ctx, tenantID, equipmentIDs, projectID, notes)
+	if err != nil {
+		return nil, domain.NewDomainError("CHECKOUT_ERROR", "failed to check out equipment", err)
+	}
+
+	return result, nil
+}
+
+// CheckInEquipment checks in equipment with condition ratings.
+// Implements POST /api/v1/scanner/checkin business logic.
+func (s *ScanService) CheckInEquipment(ctx context.Context, tenantID string, equipmentIDs []string, conditionRatings map[string]ConditionRatingPayload) (*ports.CheckinResult, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if len(equipmentIDs) == 0 {
+		return nil, domain.NewDomainError("INVALID_INPUT", "equipment_ids is required", nil)
+	}
+	if s.inventorySvc == nil {
+		return nil, domain.NewDomainError("SERVICE_UNAVAILABLE", "inventory service not available", nil)
+	}
+
+	// Convert payload ratings to port ratings
+	portRatings := make(map[string]ports.ConditionRating, len(conditionRatings))
+	for k, v := range conditionRatings {
+		portRatings[k] = ports.ConditionRating{
+			Rating:         v.Rating,
+			Notes:          v.Notes,
+			DamageReported: v.DamageReported,
+		}
+	}
+
+	result, err := s.inventorySvc.CheckInEquipment(ctx, tenantID, equipmentIDs, portRatings)
+	if err != nil {
+		return nil, domain.NewDomainError("CHECKIN_ERROR", "failed to check in equipment", err)
+	}
+
+	return result, nil
+}
+
+// ProcessBulkActions processes a batch of offline checkout/checkin actions idempotently.
+// Implements POST /api/v1/scanner/bulk business logic.
+func (s *ScanService) ProcessBulkActions(ctx context.Context, tenantID string, actions []BulkAction) (*BulkResult, error) {
+	if tenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	result := &BulkResult{
+		Results: make([]BulkActionResult, 0, len(actions)),
+	}
+
+	for _, action := range actions {
+		ar := BulkActionResult{Type: action.Type}
+
+		switch action.Type {
+		case "checkout":
+			coResult, err := s.CheckOutEquipment(ctx, tenantID, action.EquipmentIDs, action.ProjectID, action.Notes)
+			if err != nil {
+				ar.Success = false
+				ar.Error = err.Error()
+				result.Failed++
+			} else {
+				ar.Success = true
+				ar.Data = map[string]interface{}{
+					"checked_out": coResult.CheckedOut,
+					"project":     coResult.Project,
+				}
+				result.Processed++
+			}
+
+		case "checkin":
+			ciResult, err := s.CheckInEquipment(ctx, tenantID, action.EquipmentIDs, action.ConditionRatings)
+			if err != nil {
+				ar.Success = false
+				ar.Error = err.Error()
+				result.Failed++
+			} else {
+				ar.Success = true
+				ar.Data = map[string]interface{}{
+					"checked_in":     ciResult.CheckedIn,
+					"damage_reports": ciResult.DamageReports,
+				}
+				result.Processed++
+			}
+
+		default:
+			ar.Success = false
+			ar.Error = "unknown action type: " + action.Type
+			result.Failed++
+		}
+
+		result.Results = append(result.Results, ar)
+	}
+
+	return result, nil
+}
+
 func hashString(s string) int64 {
 	h := int64(5381)
 	for _, c := range s {

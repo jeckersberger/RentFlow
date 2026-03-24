@@ -232,6 +232,41 @@ func (h *Handler) AssignRfidTag(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto)
 }
 
+// AssignRfidTagPut handles PUT /api/v1/equipment/{id}/rfid
+// Scanner App contract: assigns RFID tag and returns {"success": true}
+func (h *Handler) AssignRfidTagPut(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		RfidTag string `json:"rfid_tag"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.RfidTag == "" {
+		h.respondError(w, http.StatusBadRequest, "rfid_tag is required")
+		return
+	}
+
+	_, err := h.equipmentSvc.AssignRfidTag(r.Context(), tenantID, id, payload.RfidTag)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+	})
+}
+
 func (h *Handler) UpdateEquipment(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	tenantID := r.Header.Get("X-Tenant-ID")
