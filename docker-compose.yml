@@ -276,12 +276,14 @@ services:
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      INVENTORY_SERVICE_URL: http://inventory-service:8002
     ports:
       - "8004:8004"
     depends_on:
       migrations: { condition: service_completed_successfully }
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+      inventory-service: { condition: service_healthy }
     networks:
       - rentflow
     restart: unless-stopped

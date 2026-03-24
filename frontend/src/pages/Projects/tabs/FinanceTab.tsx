@@ -1,6 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { Project } from '../../../types/project'
-import { invoiceApi } from '../../../services/api'
+import { invoiceApi, reservationApi } from '../../../services/api'
 import styles from '../ProjectDetail.module.scss'
 
 interface FinanceTabProps {
@@ -46,9 +48,87 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 }
 
 export function FinanceTab({ project }: FinanceTabProps) {
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const [autoInvoiceError, setAutoInvoiceError] = useState<string | null>(null)
+
   const { data: invoicesData, isLoading, error } = useQuery({
     queryKey: ['project-invoices', project.id],
     queryFn: () => invoiceApi.list(1, 50),
+  })
+
+  // Fetch reservations for auto-invoice
+  const { data: reservations = [] } = useQuery({
+    queryKey: ['project-reservations', project.id],
+    queryFn: () => reservationApi.list(project.id),
+  })
+
+  // Auto-generate invoice from equipment reservations
+  const autoInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      setAutoInvoiceError(null)
+      const reservationList = Array.isArray(reservations)
+        ? reservations
+        : (reservations as any)?.data ?? (reservations as any)?.items ?? []
+
+      if (reservationList.length === 0) {
+        throw new Error('Keine Equipment-Reservierungen vorhanden. Fuegen Sie zuerst Equipment im Equipment-Tab hinzu.')
+      }
+
+      // Build invoice items from reservations
+      const items = reservationList.map((res: any) => {
+        const startDate = new Date(res.start_date)
+        const endDate = new Date(res.end_date)
+        const rentalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
+        const quantity = res.quantity || 1
+        const dailyRate = res.unit_price || res.daily_rate || 0
+        const totalPrice = quantity * dailyRate * rentalDays
+
+        return {
+          description: res.equipment_name || `Equipment ${res.equipment_id?.slice(0, 8) || ''}`,
+          quantity: quantity,
+          unit: 'Tage',
+          unit_price: dailyRate,
+          days: rentalDays,
+          total_price: totalPrice,
+        }
+      })
+
+      const subtotal = items.reduce((sum: number, item: any) => sum + item.total_price, 0)
+      const taxRate = 0.19
+      const taxAmount = subtotal * taxRate
+      const total = subtotal + taxAmount
+
+      // Create invoice via API
+      const invoiceData = {
+        project_id: project.id,
+        client_name: project.client_name || 'Unbekannt',
+        client_email: project.client_email || '',
+        status: 'draft',
+        issue_date: new Date().toISOString().split('T')[0],
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        sub_total: subtotal,
+        tax_rate: taxRate,
+        tax_amount: taxAmount,
+        total: total,
+        currency: project.currency || 'EUR',
+        items: items,
+        notes: `Auto-generiert aus Projekt: ${project.name}`,
+      }
+
+      return invoiceApi.create(invoiceData)
+    },
+    onSuccess: (result: any) => {
+      queryClient.invalidateQueries({ queryKey: ['project-invoices', project.id] })
+      // Navigate to the new invoice
+      const invoiceId = result?.id || result?.data?.id
+      if (invoiceId) {
+        navigate(`/invoices/${invoiceId}`)
+      }
+    },
+    onError: (err: any) => {
+      setAutoInvoiceError(err?.message || 'Fehler beim Erstellen der Auto-Rechnung')
+    },
   })
 
   // Filter invoices for this project client-side (API might not support project_id filter)
@@ -130,8 +210,41 @@ export function FinanceTab({ project }: FinanceTabProps) {
           <div className={styles.glassCardTitle} style={{ margin: 0 }}>
             Rechnungen ({projectInvoices.length})
           </div>
-          <button className="btn btn--secondary" disabled>Rechnung erstellen</button>
+          <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+            <button
+              className="btn btn--primary"
+              onClick={() => autoInvoiceMutation.mutate()}
+              disabled={autoInvoiceMutation.isPending}
+              title="Erstellt automatisch eine Rechnung aus allen Equipment-Reservierungen dieses Projekts"
+              style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}
+            >
+              {autoInvoiceMutation.isPending ? 'Erstelle...' : '\u26A1 Auto-Rechnung'}
+            </button>
+            <button className="btn btn--secondary" disabled>Rechnung erstellen</button>
+          </div>
         </div>
+        {autoInvoiceError && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 'var(--radius-sm)',
+            padding: 'var(--spacing-3) var(--spacing-4)',
+            marginBottom: 'var(--spacing-3)',
+            color: 'var(--color-danger)',
+            fontSize: 'var(--font-size-sm)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span>{autoInvoiceError}</span>
+            <button
+              onClick={() => setAutoInvoiceError(null)}
+              style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', fontSize: 'var(--font-size-base)' }}
+            >
+              {'\u2715'}
+            </button>
+          </div>
+        )}
 
         {isLoading ? (
           <div className={styles.emptyState} style={{ padding: 'var(--spacing-6)' }}>

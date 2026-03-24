@@ -15,6 +15,7 @@ import (
 	"github.com/jeckersberger/rentflow/pkg/common/middleware"
 	httpAdapter "github.com/jeckersberger/rentflow/services/scanner-service/internal/adapters/http"
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/application"
+	"github.com/jeckersberger/rentflow/services/scanner-service/internal/infrastructure/clients"
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/infrastructure/repositories"
 )
 
@@ -49,9 +50,17 @@ func main() {
 
 	log.Info("Repositories initialized")
 
-	// Initialize services (inventorySvc can be nil for now)
-	scanSvc := application.NewScanService(scanEventRepo, deviceRepo, nil, log)
-	sessionSvc := application.NewSessionService(sessionRepo, scanEventRepo, queueRepo, deviceRepo, nil, log)
+	// Initialize inventory service HTTP client
+	inventoryURL := os.Getenv("INVENTORY_SERVICE_URL")
+	if inventoryURL == "" {
+		inventoryURL = "http://localhost:8002"
+	}
+	inventoryClient := clients.NewInventoryHTTPClient(inventoryURL)
+	log.Info("Inventory service client initialized", "url", inventoryURL)
+
+	// Initialize services
+	scanSvc := application.NewScanService(scanEventRepo, deviceRepo, inventoryClient, log)
+	sessionSvc := application.NewSessionService(sessionRepo, scanEventRepo, queueRepo, deviceRepo, inventoryClient, log)
 
 	log.Info("Services initialized")
 

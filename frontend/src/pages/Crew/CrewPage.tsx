@@ -40,11 +40,9 @@ const ROLES = [
   { value: 'technician', label: 'Techniker' },
   { value: 'rigger', label: 'Rigger' },
   { value: 'driver', label: 'Fahrer' },
-  { value: 'stagehand', label: 'Stagehand' },
-  { value: 'light_tech', label: 'Lichttechniker' },
-  { value: 'sound_tech', label: 'Tontechniker' },
-  { value: 'supervisor', label: 'Supervisor' },
-  { value: 'assistant', label: 'Assistent' },
+  { value: 'sound_engineer', label: 'Tontechniker' },
+  { value: 'lighting_tech', label: 'Lichttechniker' },
+  { value: 'freelancer', label: 'Freelancer' },
 ]
 
 const AVAILABILITY_OPTIONS = [

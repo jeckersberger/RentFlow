@@ -1220,23 +1220,44 @@ export const scannerApi = {
 export const aiApi = {
   chat: (message: string, provider: string) =>
     MOCK_MODE
-      ? mockDelay({ id: String(Date.now()), role: 'assistant', content: `Response from ${provider}`, timestamp: new Date().toISOString() })
-      : api.post('/api/v1/ai/chat', { message, provider }).then(res => res.data),
+      ? mockDelay({ id: String(Date.now()), role: 'assistant', content: `Mock-Antwort von ${provider}: "${message}" wurde verarbeitet.`, timestamp: new Date().toISOString() })
+      : api.post('/api/v1/ai/complete', { provider_id: provider, request_type: 'general', input_text: message }).then(res => res.data),
 
   providers: () =>
     MOCK_MODE
-      ? mockDelay(['Claude', 'GPT-4o', 'Gemini', 'Mistral', 'Ollama'])
-      : api.get('/api/v1/ai/providers').then(res => res.data),
+      ? mockDelay([])
+      : api.get('/api/v1/ai/providers').then(res => {
+          const data = res.data
+          return Array.isArray(data) ? data : (data?.providers ?? [])
+        }),
 
   history: () =>
     MOCK_MODE
       ? mockDelay([])
-      : api.get('/api/v1/ai/requests').then(res => res.data),
+      : api.get('/api/v1/ai/requests').then(res => {
+          const data = res.data
+          return Array.isArray(data) ? data : (data?.requests ?? [])
+        }),
 
   feedback: (requestId: string, rating: number) =>
     MOCK_MODE
       ? mockDelay({ success: true, request_id: requestId, rating })
       : api.post('/api/v1/ai/feedback', { request_id: requestId, rating }).then(res => res.data),
+
+  testProvider: (providerName: string, _apiKey?: string, _model?: string, _endpoint?: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, message: `${providerName} antwortet korrekt.` })
+      : api.post('/api/v1/ai/complete', {
+          provider_id: providerName,
+          request_type: 'general',
+          input_text: 'Antworte mit genau einem Wort: OK',
+        }).then(res => ({ success: true, message: `${providerName} antwortet korrekt.`, data: res.data }))
+          .catch((err: any) => ({ success: false, message: err?.response?.data?.error || err?.message || 'Verbindung fehlgeschlagen' })),
+
+  registerProvider: (data: { name: string; model_name: string; api_endpoint?: string; is_active: boolean; priority: number; config?: Record<string, any> }) =>
+    MOCK_MODE
+      ? mockDelay({ ...data, id: String(Date.now()) })
+      : api.post('/api/v1/ai/providers', data).then(res => res.data),
 }
 
 // Workflow Service (port 8014)
