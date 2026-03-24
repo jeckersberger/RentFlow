@@ -92,3 +92,17 @@ type StopTimeRecordCommand struct {
 type ApproveTimeRecordCommand struct {
 	ID string `json:"id"`
 }
+
+// CreateBookingRequestCommand represents a command to create a booking request
+type CreateBookingRequestCommand struct {
+	TenantID     string `json:"tenant_id"`
+	AssignmentID string `json:"assignment_id"`
+	Message      string `json:"message"`
+}
+
+// BookingResponseCommand represents a command to respond to a booking request
+type BookingResponseCommand struct {
+	Token   string `json:"token"`
+	Status  string `json:"status"`  // accepted, declined, alternative
+	Message string `json:"message"`
+}

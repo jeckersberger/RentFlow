@@ -19,4 +19,6 @@ var (
 	ErrInvalidDateRange        = errors.New("invalid date range")
 	ErrEmptyEmail              = errors.New("email is required")
 	ErrDuplicateEmail          = errors.New("email already exists for this tenant")
+	ErrBookingNotFound         = errors.New("booking request not found")
+	ErrBookingAlreadyResponded = errors.New("booking request has already been responded to")
 )

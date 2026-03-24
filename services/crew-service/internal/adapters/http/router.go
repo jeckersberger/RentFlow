@@ -14,9 +14,10 @@ func SetupRoutes(
 	qualSvc *application.QualificationService,
 	assignmentSvc *application.AssignmentService,
 	timeRecordSvc *application.TimeRecordService,
+	bookingSvc *application.BookingService,
 	log logger.Logger,
 ) {
-	handlers := NewHandlers(crewSvc, qualSvc, assignmentSvc, timeRecordSvc, log)
+	handlers := NewHandlers(crewSvc, qualSvc, assignmentSvc, timeRecordSvc, bookingSvc, log)
 
 	// Crew member routes
 	mux.HandleFunc("GET /api/v1/crew/members", handlers.ListCrewMembers)
@@ -54,6 +55,14 @@ func SetupRoutes(
 
 	// Dashboard route
 	mux.HandleFunc("GET /api/v1/crew/dashboard", handlers.GetDashboard)
+
+	// Booking request routes (authenticated)
+	mux.HandleFunc("POST /api/v1/crew/bookings", handlers.CreateBookingRequest)
+	mux.HandleFunc("GET /api/v1/crew/bookings", handlers.ListBookingRequests)
+
+	// Booking request routes (public, no auth - token is the security mechanism)
+	mux.HandleFunc("GET /api/v1/crew/bookings/{token}/details", handlers.GetBookingDetails)
+	mux.HandleFunc("POST /api/v1/crew/bookings/{token}/respond", handlers.RespondToBooking)
 
 	// Alias routes for frontend compatibility (time-entries -> time-records)
 	mux.HandleFunc("POST /api/v1/time-entries/start", handlers.StartTimeRecord)

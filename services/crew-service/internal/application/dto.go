@@ -110,6 +110,31 @@ type DriverDTO struct {
 	AssignmentEndDate   *time.Time `json:"assignment_end_date,omitempty"`
 }
 
+// BookingRequestDTO represents a booking request in responses
+type BookingRequestDTO struct {
+	ID              string  `json:"id"`
+	AssignmentID    string  `json:"assignment_id"`
+	CrewMemberID    string  `json:"crew_member_id"`
+	CrewMemberName  string  `json:"crew_member_name"`
+	ProjectID       string  `json:"project_id"`
+	Token           string  `json:"token"`
+	Status          string  `json:"status"`
+	ResponseMessage *string `json:"response_message,omitempty"`
+	RespondedAt     *string `json:"responded_at,omitempty"`
+	CreatedAt       string  `json:"created_at"`
+}
+
+// BookingDetailsDTO represents booking details for the public response page
+type BookingDetailsDTO struct {
+	ProjectName    string `json:"project_name"`
+	ProjectDates   string `json:"project_dates"`
+	Role           string `json:"role"`
+	Location       string `json:"location"`
+	Message        string `json:"message"`
+	FreelancerName string `json:"freelancer_name"`
+	Status         string `json:"status"`
+}
+
 // PaginatedResult represents a paginated response
 type PaginatedResult struct {
 	Data       interface{} `json:"data"`

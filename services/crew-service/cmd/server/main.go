@@ -55,6 +55,7 @@ func main() {
 	qualificationService := application.NewQualificationService(qualRepo, crewRepo, log)
 	assignmentService := application.NewAssignmentService(assignmentRepo, crewRepo, log)
 	timeRecordService := application.NewTimeRecordService(timeRecordRepo, crewRepo, log)
+	bookingService := application.NewBookingService(db, assignmentRepo, crewRepo, log)
 
 	// Setup router
 	router := nethttp.NewServeMux()
@@ -64,7 +65,7 @@ func main() {
 	router.HandleFunc("GET /ready", readyHandler(serviceName, db, log))
 
 	// Setup API routes
-	crewhttp.SetupRoutes(router, crewService, qualificationService, assignmentService, timeRecordService, log)
+	crewhttp.SetupRoutes(router, crewService, qualificationService, assignmentService, timeRecordService, bookingService, log)
 
 	// Create HTTP server
 	srv := &nethttp.Server{

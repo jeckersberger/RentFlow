@@ -19,6 +19,7 @@ type Handlers struct {
 	qualificationSvc  *application.QualificationService
 	assignmentSvc     *application.AssignmentService
 	timeRecordSvc     *application.TimeRecordService
+	bookingSvc        *application.BookingService
 	logger            logger.Logger
 }
 
@@ -28,6 +29,7 @@ func NewHandlers(
 	qualSvc *application.QualificationService,
 	assignmentSvc *application.AssignmentService,
 	timeRecordSvc *application.TimeRecordService,
+	bookingSvc *application.BookingService,
 	log logger.Logger,
 ) *Handlers {
 	return &Handlers{
@@ -35,6 +37,7 @@ func NewHandlers(
 		qualificationSvc: qualSvc,
 		assignmentSvc:    assignmentSvc,
 		timeRecordSvc:    timeRecordSvc,
+		bookingSvc:       bookingSvc,
 		logger:           log,
 	}
 }
@@ -587,6 +590,119 @@ func (h *Handlers) CheckAvailability(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, availability)
+}
+
+// ---- Booking Handlers ----
+
+// CreateBookingRequest creates a new booking request
+func (h *Handlers) CreateBookingRequest(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
+
+	var cmd application.CreateBookingRequestCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_json", "invalid request body")
+		return
+	}
+
+	cmd.TenantID = tenantID
+
+	dto, err := h.bookingSvc.CreateBookingRequest(r.Context(), cmd)
+	if err != nil {
+		switch err {
+		case domain.ErrAssignmentNotFound:
+			writeError(w, http.StatusNotFound, "not_found", "assignment not found")
+		case domain.ErrCrewMemberNotFound:
+			writeError(w, http.StatusNotFound, "not_found", "crew member not found")
+		default:
+			h.logger.Error("failed to create booking request", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to create booking request")
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, dto)
+}
+
+// ListBookingRequests lists booking requests for a tenant
+func (h *Handlers) ListBookingRequests(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
+
+	bookings, err := h.bookingSvc.ListBookingRequests(r.Context(), tenantID)
+	if err != nil {
+		h.logger.Error("failed to list booking requests", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to list booking requests")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, bookings)
+}
+
+// GetBookingDetails retrieves booking details by token (public, no auth)
+func (h *Handlers) GetBookingDetails(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+	if token == "" {
+		writeError(w, http.StatusBadRequest, "missing_token", "booking token is required")
+		return
+	}
+
+	dto, err := h.bookingSvc.GetBookingDetails(r.Context(), token)
+	if err != nil {
+		if err == domain.ErrBookingNotFound {
+			writeError(w, http.StatusNotFound, "not_found", "booking request not found")
+		} else {
+			h.logger.Error("failed to get booking details", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to get booking details")
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto)
+}
+
+// RespondToBooking processes a freelancer's response (public, no auth)
+func (h *Handlers) RespondToBooking(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+	if token == "" {
+		writeError(w, http.StatusBadRequest, "missing_token", "booking token is required")
+		return
+	}
+
+	var cmd application.BookingResponseCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_json", "invalid request body")
+		return
+	}
+
+	cmd.Token = token
+
+	if cmd.Status != "accepted" && cmd.Status != "declined" && cmd.Status != "alternative" {
+		writeError(w, http.StatusBadRequest, "invalid_status", "status must be accepted, declined, or alternative")
+		return
+	}
+
+	err := h.bookingSvc.RespondToBooking(r.Context(), cmd)
+	if err != nil {
+		switch err {
+		case domain.ErrBookingNotFound:
+			writeError(w, http.StatusNotFound, "not_found", "booking request not found")
+		case domain.ErrBookingAlreadyResponded:
+			writeError(w, http.StatusConflict, "already_responded", "booking request has already been responded to")
+		default:
+			h.logger.Error("failed to respond to booking", err)
+			writeError(w, http.StatusInternalServerError, "internal_error", "failed to respond to booking")
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"message": "response recorded successfully"})
 }
 
 // ---- Helper functions ----

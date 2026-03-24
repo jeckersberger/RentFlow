@@ -18,6 +18,7 @@ import { KeyboardShortcutsProvider } from './components/KeyboardShortcutsProvide
 import LoginPage from './pages/Login'
 import ForgotPasswordPage from './pages/ForgotPassword'
 import ResetPasswordPage from './pages/ResetPassword'
+import BookingResponsePage from './pages/BookingResponse'
 import SetupWizard from './pages/Setup/SetupWizard'
 import DashboardPage from './pages/Dashboard'
 
@@ -209,6 +210,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/booking/:token" element={<BookingResponsePage />} />
 
           <Route
             path="/*"

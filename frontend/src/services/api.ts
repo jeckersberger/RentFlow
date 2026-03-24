@@ -1099,6 +1099,24 @@ export const crewApi = {
 }
 
 // ============================================================================
+// Booking API (Freelancer Booking System)
+// ============================================================================
+export const bookingApi = {
+  create: (data: { assignment_id: string; message?: string }) =>
+    api.post('/api/v1/crew/bookings', data).then(r => r.data),
+
+  list: () =>
+    api.get('/api/v1/crew/bookings').then(r => r.data),
+
+  // Public endpoints - use raw axios (no auth interceptor)
+  getDetails: (token: string) =>
+    axios.get(`${API_BASE_URL}/api/v1/crew/bookings/${token}/details`).then(r => r.data),
+
+  respond: (token: string, data: { status: string; message?: string }) =>
+    axios.post(`${API_BASE_URL}/api/v1/crew/bookings/${token}/respond`, data).then(r => r.data),
+}
+
+// ============================================================================
 // Document Service (port 8007)
 // ============================================================================
 export const documentApi = {
