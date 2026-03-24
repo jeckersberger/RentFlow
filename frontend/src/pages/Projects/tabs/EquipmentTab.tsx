@@ -145,7 +145,6 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
   const handleCloseModal = () => {
     setShowAddModal(false)
     setAddEquipmentId('')
-    setAddEquipmentName('')
     setConflicts([])
     setShowConflictWarning(false)
   }
