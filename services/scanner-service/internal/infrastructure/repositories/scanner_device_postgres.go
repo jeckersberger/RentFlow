@@ -31,6 +31,7 @@ func (r *ScannerDevicePostgres) Upsert(ctx context.Context, device *ports.Scanne
 
 	now := time.Now()
 	nowStr := now.Format(time.RFC3339)
+	var createdAt time.Time
 	err := r.db.QueryRow(ctx, query,
 		device.TenantID,
 		device.DeviceID,
@@ -39,12 +40,13 @@ func (r *ScannerDevicePostgres) Upsert(ctx context.Context, device *ports.Scanne
 		device.FCMToken,
 		now,
 		now,
-	).Scan(&device.ID, &device.CreatedAt)
+	).Scan(&device.ID, &createdAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to upsert scanner device: %w", err)
 	}
 
+	device.CreatedAt = createdAt.Format(time.RFC3339)
 	device.LastSeen = &nowStr
 	return nil
 }
