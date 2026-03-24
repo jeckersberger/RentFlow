@@ -81,6 +81,9 @@ func SetupRoutes(
 	mux.HandleFunc("GET /api/v1/tenants/{id}", handlers.GetTenant)
 	mux.HandleFunc("PUT /api/v1/tenants/{id}", handlers.UpdateTenant)
 
+	// System endpoints (authenticated)
+	mux.HandleFunc("GET /api/v1/system/version", authMiddleware(http.HandlerFunc(handlers.GetSystemVersion)).ServeHTTP)
+
 	// Tenant config (authenticated)
 	mux.HandleFunc("GET /api/v1/config", authMiddleware(http.HandlerFunc(configHandlers.GetAllConfigs)).ServeHTTP)
 	mux.HandleFunc("GET /api/v1/config/{key...}", authMiddleware(http.HandlerFunc(configHandlers.GetConfig)).ServeHTTP)

@@ -39,6 +39,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { NAV_SHORTCUT_HINTS } from '../../hooks/useKeyboardShortcuts'
+import { useBadgeCounts } from '../../hooks/useBadgeCounts'
 import './Sidebar.scss'
 
 interface NavItem {
@@ -161,11 +162,20 @@ function Sidebar() {
   const logout = useAuthStore((state) => state.logout)
   const enabledModules = useModuleStore((state) => state.enabledModules)
   const modulesLoaded = useModuleStore((state) => state.loaded)
+  const badgeCounts = useBadgeCounts()
   const [collapsed, setCollapsed] = useState(false)
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  // Map nav paths to badge counts and their variant (color)
+  const badgeMap: Record<string, { count: number; variant: 'danger' | 'info' | 'warning' }> = {
+    '/invoices': { count: badgeCounts.invoicesOverdue, variant: 'danger' },
+    '/mail/inbox': { count: badgeCounts.mailUnread, variant: 'info' },
+    '/crew': { count: badgeCounts.crewPending, variant: 'warning' },
+    '/workshop': { count: badgeCounts.maintenanceOverdue, variant: 'danger' },
+  }
 
   const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), [])
 
@@ -257,9 +267,17 @@ function Sidebar() {
                     >
                       <span className="sidebar__nav-icon">
                         <IconComponent size={18} />
+                        {collapsed && badgeMap[item.href]?.count > 0 && (
+                          <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant} sidebar__badge--dot`} />
+                        )}
                       </span>
                       {!collapsed && <span className="sidebar__nav-label">{item.label}</span>}
-                      {!collapsed && shortcutHint && (
+                      {!collapsed && badgeMap[item.href]?.count > 0 && (
+                        <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant}`}>
+                          {badgeMap[item.href].count}
+                        </span>
+                      )}
+                      {!collapsed && shortcutHint && !badgeMap[item.href]?.count && (
                         <span className="sidebar__nav-shortcut">{shortcutHint}</span>
                       )}
                     </Link>
@@ -352,6 +370,11 @@ function Sidebar() {
                       >
                         <IconComponent size={18} />
                         <span>{item.label}</span>
+                        {badgeMap[item.href]?.count > 0 && (
+                          <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant}`}>
+                            {badgeMap[item.href].count}
+                          </span>
+                        )}
                       </Link>
                     )
                   })}

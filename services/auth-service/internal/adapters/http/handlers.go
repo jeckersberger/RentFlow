@@ -2,16 +2,47 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/pkg/common/middleware"
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/application"
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/domain"
 )
+
+// CurrentVersion is the hardcoded current version of RentFlow
+const CurrentVersion = "1.0.0"
+
+// versionCache caches the GitHub release check result for 6 hours
+var (
+	versionCacheMu    sync.Mutex
+	cachedVersionInfo *VersionInfo
+	versionCacheTime  time.Time
+	versionCacheTTL   = 6 * time.Hour
+)
+
+// VersionInfo represents the system version response
+type VersionInfo struct {
+	CurrentVersion  string  `json:"current_version"`
+	LatestVersion   *string `json:"latest_version"`
+	UpdateAvailable bool    `json:"update_available"`
+	ReleaseURL      string  `json:"release_url,omitempty"`
+	ReleaseNotes    string  `json:"release_notes,omitempty"`
+	CheckedAt       string  `json:"checked_at"`
+}
+
+// gitHubRelease represents the relevant fields from the GitHub releases API
+type gitHubRelease struct {
+	TagName string `json:"tag_name"`
+	HTMLURL string `json:"html_url"`
+	Body    string `json:"body"`
+}
 
 // Handlers holds references to all service handlers
 type Handlers struct {
@@ -736,6 +767,81 @@ func (h *Handlers) QRLogin(w http.ResponseWriter, r *http.Request) {
 		},
 		"message": "QR login successful",
 	})
+}
+
+// GetSystemVersion returns current and latest version info
+func (h *Handlers) GetSystemVersion(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	info := getVersionInfo(h.logger)
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    info,
+		"message": "Version info retrieved successfully",
+	})
+}
+
+// getVersionInfo returns cached version info or fetches from GitHub
+func getVersionInfo(log logger.Logger) *VersionInfo {
+	versionCacheMu.Lock()
+	defer versionCacheMu.Unlock()
+
+	if cachedVersionInfo != nil && time.Since(versionCacheTime) < versionCacheTTL {
+		return cachedVersionInfo
+	}
+
+	info := &VersionInfo{
+		CurrentVersion:  CurrentVersion,
+		UpdateAvailable: false,
+		CheckedAt:       time.Now().UTC().Format(time.RFC3339),
+	}
+
+	// Try to fetch latest release from GitHub
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("https://api.github.com/repos/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware/releases/latest")
+	if err != nil {
+		log.Warn("failed to check GitHub for updates", "error", err.Error())
+		cachedVersionInfo = info
+		versionCacheTime = time.Now()
+		return info
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Warn("GitHub API returned non-200", "status", resp.StatusCode)
+		cachedVersionInfo = info
+		versionCacheTime = time.Now()
+		return info
+	}
+
+	var release gitHubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		log.Warn("failed to decode GitHub release", "error", err.Error())
+		cachedVersionInfo = info
+		versionCacheTime = time.Now()
+		return info
+	}
+
+	// Strip "v" prefix from tag if present
+	latestVersion := strings.TrimPrefix(release.TagName, "v")
+	info.LatestVersion = &latestVersion
+	info.ReleaseURL = release.HTMLURL
+	info.ReleaseNotes = release.Body
+
+	// Simple version comparison: if they differ, an update is available
+	if latestVersion != CurrentVersion {
+		info.UpdateAvailable = true
+	}
+
+	if info.ReleaseURL == "" && latestVersion != "" {
+		info.ReleaseURL = fmt.Sprintf("https://github.com/jeckersberger/rentflow/releases/tag/v%s", latestVersion)
+	}
+
+	cachedVersionInfo = info
+	versionCacheTime = time.Now()
+	return info
 }
 
 // Helper functions
