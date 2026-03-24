@@ -75,6 +75,39 @@ type ReservationDTO struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+// Packing List JSON response grouped by storage location
+type PackingListDTO struct {
+	ProjectName  string                    `json:"project_name"`
+	ProjectDates string                    `json:"project_dates"`
+	Locations    []PackingListLocationDTO  `json:"locations"`
+	TotalItems   int                       `json:"total_items"`
+}
+
+type PackingListLocationDTO struct {
+	Location string                  `json:"location"`
+	Items    []PackingListItemDTO    `json:"items"`
+}
+
+type PackingListItemDTO struct {
+	Name           string `json:"name"`
+	Quantity       int    `json:"quantity"`
+	QuantityPacked int    `json:"quantity_packed"`
+	SKU            string `json:"sku,omitempty"`
+	Barcode        string `json:"barcode,omitempty"`
+	Status         string `json:"status"`
+	PacklistName   string `json:"packlist_name,omitempty"`
+}
+
+type ReservationConflictDTO struct {
+	ReservationID string    `json:"reservation_id"`
+	ProjectID     string    `json:"project_id"`
+	ProjectName   string    `json:"project_name,omitempty"`
+	EquipmentID   string    `json:"equipment_id"`
+	StartDate     time.Time `json:"start_date"`
+	EndDate       time.Time `json:"end_date"`
+	Status        string    `json:"status"`
+}
+
 type PaginatedResult struct {
 	Data   interface{} `json:"data"`
 	Total  int64       `json:"total"`

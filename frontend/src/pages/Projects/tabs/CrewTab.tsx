@@ -36,6 +36,16 @@ interface BookingRequest {
   created_at: string
 }
 
+interface CrewConflict {
+  project_id: string
+  project_name?: string
+  member_id?: string
+  member_name?: string
+  start_date: string
+  end_date: string
+  role?: string
+}
+
 const bookingStatusConfig: Record<string, { label: string; bg: string; color: string }> = {
   pending: { label: 'Anfrage offen', bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' },
   accepted: { label: 'Zugesagt', bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981' },
@@ -48,6 +58,11 @@ export function CrewTab({ project }: CrewTabProps) {
   const [sendingBooking, setSendingBooking] = useState<string | null>(null)
   const [bookingMessage, setBookingMessage] = useState('')
   const [showMessageFor, setShowMessageFor] = useState<string | null>(null)
+
+  // Crew conflict detection state
+  const [checkingConflictFor, setCheckingConflictFor] = useState<string | null>(null)
+  const [crewConflicts, setCrewConflicts] = useState<CrewConflict[]>([])
+  const [showCrewConflictWarning, setShowCrewConflictWarning] = useState<string | null>(null)
 
   const { data: assignmentsData, isLoading, error } = useQuery({
     queryKey: ['project-crew-assignments', project.id],
@@ -86,18 +101,65 @@ export function CrewTab({ project }: CrewTabProps) {
     return null
   }
 
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString('de-DE')
+
+  // Check for crew double-booking before sending a booking request
+  const handleCheckCrewConflictsAndBook = async (assignmentId: string, memberId: string) => {
+    setCheckingConflictFor(assignmentId)
+    setCrewConflicts([])
+    setShowCrewConflictWarning(null)
+
+    try {
+      const conflicts = await crewApi.checkConflicts(
+        memberId,
+        project.start_date,
+        project.end_date,
+      )
+
+      if (conflicts && conflicts.length > 0) {
+        // Filter out current project from conflicts
+        const otherConflicts = conflicts.filter(
+          (c: CrewConflict) => c.project_id !== project.id
+        )
+        if (otherConflicts.length > 0) {
+          setCrewConflicts(otherConflicts)
+          setShowCrewConflictWarning(assignmentId)
+          setCheckingConflictFor(null)
+          return
+        }
+      }
+
+      // No conflicts, proceed with booking
+      setShowMessageFor(assignmentId)
+    } catch {
+      // If conflict check fails, proceed anyway
+      setShowMessageFor(assignmentId)
+    } finally {
+      setCheckingConflictFor(null)
+    }
+  }
+
   const handleSendBooking = async (assignmentId: string) => {
     setSendingBooking(assignmentId)
     try {
       await bookingApi.create({ assignment_id: assignmentId, message: bookingMessage })
       setBookingMessage('')
       setShowMessageFor(null)
+      setShowCrewConflictWarning(null)
+      setCrewConflicts([])
       queryClient.invalidateQueries({ queryKey: ['booking-requests'] })
     } catch {
       // silently handle - user sees no change which indicates failure
     } finally {
       setSendingBooking(null)
     }
+  }
+
+  const handleForceBooking = (assignmentId: string) => {
+    setShowCrewConflictWarning(null)
+    setCrewConflicts([])
+    setShowMessageFor(assignmentId)
   }
 
   return (
@@ -206,7 +268,61 @@ export function CrewTab({ project }: CrewTabProps) {
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        {booking ? (
+                        {/* Crew conflict warning */}
+                        {showCrewConflictWarning === pos.id && crewConflicts.length > 0 ? (
+                          <div style={{
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            borderRadius: '6px',
+                            padding: '0.5rem',
+                            textAlign: 'left',
+                            fontSize: '0.75rem',
+                          }}>
+                            <div style={{ fontWeight: 600, color: '#f59e0b', marginBottom: '0.25rem' }}>
+                              {'\u26A0\uFE0F'} Doppelbuchung!
+                            </div>
+                            <div style={{ color: 'var(--color-text-secondary)' }}>
+                              {name} ist bereits eingeteilt:
+                            </div>
+                            <ul style={{ margin: '0.25rem 0', paddingLeft: '1rem' }}>
+                              {crewConflicts.map((c, i) => (
+                                <li key={i}>
+                                  {c.project_name || c.project_id} ({formatDate(c.start_date)} - {formatDate(c.end_date)})
+                                </li>
+                              ))}
+                            </ul>
+                            <div style={{ display: 'flex', gap: '4px', marginTop: '0.25rem' }}>
+                              <button
+                                style={{
+                                  padding: '2px 6px',
+                                  fontSize: '0.7rem',
+                                  background: 'linear-gradient(135deg, #00d4ff, #8b5cf6)',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => handleForceBooking(pos.id)}
+                              >
+                                Trotzdem buchen
+                              </button>
+                              <button
+                                style={{
+                                  padding: '2px 6px',
+                                  fontSize: '0.7rem',
+                                  background: 'transparent',
+                                  color: 'var(--color-text-muted)',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => { setShowCrewConflictWarning(null); setCrewConflicts([]) }}
+                              >
+                                Abbrechen
+                              </button>
+                            </div>
+                          </div>
+                        ) : booking ? (
                           <span
                             style={{
                               display: 'inline-block',
@@ -282,10 +398,10 @@ export function CrewTab({ project }: CrewTabProps) {
                                 cursor: 'pointer',
                                 whiteSpace: 'nowrap',
                               }}
-                              onClick={() => setShowMessageFor(pos.id)}
-                              disabled={sendingBooking !== null}
+                              onClick={() => handleCheckCrewConflictsAndBook(pos.id, pos.crew_member_id)}
+                              disabled={sendingBooking !== null || checkingConflictFor === pos.id}
                             >
-                              Buchungsanfrage senden
+                              {checkingConflictFor === pos.id ? 'Pruefe...' : 'Buchungsanfrage senden'}
                             </button>
                           )
                         ) : (

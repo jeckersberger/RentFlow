@@ -94,9 +94,12 @@ function EquipmentListPage() {
       available: 'Verfügbar',
       reserved: 'Reserviert',
       checked_out: 'Vermietet',
+      rented: 'Vermietet',
       in_maintenance: 'In Wartung',
+      maintenance: 'In Wartung',
       damaged: 'Beschädigt',
       retired: 'Ausgemustert',
+      lost: 'Verloren',
     }
 
     const rows = items.map((eq) => {

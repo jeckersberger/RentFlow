@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { documentApi } from '../../services/api'
 import type { Document } from '../../types/document'
+import { SkeletonKPI, SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import './Documents.scss'
 
 // Map backend DocumentResponse to frontend Document type
@@ -136,17 +137,10 @@ function DocumentsPage() {
         <div className="page-header">
           <div>
             <h1 className="page-title">Dokumente</h1>
-            <p className="page-subtitle">Daten werden geladen...</p>
           </div>
         </div>
-        <div className="stats-grid">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="stat-card stat-card--loading">
-              <div className="stat-card__label">Laden...</div>
-              <div className="stat-card__value">--</div>
-            </div>
-          ))}
-        </div>
+        <SkeletonKPI count={4} />
+        <SkeletonTable rows={5} columns={5} />
       </div>
     )
   }

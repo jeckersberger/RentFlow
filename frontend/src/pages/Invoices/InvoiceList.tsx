@@ -119,6 +119,57 @@ function InvoiceListPage() {
     downloadCSV(csv, `rechnungen_export_${formatDateForExport()}.csv`)
   }
 
+  const exportDatevCSV = () => {
+    // DATEV SKR03 CSV Export
+    // Columns: Umsatz (Betrag);Soll/Haben;Konto;Gegenkonto;Belegdatum;Buchungstext;Belegnummer
+    const BOM = '\uFEFF'
+    const header = 'Umsatz (Betrag);Soll/Haben;Konto;Gegenkonto;Belegdatum;Buchungstext;Belegnummer'
+
+    const rows = filteredData
+      .filter((inv: Invoice) => inv.status !== 'draft' && inv.status !== 'cancelled')
+      .flatMap((inv: Invoice) => {
+        const issueDate = inv.issue_date ? new Date(inv.issue_date) : new Date()
+        const belegdatum = `${issueDate.getDate().toString().padStart(2, '0')}${(issueDate.getMonth() + 1).toString().padStart(2, '0')}`
+        const buchungstext = `RE ${inv.number || ''} ${inv.client_name || ''}`.trim()
+        const belegnummer = inv.number || ''
+        const total = inv.total ?? 0
+        const taxTotal = inv.tax_total ?? 0
+        const netto = inv.subtotal ?? (total - taxTotal)
+
+        const lines: string[] = []
+
+        // Booking line 1: Forderungen (1400) an Erlöse 19% (8400) - Nettobetrag
+        if (netto > 0) {
+          lines.push(
+            `${netto.toFixed(2).replace('.', ',')};S;1400;8400;${belegdatum};${buchungstext};${belegnummer}`
+          )
+        }
+
+        // Booking line 2: Forderungen (1400) an Umsatzsteuer 19% (1776) - MwSt-Betrag
+        if (taxTotal > 0) {
+          lines.push(
+            `${taxTotal.toFixed(2).replace('.', ',')};S;1400;1776;${belegdatum};${buchungstext} USt;${belegnummer}`
+          )
+        }
+
+        return lines
+      })
+
+    const csv = BOM + [header, ...rows].join('\r\n')
+    const now = new Date()
+    const filename = `datev-export-${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}.csv`
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.style.display = 'none'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   const isOverdue = (invoice: Invoice) => {
     return invoice.status === 'overdue' || (
       new Date(invoice.due_date) < new Date() &&
@@ -199,6 +250,13 @@ function InvoiceListPage() {
             disabled={filteredData.length === 0}
           >
             Exportieren
+          </button>
+          <button
+            className="btn btn--secondary"
+            onClick={exportDatevCSV}
+            disabled={filteredData.length === 0}
+          >
+            DATEV Export
           </button>
           <button
             className="btn btn--secondary"

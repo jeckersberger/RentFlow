@@ -681,6 +681,76 @@ func (h *Handler) SendDunningReminder(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto)
 }
 
+// Invoice-scoped Dunning Handlers
+
+func (h *Handler) CreateInvoiceDunning(w http.ResponseWriter, r *http.Request) {
+	invoiceID := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var payload struct {
+		Level   int      `json:"level"`
+		Fee     *float64 `json:"fee,omitempty"`
+		Message string   `json:"message,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Map level to grace period days
+	daysToAdd := 7
+	switch payload.Level {
+	case 1:
+		daysToAdd = 7  // Zahlungserinnerung: 7 days grace
+	case 2:
+		daysToAdd = 14 // 1. Mahnung: 14 days
+	case 3:
+		daysToAdd = 7  // 2. Mahnung: 7 days
+	}
+
+	cmd := application.CreateDunningCommand{
+		TenantID:  tenantID,
+		InvoiceID: invoiceID,
+		Level:     payload.Level,
+		DaysToAdd: daysToAdd,
+		CustomFee: payload.Fee,
+	}
+
+	dto, err := h.duningSvc.CreateReminder(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	// Store custom message as notes if provided
+	if payload.Message != "" {
+		dto.Notes = payload.Message
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) GetInvoiceDunningHistory(w http.ResponseWriter, r *http.Request) {
+	invoiceID := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dtos, err := h.duningSvc.GetDunningHistory(r.Context(), tenantID, invoiceID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dtos)
+}
+
 // Export Handlers
 
 func (h *Handler) ExportDATEV(w http.ResponseWriter, r *http.Request) {

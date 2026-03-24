@@ -2,7 +2,9 @@ package application
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net"
 	"net/smtp"
 	"strconv"
 	"time"
@@ -184,19 +186,30 @@ func (s *MailService) SendMail(ctx context.Context, cmd domain.SendMailCmd) (*do
 		body = cmd.BodyHTML
 	}
 
-	message := fmt.Sprintf(
-		"From: %s\r\nTo: %s\r\nSubject: %s\r\nContent-Type: text/html; charset=utf-8\r\n\r\n%s",
-		mailbox.Username,
-		cmd.To,
-		cmd.Subject,
-		body,
-	)
+	contentType := "text/html"
+	if cmd.BodyHTML == "" {
+		contentType = "text/plain"
+	}
 
-	// Über SMTP senden
+	message := "From: " + mailbox.Username + "\r\n" +
+		"To: " + cmd.To + "\r\n" +
+		"Subject: " + cmd.Subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: " + contentType + "; charset=utf-8\r\n" +
+		"Date: " + time.Now().Format(time.RFC1123Z) + "\r\n" +
+		"\r\n" +
+		body
+
+	// Über SMTP senden (mit TLS-Unterstützung)
 	addr := mailbox.SmtpHost + ":" + strconv.Itoa(mailbox.SmtpPort)
-	auth := smtp.PlainAuth("", mailbox.Username, mailbox.Password, mailbox.SmtpHost)
+	msgBytes := []byte(message)
 
-	err = smtp.SendMail(addr, auth, mailbox.Username, []string{cmd.To}, []byte(message))
+	if mailbox.UseTLS && mailbox.SmtpPort == 465 {
+		// Implicit TLS (SMTPS)
+		err = sendMailViaSMTPS(addr, mailbox.SmtpHost, mailbox.Username, mailbox.Password, cmd.To, msgBytes)
+	} else {
+		err = sendMailViaSTARTTLS(addr, mailbox.SmtpHost, mailbox.Username, mailbox.Password, mailbox.UseTLS, cmd.To, msgBytes)
+	}
 	if err != nil {
 		s.log.Error("Failed to send mail via SMTP", err, "mailboxID", mailbox.ID)
 		return nil, fmt.Errorf("failed to send mail: %w", err)
@@ -226,6 +239,90 @@ func (s *MailService) SendMail(ctx context.Context, cmd domain.SendMailCmd) (*do
 
 	s.log.Info("Mail sent and stored", "mailID", created.ID, "to", cmd.To)
 	return created, nil
+}
+
+// --- SMTP helper functions ---
+
+func sendMailViaSTARTTLS(addr, host, username, password string, useTLS bool, to string, msg []byte) error {
+	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
+	if err != nil {
+		return fmt.Errorf("dial failed: %w", err)
+	}
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+	defer client.Close()
+
+	if useTLS {
+		if ok, _ := client.Extension("STARTTLS"); ok {
+			if err := client.StartTLS(&tls.Config{ServerName: host}); err != nil {
+				return fmt.Errorf("STARTTLS failed: %w", err)
+			}
+		}
+	}
+
+	if username != "" && password != "" {
+		auth := smtp.PlainAuth("", username, password, host)
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("auth failed: %w", err)
+		}
+	}
+
+	if err := client.Mail(username); err != nil {
+		return err
+	}
+	if err := client.Rcpt(to); err != nil {
+		return err
+	}
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write(msg); err != nil {
+		return err
+	}
+	w.Close()
+	client.Quit()
+	return nil
+}
+
+func sendMailViaSMTPS(addr, host, username, password, to string, msg []byte) error {
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 10 * time.Second}, "tcp", addr, &tls.Config{ServerName: host})
+	if err != nil {
+		return fmt.Errorf("TLS dial failed: %w", err)
+	}
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+	defer client.Close()
+
+	if username != "" && password != "" {
+		auth := smtp.PlainAuth("", username, password, host)
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("auth failed: %w", err)
+		}
+	}
+
+	if err := client.Mail(username); err != nil {
+		return err
+	}
+	if err := client.Rcpt(to); err != nil {
+		return err
+	}
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write(msg); err != nil {
+		return err
+	}
+	w.Close()
+	client.Quit()
+	return nil
 }
 
 // FetchMails — Platzhalter für IMAP-Abruf (benötigt go-imap Bibliothek)

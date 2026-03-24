@@ -594,10 +594,26 @@ func (h *Handler) RecordTest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetTestsByEquipment(w http.ResponseWriter, r *http.Request) {
-	equipmentID := r.PathValue("id")
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	// Support both path parameter and query parameter for equipment_id
+	equipmentID := r.PathValue("id")
+	if equipmentID == "" {
+		equipmentID = r.URL.Query().Get("equipment_id")
+	}
+
+	// If no equipment ID provided, list all tests for the tenant
+	if equipmentID == "" {
+		dtos, err := h.testSvc.ListTestsByTenant(r.Context(), tenantID)
+		if err != nil {
+			h.handleError(w, err)
+			return
+		}
+		h.respondJSON(w, http.StatusOK, map[string]interface{}{"data": dtos})
 		return
 	}
 

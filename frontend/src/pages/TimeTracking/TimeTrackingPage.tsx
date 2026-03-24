@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { timeTrackingApi } from '../../services/api'
+import { SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import styles from './TimeTracking.module.scss'
 
 type TabKey = 'hours' | 'activities' | 'absence'
@@ -239,10 +240,7 @@ function TimeTrackingPage() {
       <div className={styles.tableCard}>
         {activeTab === 'hours' ? (
           isLoadingEntries ? (
-            <div className={styles.emptyState}>
-              <h3 className={styles.emptyTitle}>Laden...</h3>
-              <p className={styles.emptyDescription}>Zeiteintraege werden geladen.</p>
-            </div>
+            <SkeletonTable rows={5} columns={5} />
           ) : filteredEntries.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>{'⏰'}</div>
@@ -284,10 +282,7 @@ function TimeTrackingPage() {
           )
         ) : activeTab === 'activities' ? (
           isLoadingEntries ? (
-            <div className={styles.emptyState}>
-              <h3 className={styles.emptyTitle}>Laden...</h3>
-              <p className={styles.emptyDescription}>Aktivitaeten werden geladen.</p>
-            </div>
+            <SkeletonTable rows={5} columns={4} />
           ) : activities.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>{'📊'}</div>
@@ -322,10 +317,7 @@ function TimeTrackingPage() {
           )
         ) : (
           isLoadingAbsences ? (
-            <div className={styles.emptyState}>
-              <h3 className={styles.emptyTitle}>Laden...</h3>
-              <p className={styles.emptyDescription}>Abwesenheiten werden geladen.</p>
-            </div>
+            <SkeletonTable rows={5} columns={4} />
           ) : absences.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>{'📅'}</div>

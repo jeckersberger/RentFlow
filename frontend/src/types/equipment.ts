@@ -25,6 +25,7 @@ export interface Equipment {
     height?: number
     unit?: string
   }
+  image_url?: string
   image_refs?: string[]
   tags?: string[]
   custom_fields?: Record<string, string>

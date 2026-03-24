@@ -10,10 +10,12 @@ const STATUS_LABELS: Record<string, string> = {
   available: 'Verfügbar',
   reserved: 'Reserviert',
   checked_out: 'Vermietet',
+  rented: 'Vermietet',
   in_maintenance: 'In Wartung',
   maintenance: 'In Wartung',
   damaged: 'Beschädigt',
   retired: 'Ausgemustert',
+  lost: 'Verloren',
   confirmed: 'Bestätigt',
   paid: 'Bezahlt',
   draft: 'Entwurf',
@@ -56,6 +58,7 @@ export function StatusBadge({ status, label, size = 'md' }: StatusBadgeProps) {
       case 'active':
         return 'cyan'
       case 'checked_out':
+      case 'rented':
       case 'sent':
       case 'planning':
       case 'invoiced':
@@ -70,6 +73,7 @@ export function StatusBadge({ status, label, size = 'md' }: StatusBadgeProps) {
       case 'overdue':
       case 'damaged':
       case 'sick':
+      case 'lost':
         return 'danger'
       case 'retired':
       case 'cancelled':

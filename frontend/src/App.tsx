@@ -68,6 +68,7 @@ import TermsConditionsPage from './pages/Settings/pages/TermsConditionsPage'
 import ModulesPage from './pages/Settings/pages/ModulesPage'
 import LabelSettingsPage from './pages/Settings/pages/LabelSettingsPage'
 import EmailAccountsPage from './pages/Settings/pages/EmailAccountsPage'
+import NotificationSettingsPage from './pages/Settings/pages/NotificationSettingsPage'
 
 // Transport Pages
 import TransportPage from './pages/Transport/TransportPage'
@@ -329,6 +330,7 @@ function App() {
               <Route path="modules" element={<ModulesPage />} />
               <Route path="labels" element={<LabelSettingsPage />} />
               <Route path="email-accounts" element={<EmailAccountsPage />} />
+              <Route path="notifications" element={<NotificationSettingsPage />} />
             </Route>
 
             {/* Phase 4 Routes */}

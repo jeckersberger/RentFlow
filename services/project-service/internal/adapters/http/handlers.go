@@ -2,8 +2,10 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/services/project-service/internal/application"
@@ -616,16 +618,32 @@ func (h *Handler) CheckConflicts(w http.ResponseWriter, r *http.Request) {
 	equipmentID := r.URL.Query().Get("equipment_id")
 	startStr := r.URL.Query().Get("start")
 	endStr := r.URL.Query().Get("end")
+	excludeProjectID := r.URL.Query().Get("exclude_project_id")
 
 	if equipmentID == "" || startStr == "" || endStr == "" {
 		h.respondError(w, http.StatusBadRequest, "equipment_id, start, and end required")
 		return
 	}
 
-	// Parse dates - expecting RFC3339 format
-	var query application.CheckReservationConflictQuery
-	query.TenantID = tenantID
-	query.EquipmentID = equipmentID
+	// Parse dates - try RFC3339 then date-only format
+	startDate, err := parseHandlerDate(startStr)
+	if err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid start date format")
+		return
+	}
+	endDate, err := parseHandlerDate(endStr)
+	if err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid end date format")
+		return
+	}
+
+	query := application.CheckReservationConflictQuery{
+		TenantID:         tenantID,
+		EquipmentID:      equipmentID,
+		StartDate:        startDate,
+		EndDate:          endDate,
+		ExcludeProjectID: excludeProjectID,
+	}
 
 	dtos, err := h.reservationSvc.CheckConflicts(r.Context(), query)
 	if err != nil {
@@ -634,6 +652,20 @@ func (h *Handler) CheckConflicts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.respondJSON(w, http.StatusOK, dtos)
+}
+
+func parseHandlerDate(s string) (time.Time, error) {
+	formats := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02",
+	}
+	for _, f := range formats {
+		if t, err := time.Parse(f, s); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unable to parse date: %s", s)
 }
 
 func (h *Handler) ConfirmReservation(w http.ResponseWriter, r *http.Request) {
@@ -918,6 +950,23 @@ func (h *Handler) CopyProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) GetPackingListJSON(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dto, err := h.projectSvc.GeneratePackingListJSON(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
 }
 
 func (h *Handler) GetPackingListHTML(w http.ResponseWriter, r *http.Request) {

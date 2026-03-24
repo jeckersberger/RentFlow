@@ -56,6 +56,10 @@ func NewRouter(
 	router.HandleFunc("POST /api/v1/dunning/{invoiceId}/remind", handler.CreateDunningReminder)
 	router.HandleFunc("POST /api/v1/dunning/{id}/send", handler.SendDunningReminder)
 
+	// Invoice-scoped dunning routes (used by frontend)
+	router.HandleFunc("POST /api/v1/invoices/{id}/dunning", handler.CreateInvoiceDunning)
+	router.HandleFunc("GET /api/v1/invoices/{id}/dunning", handler.GetInvoiceDunningHistory)
+
 	// Export routes
 	router.HandleFunc("GET /api/v1/export/datev", handler.ExportDATEV)
 	router.HandleFunc("GET /api/v1/export/csv", handler.ExportCSV)

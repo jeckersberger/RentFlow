@@ -6,6 +6,7 @@ import { Modal } from '../../components/Modal/Modal'
 import { Input } from '../../components/Form/Input'
 import { transportApi } from '../../services/api'
 import { useNotificationStore } from '../../stores/notificationStore'
+import { SkeletonKPI, SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import './Transport.scss'
 
 interface Vehicle {
@@ -191,17 +192,10 @@ function TransportPage() {
         <div className="page-header">
           <div>
             <h1 className="page-title">Transport & Logistik</h1>
-            <p className="page-subtitle">Daten werden geladen...</p>
           </div>
         </div>
-        <div className="stats-grid">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="stat-card loading-pulse">
-              <div className="stat-card__label">Laden...</div>
-              <div className="stat-card__value">--</div>
-            </div>
-          ))}
-        </div>
+        <SkeletonKPI count={4} />
+        <SkeletonTable rows={5} columns={5} />
       </div>
     )
   }

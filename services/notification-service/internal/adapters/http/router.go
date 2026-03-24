@@ -14,6 +14,7 @@ func SetupRoutes(
 	preferenceService *application.PreferenceService,
 	digestService *application.DigestService,
 	mailService *application.MailService,
+	systemEmailService *application.SystemEmailService,
 	log logger.Logger,
 ) {
 	handler := NewNotificationHandler(notificationService, channelService, preferenceService, digestService, log)
@@ -46,4 +47,11 @@ func SetupRoutes(
 	router.HandleFunc("PUT /api/v1/mail/messages/{id}/read", mailHandler.MarkMailAsRead)
 	router.HandleFunc("PUT /api/v1/mail/messages/{id}/project", mailHandler.AssignMailToProject)
 	router.HandleFunc("POST /api/v1/mail/send", mailHandler.SendMail)
+
+	// System email routes (transactional emails — invitations, password resets, etc.)
+	sysEmailHandler := NewSystemEmailHandler(systemEmailService, log)
+	router.HandleFunc("POST /api/v1/notifications/send-email", sysEmailHandler.SendEmail)
+	router.HandleFunc("POST /api/v1/notifications/send-email/booking-request", sysEmailHandler.SendBookingRequest)
+	router.HandleFunc("POST /api/v1/notifications/send-email/invitation", sysEmailHandler.SendInvitation)
+	router.HandleFunc("POST /api/v1/notifications/send-email/password-reset", sysEmailHandler.SendPasswordReset)
 }

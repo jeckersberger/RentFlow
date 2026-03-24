@@ -12,9 +12,9 @@ const formatCurrency = (value: number) =>
   new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value)
 
 const DUNNING_LEVELS = [
-  { level: 1, label: '1. Mahnung', description: 'Freundliche Zahlungserinnerung' },
-  { level: 2, label: '2. Mahnung', description: 'Nachdrückliche Zahlungsaufforderung' },
-  { level: 3, label: '3. Mahnung', description: 'Letzte Mahnung vor rechtlichen Schritten' },
+  { level: 1, label: 'Zahlungserinnerung', description: 'Freundliche Erinnerung, keine Gebühr, 7 Tage Frist', fee: 0, days: 7 },
+  { level: 2, label: '1. Mahnung', description: 'Formelle Mahnung, 5 € Gebühr, 14 Tage Frist', fee: 5, days: 14 },
+  { level: 3, label: '2. Mahnung', description: 'Letzte Mahnung, 10 € Gebühr, 7 Tage Frist, Hinweis auf rechtliche Schritte', fee: 10, days: 7 },
 ]
 
 function InvoiceDetailPage() {
@@ -42,6 +42,13 @@ function InvoiceDetailPage() {
     queryFn: () => configApi.get('finance.kleinunternehmer'),
   })
   const isKleinunternehmer = invoice?.is_kleinunternehmer || kuConfig?.kleinunternehmer || kuConfig?.value || false
+
+  // Fetch dunning history from API
+  const { data: dunningHistory = [] } = useQuery({
+    queryKey: ['dunning-history', id],
+    queryFn: () => invoiceApi.getDunningHistory(id!),
+    enabled: !!id,
+  })
 
   const isOverdue = invoice
     ? (invoice.status === 'overdue' || (
@@ -95,11 +102,16 @@ function InvoiceDetailPage() {
 
   // Create dunning mutation
   const { mutate: createDunning, isPending: isCreatingDunning } = useMutation({
-    mutationFn: (level: number) => invoiceApi.createDunning(id!, level),
+    mutationFn: (level: number) => {
+      const levelConfig = DUNNING_LEVELS.find(dl => dl.level === level)
+      return invoiceApi.createDunning(id!, level, levelConfig?.fee)
+    },
     onSuccess: () => {
       setShowDunningModal(false)
       queryClient.invalidateQueries({ queryKey: ['invoice', id] })
-      addNotification(`Mahnung (Stufe ${dunningLevel}) erstellt`, 'success', { title: 'Erfolg', duration: 3000 })
+      queryClient.invalidateQueries({ queryKey: ['dunning-history', id] })
+      const levelConfig = DUNNING_LEVELS.find(dl => dl.level === dunningLevel)
+      addNotification(`${levelConfig?.label || 'Mahnung'} erstellt`, 'success', { title: 'Erfolg', duration: 3000 })
     },
     onError: () => {
       addNotification('Fehler beim Erstellen der Mahnung', 'error', { title: 'Fehler', duration: 5000 })
@@ -316,9 +328,12 @@ function InvoiceDetailPage() {
     )
   }
 
-  const existingDunning: DunningEntry[] = invoice.dunning_entries || []
+  // Merge dunning entries from invoice payload and API history
+  const existingDunning: DunningEntry[] = (dunningHistory && dunningHistory.length > 0)
+    ? dunningHistory
+    : (invoice.dunning_entries || [])
   const nextDunningLevel = existingDunning.length > 0
-    ? Math.max(...existingDunning.map((d: DunningEntry) => d.level)) + 1
+    ? Math.min(Math.max(...existingDunning.map((d: DunningEntry) => d.level)) + 1, 3)
     : 1
 
   const paidAmount = (invoice.payments || []).reduce((sum: number, p: { amount: number }) => sum + p.amount, 0)
@@ -387,7 +402,7 @@ function InvoiceDetailPage() {
             }}
             style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: '#f87171' }}
           >
-            Mahnung erstellen
+            Mahnung senden
           </button>
         )}
         {invoice.status !== 'cancelled' && invoice.status !== 'paid' && (
@@ -697,10 +712,11 @@ function InvoiceDetailPage() {
           background: 'rgba(239, 68, 68, 0.04)',
         }}>
           <h2 className="detail-card__title" style={{ color: '#f87171' }}>Mahnwesen</h2>
-          <div className="detail-card__content">
+          <div className="detail-card__content" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
             {DUNNING_LEVELS.map((dl) => {
               const entry = existingDunning.find((d: DunningEntry) => d.level === dl.level)
-              const isNext = dl.level === nextDunningLevel
+              const isNext = dl.level === nextDunningLevel && !existingDunning.find((d: DunningEntry) => d.level === dl.level)
+              const entryDate = entry ? (entry.sent_at || entry.created_at || entry.date) : null
               return (
                 <div
                   key={dl.level}
@@ -714,7 +730,7 @@ function InvoiceDetailPage() {
                     background: entry ? 'rgba(239, 68, 68, 0.06)' : isNext ? 'rgba(245, 158, 11, 0.04)' : 'transparent',
                   }}
                 >
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, color: entry ? '#f87171' : isNext ? '#fbbf24' : 'var(--color-text-secondary)' }}>
                       {dl.label}
                     </div>
@@ -722,27 +738,46 @@ function InvoiceDetailPage() {
                       {dl.description}
                     </div>
                     {entry && (
-                      <div style={{ fontSize: '0.8rem', color: '#f87171', marginTop: '2px' }}>
-                        Gesendet am {new Date(entry.date).toLocaleDateString('de-DE')}
+                      <div style={{ display: 'flex', gap: 'var(--spacing-4)', marginTop: '4px', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                        <span style={{ color: '#f87171' }}>
+                          Erstellt: {entryDate ? new Date(entryDate).toLocaleDateString('de-DE') : '--'}
+                        </span>
+                        {entry.due_date && (
+                          <span style={{ color: 'var(--color-text-secondary)' }}>
+                            Frist bis: {new Date(entry.due_date).toLocaleDateString('de-DE')}
+                          </span>
+                        )}
+                        {(entry.fee != null && entry.fee > 0) && (
+                          <span style={{ color: '#fbbf24' }}>
+                            Gebühr: {formatCurrency(entry.fee)}
+                          </span>
+                        )}
+                        {entry.fee === 0 && (
+                          <span style={{ color: 'var(--color-text-secondary)' }}>
+                            Keine Gebühr
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
-                  {entry ? (
-                    <StatusBadge status="overdue" label="Gesendet" size="sm" />
-                  ) : isNext ? (
-                    <button
-                      className="btn btn--secondary btn--sm"
-                      onClick={() => {
-                        setDunningLevel(dl.level)
-                        setShowDunningModal(true)
-                      }}
-                      style={{ borderColor: 'rgba(245, 158, 11, 0.4)', color: '#fbbf24' }}
-                    >
-                      Mahnung erstellen
-                    </button>
-                  ) : (
-                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>Ausstehend</span>
-                  )}
+                  <div style={{ marginLeft: 'var(--spacing-3)', flexShrink: 0 }}>
+                    {entry ? (
+                      <StatusBadge status="overdue" label="Gesendet" size="sm" />
+                    ) : isNext ? (
+                      <button
+                        className="btn btn--secondary btn--sm"
+                        onClick={() => {
+                          setDunningLevel(dl.level)
+                          setShowDunningModal(true)
+                        }}
+                        style={{ borderColor: 'rgba(245, 158, 11, 0.4)', color: '#fbbf24' }}
+                      >
+                        Mahnung senden
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>Ausstehend</span>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -848,7 +883,10 @@ function InvoiceDetailPage() {
       <Modal
         isOpen={showDunningModal}
         onClose={() => setShowDunningModal(false)}
-        title={`${dunningLevel}. Mahnung erstellen`}
+        title={(() => {
+          const cfg = DUNNING_LEVELS.find(dl => dl.level === dunningLevel)
+          return cfg ? `${cfg.label} erstellen` : `Mahnung erstellen`
+        })()}
         size="sm"
         footer={
           <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
@@ -861,37 +899,74 @@ function InvoiceDetailPage() {
             <button
               className="btn btn--primary"
               onClick={() => createDunning(dunningLevel)}
-              disabled={isCreatingDunning}
+              disabled={isCreatingDunning || dunningLevel > 3}
             >
-              {isCreatingDunning ? 'Wird erstellt...' : 'Mahnung erstellen'}
+              {isCreatingDunning ? 'Wird erstellt...' : 'Mahnung senden'}
             </button>
           </div>
         }
       >
-        <div style={{ color: 'var(--color-text-secondary)' }}>
-          <p>
-            Es wird eine <strong>{dunningLevel}. Mahnung</strong> für Rechnung <strong>{invoice.number}</strong> erstellt.
-          </p>
-          <p style={{ fontSize: '0.9rem' }}>
-            Offener Betrag: <strong style={{ color: '#f87171' }}>{formatCurrency(invoice.total)}</strong>
-          </p>
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-            {dunningLevel === 1 && 'Eine freundliche Zahlungserinnerung wird generiert.'}
-            {dunningLevel === 2 && 'Eine nachdrückliche Zahlungsaufforderung wird generiert.'}
-            {dunningLevel === 3 && 'Eine letzte Mahnung mit Hinweis auf rechtliche Schritte wird generiert.'}
-          </p>
-          <div style={{
-            marginTop: 'var(--spacing-3)',
-            padding: 'var(--spacing-3)',
-            background: 'rgba(245, 158, 11, 0.08)',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '0.85rem',
-          }}>
-            Die PDF-Generierung für Mahnungen wird in einer zukünftigen Version implementiert.
-            Die Mahnung wird als gesendet markiert.
-          </div>
-        </div>
+        {(() => {
+          const levelConfig = DUNNING_LEVELS.find(dl => dl.level === dunningLevel)
+          return (
+            <div style={{ color: 'var(--color-text-secondary)' }}>
+              {/* Level selector dropdown */}
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: 'var(--spacing-2)', color: 'var(--color-text-secondary)' }}>
+                  Mahnstufe
+                </label>
+                <select
+                  value={dunningLevel}
+                  onChange={e => setDunningLevel(Number(e.target.value))}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-2) var(--spacing-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    background: 'var(--glass-bg)',
+                    color: 'var(--color-text)',
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  {DUNNING_LEVELS.map(dl => {
+                    const alreadySent = existingDunning.find((d: DunningEntry) => d.level === dl.level)
+                    return (
+                      <option key={dl.level} value={dl.level} disabled={!!alreadySent}>
+                        {dl.label}{alreadySent ? ' (bereits gesendet)' : ''}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+
+              <p>
+                Rechnung <strong>{invoice.number}</strong> — Offener Betrag: <strong style={{ color: '#f87171' }}>{formatCurrency(invoice.total)}</strong>
+              </p>
+
+              {levelConfig && (
+                <div style={{
+                  padding: 'var(--spacing-3)',
+                  background: 'rgba(245, 158, 11, 0.06)',
+                  border: '1px solid rgba(245, 158, 11, 0.15)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.85rem',
+                  marginTop: 'var(--spacing-3)',
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span>{levelConfig.description}</span>
+                    <span>Gebühr: <strong>{levelConfig.fee > 0 ? formatCurrency(levelConfig.fee) : 'Keine'}</strong></span>
+                    <span>Zahlungsfrist: <strong>{levelConfig.days} Tage</strong></span>
+                    {levelConfig.level === 3 && (
+                      <span style={{ color: '#f87171', fontWeight: 500, marginTop: '4px' }}>
+                        Hinweis: Es wird auf rechtliche Schritte hingewiesen.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </Modal>
     </div>
   )

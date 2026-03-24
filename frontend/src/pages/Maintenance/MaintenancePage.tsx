@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { maintenanceApi } from '../../services/api'
+import { SkeletonKPI, SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import './Maintenance.scss'
 
 interface MaintenanceTask {
@@ -121,17 +122,10 @@ function MaintenancePage() {
         <div className="page-header">
           <div>
             <h1 className="page-title">Wartung & Inspektion</h1>
-            <p className="page-subtitle">Daten werden geladen...</p>
           </div>
         </div>
-        <div className="stats-grid">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="stat-card">
-              <div className="stat-card__label">Laden...</div>
-              <div className="stat-card__value">--</div>
-            </div>
-          ))}
-        </div>
+        <SkeletonKPI count={4} />
+        <SkeletonTable rows={5} columns={5} />
       </div>
     )
   }

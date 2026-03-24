@@ -56,6 +56,14 @@ func main() {
 	preferenceService := application.NewPreferenceService(preferenceRepo, log)
 	digestService := application.NewDigestService(notificationRepo, channelRepo, preferenceRepo, log)
 	mailService := application.NewMailService(mailRepo, log)
+	systemEmailService := application.NewSystemEmailService(log)
+
+	// Log system email service status
+	if systemEmailService.IsConfigured() {
+		log.Info("System email service configured", "host", os.Getenv("SMTP_HOST"))
+	} else {
+		log.Warn("System email service NOT configured — set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS env vars to enable email sending")
+	}
 
 	// Wire digest service into notification service for quiet hours checking
 	notificationService.SetDigestService(digestService)
@@ -98,7 +106,7 @@ func main() {
 	router.HandleFunc("GET /ready", readyHandler(serviceName, db, log))
 
 	// Setup API routes
-	notificationhttp.SetupRoutes(router, notificationService, channelService, preferenceService, digestService, mailService, log)
+	notificationhttp.SetupRoutes(router, notificationService, channelService, preferenceService, digestService, mailService, systemEmailService, log)
 
 	// Create HTTP server
 	srv := &nethttp.Server{

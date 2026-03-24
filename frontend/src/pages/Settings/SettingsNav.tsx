@@ -10,6 +10,7 @@ import {
   FolderTree,
   Tags,
   SlidersHorizontal,
+  Bell,
   Mail,
   Mailbox,
   FileText,
@@ -64,6 +65,7 @@ const settingsNavGroups: SettingsNavGroup[] = [
       { label: 'E-Mail (SMTP)', href: '/settings/email', icon: Mail },
       { label: 'E-Mail-Konten', href: '/settings/email-accounts', icon: Mailbox },
       { label: 'Dokumentvorlagen', href: '/settings/document-templates', icon: FileText },
+      { label: 'Benachrichtigungen', href: '/settings/notifications', icon: Bell },
     ],
   },
   {

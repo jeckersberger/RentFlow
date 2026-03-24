@@ -90,7 +90,7 @@ func (s *ReservationService) ListByProject(ctx context.Context, query ListReserv
 	return dtos, nil
 }
 
-func (s *ReservationService) CheckConflicts(ctx context.Context, query CheckReservationConflictQuery) ([]*ReservationDTO, error) {
+func (s *ReservationService) CheckConflicts(ctx context.Context, query CheckReservationConflictQuery) ([]*ReservationConflictDTO, error) {
 	if query.TenantID == "" {
 		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
 	}
@@ -104,12 +104,30 @@ func (s *ReservationService) CheckConflicts(ctx context.Context, query CheckRese
 		return nil, domain.NewDomainError("QUERY_ERROR", "failed to check conflicts", err)
 	}
 
-	dtos := make([]*ReservationDTO, len(reservations))
-	for i, reservation := range reservations {
-		dtos[i] = ReservationToDTO(reservation)
+	// Filter out cancelled reservations and reservations from the excluded project
+	var conflicts []*ReservationConflictDTO
+	for _, reservation := range reservations {
+		if reservation.Status == domain.ReservationCancelled {
+			continue
+		}
+		if query.ExcludeProjectID != "" && reservation.ProjectID == query.ExcludeProjectID {
+			continue
+		}
+		conflicts = append(conflicts, &ReservationConflictDTO{
+			ReservationID: reservation.ID,
+			ProjectID:     reservation.ProjectID,
+			EquipmentID:   reservation.EquipmentID,
+			StartDate:     reservation.StartDate,
+			EndDate:       reservation.EndDate,
+			Status:        string(reservation.Status),
+		})
 	}
 
-	return dtos, nil
+	if conflicts == nil {
+		conflicts = []*ReservationConflictDTO{}
+	}
+
+	return conflicts, nil
 }
 
 func (s *ReservationService) ConfirmReservation(ctx context.Context, cmd ConfirmReservationCommand) error {

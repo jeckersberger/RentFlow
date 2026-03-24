@@ -33,10 +33,11 @@ type ListReservationsQuery struct {
 }
 
 type CheckReservationConflictQuery struct {
-	TenantID    string
-	EquipmentID string
-	StartDate   time.Time
-	EndDate     time.Time
+	TenantID         string
+	EquipmentID      string
+	StartDate        time.Time
+	EndDate          time.Time
+	ExcludeProjectID string
 }
 
 type ListCustomersQuery struct {

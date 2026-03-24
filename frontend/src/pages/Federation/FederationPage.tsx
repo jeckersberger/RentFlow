@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { federationApi } from '../../services/api'
 import type { Partner, EquipmentAvailability, SubRentalRequest } from '../../types/federation'
+import { SkeletonTable, SkeletonCard } from '../../components/Skeleton/SkeletonLoader'
 import styles from './Federation.module.scss'
 
 
@@ -246,7 +247,7 @@ function FederationPage() {
           </div>
 
           {isLoadingPartners ? (
-            <div className={styles.loadingState}>Laden...</div>
+            <SkeletonTable rows={4} columns={4} />
           ) : filteredPartners.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>{'🌐'}</div>
@@ -322,7 +323,7 @@ function FederationPage() {
       {activeTab === 'equipment' && (
         <section className={styles.section}>
           {isLoadingEquipment ? (
-            <div className={styles.loadingState}>Laden...</div>
+            <SkeletonCard count={3} />
           ) : equipmentAvailability.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>{'📦'}</div>
@@ -374,7 +375,7 @@ function FederationPage() {
           </div>
 
           {isLoadingSubRentals ? (
-            <div className={styles.loadingState}>Laden...</div>
+            <SkeletonTable rows={4} columns={4} />
           ) : filteredSubRentals.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>{'📋'}</div>

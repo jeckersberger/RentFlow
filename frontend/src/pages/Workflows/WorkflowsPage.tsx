@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { workflowApi } from '../../services/api'
 import type { WorkflowDefinition, WorkflowTemplate } from '../../types/workflow'
+import { SkeletonCard } from '../../components/Skeleton/SkeletonLoader'
 import styles from './Workflows.module.scss'
 
 // Demo data for when API returns empty
@@ -267,10 +268,7 @@ function WorkflowsPage() {
       {activeSection === 'workflows' && (
         <section className={styles.section}>
           {isLoadingWorkflows ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'\u23F3'}</div>
-              <p className={styles.emptyText}>Laden...</p>
-            </div>
+            <SkeletonCard count={3} />
           ) : workflows.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>{'\u26A1'}</div>
@@ -360,10 +358,7 @@ function WorkflowsPage() {
       {activeSection === 'templates' && (
         <section className={styles.section}>
           {isLoadingTemplates ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'\u23F3'}</div>
-              <p className={styles.emptyText}>Laden...</p>
-            </div>
+            <SkeletonCard count={3} />
           ) : templates.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>{'\u{1F4E6}'}</div>

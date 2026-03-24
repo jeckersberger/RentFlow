@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
-import { api } from '../../../services/api'
+import { api, reservationApi } from '../../../services/api'
 import { PackingListTab } from './PackingListTab'
 import styles from '../ProjectDetail.module.scss'
 
@@ -23,9 +23,27 @@ interface Reservation {
   tax_rate?: number
 }
 
+interface ConflictInfo {
+  reservation_id: string
+  project_id: string
+  project_name?: string
+  equipment_id: string
+  start_date: string
+  end_date: string
+  status: string
+}
+
 export function EquipmentTab({ project }: EquipmentTabProps) {
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [showPackingList, setShowPackingList] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addEquipmentId, setAddEquipmentId] = useState('')
+  const [addEquipmentName, setAddEquipmentName] = useState('')
+  const [isCheckingConflicts, setIsCheckingConflicts] = useState(false)
+  const [conflicts, setConflicts] = useState<ConflictInfo[]>([])
+  const [showConflictWarning, setShowConflictWarning] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
 
   const { data: reservations = [], isLoading, error } = useQuery({
     queryKey: ['project-reservations', project.id],
@@ -52,13 +70,83 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
 
   const statusLabel = (s: string) => {
     const map: Record<string, string> = {
-      confirmed: 'Bestätigt',
+      confirmed: 'Bestaetigt',
       pending: 'Ausstehend',
       cancelled: 'Storniert',
       checked_out: 'Ausgegeben',
-      returned: 'Zurückgegeben',
+      returned: 'Zurueckgegeben',
     }
     return map[s] || s
+  }
+
+  // Check for double-booking conflicts before adding equipment
+  const handleCheckAndAdd = useCallback(async () => {
+    if (!addEquipmentId) return
+
+    setIsCheckingConflicts(true)
+    setConflicts([])
+    setShowConflictWarning(false)
+
+    try {
+      const conflictResults = await reservationApi.checkConflicts(
+        addEquipmentId,
+        project.start_date,
+        project.end_date,
+        project.id, // exclude current project
+      )
+
+      if (conflictResults && conflictResults.length > 0) {
+        setConflicts(conflictResults)
+        setShowConflictWarning(true)
+        setIsCheckingConflicts(false)
+        return // Don't add yet, show warning first
+      }
+
+      // No conflicts, proceed with adding
+      await addEquipmentToProject()
+    } catch {
+      // If conflict check fails, proceed anyway (don't block the user)
+      await addEquipmentToProject()
+    } finally {
+      setIsCheckingConflicts(false)
+    }
+  }, [addEquipmentId, project.start_date, project.end_date, project.id])
+
+  const addEquipmentToProject = useCallback(async () => {
+    setIsAdding(true)
+    try {
+      await reservationApi.create({
+        project_id: project.id,
+        equipment_id: addEquipmentId,
+        start_date: project.start_date,
+        end_date: project.end_date,
+      })
+      queryClient.invalidateQueries({ queryKey: ['project-reservations', project.id] })
+      // Reset modal state
+      setShowAddModal(false)
+      setAddEquipmentId('')
+      setAddEquipmentName('')
+      setConflicts([])
+      setShowConflictWarning(false)
+    } catch {
+      // silent - user sees no change
+    } finally {
+      setIsAdding(false)
+    }
+  }, [addEquipmentId, project.id, project.start_date, project.end_date, queryClient])
+
+  const handleForceAdd = useCallback(async () => {
+    // User confirmed they want to add despite conflicts
+    setShowConflictWarning(false)
+    await addEquipmentToProject()
+  }, [addEquipmentToProject])
+
+  const handleCloseModal = () => {
+    setShowAddModal(false)
+    setAddEquipmentId('')
+    setAddEquipmentName('')
+    setConflicts([])
+    setShowConflictWarning(false)
   }
 
   return (
@@ -92,12 +180,139 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
             )}
           </button>
           {!showPackingList && (
-            <button className="btn btn--primary" disabled>
+            <button
+              className="btn btn--primary"
+              onClick={() => setShowAddModal(true)}
+            >
               + Equipment hinzufuegen
             </button>
           )}
         </div>
       </div>
+
+      {/* Add Equipment Modal with double-booking detection */}
+      {showAddModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal() }}
+        >
+          <div
+            style={{
+              background: 'var(--color-bg-secondary, #1a1a2e)',
+              borderRadius: 'var(--radius-lg, 12px)',
+              padding: 'var(--spacing-6, 1.5rem)',
+              minWidth: '400px',
+              maxWidth: '500px',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Equipment hinzufuegen</h3>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                Equipment-ID
+              </label>
+              <input
+                type="text"
+                value={addEquipmentId}
+                onChange={(e) => setAddEquipmentId(e.target.value)}
+                placeholder="z.B. eq-123 oder Equipment-ID eingeben"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '6px',
+                  color: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                Zeitraum
+              </label>
+              <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                {formatDate(project.start_date)} &ndash; {formatDate(project.end_date)}
+              </div>
+            </div>
+
+            {/* Conflict Warning */}
+            {showConflictWarning && conflicts.length > 0 && (
+              <div
+                style={{
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  borderRadius: '8px',
+                  padding: '0.75rem',
+                  marginBottom: '1rem',
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: '0.5rem', color: '#f59e0b' }}>
+                  {'\u26A0\uFE0F'} Doppelbuchung erkannt!
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                  Dieses Equipment ist bereits fuer folgende Projekte reserviert:
+                </div>
+                <ul style={{ margin: '0.5rem 0', paddingLeft: '1.25rem', fontSize: '0.85rem' }}>
+                  {conflicts.map((c) => (
+                    <li key={c.reservation_id}>
+                      <strong>{c.project_name || c.project_id}</strong>
+                      {' '}({formatDate(c.start_date)} &ndash; {formatDate(c.end_date)})
+                      {' '}<span style={{ color: 'var(--color-text-muted)' }}>- {c.status}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                  <button
+                    className="btn btn--primary"
+                    onClick={handleForceAdd}
+                    disabled={isAdding}
+                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                  >
+                    {isAdding ? 'Wird hinzugefuegt...' : 'Trotzdem hinzufuegen'}
+                  </button>
+                  <button
+                    className="btn btn--secondary"
+                    onClick={handleCloseModal}
+                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons (hidden when conflict warning is shown) */}
+            {!showConflictWarning && (
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                <button
+                  className="btn btn--secondary"
+                  onClick={handleCloseModal}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  className="btn btn--primary"
+                  onClick={handleCheckAndAdd}
+                  disabled={!addEquipmentId || isCheckingConflicts || isAdding}
+                >
+                  {isCheckingConflicts ? 'Pruefe Verfuegbarkeit...' : isAdding ? 'Wird hinzugefuegt...' : 'Hinzufuegen'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {showPackingList ? (
         <PackingListTab project={project} />

@@ -291,6 +291,20 @@ export const equipmentApi = {
     MOCK_MODE
       ? mockDelay({ id: equipmentId, condition, status: condition === 'damaged' ? 'in_maintenance' : 'available' })
       : api.patch(`/api/v1/equipment/${equipmentId}/condition`, { condition, notes, reported_by: reportedBy }).then(res => res.data),
+
+  uploadImage: (equipmentId: string, file: File) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    return api.post(`/api/v1/equipment/${equipmentId}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(res => res.data)
+  },
+
+  listReservations: (equipmentId: string) =>
+    api.get('/api/v1/reservations', { params: { equipment_id: equipmentId } }).then(res => {
+      const data = res.data
+      return Array.isArray(data) ? data : (data?.data ?? data?.items ?? [])
+    }),
 }
 
 // Tenant API endpoints
@@ -353,14 +367,69 @@ export const projectApi = {
   getCalendar: (start: string, end: string) =>
     api.get('/api/v1/projects/calendar', { params: { start, end } }).then(res => res.data),
 
-  getConflicts: (equipmentId: string, start: string, end: string) =>
-    api.get(`/api/v1/projects/conflicts/${equipmentId}`, { params: { start, end } }).then(res => res.data),
-
   copyProject: (id: string) =>
     api.post(`/api/v1/projects/${id}/copy`, {}).then(res => res.data),
 
   getPackingListHTML: (id: string) =>
-    api.get(`/api/v1/projects/${id}/packing-list`, { responseType: 'blob' }).then(res => res.data),
+    api.get(`/api/v1/projects/${id}/packing-list/html`, { responseType: 'blob' }).then(res => res.data),
+
+  getPackingListJSON: (id: string) =>
+    api.get(`/api/v1/projects/${id}/packing-list`).then(res => res.data),
+}
+
+// Reservation API endpoints
+export const reservationApi = {
+  list: (projectId: string) =>
+    api.get('/api/v1/reservations', { params: { project_id: projectId } }).then(res => res.data),
+
+  create: (data: { project_id: string; equipment_id: string; start_date: string; end_date: string }) =>
+    api.post('/api/v1/reservations', data).then(res => res.data),
+
+  delete: (id: string) =>
+    api.delete(`/api/v1/reservations/${id}`).then(res => res.data),
+
+  checkConflicts: (equipmentId: string, start: string, end: string, excludeProjectId?: string) =>
+    api.get('/api/v1/reservations/conflicts', {
+      params: {
+        equipment_id: equipmentId,
+        start,
+        end,
+        ...(excludeProjectId ? { exclude_project_id: excludeProjectId } : {}),
+      },
+    }).then(res => {
+      const data = res.data
+      return Array.isArray(data) ? data : (data?.data ?? data?.items ?? [])
+    }),
+}
+
+// Packlist API endpoints
+export const packlistApi = {
+  list: (projectId: string) =>
+    api.get('/api/v1/packlists', { params: { project_id: projectId } }).then(res => res.data),
+
+  getById: (id: string) =>
+    api.get(`/api/v1/packlists/${id}`).then(res => res.data),
+
+  create: (data: { project_id: string; name: string }) =>
+    api.post('/api/v1/packlists', data).then(res => res.data),
+
+  addItem: (packlistId: string, data: { equipment_id: string; equipment_name: string; quantity: number }) =>
+    api.post(`/api/v1/packlists/${packlistId}/items`, data).then(res => res.data),
+
+  removeItem: (packlistId: string, equipmentId: string) =>
+    api.delete(`/api/v1/packlists/${packlistId}/items`, { data: { equipment_id: equipmentId } }).then(res => res.data),
+
+  markItemPacked: (packlistId: string, data: { equipment_id: string; quantity_packed: number }) =>
+    api.patch(`/api/v1/packlists/${packlistId}/items/pack`, data).then(res => res.data),
+
+  markItemReturned: (packlistId: string, data: { equipment_id: string; quantity_returned: number }) =>
+    api.patch(`/api/v1/packlists/${packlistId}/items/return`, data).then(res => res.data),
+
+  changeStatus: (packlistId: string, status: string) =>
+    api.patch(`/api/v1/packlists/${packlistId}/status`, { status }).then(res => res.data),
+
+  delete: (id: string) =>
+    api.delete(`/api/v1/packlists/${id}`).then(res => res.data),
 }
 
 // Invoice API endpoints
@@ -419,8 +488,28 @@ export const invoiceApi = {
   sendEmail: (id: string) =>
     MOCK_MODE ? mockDelay({ success: true }) : api.post(`/api/v1/invoices/${id}/send-email`).then(res => res.data),
 
-  createDunning: (id: string, level: number) =>
-    MOCK_MODE ? mockDelay({ success: true, level, date: new Date().toISOString() }) : api.post(`/api/v1/invoices/${id}/dunning`, { level }).then(res => res.data),
+  createDunning: (id: string, level: number, fee?: number, message?: string) =>
+    MOCK_MODE
+      ? mockDelay({
+          id: `dun_${Date.now()}_${level}`,
+          invoice_id: id,
+          level,
+          level_name: level === 1 ? 'Zahlungserinnerung' : level === 2 ? '1. Mahnung' : '2. Mahnung',
+          fee: fee ?? (level === 1 ? 0 : level === 2 ? 5 : 10),
+          sent_at: new Date().toISOString(),
+          due_date: new Date(Date.now() + (level === 2 ? 14 : 7) * 86400000).toISOString(),
+          notes: message || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          date: new Date().toISOString(),
+          sent: true,
+        })
+      : api.post(`/api/v1/invoices/${id}/dunning`, { level, fee, message }).then(res => res.data),
+
+  getDunningHistory: (id: string) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get(`/api/v1/invoices/${id}/dunning`).then(res => res.data),
 }
 
 // ============================================================================
@@ -840,16 +929,162 @@ export const warehouseApi = {
       ? mockDelay({ items: mockStockMovements.slice((page - 1) * limit, page * limit), total: mockStockMovements.length, page, limit })
       : api.get('/api/v1/warehouse/movements', { params: { page, limit } }).then(res => res.data),
 
-  // Inventory Check
-  startInventoryCheck: (warehouseId: string, zoneId?: string) =>
+  // Inventory Checks — matches backend POST /api/v1/inventory-checks etc.
+  startInventoryCheck: (name: string, checkType: string, zoneId?: string) =>
     MOCK_MODE
-      ? mockDelay({ id: String(Date.now()), warehouse_id: warehouseId, zone_id: zoneId, status: 'in_progress', started_at: new Date().toISOString() })
-      : api.post(`/api/v1/warehouses/${warehouseId}/inventory-check/start`, { zone_id: zoneId }).then(res => res.data),
+      ? mockDelay({
+          id: `inv_${Date.now()}`,
+          name,
+          status: 'in_progress',
+          items: [],
+          started_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+      : api.post('/api/v1/inventory-checks', { name, check_type: checkType, zone_id: zoneId }).then(res => res.data),
 
-  completeInventoryCheck: (checkId: string, discrepancies?: object) =>
+  listInventoryChecks: (limit = 20, offset = 0) =>
     MOCK_MODE
-      ? mockDelay({ id: checkId, status: 'completed', completed_at: new Date().toISOString(), discrepancies })
-      : api.post(`/api/v1/warehouse/inventory-check/${checkId}/complete`, { discrepancies }).then(res => res.data),
+      ? mockDelay({ data: [], total: 0, limit, offset })
+      : api.get('/api/v1/inventory-checks', { params: { limit, offset } }).then(res => res.data),
+
+  getInventoryCheck: (checkId: string) =>
+    MOCK_MODE
+      ? mockDelay({ id: checkId, name: 'Mock Check', status: 'in_progress', items: [], started_at: new Date().toISOString(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      : api.get(`/api/v1/inventory-checks/${checkId}`).then(res => res.data),
+
+  scanInventoryItem: (checkId: string, equipmentId: string, locationId?: string, notes?: string) =>
+    MOCK_MODE
+      ? mockDelay({ id: checkId, status: 'in_progress', items: [{ equipment_id: equipmentId, expected_count: 1, actual_count: 1, status: 'found' }] })
+      : api.post(`/api/v1/inventory-checks/${checkId}/scan`, { equipment_id: equipmentId, location_id: locationId, notes }).then(res => res.data),
+
+  completeInventoryCheck: (checkId: string, completedBy: string) =>
+    MOCK_MODE
+      ? mockDelay({ id: checkId, status: 'completed', completed_at: new Date().toISOString() })
+      : api.post(`/api/v1/inventory-checks/${checkId}/complete`, { completed_by: completedBy }).then(res => res.data),
+
+  getDiscrepancies: (checkId: string) =>
+    MOCK_MODE
+      ? mockDelay({ check_id: checkId, discrepancy_count: 0, discrepancies: [] })
+      : api.get(`/api/v1/inventory-checks/${checkId}/discrepancies`).then(res => res.data),
+
+  // Location Tree: fetches warehouses with nested zones, racks, bays and equipment items
+  getLocationTree: async () => {
+    if (MOCK_MODE) {
+      return mockDelay([
+        {
+          id: '1',
+          name: 'Lager Muenchen - Hauptstandort',
+          code: 'LGR-MUC',
+          item_count: 42,
+          zones: [
+            {
+              id: 'z1', name: 'Zone A - Audio', zone_type: 'audio', item_count: 18,
+              racks: [
+                {
+                  id: 'r1', name: 'Regal 1', item_count: 8,
+                  bays: [
+                    { id: 'b1', name: 'Fach 1-1', item_count: 5, items: [
+                      { id: '2', name: 'Shure SM58', quantity: 5, equipment_id: '2' },
+                    ]},
+                    { id: 'b2', name: 'Fach 1-2', item_count: 3, items: [
+                      { id: 'xlr1', name: 'XLR-Kabel 10m', quantity: 3, equipment_id: '2' },
+                    ]},
+                  ],
+                },
+                {
+                  id: 'r2', name: 'Regal 2', item_count: 10,
+                  bays: [
+                    { id: 'b3', name: 'Fach 2-1', item_count: 10, items: [
+                      { id: 'di1', name: 'DI-Box', quantity: 10, equipment_id: '2' },
+                    ]},
+                  ],
+                },
+              ],
+            },
+            {
+              id: 'z2', name: 'Zone B - Lichttechnik', zone_type: 'lighting', item_count: 15,
+              racks: [
+                {
+                  id: 'r3', name: 'Regal 1', item_count: 9,
+                  bays: [
+                    { id: 'b4', name: 'Fach 1-1', item_count: 4, items: [
+                      { id: '4', name: 'Martin MAC Aura XB', quantity: 4, equipment_id: '4' },
+                    ]},
+                    { id: 'b5', name: 'Fach 1-2', item_count: 5, items: [
+                      { id: '10', name: 'Robe MegaPointe', quantity: 5, equipment_id: '10' },
+                    ]},
+                  ],
+                },
+                {
+                  id: 'r4', name: 'Regal 2', item_count: 6,
+                  bays: [
+                    { id: 'b6', name: 'Fach 2-1', item_count: 3, items: [
+                      { id: '3', name: 'MA Lighting grandMA3', quantity: 1, equipment_id: '3' },
+                      { id: 'dmx1', name: 'DMX-Kabel 10m', quantity: 2, equipment_id: '3' },
+                    ]},
+                    { id: 'b7', name: 'Fach 2-2', item_count: 3, items: [
+                      { id: 'led1', name: 'LED PAR 64', quantity: 3, equipment_id: '10' },
+                    ]},
+                  ],
+                },
+              ],
+            },
+            {
+              id: 'z3', name: 'Zone C - Buehne & Rigging', zone_type: 'stage', item_count: 9,
+              racks: [
+                {
+                  id: 'r5', name: 'Regal 1', item_count: 6,
+                  bays: [
+                    { id: 'b8', name: 'Fach 1-1', item_count: 6, items: [
+                      { id: '6', name: 'Prolyte X30V Truss 3m', quantity: 6, equipment_id: '6' },
+                    ]},
+                  ],
+                },
+                {
+                  id: 'r6', name: 'Regal 2', item_count: 3,
+                  bays: [
+                    { id: 'b9', name: 'Fach 2-1', item_count: 3, items: [
+                      { id: '9', name: 'Chainmaster BGV-D8+ 1t', quantity: 3, equipment_id: '9' },
+                    ]},
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ])
+    }
+    // Real API: fetch warehouses, then zones/racks/bays for each
+    const whRes = await api.get('/api/v1/warehouses', { params: { limit: 50 } })
+    const warehouses = whRes.data?.data || whRes.data?.items || []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tree = await Promise.all(warehouses.map(async (wh: any) => {
+      const zonesRes = await api.get('/api/v1/warehouse/zones')
+      const zones = zonesRes.data?.zones || []
+      return {
+        id: wh.id,
+        name: wh.name,
+        code: wh.code,
+        item_count: wh.current_occupancy || 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        zones: zones.map((z: any) => ({
+          id: z.id,
+          name: z.name,
+          zone_type: '',
+          item_count: 0,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          racks: (z.shelves || []).map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            item_count: r.expected_count || 0,
+            bays: [],
+          })),
+        })),
+      }
+    }))
+    return tree
+  },
 }
 
 // ============================================================================
@@ -1003,6 +1238,31 @@ export const federationApi = {
 }
 
 // ============================================================================
+// Notification Preferences API (notification-service port 8015)
+// ============================================================================
+export interface NotificationPreference {
+  id?: string
+  event_type: string
+  channels: string[]
+  is_enabled: boolean
+  quiet_hours_start?: string | null
+  quiet_hours_end?: string | null
+  digest_mode?: string
+}
+
+export const notificationPreferencesApi = {
+  list: (): Promise<NotificationPreference[]> =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/notifications/preferences').then(res => Array.isArray(res.data) ? res.data : res.data ?? []),
+
+  update: (pref: NotificationPreference): Promise<NotificationPreference> =>
+    MOCK_MODE
+      ? mockDelay(pref)
+      : api.put('/api/v1/notifications/preferences', pref).then(res => res.data),
+}
+
+// ============================================================================
 // Time Tracking API (crew-service port 8008)
 // ============================================================================
 export const timeTrackingApi = {
@@ -1096,6 +1356,16 @@ export const crewApi = {
     MOCK_MODE
       ? mockDelay(null)
       : api.get('/api/v1/crew/dashboard').then(res => res.data),
+
+  checkConflicts: (memberId: string, start: string, end: string) =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/crew/assignments/conflicts', {
+          params: { member_id: memberId, start, end },
+        }).then(res => {
+          const data = res.data
+          return Array.isArray(data) ? data : (data?.data ?? data?.items ?? [])
+        }),
 }
 
 // ============================================================================
@@ -1317,6 +1587,11 @@ export const configApi = {
     MOCK_MODE
       ? mockDelay({ success: true, message: 'Test email sent' })
       : api.post('/api/v1/config/smtp-test').then(res => res.data),
+
+  backupNow: () =>
+    MOCK_MODE
+      ? mockDelay({ success: true, message: 'Backup started' })
+      : api.post('/api/v1/config/backup-now').then(res => res.data),
 }
 
 // ============================================================================

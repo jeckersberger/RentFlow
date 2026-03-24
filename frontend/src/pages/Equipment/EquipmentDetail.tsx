@@ -156,12 +156,50 @@ function EquipmentDetailPage() {
       setQrBlobUrl(url)
       setShowQrModal(true)
     } catch (err) {
-      console.error('Failed to load QR code:', err)
-      addNotification('QR-Code konnte nicht geladen werden', 'error', {
-        title: 'Fehler',
-        duration: 5000,
-      })
+      console.error('Failed to load QR code from backend, using fallback API:', err)
+      // Fallback: use external QR code API
+      const qrData = equipment?.barcode || equipment?.sku || id!
+      const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`
+      setQrBlobUrl(fallbackUrl)
+      setShowQrModal(true)
     }
+  }
+
+  const handlePrintQRCode = () => {
+    if (!qrBlobUrl || !equipment) return
+    const printWindow = window.open('', '_blank', 'width=400,height=500')
+    if (!printWindow) return
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>QR-Code - ${equipment.name}</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 40px; }
+          img { margin: 20px 0; }
+          h2 { margin: 0 0 8px 0; font-size: 18px; }
+          p { margin: 4px 0; color: #555; font-size: 14px; }
+          .barcode { font-family: monospace; font-size: 16px; letter-spacing: 2px; margin-top: 12px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <h2>${equipment.name}</h2>
+        <p>SKU: ${equipment.sku}</p>
+        <img src="${qrBlobUrl}" alt="QR-Code" width="200" height="200" />
+        <p class="barcode">${equipment.barcode || equipment.sku || ''}</p>
+        <script>
+          window.onload = function() {
+            // Wait for image to load before printing
+            var img = document.querySelector('img');
+            if (img.complete) { window.print(); }
+            else { img.onload = function() { window.print(); }; }
+          };
+        </script>
+      </body>
+      </html>
+    `)
+    printWindow.document.close()
   }
 
   const handleDownloadQRCode = () => {
@@ -569,6 +607,12 @@ function EquipmentDetailPage() {
               Schließen
             </button>
             <button
+              className="btn btn--secondary"
+              onClick={handlePrintQRCode}
+            >
+              Drucken
+            </button>
+            <button
               className="btn btn--primary"
               onClick={handleDownloadQRCode}
             >
@@ -591,9 +635,19 @@ function EquipmentDetailPage() {
               }}
             />
           )}
-          <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', textAlign: 'center' }}>
-            {equipment.name} ({equipment.sku})
-          </p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', fontWeight: 600 }}>
+              {equipment.name}
+            </p>
+            <p style={{ margin: '4px 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+              SKU: {equipment.sku}
+            </p>
+            {equipment.barcode && (
+              <p style={{ margin: '4px 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>
+                {equipment.barcode}
+              </p>
+            )}
+          </div>
         </div>
       </Modal>
 

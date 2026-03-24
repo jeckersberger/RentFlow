@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { equipmentApi, maintenanceApi } from '../../services/api'
+import { SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import styles from './Workshop.module.scss'
 
 type TabKey = 'repairs' | 'inspections' | 'lost' | 'inventory'
@@ -233,10 +234,7 @@ function WorkshopPage() {
       {/* Content */}
       <div className={styles.tableCard}>
         {isLoading ? (
-          <div className={styles.loadingState}>
-            <div className={styles.spinner} />
-            <p>Daten werden geladen...</p>
-          </div>
+          <SkeletonTable rows={5} columns={5} />
         ) : activeTab === 'repairs' ? (
           repairs.length === 0 ? (
             <div className={styles.emptyState}>

@@ -1,9 +1,15 @@
 package http
 
 import (
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
+	"net/smtp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
 	"github.com/jeckersberger/rentflow/pkg/common/middleware"
@@ -142,7 +148,7 @@ func (h *ConfigHandlers) TestSMTP(w http.ResponseWriter, r *http.Request) {
 	// Parse SMTP config
 	var smtpConfig struct {
 		Host     string `json:"host"`
-		Port     int    `json:"port"`
+		Port     string `json:"port"`
 		Username string `json:"username"`
 		Password string `json:"password"`
 		TLS      bool   `json:"tls"`
@@ -153,22 +159,76 @@ func (h *ConfigHandlers) TestSMTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse port (frontend sends it as string)
+	portNum, _ := strconv.Atoi(smtpConfig.Port)
+	if portNum == 0 {
+		portNum = 587
+	}
+
 	// Validate SMTP config is present
-	if smtpConfig.Host == "" || smtpConfig.Port == 0 {
+	if smtpConfig.Host == "" {
 		writeError(w, http.StatusBadRequest, "SMTP_NOT_CONFIGURED", "SMTP is not configured")
 		return
 	}
 
-	// For now, return a success response indicating the config looks valid
-	// A full SMTP dial test can be added later when net/smtp is needed
+	// Actually dial the SMTP server to verify connectivity
+	addr := smtpConfig.Host + ":" + strconv.Itoa(portNum)
+	var dialErr error
+
+	if smtpConfig.TLS && portNum == 465 {
+		// Implicit TLS (SMTPS) on port 465
+		conn, err := tls.DialWithDialer(
+			&net.Dialer{Timeout: 10 * time.Second},
+			"tcp", addr,
+			&tls.Config{ServerName: smtpConfig.Host},
+		)
+		if err != nil {
+			dialErr = fmt.Errorf("TLS dial failed: %w", err)
+		} else {
+			conn.Close()
+		}
+	} else {
+		// STARTTLS or plain — use net/smtp
+		client, err := smtp.Dial(addr)
+		if err != nil {
+			dialErr = fmt.Errorf("SMTP dial failed: %w", err)
+		} else {
+			defer client.Close()
+
+			// Try STARTTLS if enabled
+			if smtpConfig.TLS {
+				tlsConfig := &tls.Config{ServerName: smtpConfig.Host}
+				if err := client.StartTLS(tlsConfig); err != nil {
+					dialErr = fmt.Errorf("STARTTLS failed: %w", err)
+				}
+			}
+
+			// Try authentication if credentials provided
+			if dialErr == nil && smtpConfig.Username != "" && smtpConfig.Password != "" {
+				auth := smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host)
+				if err := client.Auth(auth); err != nil {
+					dialErr = fmt.Errorf("SMTP auth failed: %w", err)
+				}
+			}
+
+			client.Quit()
+		}
+	}
+
+	if dialErr != nil {
+		h.logger.Error("SMTP test failed", dialErr)
+		writeError(w, http.StatusBadRequest, "SMTP_TEST_FAILED", dialErr.Error())
+		return
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"data": map[string]interface{}{
 			"host":      smtpConfig.Host,
-			"port":      smtpConfig.Port,
+			"port":      portNum,
 			"tls":       smtpConfig.TLS,
 			"connected": true,
 		},
-		"message": "SMTP configuration validated successfully",
+		"message": "SMTP-Verbindung erfolgreich getestet",
 	})
 }
 

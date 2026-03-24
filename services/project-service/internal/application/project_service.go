@@ -338,6 +338,73 @@ func (s *ProjectService) CopyProject(ctx context.Context, projectID, tenantID, n
 	return ProjectToDTO(newProject), nil
 }
 
+func (s *ProjectService) GeneratePackingListJSON(ctx context.Context, tenantID, projectID string) (*PackingListDTO, error) {
+	project, err := s.repo.GetByID(ctx, tenantID, projectID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "project not found", err)
+	}
+
+	var packlists []*domain.Packlist
+	if s.packlistRepo != nil {
+		result, err := s.packlistRepo.ListByProjectID(ctx, tenantID, projectID, 1000, 0)
+		if err != nil {
+			s.logger.Warn("Failed to fetch packlists for JSON generation", "error", err)
+		} else {
+			packlists = result.Items
+		}
+	}
+
+	// Group items by storage location
+	locationMap := make(map[string][]PackingListItemDTO)
+	totalItems := 0
+
+	for _, packlist := range packlists {
+		for _, item := range packlist.Items {
+			loc := item.StorageLocation
+			if loc == "" {
+				loc = "Nicht zugeordnet"
+			}
+			locationMap[loc] = append(locationMap[loc], PackingListItemDTO{
+				Name:           item.EquipmentName,
+				Quantity:       item.Quantity,
+				QuantityPacked: item.QuantityPacked,
+				Status:         string(item.Status),
+				PacklistName:   packlist.Name,
+			})
+			totalItems++
+		}
+	}
+
+	// Build sorted locations slice
+	var locations []PackingListLocationDTO
+	for loc, items := range locationMap {
+		locations = append(locations, PackingListLocationDTO{
+			Location: loc,
+			Items:    items,
+		})
+	}
+
+	// Sort locations alphabetically
+	for i := 0; i < len(locations); i++ {
+		for j := i + 1; j < len(locations); j++ {
+			if locations[i].Location > locations[j].Location {
+				locations[i], locations[j] = locations[j], locations[i]
+			}
+		}
+	}
+
+	projectDates := fmt.Sprintf("%s - %s",
+		project.StartDate.Format("02.01.2006"),
+		project.EndDate.Format("02.01.2006"))
+
+	return &PackingListDTO{
+		ProjectName:  project.Name,
+		ProjectDates: projectDates,
+		Locations:    locations,
+		TotalItems:   totalItems,
+	}, nil
+}
+
 func (s *ProjectService) GeneratePackingListHTML(ctx context.Context, tenantID, projectID string) (string, error) {
 	project, err := s.repo.GetByID(ctx, tenantID, projectID)
 	if err != nil {

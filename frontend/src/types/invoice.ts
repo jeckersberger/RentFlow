@@ -22,7 +22,17 @@ export interface InvoicePayment {
 }
 
 export interface DunningEntry {
+  id: string
+  invoice_id: string
   level: number
+  level_name: string
+  fee: number
+  sent_at: string
+  due_date: string
+  notes: string
+  created_at: string
+  updated_at: string
+  // legacy compat
   date: string
   sent: boolean
 }

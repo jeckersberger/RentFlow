@@ -3,9 +3,11 @@ package application
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/smtp"
 	"strconv"
@@ -64,24 +66,114 @@ func (d *SMTPDriver) Send(ctx context.Context, n *domain.Notification, config ma
 	subject := n.Title
 	body := n.Body
 
-	message := fmt.Sprintf(
-		"To: %s\r\nSubject: %s\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n%s",
-		recipient,
-		subject,
-		body,
-	)
+	message := "From: " + d.from + "\r\n" +
+		"To: " + recipient + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=utf-8\r\n" +
+		"Date: " + time.Now().Format(time.RFC1123Z) + "\r\n" +
+		"\r\n" +
+		body
 
-	// Send email using SMTP
 	addr := d.host + ":" + strconv.Itoa(d.port)
-	auth := smtp.PlainAuth("", d.username, d.password, d.host)
+	msgBytes := []byte(message)
 
-	err := smtp.SendMail(addr, auth, d.from, []string{recipient}, []byte(message))
+	var err error
+	if d.port == 465 {
+		// Implicit TLS (SMTPS)
+		err = d.sendViaSMTPS(addr, recipient, msgBytes)
+	} else {
+		// STARTTLS or plain
+		err = d.sendViaSTARTTLS(addr, recipient, msgBytes)
+	}
+
 	if err != nil {
 		d.log.Error("Failed to send email", "error", err, "notificationID", n.ID, "recipient", recipient)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
 	d.log.Info("Email sent successfully", "notificationID", n.ID, "recipient", recipient)
+	return nil
+}
+
+func (d *SMTPDriver) sendViaSTARTTLS(addr, recipient string, msg []byte) error {
+	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
+	if err != nil {
+		return fmt.Errorf("dial failed: %w", err)
+	}
+	client, err := smtp.NewClient(conn, d.host)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+	defer client.Close()
+
+	// Try STARTTLS
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		if err := client.StartTLS(&tls.Config{ServerName: d.host}); err != nil {
+			return fmt.Errorf("STARTTLS failed: %w", err)
+		}
+	}
+
+	if d.username != "" && d.password != "" {
+		auth := smtp.PlainAuth("", d.username, d.password, d.host)
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("auth failed: %w", err)
+		}
+	}
+
+	if err := client.Mail(d.from); err != nil {
+		return err
+	}
+	if err := client.Rcpt(recipient); err != nil {
+		return err
+	}
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write(msg); err != nil {
+		return err
+	}
+	w.Close()
+	client.Quit()
+	return nil
+}
+
+func (d *SMTPDriver) sendViaSMTPS(addr, recipient string, msg []byte) error {
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 10 * time.Second}, "tcp", addr, &tls.Config{ServerName: d.host})
+	if err != nil {
+		return fmt.Errorf("TLS dial failed: %w", err)
+	}
+	client, err := smtp.NewClient(conn, d.host)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+	defer client.Close()
+
+	if d.username != "" && d.password != "" {
+		auth := smtp.PlainAuth("", d.username, d.password, d.host)
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("auth failed: %w", err)
+		}
+	}
+
+	if err := client.Mail(d.from); err != nil {
+		return err
+	}
+	if err := client.Rcpt(recipient); err != nil {
+		return err
+	}
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write(msg); err != nil {
+		return err
+	}
+	w.Close()
+	client.Quit()
 	return nil
 }
 

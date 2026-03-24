@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { equipmentApi, categoryApi } from '../../services/api'
@@ -6,7 +6,6 @@ import { useNotificationStore } from '../../stores/notificationStore'
 import { Input } from '../../components/Form/Input'
 import { Select } from '../../components/Form/Select'
 import { TextArea } from '../../components/Form/TextArea'
-import { FileUpload } from '../../components/Form/FileUpload'
 import { Modal } from '../../components/Modal/Modal'
 import { CreateEquipmentDTO, Category } from '../../types/equipment'
 import './Equipment.scss'
@@ -59,6 +58,10 @@ function EquipmentFormPage() {
 
   const [tagInput, setTagInput] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
   const [showAiModal, setShowAiModal] = useState(false)
   const [aiImage, setAiImage] = useState<File | null>(null)
   const [aiImagePreview, setAiImagePreview] = useState<string | null>(null)
@@ -88,11 +91,26 @@ function EquipmentFormPage() {
     mutationFn: async () => {
       // Build payload - include status/condition only for create
       const payload: Record<string, unknown> = { ...formData }
+      let result
       if (isEditing && id) {
-        return equipmentApi.update(id, payload)
+        result = await equipmentApi.update(id, payload)
       } else {
-        return equipmentApi.create(payload)
+        result = await equipmentApi.create(payload)
       }
+      // Upload image if one was selected
+      if (imageFile && result?.id) {
+        try {
+          await equipmentApi.uploadImage(result.id, imageFile)
+        } catch (imgErr) {
+          console.warn('Image upload failed, equipment was saved:', imgErr)
+          addNotification(
+            'Ausrüstung gespeichert, aber Bild-Upload fehlgeschlagen',
+            'warning',
+            { title: 'Hinweis', duration: 5000 }
+          )
+        }
+      }
+      return result
     },
     onSuccess: (data) => {
       addNotification(
@@ -194,6 +212,48 @@ function EquipmentFormPage() {
       e.preventDefault()
       handleAddTag()
     }
+  }
+
+  const handleImageSelect = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) return
+    if (file.size > 10 * 1024 * 1024) {
+      addNotification('Bild darf maximal 10 MB groß sein', 'error', { title: 'Fehler', duration: 4000 })
+      return
+    }
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setImagePreview(ev.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }, [addNotification])
+
+  const handleImageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) handleImageSelect(file)
+  }
+
+  const handleImageDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleImageSelect(file)
+  }, [handleImageSelect])
+
+  const handleImageDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
+
+  const handleImageDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }, [])
+
+  const handleRemoveImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    if (imageInputRef.current) imageInputRef.current.value = ''
   }
 
   const handleAiImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
