@@ -40,7 +40,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { NAV_SHORTCUT_HINTS } from '../../hooks/useKeyboardShortcuts'
-import { useBadgeCounts } from '../../hooks/useBadgeCounts'
+import { useBadgeCounts, useMarkSectionSeen } from '../../hooks/useBadgeCounts'
 import './Sidebar.scss'
 
 interface NavItem {
@@ -165,18 +165,49 @@ function Sidebar() {
   const enabledModules = useModuleStore((state) => state.enabledModules)
   const modulesLoaded = useModuleStore((state) => state.loaded)
   const badgeCounts = useBadgeCounts()
+  const markSeen = useMarkSectionSeen()
   const [collapsed, setCollapsed] = useState(false)
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
-  // Map nav paths to badge counts and their variant (color)
-  const badgeMap: Record<string, { count: number; variant: 'danger' | 'info' | 'warning' }> = {
-    '/invoices': { count: badgeCounts.invoicesOverdue, variant: 'danger' },
+  // Map nav paths to badge counts (new items + urgent items) and their section keys for markSeen
+  const sectionKeyMap: Record<string, string> = {
+    '/projects': 'projects',
+    '/equipment': 'equipment',
+    '/invoices': 'invoices',
+    '/contacts': 'contacts',
+    '/crew': 'crew',
+    '/mail/inbox': 'mail',
+    '/workshop': 'maintenance',
+    '/audit': 'audit',
+  }
+
+  // Primary badge: new items since last visit (info/blue)
+  // Secondary badge: urgent items that always show (danger/red)
+  const badgeMap: Record<string, {
+    count: number; variant: 'danger' | 'info' | 'warning';
+    urgentCount?: number; urgentVariant?: 'danger' | 'warning';
+  }> = {
+    '/projects': { count: badgeCounts.projects, variant: 'info' },
+    '/equipment': { count: badgeCounts.equipment, variant: 'info' },
+    '/invoices': {
+      count: badgeCounts.invoices,
+      variant: 'info',
+      urgentCount: badgeCounts.invoicesOverdue,
+      urgentVariant: 'danger',
+    },
+    '/contacts': { count: badgeCounts.contacts, variant: 'info' },
+    '/crew': { count: badgeCounts.crew, variant: badgeCounts.crew > 0 ? 'warning' : 'info' },
     '/mail/inbox': { count: badgeCounts.mailUnread, variant: 'info' },
-    '/crew': { count: badgeCounts.crewPending, variant: 'warning' },
-    '/workshop': { count: badgeCounts.maintenanceOverdue, variant: 'danger' },
+    '/workshop': {
+      count: badgeCounts.maintenance,
+      variant: 'info',
+      urgentCount: badgeCounts.maintenanceOverdue,
+      urgentVariant: 'danger',
+    },
+    '/audit': { count: badgeCounts.audit, variant: 'info' },
   }
 
   const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), [])
@@ -261,26 +292,35 @@ function Sidebar() {
                   const IconComponent = item.icon
                   const shortcutHint = NAV_SHORTCUT_HINTS[item.href]
                   const label = t(item.labelKey)
+                  const badge = badgeMap[item.href]
+                  const sectionKey = sectionKeyMap[item.href]
+                  const hasBadge = badge && (badge.count > 0 || (badge.urgentCount && badge.urgentCount > 0))
                   return (
                     <Link
                       key={item.href}
                       to={item.href}
                       className={`sidebar__nav-item ${isActiveRoute(location.pathname, item.href) ? 'sidebar__nav-item--active' : ''}`}
                       title={collapsed ? label : undefined}
+                      onClick={() => sectionKey && markSeen(sectionKey)}
                     >
                       <span className="sidebar__nav-icon">
                         <IconComponent size={18} />
-                        {collapsed && badgeMap[item.href]?.count > 0 && (
-                          <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant} sidebar__badge--dot`} />
+                        {collapsed && hasBadge && (
+                          <span className={`sidebar__badge sidebar__badge--${badge.urgentCount && badge.urgentCount > 0 ? (badge.urgentVariant || 'danger') : badge.variant} sidebar__badge--dot`} />
                         )}
                       </span>
                       {!collapsed && <span className="sidebar__nav-label">{label}</span>}
-                      {!collapsed && badgeMap[item.href]?.count > 0 && (
-                        <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant}`}>
-                          {badgeMap[item.href].count}
+                      {!collapsed && badge?.urgentCount != null && badge.urgentCount > 0 && (
+                        <span className={`sidebar__badge sidebar__badge--${badge.urgentVariant || 'danger'}`}>
+                          {badge.urgentCount}
                         </span>
                       )}
-                      {!collapsed && shortcutHint && !badgeMap[item.href]?.count && (
+                      {!collapsed && badge && badge.count > 0 && (
+                        <span className={`sidebar__badge sidebar__badge--${badge.variant}`}>
+                          {badge.count}
+                        </span>
+                      )}
+                      {!collapsed && shortcutHint && !hasBadge && (
                         <span className="sidebar__nav-shortcut">{shortcutHint}</span>
                       )}
                     </Link>
@@ -364,18 +404,25 @@ function Sidebar() {
                   <span className="mobile-overlay__group-label">{t(group.labelKey)}</span>
                   {group.items.map((item) => {
                     const IconComponent = item.icon
+                    const badge = badgeMap[item.href]
+                    const sectionKey = sectionKeyMap[item.href]
                     return (
                       <Link
                         key={item.href}
                         to={item.href}
                         className={`mobile-overlay__nav-item ${isActiveRoute(location.pathname, item.href) ? 'mobile-overlay__nav-item--active' : ''}`}
-                        onClick={closeMobileMenu}
+                        onClick={() => { if (sectionKey) markSeen(sectionKey); closeMobileMenu() }}
                       >
                         <IconComponent size={18} />
                         <span>{t(item.labelKey)}</span>
-                        {badgeMap[item.href]?.count > 0 && (
-                          <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant}`}>
-                            {badgeMap[item.href].count}
+                        {badge?.urgentCount != null && badge.urgentCount > 0 && (
+                          <span className={`sidebar__badge sidebar__badge--${badge.urgentVariant || 'danger'}`}>
+                            {badge.urgentCount}
+                          </span>
+                        )}
+                        {badge && badge.count > 0 && (
+                          <span className={`sidebar__badge sidebar__badge--${badge.variant}`}>
+                            {badge.count}
                           </span>
                         )}
                       </Link>
