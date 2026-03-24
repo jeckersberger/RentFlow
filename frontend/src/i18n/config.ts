@@ -81,7 +81,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: localStorage.getItem('language') || 'de',
+    lng: localStorage.getItem('rentflow_language') || 'de',
     fallbackLng: 'de',
     interpolation: {
       escapeValue: false,

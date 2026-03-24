@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useThemeStore } from '../../stores/themeStore'
 import { useModuleStore } from '../../stores/moduleStore'
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   Calendar,
@@ -43,72 +44,72 @@ import { useBadgeCounts } from '../../hooks/useBadgeCounts'
 import './Sidebar.scss'
 
 interface NavItem {
-  label: string
+  labelKey: string
   href: string
   icon: LucideIcon
 }
 
 interface NavGroup {
-  label: string
+  labelKey: string
   items: NavItem[]
 }
 
 const navGroups: NavGroup[] = [
   {
-    label: 'Planen',
+    labelKey: 'nav.planning',
     items: [
-      { label: 'Dashboard', href: '/', icon: LayoutDashboard },
-      { label: 'Kalender', href: '/calendar', icon: Calendar },
-      { label: 'Projekte', href: '/projects', icon: FolderKanban },
-      { label: 'Engpässe', href: '/shortages', icon: AlertTriangle },
+      { labelKey: 'nav.dashboard', href: '/', icon: LayoutDashboard },
+      { labelKey: 'nav.calendar', href: '/calendar', icon: Calendar },
+      { labelKey: 'nav.projects', href: '/projects', icon: FolderKanban },
+      { labelKey: 'nav.shortages', href: '/shortages', icon: AlertTriangle },
     ],
   },
   {
-    label: 'Lager',
+    labelKey: 'nav.warehouse',
     items: [
-      { label: 'Equipment', href: '/equipment', icon: Package },
-      { label: 'Lager', href: '/warehouse', icon: Warehouse },
-      { label: 'Scanner', href: '/scanner', icon: ScanLine },
-      { label: 'Werkstatt', href: '/workshop', icon: Wrench },
+      { labelKey: 'nav.equipment', href: '/equipment', icon: Package },
+      { labelKey: 'nav.warehouse_nav', href: '/warehouse', icon: Warehouse },
+      { labelKey: 'nav.scanner', href: '/scanner', icon: ScanLine },
+      { labelKey: 'nav.workshop', href: '/workshop', icon: Wrench },
     ],
   },
   {
-    label: 'Team',
+    labelKey: 'nav.team',
     items: [
-      { label: 'Crew', href: '/crew', icon: Users },
-      { label: 'Zeiterfassung', href: '/time-tracking', icon: Clock },
-      { label: 'Transport', href: '/transport', icon: Truck },
+      { labelKey: 'nav.crew', href: '/crew', icon: Users },
+      { labelKey: 'nav.time_tracking', href: '/time-tracking', icon: Clock },
+      { labelKey: 'nav.transport', href: '/transport', icon: Truck },
     ],
   },
   {
-    label: 'Finanzen',
+    labelKey: 'nav.finance',
     items: [
-      { label: 'Angebote', href: '/quotes', icon: FileText },
-      { label: 'Rechnungen', href: '/invoices', icon: Receipt },
-      { label: 'Kontakte', href: '/contacts', icon: Contact },
+      { labelKey: 'nav.quotes', href: '/quotes', icon: FileText },
+      { labelKey: 'nav.invoices', href: '/invoices', icon: Receipt },
+      { labelKey: 'nav.contacts', href: '/contacts', icon: Contact },
     ],
   },
   {
-    label: 'Kommunikation',
+    labelKey: 'nav.communication',
     items: [
-      { label: 'Verfassen', href: '/mail/compose', icon: PenSquare },
-      { label: 'Posteingang', href: '/mail/inbox', icon: Inbox },
-      { label: 'Gesendet', href: '/mail/sent', icon: Send },
+      { labelKey: 'nav.compose', href: '/mail/compose', icon: PenSquare },
+      { labelKey: 'nav.inbox', href: '/mail/inbox', icon: Inbox },
+      { labelKey: 'nav.sent', href: '/mail/sent', icon: Send },
     ],
   },
   {
-    label: 'Auswerten',
+    labelKey: 'nav.analytics',
     items: [
-      { label: 'Reports', href: '/reports', icon: BarChart3 },
-      { label: 'KI-Assistent', href: '/ai', icon: Bot },
+      { labelKey: 'nav.reports', href: '/reports', icon: BarChart3 },
+      { labelKey: 'nav.ai_assistant', href: '/ai', icon: Bot },
     ],
   },
   {
-    label: 'Verwalten',
+    labelKey: 'nav.admin',
     items: [
-      { label: 'Einstellungen', href: '/settings', icon: Settings },
-      { label: 'Federation', href: '/federation', icon: Globe },
-      { label: 'Audit-Log', href: '/audit', icon: Shield },
+      { labelKey: 'nav.settings', href: '/settings', icon: Settings },
+      { labelKey: 'nav.federation', href: '/federation', icon: Globe },
+      { labelKey: 'nav.audit_log', href: '/audit', icon: Shield },
     ],
   },
 ]
@@ -141,10 +142,10 @@ function isPathVisibleForModules(path: string, enabledModules: string[]): boolea
 
 // Flat list of key items for mobile bottom nav (5 items: last one opens full sidebar overlay)
 const mobileNavItems: NavItem[] = [
-  { label: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { label: 'Equipment', href: '/equipment', icon: Package },
-  { label: 'Scanner', href: '/scanner', icon: ScanLine },
-  { label: 'Projekte', href: '/projects', icon: FolderKanban },
+  { labelKey: 'nav.dashboard', href: '/', icon: LayoutDashboard },
+  { labelKey: 'nav.equipment', href: '/equipment', icon: Package },
+  { labelKey: 'nav.scanner', href: '/scanner', icon: ScanLine },
+  { labelKey: 'nav.projects', href: '/projects', icon: FolderKanban },
   // "Menu" item is handled separately in the component (opens overlay)
 ]
 
@@ -154,6 +155,7 @@ function isActiveRoute(pathname: string, href: string): boolean {
 }
 
 function Sidebar() {
+  const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
   const isDarkMode = useThemeStore((state) => state.isDarkMode)
@@ -212,10 +214,10 @@ function Sidebar() {
     navigate('/login')
   }
 
-  const toggleGroup = (label: string) => {
+  const toggleGroup = (labelKey: string) => {
     setCollapsedGroups((prev) => ({
       ...prev,
-      [label]: !prev[label],
+      [labelKey]: !prev[labelKey],
     }))
   }
 
@@ -235,7 +237,7 @@ function Sidebar() {
           <button
             className="sidebar__collapse-btn"
             onClick={() => setCollapsed(!collapsed)}
-            title={collapsed ? 'Sidebar einblenden' : 'Sidebar ausblenden'}
+            title={collapsed ? t('nav.expand_sidebar') : t('nav.collapse_sidebar')}
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
@@ -243,27 +245,28 @@ function Sidebar() {
 
         <nav className="sidebar__nav">
           {filteredNavGroups.map((group) => {
-            const isGroupCollapsed = collapsedGroups[group.label]
+            const isGroupCollapsed = collapsedGroups[group.labelKey]
             return (
-              <div key={group.label} className="sidebar__nav-group">
+              <div key={group.labelKey} className="sidebar__nav-group">
                 {!collapsed && (
                   <button
                     className="sidebar__nav-group-label"
-                    onClick={() => toggleGroup(group.label)}
+                    onClick={() => toggleGroup(group.labelKey)}
                   >
-                    <span>{group.label}</span>
+                    <span>{t(group.labelKey)}</span>
                     {isGroupCollapsed ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
                   </button>
                 )}
                 {!isGroupCollapsed && group.items.map((item) => {
                   const IconComponent = item.icon
                   const shortcutHint = NAV_SHORTCUT_HINTS[item.href]
+                  const label = t(item.labelKey)
                   return (
                     <Link
                       key={item.href}
                       to={item.href}
                       className={`sidebar__nav-item ${isActiveRoute(location.pathname, item.href) ? 'sidebar__nav-item--active' : ''}`}
-                      title={collapsed ? item.label : undefined}
+                      title={collapsed ? label : undefined}
                     >
                       <span className="sidebar__nav-icon">
                         <IconComponent size={18} />
@@ -271,7 +274,7 @@ function Sidebar() {
                           <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant} sidebar__badge--dot`} />
                         )}
                       </span>
-                      {!collapsed && <span className="sidebar__nav-label">{item.label}</span>}
+                      {!collapsed && <span className="sidebar__nav-label">{label}</span>}
                       {!collapsed && badgeMap[item.href]?.count > 0 && (
                         <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant}`}>
                           {badgeMap[item.href].count}
@@ -292,12 +295,12 @@ function Sidebar() {
           <button
             className="sidebar__theme-toggle"
             onClick={toggleDarkMode}
-            title={isDarkMode ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren'}
+            title={isDarkMode ? t('nav.light_mode') : t('nav.dark_mode')}
           >
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             {!collapsed && (
               <span className="sidebar__theme-label">
-                {isDarkMode ? 'Hellmodus' : 'Dunkelmodus'}
+                {isDarkMode ? t('nav.light_mode') : t('nav.dark_mode')}
               </span>
             )}
           </button>
@@ -306,12 +309,12 @@ function Sidebar() {
             <button
               className="sidebar__user-trigger"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              title={collapsed ? (user?.name || 'Benutzer') : undefined}
+              title={collapsed ? (user?.name || t('nav.profile')) : undefined}
             >
               <div className="sidebar__user-avatar">{userInitials}</div>
               {!collapsed && (
                 <div className="sidebar__user-details">
-                  <p className="sidebar__user-name">{user?.name || 'Benutzer'}</p>
+                  <p className="sidebar__user-name">{user?.name || t('nav.profile')}</p>
                   <p className="sidebar__user-email">{user?.email}</p>
                 </div>
               )}
@@ -323,7 +326,7 @@ function Sidebar() {
                   onClick={() => { setUserMenuOpen(false); navigate('/profile') }}
                 >
                   <User size={16} />
-                  <span>Profil</span>
+                  <span>{t('nav.profile')}</span>
                 </button>
                 <div className="sidebar__user-menu-divider" />
                 <button
@@ -331,7 +334,7 @@ function Sidebar() {
                   onClick={() => { setUserMenuOpen(false); handleLogout() }}
                 >
                   <LogOut size={16} />
-                  <span>Abmelden</span>
+                  <span>{t('nav.logout')}</span>
                 </button>
               </div>
             )}
@@ -357,8 +360,8 @@ function Sidebar() {
 
             <nav className="mobile-overlay__nav">
               {filteredNavGroups.map((group) => (
-                <div key={group.label} className="mobile-overlay__group">
-                  <span className="mobile-overlay__group-label">{group.label}</span>
+                <div key={group.labelKey} className="mobile-overlay__group">
+                  <span className="mobile-overlay__group-label">{t(group.labelKey)}</span>
                   {group.items.map((item) => {
                     const IconComponent = item.icon
                     return (
@@ -369,7 +372,7 @@ function Sidebar() {
                         onClick={closeMobileMenu}
                       >
                         <IconComponent size={18} />
-                        <span>{item.label}</span>
+                        <span>{t(item.labelKey)}</span>
                         {badgeMap[item.href]?.count > 0 && (
                           <span className={`sidebar__badge sidebar__badge--${badgeMap[item.href].variant}`}>
                             {badgeMap[item.href].count}
@@ -385,12 +388,12 @@ function Sidebar() {
             <div className="mobile-overlay__footer">
               <button className="mobile-overlay__theme-btn" onClick={toggleDarkMode}>
                 {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-                <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                <span>{isDarkMode ? t('nav.light_mode') : t('nav.dark_mode')}</span>
               </button>
               <div className="mobile-overlay__user">
                 <div className="sidebar__user-avatar">{userInitials}</div>
                 <div className="sidebar__user-details">
-                  <p className="sidebar__user-name">{user?.name || 'Benutzer'}</p>
+                  <p className="sidebar__user-name">{user?.name || t('nav.profile')}</p>
                   <p className="sidebar__user-email">{user?.email}</p>
                 </div>
               </div>
@@ -399,7 +402,7 @@ function Sidebar() {
                 onClick={() => { closeMobileMenu(); handleLogout(); }}
               >
                 <LogOut size={16} />
-                <span>Abmelden</span>
+                <span>{t('nav.logout')}</span>
               </button>
             </div>
           </aside>
@@ -419,7 +422,7 @@ function Sidebar() {
               <span className="mobile-nav__icon">
                 <IconComponent size={20} />
               </span>
-              <span className="mobile-nav__label">{item.label}</span>
+              <span className="mobile-nav__label">{t(item.labelKey)}</span>
             </Link>
           )
         })}
@@ -431,11 +434,11 @@ function Sidebar() {
           <span className="mobile-nav__icon">
             <Menu size={20} />
           </span>
-          <span className="mobile-nav__label">Menü</span>
+          <span className="mobile-nav__label">{t('nav.menu')}</span>
         </button>
       </nav>
     </>
   )
 }
 
-export default Sidebar
+export default React.memo(Sidebar)

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { configApi } from '../../../services/api'
 import { useNotificationStore } from '../../../stores/notificationStore'
-import { Download, RefreshCw, HardDrive, Clock, Calendar, Shield } from 'lucide-react'
+import { Download, RefreshCw, HardDrive, Clock, Calendar, Shield, RotateCcw, Upload, AlertTriangle } from 'lucide-react'
 import { SkeletonCard } from '../../../components/Skeleton/SkeletonLoader'
 import '../Settings.scss'
 
@@ -19,6 +19,10 @@ function BackupsPage() {
   const queryClient = useQueryClient()
   const addNotification = useNotificationStore((s) => s.addNotification)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [restoreConfirmId, setRestoreConfirmId] = useState<string | null>(null)
+  const [restoreConfirmDate, setRestoreConfirmDate] = useState<string>('')
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     schedule: 'daily',
@@ -88,6 +92,31 @@ function BackupsPage() {
     },
     onError: () => {
       addNotification('Fehler beim Starten des Backups', 'error')
+    },
+  })
+
+  const restoreMutation = useMutation({
+    mutationFn: (backupId: string) => configApi.backupRestore(backupId),
+    onSuccess: () => {
+      setRestoreConfirmId(null)
+      addNotification('Backup wurde wiederhergestellt. Die Seite wird neu geladen.', 'success')
+      setTimeout(() => window.location.reload(), 3000)
+    },
+    onError: () => {
+      addNotification('Fehler beim Wiederherstellen des Backups', 'error')
+    },
+  })
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => configApi.backupUpload(file),
+    onSuccess: () => {
+      addNotification('Backup wurde erfolgreich importiert', 'success')
+      setUploadFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      queryClient.invalidateQueries({ queryKey: ['config', 'backup.history'] })
+    },
+    onError: () => {
+      addNotification('Fehler beim Importieren des Backups', 'error')
     },
   })
 
@@ -346,17 +375,32 @@ function BackupsPage() {
                       </span>
                     </td>
                     <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', textAlign: 'right' }}>
-                      {entry.status === 'Erfolgreich' && entry.download_url && (
-                        <a
-                          href={entry.download_url}
-                          className="sp-btn sp-btn--ghost"
-                          style={{ fontSize: 'var(--font-size-xs, 12px)', padding: '2px 8px', textDecoration: 'none' }}
-                          download
-                        >
-                          <Download size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                          Herunterladen
-                        </a>
-                      )}
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'flex-end' }}>
+                        {entry.status === 'Erfolgreich' && entry.download_url && (
+                          <a
+                            href={entry.download_url}
+                            className="sp-btn sp-btn--ghost"
+                            style={{ fontSize: 'var(--font-size-xs, 12px)', padding: '2px 8px', textDecoration: 'none' }}
+                            download
+                          >
+                            <Download size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                            Herunterladen
+                          </a>
+                        )}
+                        {entry.status === 'Erfolgreich' && (
+                          <button
+                            className="sp-btn sp-btn--secondary"
+                            style={{ fontSize: 'var(--font-size-xs, 12px)', padding: '2px 8px' }}
+                            onClick={() => {
+                              setRestoreConfirmId(entry.id)
+                              setRestoreConfirmDate(entry.date)
+                            }}
+                          >
+                            <RotateCcw size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                            Wiederherstellen
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -365,6 +409,94 @@ function BackupsPage() {
           </div>
         )}
       </div>
+
+      {/* Upload Backup */}
+      <div className="sp-card">
+        <h3 className="sp-card__title">
+          <Upload size={18} style={{ marginRight: 8, verticalAlign: 'text-bottom' }} />
+          Backup importieren
+        </h3>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-4) 0' }}>
+          Laden Sie eine vorhandene Backup-Datei (.tar.gz) hoch, um sie zu importieren.
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".tar.gz,.tgz"
+            onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+            style={{
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-primary)',
+            }}
+          />
+          <button
+            className="sp-btn sp-btn--primary"
+            onClick={() => uploadFile && uploadMutation.mutate(uploadFile)}
+            disabled={!uploadFile || uploadMutation.isPending}
+          >
+            {uploadMutation.isPending ? (
+              <>
+                <RefreshCw size={16} style={{ marginRight: 6, verticalAlign: 'middle', animation: 'spin 1s linear infinite' }} />
+                Wird importiert...
+              </>
+            ) : (
+              <>
+                <Upload size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                Backup importieren
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Restore Confirmation Dialog */}
+      {restoreConfirmId && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1050,
+        }} onClick={() => !restoreMutation.isPending && setRestoreConfirmId(null)}>
+          <div
+            className="sp-card"
+            style={{ width: 480, maxWidth: '90vw', margin: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', marginBottom: 'var(--spacing-4)' }}>
+              <AlertTriangle size={24} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
+              <h2 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--color-text-primary)' }}>
+                Backup wiederherstellen
+              </h2>
+            </div>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-5) 0', lineHeight: 1.6 }}>
+              Achtung! Alle aktuellen Daten werden durch das Backup vom <strong>{restoreConfirmDate}</strong> ersetzt.
+              Dieser Vorgang kann nicht rueckgaengig gemacht werden. Fortfahren?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+              <button
+                className="sp-btn sp-btn--secondary"
+                onClick={() => setRestoreConfirmId(null)}
+                disabled={restoreMutation.isPending}
+              >
+                Abbrechen
+              </button>
+              <button
+                className="sp-btn sp-btn--danger"
+                onClick={() => restoreMutation.mutate(restoreConfirmId)}
+                disabled={restoreMutation.isPending}
+              >
+                {restoreMutation.isPending ? (
+                  <>
+                    <RefreshCw size={16} style={{ marginRight: 6, verticalAlign: 'middle', animation: 'spin 1s linear infinite' }} />
+                    Wiederherstellen...
+                  </>
+                ) : (
+                  'Wiederherstellen'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

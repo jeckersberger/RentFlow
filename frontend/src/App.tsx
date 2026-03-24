@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { Theme } from '@radix-ui/themes'
@@ -15,130 +15,135 @@ import { ToastContainer } from './components/Toast/Toast'
 import { CommandPalette } from './components/CommandPalette/CommandPalette'
 import { ShortcutsHelp } from './components/ShortcutsHelp/ShortcutsHelp'
 import { KeyboardShortcutsProvider } from './components/KeyboardShortcutsProvider'
+
+// Eagerly loaded pages (first pages users see — no lazy loading)
 import LoginPage from './pages/Login'
 import ForgotPasswordPage from './pages/ForgotPassword'
 import ResetPasswordPage from './pages/ResetPassword'
 import BookingResponsePage from './pages/BookingResponse'
 import SetupWizard from './pages/Setup/SetupWizard'
-import DashboardPage from './pages/Dashboard'
+
+// Lazy-loaded pages (code-split for faster initial load)
+const DashboardPage = lazy(() => import('./pages/Dashboard'))
 
 // Equipment Pages
-import EquipmentListPage from './pages/Equipment/EquipmentList'
-import EquipmentDetailPage from './pages/Equipment/EquipmentDetail'
-import EquipmentFormPage from './pages/Equipment/EquipmentForm'
-import EquipmentLabelsPage from './pages/Equipment/EquipmentLabels'
-import EquipmentImportPage from './pages/Equipment/EquipmentImport'
-import EquipmentTimelinePage from './pages/Equipment/EquipmentTimeline'
+const EquipmentListPage = lazy(() => import('./pages/Equipment/EquipmentList'))
+const EquipmentDetailPage = lazy(() => import('./pages/Equipment/EquipmentDetail'))
+const EquipmentFormPage = lazy(() => import('./pages/Equipment/EquipmentForm'))
+const EquipmentLabelsPage = lazy(() => import('./pages/Equipment/EquipmentLabels'))
+const EquipmentImportPage = lazy(() => import('./pages/Equipment/EquipmentImport'))
+const EquipmentTimelinePage = lazy(() => import('./pages/Equipment/EquipmentTimeline'))
 
 // Project Pages
-import ProjectListPage from './pages/Projects/ProjectList'
-import ProjectDetailPage from './pages/Projects/ProjectDetail'
-import ProjectFormPage from './pages/Projects/ProjectForm'
+const ProjectListPage = lazy(() => import('./pages/Projects/ProjectList'))
+const ProjectDetailPage = lazy(() => import('./pages/Projects/ProjectDetail'))
+const ProjectFormPage = lazy(() => import('./pages/Projects/ProjectForm'))
 
 // Invoice Pages
-import InvoiceListPage from './pages/Invoices/InvoiceList'
-import InvoiceDetailPage from './pages/Invoices/InvoiceDetail'
-import InvoiceFormPage from './pages/Invoices/InvoiceForm'
+const InvoiceListPage = lazy(() => import('./pages/Invoices/InvoiceList'))
+const InvoiceDetailPage = lazy(() => import('./pages/Invoices/InvoiceDetail'))
+const InvoiceEditor = lazy(() => import('./pages/Invoices/InvoiceEditor'))
 
 // Scanner Page
-import ScannerPage from './pages/Scanner/ScannerPage'
+const ScannerPage = lazy(() => import('./pages/Scanner/ScannerPage'))
 
 // Warehouse Page
-import WarehouseViewPage from './pages/Warehouse/WarehousePage'
-import InventoryPage from './pages/Warehouse/InventoryPage'
+const WarehouseViewPage = lazy(() => import('./pages/Warehouse/WarehousePage'))
+const InventoryPage = lazy(() => import('./pages/Warehouse/InventoryPage'))
 
 // Settings Pages
-import SettingsLayout from './pages/Settings/SettingsLayout'
-import CompanyPage from './pages/Settings/pages/CompanyPage'
-import UsersPage from './pages/Settings/pages/UsersPage'
-import RolesPage from './pages/Settings/pages/RolesPage'
-import IntegrationsPage from './pages/Settings/pages/IntegrationsPage'
-import BackupsPage from './pages/Settings/pages/BackupsPage'
-import LocalePage from './pages/Settings/pages/LocalePage'
-import NumberSequencesPage from './pages/Settings/pages/NumberSequencesPage'
-import ProjectTypesPage from './pages/Settings/pages/ProjectTypesPage'
-import CategoriesPage from './pages/Settings/pages/CategoriesPage'
-import CustomFieldsPage from './pages/Settings/pages/CustomFieldsPage'
-import EmailSettingsPage from './pages/Settings/pages/EmailSettingsPage'
-import DocumentTemplatesPage from './pages/Settings/pages/DocumentTemplatesPage'
-import TaxExemptionPage from './pages/Settings/pages/TaxExemptionPage'
-import VatSchemesPage from './pages/Settings/pages/VatSchemesPage'
-import PaymentTermsPage from './pages/Settings/pages/PaymentTermsPage'
-import BankDetailsPage from './pages/Settings/pages/BankDetailsPage'
-import TermsConditionsPage from './pages/Settings/pages/TermsConditionsPage'
-import ModulesPage from './pages/Settings/pages/ModulesPage'
-import LabelSettingsPage from './pages/Settings/pages/LabelSettingsPage'
-import EmailAccountsPage from './pages/Settings/pages/EmailAccountsPage'
-import NotificationSettingsPage from './pages/Settings/pages/NotificationSettingsPage'
-import ScannerDevicesPage from './pages/Settings/pages/ScannerDevicesPage'
+const SettingsLayout = lazy(() => import('./pages/Settings/SettingsLayout'))
+const CompanyPage = lazy(() => import('./pages/Settings/pages/CompanyPage'))
+const UsersPage = lazy(() => import('./pages/Settings/pages/UsersPage'))
+const RolesPage = lazy(() => import('./pages/Settings/pages/RolesPage'))
+const IntegrationsPage = lazy(() => import('./pages/Settings/pages/IntegrationsPage'))
+const BackupsPage = lazy(() => import('./pages/Settings/pages/BackupsPage'))
+const LocalePage = lazy(() => import('./pages/Settings/pages/LocalePage'))
+const NumberSequencesPage = lazy(() => import('./pages/Settings/pages/NumberSequencesPage'))
+const ProjectTypesPage = lazy(() => import('./pages/Settings/pages/ProjectTypesPage'))
+const CategoriesPage = lazy(() => import('./pages/Settings/pages/CategoriesPage'))
+const CustomFieldsPage = lazy(() => import('./pages/Settings/pages/CustomFieldsPage'))
+const EmailSettingsPage = lazy(() => import('./pages/Settings/pages/EmailSettingsPage'))
+const DocumentTemplatesPage = lazy(() => import('./pages/Settings/pages/DocumentTemplatesPage'))
+const TaxExemptionPage = lazy(() => import('./pages/Settings/pages/TaxExemptionPage'))
+const VatSchemesPage = lazy(() => import('./pages/Settings/pages/VatSchemesPage'))
+const PaymentTermsPage = lazy(() => import('./pages/Settings/pages/PaymentTermsPage'))
+const BankDetailsPage = lazy(() => import('./pages/Settings/pages/BankDetailsPage'))
+const TermsConditionsPage = lazy(() => import('./pages/Settings/pages/TermsConditionsPage'))
+const ModulesPage = lazy(() => import('./pages/Settings/pages/ModulesPage'))
+const LabelSettingsPage = lazy(() => import('./pages/Settings/pages/LabelSettingsPage'))
+const EmailAccountsPage = lazy(() => import('./pages/Settings/pages/EmailAccountsPage'))
+const NotificationSettingsPage = lazy(() => import('./pages/Settings/pages/NotificationSettingsPage'))
+const ScannerDevicesPage = lazy(() => import('./pages/Settings/pages/ScannerDevicesPage'))
 
 // Transport Pages
-import TransportPage from './pages/Transport/TransportPage'
-import TransportDetailPage from './pages/Transport/TransportDetail'
+const TransportPage = lazy(() => import('./pages/Transport/TransportPage'))
+const TransportDetailPage = lazy(() => import('./pages/Transport/TransportDetail'))
 
 // Maintenance Pages
-import MaintenancePage from './pages/Maintenance/MaintenancePage'
-import MaintenanceDetailPage from './pages/Maintenance/MaintenanceDetail'
+const MaintenancePage = lazy(() => import('./pages/Maintenance/MaintenancePage'))
+const MaintenanceDetailPage = lazy(() => import('./pages/Maintenance/MaintenanceDetail'))
 
 // Crew Pages
-import CrewPage from './pages/Crew/CrewPage'
-import CrewDetail from './pages/Crew/CrewDetail'
-import MyAssignments from './pages/Crew/MyAssignments'
+const CrewPage = lazy(() => import('./pages/Crew/CrewPage'))
+const CrewDetail = lazy(() => import('./pages/Crew/CrewDetail'))
+const MyAssignments = lazy(() => import('./pages/Crew/MyAssignments'))
 
 // Documents Pages
-import DocumentsPage from './pages/Documents/DocumentsPage'
+const DocumentsPage = lazy(() => import('./pages/Documents/DocumentsPage'))
 
 // Insurance Pages
-import InsurancePage from './pages/Insurance/InsurancePage'
-import InsuranceDetail from './pages/Insurance/InsuranceDetail'
+const InsurancePage = lazy(() => import('./pages/Insurance/InsurancePage'))
+const InsuranceDetail = lazy(() => import('./pages/Insurance/InsuranceDetail'))
 
 // Reports Pages
-import ReportsPage from './pages/Reports/ReportsPage'
+const ReportsPage = lazy(() => import('./pages/Reports/ReportsPage'))
 
 // Contacts Pages
-import ContactsPage from './pages/Contacts/ContactsPage'
+const ContactsPage = lazy(() => import('./pages/Contacts/ContactsPage'))
 
 // Quotes Pages
-import QuotesPage from './pages/Quotes/QuotesPage'
-import QuoteDetailPage from './pages/Quotes/QuoteDetail'
+const QuotesPage = lazy(() => import('./pages/Quotes/QuotesPage'))
+const QuoteDetailPage = lazy(() => import('./pages/Quotes/QuoteDetail'))
 
 // Real Pages (formerly placeholders)
-import CalendarPage from './pages/Calendar/CalendarPage'
-import ShortagesPage from './pages/Shortages/ShortagesPage'
-import WorkshopPage from './pages/Workshop/WorkshopPage'
-import TimeTrackingPage from './pages/TimeTracking/TimeTrackingPage'
-import MailInboxPage from './pages/Mail/MailInboxPage'
-import MailSentPage from './pages/Mail/MailSentPage'
-import MailComposePage from './pages/Mail/MailComposePage'
+const CalendarPage = lazy(() => import('./pages/Calendar/CalendarPage'))
+const ShortagesPage = lazy(() => import('./pages/Shortages/ShortagesPage'))
+const WorkshopPage = lazy(() => import('./pages/Workshop/WorkshopPage'))
+const TimeTrackingPage = lazy(() => import('./pages/TimeTracking/TimeTrackingPage'))
+const MailInboxPage = lazy(() => import('./pages/Mail/MailInboxPage'))
+const MailSentPage = lazy(() => import('./pages/Mail/MailSentPage'))
+const MailComposePage = lazy(() => import('./pages/Mail/MailComposePage'))
 
-// Remaining Placeholder Pages
-import {
-  NewTourPage,
-  NewVehiclePage,
-  VehicleDetailPage,
-  NewMaintenanceTaskPage,
-  NewECheckPage,
-  MaintenancePlanDetailPage,
-  NewCrewMemberPage,
-  DocumentDetailPage,
-  NewDocumentPage,
-  NewClaimPage,
-} from './pages/PlaceholderPages'
+// Remaining Placeholder Pages — lazy-loaded as a single chunk
+const PlaceholderPages = lazy(() => import('./pages/PlaceholderPages'))
+const NewTourPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewTourPage })))
+const NewVehiclePage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewVehiclePage })))
+const VehicleDetailPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.VehicleDetailPage })))
+const NewMaintenanceTaskPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewMaintenanceTaskPage })))
+const NewECheckPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewECheckPage })))
+const MaintenancePlanDetailPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.MaintenancePlanDetailPage })))
+const NewCrewMemberPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewCrewMemberPage })))
+const DocumentDetailPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.DocumentDetailPage })))
+const NewDocumentPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewDocumentPage })))
+const NewClaimPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewClaimPage })))
 
 // Phase 4 Pages
-import AIPage from './pages/AI/AIPage'
-import WorkflowsPage from './pages/Workflows/WorkflowsPage'
-import FederationPage from './pages/Federation/FederationPage'
-import AuditPage from './pages/Audit/AuditPage'
-import AdminPage from './pages/Admin/AdminPage'
-import NotFoundPage from './pages/NotFound/NotFoundPage'
-import ProfilePage from './pages/Profile/ProfilePage'
+const AIPage = lazy(() => import('./pages/AI/AIPage'))
+const WorkflowsPage = lazy(() => import('./pages/Workflows/WorkflowsPage'))
+const FederationPage = lazy(() => import('./pages/Federation/FederationPage'))
+const AuditPage = lazy(() => import('./pages/Audit/AuditPage'))
+const AdminPage = lazy(() => import('./pages/Admin/AdminPage'))
+const NotFoundPage = lazy(() => import('./pages/NotFound/NotFoundPage'))
+const ProfilePage = lazy(() => import('./pages/Profile/ProfilePage'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
     },
   },
 })
@@ -208,6 +213,7 @@ function App() {
       <Theme appearance={isDarkMode ? 'dark' : 'light'} accentColor="cyan" grayColor="slate" panelBackground="translucent">
         <BrowserRouter>
           <SetupCheck>
+          <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--gray-11)' }}>Laden...</div>}>
           <Routes>
           <Route path="/setup" element={<SetupWizard />} />
           <Route path="/login" element={<LoginPage />} />
@@ -250,9 +256,9 @@ function App() {
 
             {/* Invoice Routes */}
             <Route path="invoices" element={<InvoiceListPage />} />
-            <Route path="invoices/new" element={<InvoiceFormPage />} />
+            <Route path="invoices/new" element={<InvoiceEditor />} />
             <Route path="invoices/:id" element={<InvoiceDetailPage />} />
-            <Route path="invoices/:id/edit" element={<InvoiceFormPage />} />
+            <Route path="invoices/:id/edit" element={<InvoiceEditor />} />
 
             {/* Quotes */}
             <Route path="quotes" element={<QuotesPage />} />
@@ -351,6 +357,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
+          </Suspense>
           </SetupCheck>
         <ToastContainer />
         <CommandPalette />

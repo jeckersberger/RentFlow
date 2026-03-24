@@ -1717,6 +1717,21 @@ export const configApi = {
     MOCK_MODE
       ? mockDelay({ success: true, message: 'Backup started' })
       : api.post('/api/v1/config/backup-now').then(res => res.data),
+
+  backupRestore: (backupId: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true, message: 'Backup restored' })
+      : api.post('/api/v1/config/backup-restore', { backup_id: backupId }).then(res => res.data),
+
+  backupUpload: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return MOCK_MODE
+      ? mockDelay({ success: true, message: 'Backup imported' })
+      : api.post('/api/v1/config/backup-upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }).then(res => res.data)
+  },
 }
 
 // ============================================================================

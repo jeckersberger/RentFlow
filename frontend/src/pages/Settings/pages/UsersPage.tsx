@@ -184,80 +184,112 @@ function UsersPage() {
       {showModal && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 1050,
+          alignItems: 'center', justifyContent: 'center', zIndex: 1050, padding: 'var(--spacing-4)',
         }} onClick={() => setShowModal(false)}>
-          <div className="sp-card" style={{ width: 520, maxWidth: '90vw', margin: 0 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-5)' }}>
+          <div
+            className="sp-card"
+            style={{
+              width: 500, maxWidth: '100%', margin: 0, padding: 0, overflow: 'hidden',
+              maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: 'var(--spacing-5) var(--spacing-6)', borderBottom: '1px solid var(--color-border)',
+              flexShrink: 0,
+            }}>
               <h2 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--color-text-primary)' }}>
                 Mitarbeiter einladen
               </h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)',
+                  padding: 4, borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--color-text-muted)' }}
+              >
                 <X size={20} />
               </button>
             </div>
 
             {inviteSuccess ? (
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-6)' }}>
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-8) var(--spacing-6)' }}>
                 <CheckCircle size={48} style={{ color: 'var(--color-success)', marginBottom: 'var(--spacing-3)' }} />
-                <p style={{ color: 'var(--color-success)', fontWeight: 'var(--font-weight-semibold)' }}>{inviteSuccess}</p>
+                <p style={{ color: 'var(--color-success)', fontWeight: 'var(--font-weight-semibold)', margin: 0 }}>{inviteSuccess}</p>
               </div>
             ) : (
               <>
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-4) 0' }}>
-                  Der Mitarbeiter erhaelt einen Einladungslink per E-Mail und kann sich selbst registrieren.
-                </p>
+                {/* Modal Body - Scrollable */}
+                <div style={{
+                  padding: 'var(--spacing-5) var(--spacing-6)', overflowY: 'auto', flex: 1,
+                }}>
+                  <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-5) 0', lineHeight: 1.5 }}>
+                    Der Mitarbeiter erhaelt einen Einladungslink per E-Mail und kann sich selbst registrieren.
+                  </p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-                  <div className="sp-field">
-                    <label className="sp-label">E-Mail-Adresse *</label>
-                    <input
-                      className="sp-input"
-                      type="email"
-                      placeholder="mitarbeiter@je-soundulight.de"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)' }}>
+                    <div className="sp-field">
+                      <label className="sp-label">E-Mail-Adresse *</label>
+                      <input
+                        className="sp-input"
+                        type="email"
+                        placeholder="mitarbeiter@je-soundulight.de"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        autoFocus
+                        style={{ width: '100%' }}
+                      />
+                    </div>
 
-                  <div className="sp-field">
-                    <label className="sp-label">Rolle</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
-                      {ROLES.map((role) => (
-                        <label key={role.value} style={{
-                          display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-3)',
-                          padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)',
-                          border: `1px solid ${inviteRole === role.value ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                          background: inviteRole === role.value ? 'rgba(0, 212, 255, 0.06)' : 'transparent',
-                          cursor: 'pointer', transition: 'all 0.15s ease',
-                        }}>
-                          <input
-                            type="radio" name="role" value={role.value}
-                            checked={inviteRole === role.value}
-                            onChange={() => setInviteRole(role.value)}
-                            style={{ marginTop: 2 }}
-                          />
-                          <div>
-                            <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
-                              {role.label}
+                    <div className="sp-field">
+                      <label className="sp-label" style={{ marginBottom: 'var(--spacing-2)' }}>Rolle</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+                        {ROLES.map((role) => (
+                          <label key={role.value} style={{
+                            display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)',
+                            padding: 'var(--spacing-3) var(--spacing-4)', borderRadius: 'var(--radius-md)',
+                            border: `1.5px solid ${inviteRole === role.value ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                            background: inviteRole === role.value ? 'rgba(0, 212, 255, 0.06)' : 'transparent',
+                            cursor: 'pointer', transition: 'all 0.15s ease',
+                          }}>
+                            <input
+                              type="radio" name="role" value={role.value}
+                              checked={inviteRole === role.value}
+                              onChange={() => setInviteRole(role.value)}
+                              style={{ accentColor: 'var(--color-primary)', flexShrink: 0, width: 16, height: 16 }}
+                            />
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
+                                {role.label}
+                              </div>
+                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', lineHeight: 1.4 }}>
+                                {role.desc}
+                              </div>
                             </div>
-                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                              {role.desc}
-                            </div>
-                          </div>
-                        </label>
-                      ))}
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </div>
+
+                  {inviteMutation.isError && (
+                    <p style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-3)', marginBottom: 0 }}>
+                      {(inviteMutation.error as Error)?.message || 'Fehler beim Einladen'}
+                    </p>
+                  )}
                 </div>
 
-                {inviteMutation.isError && (
-                  <p style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-3)' }}>
-                    {(inviteMutation.error as Error)?.message || 'Fehler beim Einladen'}
-                  </p>
-                )}
-
-                <div className="sp-footer">
+                {/* Modal Footer */}
+                <div style={{
+                  display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)',
+                  padding: 'var(--spacing-4) var(--spacing-6)', borderTop: '1px solid var(--color-border)',
+                  flexShrink: 0,
+                }}>
                   <button className="sp-btn sp-btn--secondary" onClick={() => setShowModal(false)}>Abbrechen</button>
                   <button
                     className="sp-btn sp-btn--primary"

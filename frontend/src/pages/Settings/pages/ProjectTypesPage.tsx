@@ -52,8 +52,10 @@ function ProjectTypesPage() {
     setNewColor('#6366f1')
   }
 
-  const removeType = (id: string) => {
-    setTypes((prev) => prev.filter((t) => t.id !== id))
+  const removeType = (t: ProjectType) => {
+    if (window.confirm(`Projekttyp '${t.name}' wirklich löschen?`)) {
+      setTypes((prev) => prev.filter((item) => item.id !== t.id))
+    }
   }
 
   if (isLoading) return (
@@ -105,7 +107,7 @@ function ProjectTypesPage() {
                 </td>
                 <td>{t.name}</td>
                 <td>
-                  <button onClick={() => removeType(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: 4 }}>
+                  <button onClick={() => removeType(t)} title={`Projekttyp '${t.name}' löschen`} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger, #ef4444)', padding: 4 }}>
                     <Trash2 size={14} />
                   </button>
                 </td>

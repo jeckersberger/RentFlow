@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { categoryApi } from '../../../services/api'
-import { Plus, Tags } from 'lucide-react'
+import { Plus, Tags, Trash2 } from 'lucide-react'
 import { Category } from '../../../types/equipment'
 import { SkeletonTable } from '../../../components/Skeleton/SkeletonLoader'
 import EmptyState from '../../../components/EmptyState/EmptyState'
@@ -30,6 +30,19 @@ function CategoriesPage() {
       setShowForm(false)
     },
   })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => categoryApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    },
+  })
+
+  const handleDelete = (cat: Category) => {
+    if (window.confirm(`Kategorie '${cat.name}' wirklich löschen?`)) {
+      deleteMutation.mutate(cat.id)
+    }
+  }
 
   const categories = Array.isArray(categoriesData) ? categoriesData : []
 
@@ -92,6 +105,7 @@ function CategoriesPage() {
                 <th>Icon</th>
                 <th>Name</th>
                 <th>Farbe</th>
+                <th style={{ width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -103,6 +117,16 @@ function CategoriesPage() {
                     {cat.color && (
                       <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', backgroundColor: cat.color, verticalAlign: 'middle' }} />
                     )}
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => handleDelete(cat)}
+                      disabled={deleteMutation.isPending}
+                      title={`Kategorie '${cat.name}' löschen`}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger, #ef4444)', padding: 4 }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </td>
                 </tr>
               ))}

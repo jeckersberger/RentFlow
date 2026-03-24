@@ -41,11 +41,17 @@ function ScannerDevicesPage() {
   }, [qrExpiry, qrToken])
 
   // Fetch devices
-  const { data: devices, isLoading } = useQuery<ScannerDevice[]>({
+  const { data: devicesData, isLoading } = useQuery<ScannerDevice[] | Record<string, unknown>>({
     queryKey: ['scanner-devices'],
     queryFn: () => scannerDeviceApi.list(),
     refetchInterval: 15000, // refresh every 15s for online status
+    retry: 1,
   })
+
+  // Unwrap response: API may return plain array or { data: [...] } or { devices: [...] }
+  const devices: ScannerDevice[] = Array.isArray(devicesData)
+    ? devicesData
+    : ((devicesData as any)?.data || (devicesData as any)?.devices || [])
 
   // Generate QR token
   const qrMutation = useMutation({
