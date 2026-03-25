@@ -10,11 +10,31 @@ function UpdatePage() {
   const queryClient = useQueryClient()
   const [updateLog, setUpdateLog] = useState<string | null>(null)
 
+  const [checkMessage, setCheckMessage] = useState<string | null>(null)
+
   const { data: versionInfo, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['system-version'],
     queryFn: () => systemApi.getVersion(),
     staleTime: 0,
   })
+
+  const handleCheckUpdate = async () => {
+    setCheckMessage(null)
+    try {
+      const result = await refetch()
+      const data = result.data
+      if (data?.update_available) {
+        setCheckMessage(`Update auf v${data.latest_version} verfuegbar!`)
+      } else {
+        setCheckMessage('Ihre Version ist aktuell. Kein Update verfuegbar.')
+      }
+      // Meldung nach 8 Sekunden ausblenden
+      setTimeout(() => setCheckMessage(null), 8000)
+    } catch {
+      setCheckMessage('Fehler beim Pruefen auf Updates.')
+      setTimeout(() => setCheckMessage(null), 5000)
+    }
+  }
 
   const updateMutation = useMutation({
     mutationFn: () => systemApi.triggerUpdate(),
@@ -88,13 +108,26 @@ function UpdatePage() {
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button
             className="btn btn--secondary"
-            onClick={() => refetch()}
+            onClick={handleCheckUpdate}
             disabled={isFetching}
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
             <RefreshCw size={16} className={isFetching ? 'spin' : ''} />
             {isFetching ? 'Pruefe...' : 'Auf Updates pruefen'}
           </button>
+          {checkMessage && (
+            <span style={{
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              color: checkMessage.includes('verfuegbar') ? '#f59e0b' : checkMessage.includes('aktuell') ? '#10b981' : '#ef4444',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}>
+              {checkMessage.includes('aktuell') ? <CheckCircle size={16} /> : checkMessage.includes('verfuegbar') ? <AlertTriangle size={16} /> : null}
+              {checkMessage}
+            </span>
+          )}
 
           {versionInfo?.update_available && (
             <button
