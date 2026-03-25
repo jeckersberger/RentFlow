@@ -1,9 +1,7 @@
 # RentFlow
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware)
-[![License](https://img.shields.io/badge/license-TBD-blue?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha-red?style=flat-square)](https://github.com/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware/releases)
-[![Status](https://img.shields.io/badge/status-pre--alpha-orange?style=flat-square)](https://github.com/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware)
+[![Version](https://img.shields.io/github/v/release/jeckersberger/RentFlow?style=flat-square)](https://github.com/jeckersberger/RentFlow/releases)
+[![License](https://img.shields.io/badge/license-proprietary-blue?style=flat-square)](LICENSE)
 
 **Self-hosted Lagerverwaltung & Rechnungssoftware fuer Veranstaltungstechnik**
 
@@ -17,38 +15,149 @@ Statt teure Cloud-Loesungen mit Lizenzgebuehren und Vendor Lock-in nutzen VT-Pro
 
 ---
 
-## Quick Start
+## Server-Empfehlung
 
-### Systemanforderungen
+RentFlow laeuft auf jedem Linux-Server mit Docker. Unsere Empfehlung:
+
+| Server | Spezifikation | Preis | Fuer wen |
+|--------|--------------|-------|----------|
+| **Hetzner CX22** | 2 vCPU, 4 GB RAM, 40 GB SSD | ~4 EUR/Monat | Kleine Firmen, zum Testen |
+| **Hetzner CX33** (empfohlen) | 4 vCPU, 8 GB RAM, 80 GB SSD | ~7 EUR/Monat | 1-20 Mitarbeiter, alle Module |
+| **Hetzner CX43** | 4 vCPU, 16 GB RAM, 160 GB SSD | ~14 EUR/Monat | 20+ Mitarbeiter, KI-Features intensiv |
+
+> **Wichtig:** NAS-Systeme (z.B. Synology) sind zu schwach fuer alle 18 Services. Nutze einen richtigen Cloud-Server.
+
+Alternativ funktioniert jeder VPS bei Netcup, DigitalOcean, AWS Lightsail etc. mit mindestens 4 GB RAM.
+
+---
+
+## Installation
+
+### Voraussetzungen
 
 | Anforderung | Minimum |
 |---|---|
-| Docker | 24+ |
-| Docker Compose | v2 |
-| RAM | 4 GB |
-| Festplatte | 10 GB |
-| OS | Linux (Ubuntu 22.04+ / Debian 12+) |
-| Domain | Empfohlen (fuer SSL via Let's Encrypt) |
+| **Betriebssystem** | Ubuntu 24.04 LTS (empfohlen) / Debian 12+ |
+| **Docker** | 24+ |
+| **Docker Compose** | v2 |
+| **RAM** | 4 GB (8 GB empfohlen) |
+| **Festplatte** | 20 GB (80 GB empfohlen) |
+| **Domain** | Empfohlen (fuer SSL + Cloudflare Tunnel) |
+| **Git** | 2.x |
 
-### Installation in 4 Schritten
+### Schritt 1: Server vorbereiten
 
 ```bash
-# 1. Repository klonen
-git clone https://github.com/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware.git rentflow
-cd rentflow
+# Ubuntu 24.04 — Docker + Tools installieren
+apt update && apt install -y docker.io docker-compose-v2 git ufw curl
 
-# 2. Environment-Variablen konfigurieren
-cp .env.example .env
-# .env bearbeiten: Passwoerter, Domain, E-Mail anpassen
+# Firewall einrichten (nur SSH + HTTP + HTTPS)
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow ssh
+ufw allow 80/tcp
+ufw allow 443/tcp
+echo "y" | ufw enable
 
-# 3. Starten
-docker compose up -d
+# Docker darf UFW nicht umgehen
+echo '{"iptables": false}' > /etc/docker/daemon.json
+systemctl restart docker
 
-# 4. Browser oeffnen
-# http://localhost:3000 -> Setup-Wizard
+# Sicherheit: fail2ban + automatische Updates
+apt install -y fail2ban unattended-upgrades
+systemctl enable fail2ban
 ```
 
-> **Empfohlener Server:** Hetzner CX21 (4 GB RAM, 40 GB SSD) ab 5 EUR/Monat
+### Schritt 2: RentFlow installieren
+
+```bash
+# Repository klonen
+cd /opt
+git clone https://github.com/jeckersberger/RentFlow.git rentflow
+cd rentflow
+
+# Environment konfigurieren
+cp .env.example .env
+nano .env  # Passwoerter, Domain, E-Mail anpassen
+
+# WICHTIG: Sichere Passwoerter setzen (keine Sonderzeichen wie + oder & in DB-Passwoertern)
+# Mindestens diese Werte aendern:
+#   POSTGRES_PASSWORD=EinSicheresPasswort123
+#   REDIS_PASSWORD=EinAnderesPasswort456
+#   JWT_SECRET=MindestensAchtundvierzigZeichenLangerGeheimschluessel
+#   ADMIN_EMAIL=deine@email.de
+#   ADMIN_PASSWORD=DeinAdminPasswort!
+#   DOMAIN=deine-domain.de
+
+# Speicherverzeichnisse anlegen
+mkdir -p /data/belege /data/dokumente /data/backups
+```
+
+### Schritt 3: Starten
+
+```bash
+# Alle Services bauen und starten
+docker compose build --parallel
+docker compose up -d
+
+# Pruefen ob alles laeuft
+docker compose ps
+```
+
+### Schritt 4: Setup-Wizard
+
+1. Browser oeffnen: `https://deine-domain.de` (oder `http://SERVER-IP:3000`)
+2. **Setup-Token** aus den Logs holen:
+   ```bash
+   docker exec rentflow-postgres psql -U rentflow -d auth_service \
+     -c "SELECT setup_token FROM auth.setup_state;"
+   ```
+3. Token eingeben, Firma konfigurieren, Admin-Account erstellen
+4. Fertig — einloggen und loslegen!
+
+### Schritt 5: HTTPS mit Cloudflare Tunnel (empfohlen)
+
+Kostenlose SSL-Verschluesselung + DDoS-Schutz ohne offene Ports:
+
+```bash
+# Cloudflare Tunnel Container starten (Token im Cloudflare Dashboard erstellen)
+docker run -d --name cloudflare-tunnel \
+  --restart unless-stopped \
+  --network rentflow_rentflow \
+  cloudflare/cloudflared:latest \
+  tunnel --no-autoupdate run --token DEIN_TUNNEL_TOKEN
+
+# Route im Cloudflare Dashboard konfigurieren:
+# subdomain.deine-domain.de -> http://rentflow-frontend:80
+```
+
+---
+
+## Updates
+
+RentFlow prueft automatisch auf neue Versionen. Wenn ein Update verfuegbar ist, erscheint ein **Banner im Dashboard** mit einem "Jetzt aktualisieren" Button.
+
+**Was passiert beim Update:**
+1. Automatisches Datenbank-Backup
+2. Neuester Code von GitHub holen
+3. Docker-Container neu bauen
+4. Services neustarten (Downtime: ~2-3 Minuten)
+
+**Manuelles Update:**
+```bash
+cd /opt/rentflow
+./scripts/update.sh
+```
+
+**Rollback bei Problemen:**
+```bash
+./scripts/rollback.sh
+```
+
+**Versionierung (Semantic Versioning):**
+- `v1.0.x` — Bugfixes (Patch)
+- `v1.x.0` — Neue Features (Minor)
+- `vX.0.0` — Grosse Aenderungen (Major)
 
 ---
 
@@ -284,7 +393,7 @@ Clients (Browser / PWA / Scanner)
 4. **Push**: `git push origin feature/dein-feature`
 5. **Pull Request erstellen**
 
-**Bug-Reports & Feature-Requests:** [GitHub Issues](https://github.com/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware/issues)
+**Bug-Reports & Feature-Requests:** [GitHub Issues](https://github.com/jeckersberger/RentFlow/issues)
 
 ---
 
@@ -309,6 +418,6 @@ Clients (Browser / PWA / Scanner)
 
 ## Support & Community
 
-- **Fragen & Diskussionen**: [GitHub Discussions](https://github.com/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware/discussions)
-- **Bug-Reports**: [GitHub Issues](https://github.com/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware/issues)
+- **Fragen & Diskussionen**: [GitHub Discussions](https://github.com/jeckersberger/RentFlow/discussions)
+- **Bug-Reports**: [GitHub Issues](https://github.com/jeckersberger/RentFlow/issues)
 - **Dokumentation**: [docs/](docs/)
