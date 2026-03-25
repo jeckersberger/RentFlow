@@ -23,42 +23,53 @@ interface RoleDefinition {
 const PERMISSIONS = [
   { key: 'equipment', label: 'Equipment verwalten' },
   { key: 'projects', label: 'Projekte verwalten' },
-  { key: 'invoices', label: 'Rechnungen erstellen' },
-  { key: 'crew', label: 'Crew verwalten' },
+  { key: 'invoices', label: 'Rechnungen & Belege' },
+  { key: 'contacts', label: 'Kontakte verwalten' },
+  { key: 'crew', label: 'Crew & Freelancer' },
+  { key: 'transport', label: 'Transport & Fahrzeuge' },
+  { key: 'warehouse', label: 'Lager & Inventur' },
   { key: 'scanner', label: 'Scanner nutzen' },
-  { key: 'reports', label: 'Reports sehen' },
-  { key: 'settings', label: 'Einstellungen aendern' },
-  { key: 'users', label: 'Benutzer verwalten' },
+  { key: 'maintenance', label: 'Werkstatt & Wartung' },
+  { key: 'reports', label: 'Reports & Auswertungen' },
+  { key: 'ai', label: 'KI-Assistent' },
+  { key: 'mail', label: 'E-Mail Posteingang' },
+  { key: 'settings', label: 'Servereinstellungen' },
+  { key: 'users', label: 'Personal einladen & verwalten' },
+  { key: 'updates', label: 'Software-Updates' },
 ]
 
 const DEFAULT_ROLES: RoleDefinition[] = [
   {
-    key: 'admin', label: 'Admin', description: 'Vollzugriff auf alle Bereiche', color: '#ef4444',
-    permissions: { equipment: 'full', projects: 'full', invoices: 'full', crew: 'full', scanner: 'full', reports: 'full', settings: 'full', users: 'full' },
+    key: 'admin', label: 'Admin', description: 'Vollzugriff inkl. Servereinstellungen, Updates und Personalverwaltung. Kann nicht gesperrt oder geloescht werden.', color: '#ef4444',
+    permissions: { equipment: 'full', projects: 'full', invoices: 'full', contacts: 'full', crew: 'full', transport: 'full', warehouse: 'full', scanner: 'full', maintenance: 'full', reports: 'full', ai: 'full', mail: 'full', settings: 'full', users: 'full', updates: 'full' },
   },
   {
-    key: 'manager', label: 'Manager', description: 'Projekte, Equipment, Rechnungen, Crew', color: '#f59e0b',
-    permissions: { equipment: 'full', projects: 'full', invoices: 'full', crew: 'full', scanner: 'full', reports: 'full', settings: 'none', users: 'none' },
+    key: 'projectlead', label: 'Projektleiter', description: 'Alles ausser Servereinstellungen, Updates und Personalverwaltung', color: '#f59e0b',
+    permissions: { equipment: 'full', projects: 'full', invoices: 'full', contacts: 'full', crew: 'full', transport: 'full', warehouse: 'full', scanner: 'full', maintenance: 'full', reports: 'full', ai: 'full', mail: 'full', settings: 'none', users: 'none', updates: 'none' },
   },
   {
-    key: 'warehouse', label: 'Lager', description: 'Equipment und Lagerverwaltung', color: '#10b981',
-    permissions: { equipment: 'full', projects: 'none', invoices: 'none', crew: 'none', scanner: 'full', reports: 'none', settings: 'none', users: 'none' },
+    key: 'warehouse', label: 'Lager', description: 'Equipment, Scanner, Lager, Inventur, Wartung', color: '#10b981',
+    permissions: { equipment: 'full', projects: 'read', invoices: 'none', contacts: 'none', crew: 'none', transport: 'read', warehouse: 'full', scanner: 'full', maintenance: 'full', reports: 'read', ai: 'none', mail: 'none', settings: 'none', users: 'none', updates: 'none' },
   },
   {
-    key: 'driver', label: 'Fahrer', description: 'Transport und zugewiesene Fahrten', color: '#3b82f6',
-    permissions: { equipment: 'none', projects: 'none', invoices: 'none', crew: 'none', scanner: 'full', reports: 'none', settings: 'none', users: 'none' },
+    key: 'driver', label: 'Fahrer', description: 'Transport, Scanner, zugewiesene Projekte einsehen', color: '#3b82f6',
+    permissions: { equipment: 'read', projects: 'read', invoices: 'none', contacts: 'none', crew: 'none', transport: 'full', warehouse: 'read', scanner: 'full', maintenance: 'none', reports: 'none', ai: 'none', mail: 'none', settings: 'none', users: 'none', updates: 'none' },
   },
   {
-    key: 'crew', label: 'Crew', description: 'Zugewiesene Projekte und Zeiterfassung', color: '#8b5cf6',
-    permissions: { equipment: 'none', projects: 'none', invoices: 'none', crew: 'none', scanner: 'full', reports: 'none', settings: 'none', users: 'none' },
+    key: 'technician', label: 'Techniker', description: 'Equipment, Projekte, Scanner, Wartung, Zeiterfassung', color: '#8b5cf6',
+    permissions: { equipment: 'full', projects: 'read', invoices: 'none', contacts: 'none', crew: 'read', transport: 'read', warehouse: 'read', scanner: 'full', maintenance: 'full', reports: 'none', ai: 'none', mail: 'none', settings: 'none', users: 'none', updates: 'none' },
   },
   {
-    key: 'freelancer', label: 'Freelancer', description: 'Externer Zugriff auf zugewiesene Bereiche', color: '#06b6d4',
-    permissions: { equipment: 'none', projects: 'none', invoices: 'none', crew: 'none', scanner: 'full', reports: 'none', settings: 'none', users: 'none' },
+    key: 'freelancer', label: 'Freelancer', description: 'Nur zugewiesene Projekte und Zeiterfassung', color: '#06b6d4',
+    permissions: { equipment: 'none', projects: 'read', invoices: 'none', contacts: 'none', crew: 'none', transport: 'none', warehouse: 'none', scanner: 'full', maintenance: 'none', reports: 'none', ai: 'none', mail: 'none', settings: 'none', users: 'none', updates: 'none' },
   },
   {
-    key: 'readonly', label: 'Nur Lesen', description: 'Kann alle Daten einsehen, nicht bearbeiten', color: '#6b7280',
-    permissions: { equipment: 'read', projects: 'read', invoices: 'read', crew: 'none', scanner: 'none', reports: 'read', settings: 'none', users: 'none' },
+    key: 'accounting', label: 'Buchhaltung', description: 'Rechnungen, Belege, Kontakte, Reports, DATEV-Export', color: '#ec4899',
+    permissions: { equipment: 'read', projects: 'read', invoices: 'full', contacts: 'full', crew: 'read', transport: 'none', warehouse: 'none', scanner: 'none', maintenance: 'none', reports: 'full', ai: 'read', mail: 'full', settings: 'none', users: 'none', updates: 'none' },
+  },
+  {
+    key: 'readonly', label: 'Nur Lesen', description: 'Kann alle Daten einsehen, nichts bearbeiten', color: '#6b7280',
+    permissions: { equipment: 'read', projects: 'read', invoices: 'read', contacts: 'read', crew: 'none', transport: 'read', warehouse: 'read', scanner: 'none', maintenance: 'read', reports: 'read', ai: 'none', mail: 'none', settings: 'none', users: 'none', updates: 'none' },
   },
 ]
 

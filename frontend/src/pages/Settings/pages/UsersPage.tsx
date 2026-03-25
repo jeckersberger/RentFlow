@@ -27,11 +27,13 @@ interface InvitationData {
 }
 
 const ROLES = [
-  { value: 'admin', label: 'Administrator', desc: 'Voller Zugriff auf alle Funktionen' },
-  { value: 'manager', label: 'Projektleiter', desc: 'Projekte, Equipment, Rechnungen verwalten' },
-  { value: 'warehouse', label: 'Lagerist', desc: 'Equipment, Lager, Scanner' },
-  { value: 'crew', label: 'Techniker/Crew', desc: 'Zugewiesene Projekte, Zeiterfassung' },
-  { value: 'driver', label: 'Fahrer', desc: 'Transport, Zugewiesene Fahrten' },
+  { value: 'admin', label: 'Administrator', desc: 'Vollzugriff inkl. Servereinstellungen und Personal' },
+  { value: 'projectlead', label: 'Projektleiter', desc: 'Alles ausser Servereinstellungen und Personal' },
+  { value: 'warehouse', label: 'Lager', desc: 'Equipment, Scanner, Lager, Inventur, Wartung' },
+  { value: 'technician', label: 'Techniker', desc: 'Equipment, Projekte, Scanner, Wartung' },
+  { value: 'driver', label: 'Fahrer', desc: 'Transport, Scanner, zugewiesene Projekte' },
+  { value: 'accounting', label: 'Buchhaltung', desc: 'Rechnungen, Belege, Kontakte, Reports' },
+  { value: 'freelancer', label: 'Freelancer', desc: 'Nur zugewiesene Projekte und Zeiterfassung' },
   { value: 'readonly', label: 'Nur Lesen', desc: 'Kann alle Daten einsehen, aber nicht bearbeiten' },
 ]
 
@@ -130,8 +132,6 @@ function UsersPage() {
   }
 
   const isCurrentUser = (user: UserData) => {
-    // Check if this user is the currently logged-in admin
-    // We can detect this by checking the stored user data
     try {
       const stored = localStorage.getItem('rentflow_user')
       if (stored) {
@@ -141,6 +141,28 @@ function UsersPage() {
     } catch { /* ignore */ }
     return false
   }
+
+  const isAdmin = (user: UserData) => {
+    const roles = Array.isArray(user.roles) ? user.roles : [user.roles]
+    return roles.some(r => ['admin', 'superadmin', 'owner'].includes(r?.toLowerCase()))
+  }
+
+  const canModifyUser = (user: UserData) => {
+    // Admins cannot be deactivated or deleted
+    if (isAdmin(user)) return false
+    // Cannot modify yourself
+    if (isCurrentUser(user)) return false
+    return true
+  }
+
+  // Einladung zurueckziehen
+  const revokeInvitationMutation = useMutation({
+    mutationFn: (invitationId: string) =>
+      api.delete(`/api/v1/invitations/${invitationId}`).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invitations'] })
+    },
+  })
 
   const users = usersData
   const invitations = Array.isArray(invitationsData) ? invitationsData.filter(i => i.status === 'pending') : []
@@ -182,6 +204,16 @@ function UsersPage() {
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
                   Gueltig bis {new Date(inv.expires_at).toLocaleDateString('de-DE')}
                 </span>
+                <button
+                  className="sp-btn sp-btn--secondary"
+                  style={{ padding: '2px 8px', fontSize: 'var(--font-size-xs)', color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
+                  onClick={() => revokeInvitationMutation.mutate(inv.id)}
+                  disabled={revokeInvitationMutation.isPending}
+                  title="Einladung zurueckziehen"
+                >
+                  <X size={12} style={{ marginRight: 2, verticalAlign: 'middle' }} />
+                  Zurueckziehen
+                </button>
               </div>
             </div>
           ))}
@@ -225,7 +257,7 @@ function UsersPage() {
                     <td><span className={roleBadge(Array.isArray(user.roles) ? user.roles[0] : '')}>{roleLabel(user.roles)}</span></td>
                     <td><span className={status.badge}>{status.label}</span></td>
                     <td style={{ textAlign: 'right' }}>
-                      {!isSelf && (
+                      {canModifyUser(user) && (
                         <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'flex-end' }}>
                           {isDeactivated ? (
                             <button
