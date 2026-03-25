@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
-	github.com/rs/zerolog v1.31.0
+	github.com/rs/zerolog v1.34.0
 )
 
 require (
