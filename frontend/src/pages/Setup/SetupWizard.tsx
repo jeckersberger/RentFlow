@@ -255,8 +255,11 @@ function SetupWizard() {
 
     if (!formData.admin_password?.trim()) {
       errors.admin_password = 'Passwort ist erforderlich'
-    } else if (formData.admin_password.length < 12) {
-      errors.admin_password = 'Passwort muss mindestens 12 Zeichen lang sein'
+    } else {
+      const pw = formData.admin_password
+      if (pw.length < 12 || !/[A-Z]/.test(pw) || !/[a-z]/.test(pw) || !/[0-9]/.test(pw) || !/[^A-Za-z0-9]/.test(pw)) {
+        errors.admin_password = 'Passwort erfuellt nicht alle Anforderungen (siehe oben)'
+      }
     }
 
     if (!formData.confirmPassword?.trim()) {
@@ -696,6 +699,26 @@ function SetupWizard() {
                   </span>
                 </div>
               )}
+              {(() => {
+                const pw = formData.admin_password || ''
+                const checks = [
+                  { ok: pw.length >= 12, label: 'Mindestens 12 Zeichen' },
+                  { ok: /[A-Z]/.test(pw), label: 'Mindestens ein Grossbuchstabe' },
+                  { ok: /[a-z]/.test(pw), label: 'Mindestens ein Kleinbuchstabe' },
+                  { ok: /[0-9]/.test(pw), label: 'Mindestens eine Zahl' },
+                  { ok: /[^A-Za-z0-9]/.test(pw), label: 'Mindestens ein Sonderzeichen' },
+                ]
+                return (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
+                    {checks.map((c, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.15rem', color: !pw ? 'var(--color-text-muted)' : c.ok ? '#10b981' : '#ef4444' }}>
+                        <span>{!pw ? '\u25CB' : c.ok ? '\u2713' : '\u2717'}</span>
+                        <span>{c.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
               {fieldErrors.admin_password && (
                 <p className="setup-form__error">{fieldErrors.admin_password}</p>
               )}
