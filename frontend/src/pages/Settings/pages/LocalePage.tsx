@@ -85,7 +85,7 @@ function LocalePage() {
             <select className="sp-select" value={form.language} onChange={(e) => update('language', e.target.value)}>
               <option value="de">Deutsch</option>
               <option value="en">English</option>
-              <option value="fr">Fran\u00e7ais</option>
+              <option value="fr">Fran{'\u00e7'}ais</option>
               <option value="nl">Nederlands</option>
             </select>
           </div>
