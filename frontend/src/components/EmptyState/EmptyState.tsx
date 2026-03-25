@@ -37,12 +37,15 @@ export default function EmptyState({
   // Resolve the icon into a ReactNode
   let iconNode: ReactNode = null
   if (icon) {
-    if (typeof icon === 'function') {
+    // Check for function components AND forwardRef components (e.g. Lucide icons)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isComponent = typeof icon === 'function' || (typeof icon === 'object' && icon !== null && '$$typeof' in (icon as any))
+    if (isComponent) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const IconComponent = icon as ComponentType<any>
       iconNode = <IconComponent size={32} strokeWidth={1.5} />
     } else {
-      iconNode = icon
+      iconNode = icon as ReactNode
     }
   }
 
