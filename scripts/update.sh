@@ -44,11 +44,23 @@ log "========================================="
 log "  RentFlow Update"
 log "========================================="
 
-# 1. Pre-flight check
+# 1. Pull latest code from GitHub
+log "Hole neuesten Code von GitHub..."
+git fetch origin Main 2>&1 || warn "Git fetch fehlgeschlagen"
+git merge origin/Main --no-edit 2>&1 || warn "Git merge fehlgeschlagen"
+
+# Update version in .env
+NEW_VERSION=$(grep '^APP_VERSION=' .env.example 2>/dev/null | cut -d= -f2)
+if [ -n "$NEW_VERSION" ] && [ -f .env ]; then
+    sed -i "s/^APP_VERSION=.*/APP_VERSION=$NEW_VERSION/" .env
+    log "Version aktualisiert auf $NEW_VERSION"
+fi
+
+# 2. Pre-flight check
 log "Pruefe laufende Services..."
 $COMPOSE $COMPOSE_FILES ps --format "table {{.Name}}\t{{.Status}}" 2>/dev/null || true
 
-# 2. Create backup before update
+# 3. Create backup before update
 if [ -x "$SCRIPT_DIR/backup.sh" ]; then
     log "Erstelle Backup vor dem Update..."
     "$SCRIPT_DIR/backup.sh" || warn "Backup fehlgeschlagen -- Update wird trotzdem fortgesetzt"
@@ -56,7 +68,7 @@ else
     warn "Backup-Script nicht gefunden, ueberspringe Backup"
 fi
 
-# 3. Pull latest images
+# 4. Pull latest images
 log "Lade neueste Images herunter..."
 if [ -n "$SERVICES" ]; then
     $COMPOSE $COMPOSE_FILES pull $SERVICES
@@ -64,12 +76,12 @@ else
     $COMPOSE $COMPOSE_FILES pull
 fi
 
-# 4. Rebuild local images if needed
+# 5. Rebuild local images
 log "Baue lokale Images neu..."
 if [ -n "$SERVICES" ]; then
-    $COMPOSE $COMPOSE_FILES build --no-cache $SERVICES
+    $COMPOSE $COMPOSE_FILES build --parallel $SERVICES
 else
-    $COMPOSE $COMPOSE_FILES build --no-cache
+    $COMPOSE $COMPOSE_FILES build --parallel
 fi
 
 # 5. Restart services

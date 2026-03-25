@@ -1775,13 +1775,18 @@ export const systemApi = {
     MOCK_MODE
       ? mockDelay({
           current_version: '1.0.0',
-          latest_version: '1.2.0',
+          latest_version: '1.0.1',
           update_available: true,
-          release_url: 'https://github.com/jeckersberger/rentflow/releases/tag/v1.2.0',
+          release_url: 'https://github.com/jeckersberger/RentFlow/releases/tag/v1.0.1',
           release_notes: 'Bug fixes and new features',
           checked_at: new Date().toISOString(),
         })
       : api.get('/api/v1/system/version').then(r => r.data),
+
+  triggerUpdate: () =>
+    MOCK_MODE
+      ? mockDelay({ success: true, output: 'Mock update completed' })
+      : api.post('/api/v1/system/update').then(r => r.data),
 }
 
 // ============================================================================

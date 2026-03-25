@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,7 +18,7 @@ import (
 )
 
 // CurrentVersion is the hardcoded current version of RentFlow
-const CurrentVersion = "1.0.0"
+const CurrentVersion = "1.0.1"
 
 // versionCache caches the GitHub release check result for 6 hours
 var (
@@ -839,7 +840,7 @@ func getVersionInfo(log logger.Logger) *VersionInfo {
 
 	// Try to fetch latest release from GitHub
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get("https://api.github.com/repos/jeckersberger/Lagerverwaltung-und-Rechnungsbearbeitungssoftware/releases/latest")
+	resp, err := client.Get("https://api.github.com/repos/jeckersberger/RentFlow/releases/latest")
 	if err != nil {
 		log.Warn("failed to check GitHub for updates", "error", err.Error())
 		cachedVersionInfo = info
@@ -881,6 +882,37 @@ func getVersionInfo(log logger.Logger) *VersionInfo {
 	cachedVersionInfo = info
 	versionCacheTime = time.Now()
 	return info
+}
+
+// TriggerUpdate signals the host to run the update script
+func (h *Handlers) TriggerUpdate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	h.logger.Info("Update triggered via API")
+
+	// Write trigger file that the host cron/watcher picks up
+	triggerFile := "/update-trigger/update-requested"
+	if err := os.WriteFile(triggerFile, []byte(time.Now().UTC().Format(time.RFC3339)), 0644); err != nil {
+		h.logger.Error("Failed to write update trigger", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			"data":    map[string]interface{}{"success": false, "error": err.Error()},
+			"message": "Update-Trigger konnte nicht geschrieben werden",
+		})
+		return
+	}
+
+	// Clear version cache
+	versionCacheMu.Lock()
+	cachedVersionInfo = nil
+	versionCacheMu.Unlock()
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    map[string]interface{}{"success": true},
+		"message": "Update gestartet. Die Anwendung wird in wenigen Minuten neu gestartet.",
+	})
 }
 
 // Helper functions
