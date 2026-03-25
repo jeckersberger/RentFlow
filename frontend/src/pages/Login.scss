@@ -417,6 +417,36 @@
 // VERSION NUMBER
 // ============================================================================
 
+.login-legal-links {
+  position: absolute;
+  bottom: calc(var(--spacing-4) + 1.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  z-index: 1;
+
+  a {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: #00d4ff;
+      opacity: 1;
+    }
+  }
+
+  &__separator {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    opacity: 0.3;
+  }
+}
+
 .login-version {
   position: absolute;
   bottom: var(--spacing-4);

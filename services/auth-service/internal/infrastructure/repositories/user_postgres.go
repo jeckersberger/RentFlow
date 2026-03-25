@@ -69,20 +69,20 @@ func (r *PostgresUserRepository) List(ctx context.Context, tenantID string, page
 	// Calculate offset
 	offset := (page - 1) * perPage
 
-	// Count total
-	countQuery := `SELECT COUNT(*) FROM auth.users WHERE tenant_id = $1`
+	// Count total (exclude soft-deleted users)
+	countQuery := `SELECT COUNT(*) FROM auth.users WHERE tenant_id = $1 AND status != 'deleted'`
 	var total int
 	if err := r.db.QueryRowContext(ctx, countQuery, tenantID).Scan(&total); err != nil {
 		r.logger.Error("failed to count users", err, "tenantID", tenantID)
 		return nil, 0, err
 	}
 
-	// Query users
+	// Query users (exclude soft-deleted)
 	query := `
 		SELECT id, tenant_id, email, password_hash, first_name, last_name,
 		       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 		FROM auth.users
-		WHERE tenant_id = $1
+		WHERE tenant_id = $1 AND status != 'deleted'
 		ORDER BY created_at DESC
 		LIMIT $2 OFFSET $3
 	`

@@ -41,7 +41,7 @@ function InvoiceDetailPage() {
     queryKey: ['config', 'finance.kleinunternehmer'],
     queryFn: () => configApi.get('finance.kleinunternehmer'),
   })
-  const isKleinunternehmer = invoice?.is_kleinunternehmer || kuConfig?.kleinunternehmer || kuConfig?.value || false
+  const isKleinunternehmer = invoice?.is_kleinunternehmer || kuConfig?.enabled || kuConfig?.kleinunternehmer || kuConfig?.value || false
 
   // Fetch dunning history from API
   const { data: dunningHistory = [] } = useQuery({

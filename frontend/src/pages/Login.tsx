@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { authApi } from '../services/api'
 import { Input } from '../components/Form/Input'
@@ -192,8 +192,14 @@ function LoginPage() {
         </div>
       </div>
 
+      <div className="login-legal-links">
+        <Link to="/impressum">Impressum</Link>
+        <span className="login-legal-links__separator">|</span>
+        <Link to="/datenschutz">Datenschutz</Link>
+      </div>
+
       <div className="login-version">
-        RentFlow v1.0.0
+        RentFlow v1.1.0
       </div>
     </div>
   )

@@ -121,8 +121,8 @@ func (s *UserService) Login(ctx context.Context, cmd LoginCommand) (*TokenPair, 
 		}
 	}
 
-	// Check if user is inactive
-	if user.Status == domain.UserStatusInactive {
+	// Check if user is inactive or deleted
+	if user.Status == domain.UserStatusInactive || user.Status == domain.UserStatusDeleted {
 		return nil, domain.ErrInvalidCredentials
 	}
 
@@ -460,7 +460,7 @@ func (s *UserService) ForgotPassword(ctx context.Context, cmd ForgotPasswordComm
 	s.logger.Info("password reset token generated",
 		"userID", user.ID,
 		"email", user.Email,
-		"token", token,
+		"tokenPrefix", token[:8]+"...",
 		"expiresAt", expiresAt.Format(time.RFC3339),
 	)
 
@@ -673,10 +673,49 @@ func (s *UserService) GenerateQRToken(ctx context.Context, userID, tenantID stri
 	return token, expiresAt, nil
 }
 
+// QRTokenStatus checks if a QR token has been redeemed (for browser polling)
+func (s *UserService) QRTokenStatus(ctx context.Context, qrToken string) (string, bool, error) {
+	if s.db == nil {
+		return "", false, fmt.Errorf("database not configured for QR tokens")
+	}
+
+	var expiresAt time.Time
+	var usedAt sql.NullTime
+	var status string
+
+	err := s.db.QueryRowContext(ctx,
+		`SELECT expires_at, used_at
+		 FROM auth.qr_login_tokens
+		 WHERE token = $1`,
+		qrToken,
+	).Scan(&expiresAt, &usedAt)
+
+	if err == sql.ErrNoRows {
+		return "not_found", false, nil
+	}
+	if err != nil {
+		s.logger.Error("failed to look up QR token status", err)
+		return "error", false, err
+	}
+
+	if usedAt.Valid {
+		status = "redeemed"
+		return status, true, nil
+	}
+
+	if time.Now().After(expiresAt) {
+		status = "expired"
+		return status, false, nil
+	}
+
+	status = "pending"
+	return status, false, nil
+}
+
 // Helper functions
 
 func (s *UserService) toUserDTO(user *domain.User) *UserDTO {
-	return &UserDTO{
+	dto := &UserDTO{
 		ID:        user.ID,
 		Email:     user.Email,
 		FirstName: user.FirstName,
@@ -687,6 +726,53 @@ func (s *UserService) toUserDTO(user *domain.User) *UserDTO {
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 	}
+	if user.LastLoginAt != nil {
+		formatted := user.LastLoginAt.Format(time.RFC3339)
+		dto.LastLoginAt = &formatted
+	}
+	return dto
+}
+
+// ActivateUser reactivates a deactivated user
+func (s *UserService) ActivateUser(ctx context.Context, cmd DeactivateUserCommand) error {
+	user, err := s.userRepo.FindByID(ctx, cmd.UserID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return domain.ErrUserNotFound
+	}
+
+	user.Status = domain.UserStatusActive
+	user.UpdatedAt = time.Now()
+	if err := s.userRepo.Save(ctx, user); err != nil {
+		s.logger.Error("failed to activate user", err, "id", cmd.UserID)
+		return err
+	}
+
+	s.logger.Info("user activated", "id", cmd.UserID)
+	return nil
+}
+
+// SoftDeleteUser marks a user as deleted
+func (s *UserService) SoftDeleteUser(ctx context.Context, cmd DeactivateUserCommand) error {
+	user, err := s.userRepo.FindByID(ctx, cmd.UserID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return domain.ErrUserNotFound
+	}
+
+	user.Status = domain.UserStatusDeleted
+	user.UpdatedAt = time.Now()
+	if err := s.userRepo.Save(ctx, user); err != nil {
+		s.logger.Error("failed to soft-delete user", err, "id", cmd.UserID)
+		return err
+	}
+
+	s.logger.Info("user soft-deleted", "id", cmd.UserID)
+	return nil
 }
 
 // InviteUser creates an invitation for a new employee

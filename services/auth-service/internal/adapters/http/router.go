@@ -49,6 +49,7 @@ func SetupRoutes(
 	mux.HandleFunc("POST /api/v1/auth/register", handlers.Register)
 	mux.HandleFunc("POST /api/v1/auth/refresh", handlers.Refresh)
 	mux.HandleFunc("POST /api/v1/auth/qr-login", handlers.QRLogin)
+	mux.HandleFunc("GET /api/v1/auth/qr-status/{token}", handlers.QRStatus)
 	mux.HandleFunc("POST /api/v1/auth/forgot-password", handlers.ForgotPassword)
 	mux.HandleFunc("POST /api/v1/auth/reset-password", handlers.ResetPassword)
 
@@ -70,6 +71,8 @@ func SetupRoutes(
 	mux.HandleFunc("GET /api/v1/users", authMiddleware(http.HandlerFunc(handlers.ListUsers)).ServeHTTP)
 	mux.HandleFunc("GET /api/v1/users/{id}", authMiddleware(http.HandlerFunc(handlers.GetUser)).ServeHTTP)
 	mux.HandleFunc("PUT /api/v1/users/{id}/roles", authMiddleware(http.HandlerFunc(handlers.AssignRole)).ServeHTTP)
+	mux.HandleFunc("PUT /api/v1/users/{id}/deactivate", authMiddleware(http.HandlerFunc(handlers.DeactivateUser)).ServeHTTP)
+	mux.HandleFunc("PUT /api/v1/users/{id}/activate", authMiddleware(http.HandlerFunc(handlers.ActivateUser)).ServeHTTP)
 	mux.HandleFunc("DELETE /api/v1/users/{id}", authMiddleware(http.HandlerFunc(handlers.DeleteUser)).ServeHTTP)
 
 	// Invitation management (admin only, authenticated)
@@ -79,10 +82,10 @@ func SetupRoutes(
 	// Accept invitation (no auth required - public endpoint)
 	mux.HandleFunc("POST /api/v1/invitations/{token}/accept", handlers.AcceptInvitation)
 
-	// Tenant management
-	mux.HandleFunc("POST /api/v1/tenants", handlers.CreateTenant)
-	mux.HandleFunc("GET /api/v1/tenants/{id}", handlers.GetTenant)
-	mux.HandleFunc("PUT /api/v1/tenants/{id}", handlers.UpdateTenant)
+	// Tenant management (authenticated — prevent unauthorized access)
+	mux.HandleFunc("POST /api/v1/tenants", authMiddleware(http.HandlerFunc(handlers.CreateTenant)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/tenants/{id}", authMiddleware(http.HandlerFunc(handlers.GetTenant)).ServeHTTP)
+	mux.HandleFunc("PUT /api/v1/tenants/{id}", authMiddleware(http.HandlerFunc(handlers.UpdateTenant)).ServeHTTP)
 
 	// System endpoints (authenticated)
 	mux.HandleFunc("GET /api/v1/system/version", authMiddleware(http.HandlerFunc(handlers.GetSystemVersion)).ServeHTTP)
@@ -149,8 +152,9 @@ func createRS256Middleware(publicKeyPEM string, log logger.Logger) func(http.Han
 				return
 			}
 
-			// Fallback to legacy validation if public key is not available
-			next.ServeHTTP(w, r)
+			// No valid authentication — reject request
+			http.Error(w, "authentication failed", http.StatusUnauthorized)
+			return
 		})
 	}
 }
@@ -188,10 +192,16 @@ func verifyRS256Token(token string, publicKey *rsa.PublicKey) (*application.Acce
 		return nil, err
 	}
 
+	// Verify token is not expired
+	if claims.ExpiresAt > 0 && time.Now().Unix() > claims.ExpiresAt {
+		return nil, ErrTokenExpired
+	}
+
 	return &claims, nil
 }
 
 var (
 	ErrInvalidTokenFormat = errors.New("invalid token format")
 	ErrInvalidSignature   = errors.New("invalid signature")
+	ErrTokenExpired       = errors.New("token expired")
 )

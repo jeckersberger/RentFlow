@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { userApi, api } from '../../../services/api'
-import { UserPlus, X, Users, Mail, Clock, CheckCircle } from 'lucide-react'
+import { UserPlus, X, Users, Mail, Clock, CheckCircle, ShieldOff, ShieldCheck, Trash2, AlertTriangle } from 'lucide-react'
 import { SkeletonTable } from '../../../components/Skeleton/SkeletonLoader'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import '../Settings.scss'
@@ -13,6 +13,7 @@ interface UserData {
   email: string
   roles: string[]
   status: string
+  last_login_at: string | null
   created_at: string
 }
 
@@ -40,6 +41,7 @@ function UsersPage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('crew')
   const [inviteSuccess, setInviteSuccess] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState<UserData | null>(null)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: usersRaw, isLoading } = useQuery<any>({
@@ -69,6 +71,28 @@ function UsersPage() {
     },
   })
 
+  const deactivateMutation = useMutation({
+    mutationFn: (userId: string) => userApi.deactivate(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+
+  const activateMutation = useMutation({
+    mutationFn: (userId: string) => userApi.activate(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) => userApi.delete(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      setDeleteConfirm(null)
+    },
+  })
+
   const roleBadge = (role: string) => {
     if (['admin', 'owner', 'superadmin'].includes(role?.toLowerCase())) return 'badge badge--primary'
     if (['manager'].includes(role?.toLowerCase())) return 'badge badge--success'
@@ -81,19 +105,41 @@ function UsersPage() {
     return found?.label || role
   }
 
-  const statusBadge = (status: string) => {
-    if (status === 'active') return 'badge badge--success'
-    if (['invited', 'pending'].includes(status)) return 'badge badge--warning'
-    return 'badge badge--secondary'
+  const getUserStatus = (user: UserData): { badge: string; label: string } => {
+    // Gesperrt (inactive)
+    if (user.status === 'inactive' || user.status === 'disabled') {
+      return { badge: 'badge badge--danger', label: 'Gesperrt' }
+    }
+    // Einladung offen: active status but never logged in
+    if (user.status === 'active' && !user.last_login_at) {
+      return { badge: 'badge badge--warning', label: 'Einladung offen' }
+    }
+    // Aktiv
+    if (user.status === 'active') {
+      return { badge: 'badge badge--success', label: 'Aktiv' }
+    }
+    // Locked
+    if (user.status === 'locked') {
+      return { badge: 'badge badge--danger', label: 'Gesperrt' }
+    }
+    return { badge: 'badge badge--secondary', label: user.status }
   }
 
-  const statusLabel = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'active': return 'Aktiv'
-      case 'invited': case 'pending': return 'Eingeladen'
-      case 'inactive': case 'disabled': return 'Deaktiviert'
-      default: return status
-    }
+  const isUserDeactivated = (user: UserData) => {
+    return user.status === 'inactive' || user.status === 'disabled'
+  }
+
+  const isCurrentUser = (user: UserData) => {
+    // Check if this user is the currently logged-in admin
+    // We can detect this by checking the stored user data
+    try {
+      const stored = localStorage.getItem('rentflow_user')
+      if (stored) {
+        const currentUser = JSON.parse(stored)
+        return currentUser.id === user.id
+      }
+    } catch { /* ignore */ }
+    return false
   }
 
   const users = usersData
@@ -145,7 +191,7 @@ function UsersPage() {
       {/* Active Users */}
       <div className="sp-card" style={{ padding: 0, overflow: 'hidden' }}>
         {isLoading ? (
-          <SkeletonTable rows={4} columns={4} />
+          <SkeletonTable rows={4} columns={5} />
         ) : users.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -162,23 +208,119 @@ function UsersPage() {
                 <th>E-Mail</th>
                 <th>Rolle</th>
                 <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Aktionen</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td style={{ fontWeight: 'var(--font-weight-medium)' }}>
-                    {user.first_name} {user.last_name}
-                  </td>
-                  <td>{user.email}</td>
-                  <td><span className={roleBadge(Array.isArray(user.roles) ? user.roles[0] : '')}>{roleLabel(user.roles)}</span></td>
-                  <td><span className={statusBadge(user.status)}>{statusLabel(user.status)}</span></td>
-                </tr>
-              ))}
+              {users.map((user) => {
+                const status = getUserStatus(user)
+                const isSelf = isCurrentUser(user)
+                const isDeactivated = isUserDeactivated(user)
+                return (
+                  <tr key={user.id} style={isDeactivated ? { opacity: 0.6 } : undefined}>
+                    <td style={{ fontWeight: 'var(--font-weight-medium)' }}>
+                      {user.first_name} {user.last_name}
+                    </td>
+                    <td>{user.email}</td>
+                    <td><span className={roleBadge(Array.isArray(user.roles) ? user.roles[0] : '')}>{roleLabel(user.roles)}</span></td>
+                    <td><span className={status.badge}>{status.label}</span></td>
+                    <td style={{ textAlign: 'right' }}>
+                      {!isSelf && (
+                        <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'flex-end' }}>
+                          {isDeactivated ? (
+                            <button
+                              className="sp-btn sp-btn--secondary"
+                              style={{ padding: '4px 10px', fontSize: 'var(--font-size-xs)' }}
+                              onClick={() => activateMutation.mutate(user.id)}
+                              disabled={activateMutation.isPending}
+                              title="Benutzer entsperren"
+                            >
+                              <ShieldCheck size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                              Entsperren
+                            </button>
+                          ) : (
+                            <button
+                              className="sp-btn sp-btn--secondary"
+                              style={{ padding: '4px 10px', fontSize: 'var(--font-size-xs)' }}
+                              onClick={() => deactivateMutation.mutate(user.id)}
+                              disabled={deactivateMutation.isPending}
+                              title="Benutzer sperren"
+                            >
+                              <ShieldOff size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                              Sperren
+                            </button>
+                          )}
+                          <button
+                            className="sp-btn sp-btn--secondary"
+                            style={{
+                              padding: '4px 10px', fontSize: 'var(--font-size-xs)',
+                              color: 'var(--color-danger)', borderColor: 'var(--color-danger)',
+                            }}
+                            onClick={() => setDeleteConfirm(user)}
+                            title="Benutzer loeschen"
+                          >
+                            <Trash2 size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                            Loeschen
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1050, padding: 'var(--spacing-4)',
+        }} onClick={() => setDeleteConfirm(null)}>
+          <div
+            className="sp-card"
+            style={{
+              width: 440, maxWidth: '100%', margin: 0, padding: 0, overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{
+              padding: 'var(--spacing-6)', textAlign: 'center',
+            }}>
+              <AlertTriangle size={48} style={{ color: 'var(--color-danger)', marginBottom: 'var(--spacing-3)' }} />
+              <h3 style={{ margin: '0 0 var(--spacing-2) 0', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-lg)' }}>
+                Benutzer loeschen?
+              </h3>
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-2) 0' }}>
+                Sind Sie sicher, dass Sie den Benutzer <strong>{deleteConfirm.first_name} {deleteConfirm.last_name}</strong> ({deleteConfirm.email}) loeschen moechten?
+              </p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)', margin: 0 }}>
+                Der Benutzer wird deaktiviert und kann sich nicht mehr einloggen.
+              </p>
+            </div>
+            <div style={{
+              display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)',
+              padding: 'var(--spacing-4) var(--spacing-6)', borderTop: '1px solid var(--color-border)',
+            }}>
+              <button className="sp-btn sp-btn--secondary" onClick={() => setDeleteConfirm(null)}>
+                Abbrechen
+              </button>
+              <button
+                className="sp-btn"
+                style={{
+                  background: 'var(--color-danger)', color: '#fff', border: 'none',
+                }}
+                onClick={() => deleteMutation.mutate(deleteConfirm.id)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Wird geloescht...' : 'Endgueltig loeschen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invite Modal */}
       {showModal && (

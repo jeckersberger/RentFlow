@@ -130,6 +130,20 @@ export const authApi = {
     MOCK_MODE
       ? mockDelay({ success: true })
       : api.post('/api/v1/auth/sessions/revoke-others').then(res => res.data),
+
+  generateQRToken: () =>
+    MOCK_MODE
+      ? mockDelay({ qr_token: 'mock-qr-token-12345', expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString() })
+      : api.post('/api/v1/auth/qr-token').then(res => {
+          // qr-token endpoint returns { qr_token, expires_at } without data/message envelope
+          const d = res.data
+          return { qr_token: d.qr_token, expires_at: d.expires_at }
+        }),
+
+  getQRStatus: (token: string) =>
+    MOCK_MODE
+      ? mockDelay({ status: 'pending', redeemed: false })
+      : api.get(`/api/v1/auth/qr-status/${token}`).then(res => res.data as { status: string; redeemed: boolean }),
 }
 
 // ============================================================================
@@ -323,6 +337,15 @@ export const userApi = {
 
   create: (data: { name: string; email: string; password: string; role: string }) =>
     api.post('/api/v1/users', data).then(res => res.data),
+
+  deactivate: (id: string) =>
+    api.put(`/api/v1/users/${id}/deactivate`).then(res => res.data),
+
+  activate: (id: string) =>
+    api.put(`/api/v1/users/${id}/activate`).then(res => res.data),
+
+  delete: (id: string) =>
+    api.delete(`/api/v1/users/${id}`).then(res => res.data),
 }
 
 // Category API endpoints

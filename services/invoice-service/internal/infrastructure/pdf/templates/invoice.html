@@ -460,6 +460,13 @@
     </table>
     {{end}}
 
+    <!-- Kleinunternehmer Hinweis (vor den Summen) -->
+    {{if .IsKleinunternehmer}}
+    <div class="kleinunternehmer-notice">
+        <strong>Hinweis:</strong> {{if .KleinunternehmerText}}{{.KleinunternehmerText}}{{else}}Gemaess §19 UStG wird keine Umsatzsteuer berechnet.{{end}}
+    </div>
+    {{end}}
+
     <!-- Summen und Bemerkungen -->
     <div class="totals-section">
         <div class="totals-notes">
@@ -489,13 +496,6 @@
             </table>
         </div>
     </div>
-
-    <!-- Kleinunternehmer Hinweis -->
-    {{if .IsKleinunternehmer}}
-    <div class="kleinunternehmer-notice">
-        <strong>Hinweis:</strong> {{.KleinunternehmerText}}
-    </div>
-    {{end}}
 
     <!-- Bankverbindung -->
     <div class="bank-section">

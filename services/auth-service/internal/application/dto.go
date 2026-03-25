@@ -2,15 +2,16 @@ package application
 
 // UserDTO represents a user in responses
 type UserDTO struct {
-	ID        string   `json:"id"`
-	Email     string   `json:"email"`
-	FirstName string   `json:"first_name"`
-	LastName  string   `json:"last_name"`
-	Roles     []string `json:"roles"`
-	TenantID  string   `json:"tenant_id"`
-	Status    string   `json:"status"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
+	ID          string   `json:"id"`
+	Email       string   `json:"email"`
+	FirstName   string   `json:"first_name"`
+	LastName    string   `json:"last_name"`
+	Roles       []string `json:"roles"`
+	TenantID    string   `json:"tenant_id"`
+	Status      string   `json:"status"`
+	LastLoginAt *string  `json:"last_login_at"`
+	CreatedAt   string   `json:"created_at"`
+	UpdatedAt   string   `json:"updated_at"`
 }
 
 // TokenPair represents access and refresh tokens

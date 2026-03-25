@@ -21,6 +21,7 @@ const (
 	UserStatusActive   UserStatus = "active"
 	UserStatusInactive UserStatus = "inactive"
 	UserStatusLocked   UserStatus = "locked"
+	UserStatusDeleted  UserStatus = "deleted"
 )
 
 // Role represents a user role

@@ -2,7 +2,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useState, useRef, useEffect } from 'react'
 import { NotificationCenter } from '../NotificationCenter/NotificationCenter'
-import { User, LogOut, ChevronDown } from 'lucide-react'
+import { User, LogOut, ChevronDown, QrCode } from 'lucide-react'
+import { QRLoginModal } from '../QRLoginModal/QRLoginModal'
 import './Header.scss'
 
 const pageTitles: Record<string, string> = {
@@ -43,6 +44,7 @@ function Header() {
   const logout = useAuthStore((state) => state.logout)
   const [searchQuery, setSearchQuery] = useState('')
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [qrModalOpen, setQrModalOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const pageTitle = getPageTitle(location.pathname)
@@ -71,6 +73,7 @@ function Header() {
   }
 
   return (
+    <>
     <header className="header">
       <div className="header__content">
         <div className="header__left">
@@ -113,6 +116,13 @@ function Header() {
                   <User size={16} />
                   <span>Profil</span>
                 </button>
+                <button
+                  className="header__user-menu-item"
+                  onClick={() => { setUserMenuOpen(false); setQrModalOpen(true) }}
+                >
+                  <QrCode size={16} />
+                  <span>QR-Code fuer Scanner</span>
+                </button>
                 <div className="header__user-menu-divider" />
                 <button
                   className="header__user-menu-item header__user-menu-item--danger"
@@ -127,6 +137,8 @@ function Header() {
         </div>
       </div>
     </header>
+    <QRLoginModal isOpen={qrModalOpen} onClose={() => setQrModalOpen(false)} />
+    </>
   )
 }
 

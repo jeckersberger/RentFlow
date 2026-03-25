@@ -82,7 +82,7 @@ function InvoiceEditor() {
     queryKey: ['config', 'finance.kleinunternehmer'],
     queryFn: () => configApi.get('finance.kleinunternehmer'),
   })
-  const isKleinunternehmer = kuConfig?.kleinunternehmer ?? kuConfig?.value ?? false
+  const isKleinunternehmer = kuConfig?.enabled ?? kuConfig?.kleinunternehmer ?? kuConfig?.value ?? false
 
   const { data: bankConfig } = useQuery({
     queryKey: ['config', 'finance.bank'],

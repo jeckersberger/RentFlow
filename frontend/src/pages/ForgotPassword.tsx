@@ -122,7 +122,7 @@ function ForgotPasswordPage() {
         )}
       </div>
 
-      <div className="login-version">RentFlow v1.0.0</div>
+      <div className="login-version">RentFlow v1.1.0</div>
     </div>
   )
 }

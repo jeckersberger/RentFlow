@@ -41,7 +41,7 @@ function InvoiceListPage() {
     queryKey: ['config', 'finance.kleinunternehmer'],
     queryFn: () => configApi.get('finance.kleinunternehmer'),
   })
-  const isKleinunternehmer = kuConfig?.kleinunternehmer ?? kuConfig?.value ?? false
+  const isKleinunternehmer = kuConfig?.enabled ?? kuConfig?.kleinunternehmer ?? kuConfig?.value ?? false
 
   // Load projects for the "Aus Projekt erstellen" modal
   const { data: projectsData } = useQuery({

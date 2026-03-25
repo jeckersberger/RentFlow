@@ -18,7 +18,7 @@ import (
 )
 
 // CurrentVersion is the hardcoded current version of RentFlow
-const CurrentVersion = "1.0.1"
+const CurrentVersion = "1.1.0"
 
 // versionCache caches the GitHub release check result for 6 hours
 var (
@@ -469,26 +469,94 @@ func (h *Handlers) AssignRole(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DeleteUser handles user deletion (admin only)
-func (h *Handlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
-		return
-	}
-
+// DeactivateUser handles user deactivation/lock (admin only)
+func (h *Handlers) DeactivateUser(w http.ResponseWriter, r *http.Request) {
 	if !middleware.HasRole(r.Context(), "admin") {
 		writeError(w, http.StatusForbidden, "FORBIDDEN", "Admin role required")
 		return
 	}
 
-	userID := extractUserIDFromPath(r.URL.Path)
+	userID := r.PathValue("id")
+	if userID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "User ID is required")
+		return
+	}
+
+	// Prevent self-deactivation
+	currentUserID := middleware.GetUserID(r.Context())
+	if currentUserID == userID {
+		writeError(w, http.StatusBadRequest, "SELF_DEACTIVATION", "You cannot deactivate your own account")
+		return
+	}
+
+	tenantID := middleware.GetTenantIDFromClaims(r.Context())
+	if err := h.userService.DeactivateUser(r.Context(), application.DeactivateUserCommand{
+		UserID:   userID,
+		TenantID: tenantID,
+	}); err != nil {
+		h.logger.Error("deactivate user error", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "User deactivated successfully",
+	})
+}
+
+// ActivateUser handles user reactivation (admin only)
+func (h *Handlers) ActivateUser(w http.ResponseWriter, r *http.Request) {
+	if !middleware.HasRole(r.Context(), "admin") {
+		writeError(w, http.StatusForbidden, "FORBIDDEN", "Admin role required")
+		return
+	}
+
+	userID := r.PathValue("id")
 	if userID == "" {
 		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "User ID is required")
 		return
 	}
 
 	tenantID := middleware.GetTenantIDFromClaims(r.Context())
-	if err := h.userService.DeactivateUser(r.Context(), application.DeactivateUserCommand{
+	if err := h.userService.ActivateUser(r.Context(), application.DeactivateUserCommand{
+		UserID:   userID,
+		TenantID: tenantID,
+	}); err != nil {
+		h.logger.Error("activate user error", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "User activated successfully",
+	})
+}
+
+// DeleteUser handles user soft-deletion (admin only)
+func (h *Handlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	if !middleware.HasRole(r.Context(), "admin") {
+		writeError(w, http.StatusForbidden, "FORBIDDEN", "Admin role required")
+		return
+	}
+
+	userID := r.PathValue("id")
+	if userID == "" {
+		userID = extractUserIDFromPath(r.URL.Path)
+	}
+	if userID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "User ID is required")
+		return
+	}
+
+	// Prevent self-deletion
+	currentUserID := middleware.GetUserID(r.Context())
+	if currentUserID == userID {
+		writeError(w, http.StatusBadRequest, "SELF_DELETION", "You cannot delete your own account")
+		return
+	}
+
+	tenantID := middleware.GetTenantIDFromClaims(r.Context())
+	if err := h.userService.SoftDeleteUser(r.Context(), application.DeactivateUserCommand{
 		UserID:   userID,
 		TenantID: tenantID,
 	}); err != nil {
@@ -806,6 +874,32 @@ func (h *Handlers) GenerateQRToken(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"qr_token":   token,
 		"expires_at": expiresAt.Format(time.RFC3339),
+	})
+}
+
+// QRStatus returns the status of a QR login token (for browser polling)
+func (h *Handlers) QRStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
+		return
+	}
+
+	token := r.PathValue("token")
+	if token == "" {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Token is required")
+		return
+	}
+
+	status, redeemed, err := h.userService.QRTokenStatus(r.Context(), token)
+	if err != nil {
+		h.logger.Error("failed to check QR token status", err)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":   status,
+		"redeemed": redeemed,
 	})
 }
 

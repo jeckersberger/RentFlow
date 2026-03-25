@@ -51,7 +51,7 @@ function QuoteNew() {
     queryKey: ['config', 'finance.kleinunternehmer'],
     queryFn: () => configApi.get('finance.kleinunternehmer'),
   })
-  const isKleinunternehmer = kuConfig?.kleinunternehmer ?? kuConfig?.value ?? false
+  const isKleinunternehmer = kuConfig?.enabled ?? kuConfig?.kleinunternehmer ?? kuConfig?.value ?? false
 
   const { data: companyConfig } = useQuery({
     queryKey: ['config', 'company.details'],

@@ -22,6 +22,8 @@ import ForgotPasswordPage from './pages/ForgotPassword'
 import ResetPasswordPage from './pages/ResetPassword'
 import BookingResponsePage from './pages/BookingResponse'
 import SetupWizard from './pages/Setup/SetupWizard'
+import ImpressumPage from './pages/Legal/ImpressumPage'
+import DatenschutzPage from './pages/Legal/DatenschutzPage'
 
 // Lazy-loaded pages (code-split for faster initial load)
 const DashboardPage = lazy(() => import('./pages/Dashboard'))
@@ -224,6 +226,8 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="/booking/:token" element={<BookingResponsePage />} />
+          <Route path="/impressum" element={<ImpressumPage />} />
+          <Route path="/datenschutz" element={<DatenschutzPage />} />
 
           <Route
             path="/*"

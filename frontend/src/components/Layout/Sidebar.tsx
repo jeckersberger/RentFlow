@@ -382,7 +382,7 @@ function Sidebar() {
             )}
           </div>
 
-          {!collapsed && <p className="sidebar__version">v1.0.0</p>}
+          {!collapsed && <p className="sidebar__version">v1.1.0</p>}
         </div>
       </aside>
 
