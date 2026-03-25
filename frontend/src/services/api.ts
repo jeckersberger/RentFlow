@@ -1793,19 +1793,43 @@ export const configApi = {
   backupNow: () =>
     MOCK_MODE
       ? mockDelay({ success: true, message: 'Backup started' })
-      : api.post('/api/v1/config/backup-now').then(res => res.data),
+      : api.post('/api/v1/system/backup').then(res => res.data),
 
-  backupRestore: (backupId: string) =>
+  backupList: () =>
+    MOCK_MODE
+      ? mockDelay([])
+      : api.get('/api/v1/system/backups').then(res => res.data),
+
+  backupDownload: (filename: string) =>
+    api.get(`/api/v1/system/backups/${encodeURIComponent(filename)}`, {
+      responseType: 'blob',
+    }).then(res => {
+      const url = window.URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    }),
+
+  backupRestore: (filename: string) =>
     MOCK_MODE
       ? mockDelay({ success: true, message: 'Backup restored' })
-      : api.post('/api/v1/config/backup-restore', { backup_id: backupId }).then(res => res.data),
+      : api.post(`/api/v1/system/backups/${encodeURIComponent(filename)}/restore`).then(res => res.data),
+
+  backupDelete: (filename: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.delete(`/api/v1/system/backups/${encodeURIComponent(filename)}`).then(res => res.data),
 
   backupUpload: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
     return MOCK_MODE
       ? mockDelay({ success: true, message: 'Backup imported' })
-      : api.post('/api/v1/config/backup-upload', formData, {
+      : api.post('/api/v1/system/backups/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         }).then(res => res.data)
   },

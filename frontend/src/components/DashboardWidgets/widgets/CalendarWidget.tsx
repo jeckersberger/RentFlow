@@ -48,17 +48,6 @@ export function CalendarWidget() {
     return date.toISOString().split('T')[0] === today.toISOString().split('T')[0]
   }
 
-  // Demo projects for the calendar
-  const demoProjects = [
-    { id: 'd1', name: 'Stadtfest München', start: -1, end: 2 },
-    { id: 'd2', name: 'Firmenfeier Schmidt AG', start: 3, end: 5 },
-    { id: 'd3', name: 'Hochzeit Weber', start: 5, end: 6 },
-  ]
-
-  const getDemoProjectsForDay = (dayIndex: number) => {
-    return demoProjects.filter(p => dayIndex >= p.start && dayIndex <= p.end)
-  }
-
   return (
     <div className="calendar-widget">
       <div className="calendar-widget__week-header">
@@ -69,9 +58,7 @@ export function CalendarWidget() {
 
       <div className="calendar-widget__grid">
         {weekDays.map((date, index) => {
-          const apiProjects = getProjectsForDay(date)
-          const demoDay = getDemoProjectsForDay(index)
-          const dayProjects = apiProjects.length > 0 ? apiProjects : demoDay
+          const dayProjects = getProjectsForDay(date)
 
           return (
             <div

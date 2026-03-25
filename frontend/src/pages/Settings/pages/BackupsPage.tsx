@@ -1,109 +1,68 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { configApi } from '../../../services/api'
 import { useNotificationStore } from '../../../stores/notificationStore'
-import { Download, RefreshCw, HardDrive, Clock, Calendar, Shield, RotateCcw, Upload, AlertTriangle } from 'lucide-react'
+import { Download, RefreshCw, HardDrive, Shield, RotateCcw, Upload, AlertTriangle, Trash2, Clock } from 'lucide-react'
 import { SkeletonCard } from '../../../components/Skeleton/SkeletonLoader'
 import '../Settings.scss'
 
-interface BackupHistoryEntry {
-  id: string
-  date: string
-  size: string
-  type: 'Automatisch' | 'Manuell'
-  status: 'Erfolgreich' | 'Fehlgeschlagen' | 'Laeuft'
-  download_url?: string
+interface BackupEntry {
+  filename: string
+  size: number
+  size_human: string
+  created_at: string
+  type: string
+  status: string
 }
 
 function BackupsPage() {
   const queryClient = useQueryClient()
   const addNotification = useNotificationStore((s) => s.addNotification)
-  const [saveSuccess, setSaveSuccess] = useState(false)
-  const [restoreConfirmId, setRestoreConfirmId] = useState<string | null>(null)
+  const [restoreConfirmFilename, setRestoreConfirmFilename] = useState<string | null>(null)
   const [restoreConfirmDate, setRestoreConfirmDate] = useState<string>('')
+  const [deleteConfirmFilename, setDeleteConfirmFilename] = useState<string | null>(null)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [form, setForm] = useState({
-    schedule: 'daily',
-    time: '02:00',
-    retention_days: '30',
-  })
-
-  const { data: scheduleConfig, isLoading: isLoadingSchedule } = useQuery({
-    queryKey: ['config', 'backup.schedule'],
-    queryFn: () => configApi.get('backup.schedule'),
-  })
-
-  const { data: timeConfig, isLoading: isLoadingTime } = useQuery({
-    queryKey: ['config', 'backup.time'],
-    queryFn: () => configApi.get('backup.time'),
-  })
-
-  const { data: retentionConfig, isLoading: isLoadingRetention } = useQuery({
-    queryKey: ['config', 'backup.retention_days'],
-    queryFn: () => configApi.get('backup.retention_days'),
-  })
-
-  const { data: statusConfig, isLoading: isLoadingStatus } = useQuery({
-    queryKey: ['config', 'backup.status'],
-    queryFn: () => configApi.get('backup.status'),
-  })
-
-  const { data: historyConfig, isLoading: isLoadingHistory } = useQuery({
-    queryKey: ['config', 'backup.history'],
-    queryFn: () => configApi.get('backup.history'),
-  })
-
-  const isLoading = isLoadingSchedule || isLoadingTime || isLoadingRetention || isLoadingStatus
-
-  useEffect(() => {
-    if (scheduleConfig?.value) setForm((f) => ({ ...f, schedule: scheduleConfig.value }))
-    if (timeConfig?.value) setForm((f) => ({ ...f, time: timeConfig.value }))
-    if (retentionConfig?.value) setForm((f) => ({ ...f, retention_days: retentionConfig.value }))
-  }, [scheduleConfig, timeConfig, retentionConfig])
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      await Promise.all([
-        configApi.set('backup.schedule', { value: form.schedule }),
-        configApi.set('backup.time', { value: form.time }),
-        configApi.set('backup.retention_days', { value: form.retention_days }),
-      ])
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['config', 'backup.schedule'] })
-      queryClient.invalidateQueries({ queryKey: ['config', 'backup.time'] })
-      queryClient.invalidateQueries({ queryKey: ['config', 'backup.retention_days'] })
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
-    },
-    onError: () => {
-      addNotification('Fehler beim Speichern der Backup-Einstellungen', 'error')
-    },
+  const { data: backups, isLoading } = useQuery<BackupEntry[]>({
+    queryKey: ['system', 'backups'],
+    queryFn: () => configApi.backupList(),
+    refetchInterval: 30000,
   })
 
   const backupNowMutation = useMutation({
     mutationFn: () => configApi.backupNow(),
     onSuccess: () => {
-      addNotification('Backup wurde gestartet', 'success')
-      queryClient.invalidateQueries({ queryKey: ['config', 'backup.status'] })
-      queryClient.invalidateQueries({ queryKey: ['config', 'backup.history'] })
+      addNotification('Backup wurde erfolgreich erstellt', 'success')
+      queryClient.invalidateQueries({ queryKey: ['system', 'backups'] })
     },
     onError: () => {
-      addNotification('Fehler beim Starten des Backups', 'error')
+      addNotification('Fehler beim Erstellen des Backups', 'error')
     },
   })
 
   const restoreMutation = useMutation({
-    mutationFn: (backupId: string) => configApi.backupRestore(backupId),
+    mutationFn: (filename: string) => configApi.backupRestore(filename),
     onSuccess: () => {
-      setRestoreConfirmId(null)
+      setRestoreConfirmFilename(null)
       addNotification('Backup wurde wiederhergestellt. Die Seite wird neu geladen.', 'success')
       setTimeout(() => window.location.reload(), 3000)
     },
     onError: () => {
       addNotification('Fehler beim Wiederherstellen des Backups', 'error')
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (filename: string) => configApi.backupDelete(filename),
+    onSuccess: () => {
+      setDeleteConfirmFilename(null)
+      addNotification('Backup wurde geloescht', 'success')
+      queryClient.invalidateQueries({ queryKey: ['system', 'backups'] })
+    },
+    onError: () => {
+      addNotification('Fehler beim Loeschen des Backups', 'error')
     },
   })
 
@@ -113,53 +72,40 @@ function BackupsPage() {
       addNotification('Backup wurde erfolgreich importiert', 'success')
       setUploadFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
-      queryClient.invalidateQueries({ queryKey: ['config', 'backup.history'] })
+      queryClient.invalidateQueries({ queryKey: ['system', 'backups'] })
     },
     onError: () => {
       addNotification('Fehler beim Importieren des Backups', 'error')
     },
   })
 
-  const update = (field: string, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }))
-
-  const scheduleLabel = (value: string) => {
-    switch (value) {
-      case 'daily': return 'Taeglich'
-      case 'weekly': return 'Woechentlich'
-      case 'monthly': return 'Monatlich'
-      default: return value
+  const handleDownload = async (filename: string) => {
+    setDownloadingFile(filename)
+    try {
+      await configApi.backupDownload(filename)
+    } catch {
+      addNotification('Fehler beim Herunterladen des Backups', 'error')
+    } finally {
+      setDownloadingFile(null)
     }
   }
 
-  const formatNextBackup = () => {
-    const now = new Date()
-    const [hours, minutes] = (form.time || '02:00').split(':').map(Number)
-    const next = new Date(now)
-    next.setHours(hours, minutes, 0, 0)
-
-    if (next <= now) {
-      if (form.schedule === 'daily') {
-        next.setDate(next.getDate() + 1)
-      } else if (form.schedule === 'weekly') {
-        next.setDate(next.getDate() + 7)
-      } else {
-        next.setMonth(next.getMonth() + 1)
-      }
+  const formatDate = (isoDate: string) => {
+    try {
+      return new Date(isoDate).toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch {
+      return isoDate
     }
-
-    return next.toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
   }
 
-  const backupHistory: BackupHistoryEntry[] = Array.isArray(historyConfig?.value)
-    ? historyConfig.value
-    : []
+  const backupList: BackupEntry[] = Array.isArray(backups) ? backups : []
+  const lastBackup = backupList.length > 0 ? backupList[0] : null
 
   if (isLoading) return (
     <div className="sp-page">
@@ -185,94 +131,22 @@ function BackupsPage() {
           <div className="sp-field">
             <label className="sp-label">Letztes Backup</label>
             <p style={{ color: 'var(--color-text-primary)', margin: 0, fontSize: 'var(--font-size-sm)' }}>
-              {statusConfig?.last_backup || 'Noch kein Backup erstellt'}
+              {lastBackup ? formatDate(lastBackup.created_at) : 'Noch kein Backup erstellt'}
             </p>
           </div>
           <div className="sp-field">
-            <label className="sp-label">Naechstes geplantes Backup</label>
+            <label className="sp-label">Letzte Groesse</label>
             <p style={{ color: 'var(--color-text-primary)', margin: 0, fontSize: 'var(--font-size-sm)' }}>
-              {formatNextBackup()} ({scheduleLabel(form.schedule)})
+              {lastBackup ? lastBackup.size_human : '---'}
             </p>
           </div>
           <div className="sp-field">
-            <label className="sp-label">Backup-Groesse</label>
+            <label className="sp-label">Gesamt-Backups</label>
             <p style={{ color: 'var(--color-text-primary)', margin: 0, fontSize: 'var(--font-size-sm)' }}>
-              {statusConfig?.size || '~ 0 MB'}
+              {backupList.length}
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Backup Schedule Configuration */}
-      <div className="sp-card">
-        <h3 className="sp-card__title">
-          <Calendar size={18} style={{ marginRight: 8, verticalAlign: 'text-bottom' }} />
-          Zeitplan-Konfiguration
-        </h3>
-        <div className="sp-grid">
-          <div className="sp-field">
-            <label className="sp-label">Zeitplan</label>
-            <div style={{ display: 'flex', gap: 'var(--spacing-4)', marginTop: 'var(--spacing-2)' }}>
-              {(['daily', 'weekly', 'monthly'] as const).map((opt) => (
-                <label
-                  key={opt}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--spacing-2)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="backup-schedule"
-                    value={opt}
-                    checked={form.schedule === opt}
-                    onChange={(e) => update('schedule', e.target.value)}
-                    style={{ accentColor: 'var(--color-primary)' }}
-                  />
-                  {scheduleLabel(opt)}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="sp-field">
-            <label className="sp-label">Uhrzeit</label>
-            <input
-              className="sp-input"
-              type="time"
-              value={form.time}
-              onChange={(e) => update('time', e.target.value)}
-              style={{ width: 140 }}
-            />
-          </div>
-          <div className="sp-field">
-            <label className="sp-label">Aufbewahrung (Tage)</label>
-            <input
-              className="sp-input"
-              type="number"
-              min="1"
-              max="365"
-              value={form.retention_days}
-              onChange={(e) => update('retention_days', e.target.value)}
-              style={{ width: 120 }}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="sp-footer">
-        {saveSuccess && <span className="sp-msg--success">Gespeichert!</span>}
-        {saveMutation.isError && <span className="sp-msg--error">Fehler beim Speichern</span>}
-        <button
-          className="sp-btn sp-btn--primary"
-          onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending}
-        >
-          {saveMutation.isPending ? 'Speichern...' : 'Speichern'}
-        </button>
       </div>
 
       {/* Manual Backup */}
@@ -282,7 +156,7 @@ function BackupsPage() {
           Manuelles Backup
         </h3>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-4) 0' }}>
-          Erstellen Sie ein manuelles Backup aller Daten. Dies kann einige Minuten dauern.
+          Erstellen Sie ein manuelles Backup aller 18 Service-Datenbanken. Dies kann einige Minuten dauern.
         </p>
         <button
           className="sp-btn sp-btn--primary"
@@ -309,9 +183,7 @@ function BackupsPage() {
           <Clock size={18} style={{ marginRight: 8, verticalAlign: 'text-bottom' }} />
           Backup-Verlauf
         </h3>
-        {isLoadingHistory ? (
-          <SkeletonCard count={1} />
-        ) : backupHistory.length === 0 ? (
+        {backupList.length === 0 ? (
           <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: 0 }}>
             Noch keine Backups vorhanden.
           </p>
@@ -322,6 +194,9 @@ function BackupsPage() {
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
                     Datum
+                  </th>
+                  <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                    Dateiname
                   </th>
                   <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
                     Groesse
@@ -338,13 +213,16 @@ function BackupsPage() {
                 </tr>
               </thead>
               <tbody>
-                {backupHistory.map((entry) => (
-                  <tr key={entry.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                {backupList.map((entry) => (
+                  <tr key={entry.filename} style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-primary)' }}>
-                      {entry.date}
+                      {formatDate(entry.created_at)}
+                    </td>
+                    <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-secondary)', fontFamily: 'monospace', fontSize: 'var(--font-size-xs, 12px)' }}>
+                      {entry.filename}
                     </td>
                     <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-primary)' }}>
-                      {entry.size}
+                      {entry.size_human}
                     </td>
                     <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', color: 'var(--color-text-primary)' }}>
                       {entry.type}
@@ -360,15 +238,15 @@ function BackupsPage() {
                           backgroundColor:
                             entry.status === 'Erfolgreich'
                               ? 'var(--color-success-bg, #dcfce7)'
-                              : entry.status === 'Fehlgeschlagen'
-                              ? 'var(--color-error-bg, #fef2f2)'
-                              : 'var(--color-warning-bg, #fefce8)',
+                              : entry.status.startsWith('Teilweise')
+                              ? 'var(--color-warning-bg, #fefce8)'
+                              : 'var(--color-error-bg, #fef2f2)',
                           color:
                             entry.status === 'Erfolgreich'
                               ? 'var(--color-success, #16a34a)'
-                              : entry.status === 'Fehlgeschlagen'
-                              ? 'var(--color-error, #dc2626)'
-                              : 'var(--color-warning, #ca8a04)',
+                              : entry.status.startsWith('Teilweise')
+                              ? 'var(--color-warning, #ca8a04)'
+                              : 'var(--color-error, #dc2626)',
                         }}
                       >
                         {entry.status}
@@ -376,30 +254,37 @@ function BackupsPage() {
                     </td>
                     <td style={{ padding: 'var(--spacing-2) var(--spacing-3)', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'flex-end' }}>
-                        {entry.status === 'Erfolgreich' && entry.download_url && (
-                          <a
-                            href={entry.download_url}
-                            className="sp-btn sp-btn--ghost"
-                            style={{ fontSize: 'var(--font-size-xs, 12px)', padding: '2px 8px', textDecoration: 'none' }}
-                            download
-                          >
+                        <button
+                          className="sp-btn sp-btn--ghost"
+                          style={{ fontSize: 'var(--font-size-xs, 12px)', padding: '2px 8px' }}
+                          onClick={() => handleDownload(entry.filename)}
+                          disabled={downloadingFile === entry.filename}
+                        >
+                          {downloadingFile === entry.filename ? (
+                            <RefreshCw size={14} style={{ marginRight: 4, verticalAlign: 'middle', animation: 'spin 1s linear infinite' }} />
+                          ) : (
                             <Download size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                            Herunterladen
-                          </a>
-                        )}
-                        {entry.status === 'Erfolgreich' && (
-                          <button
-                            className="sp-btn sp-btn--secondary"
-                            style={{ fontSize: 'var(--font-size-xs, 12px)', padding: '2px 8px' }}
-                            onClick={() => {
-                              setRestoreConfirmId(entry.id)
-                              setRestoreConfirmDate(entry.date)
-                            }}
-                          >
-                            <RotateCcw size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                            Wiederherstellen
-                          </button>
-                        )}
+                          )}
+                          Download
+                        </button>
+                        <button
+                          className="sp-btn sp-btn--secondary"
+                          style={{ fontSize: 'var(--font-size-xs, 12px)', padding: '2px 8px' }}
+                          onClick={() => {
+                            setRestoreConfirmFilename(entry.filename)
+                            setRestoreConfirmDate(formatDate(entry.created_at))
+                          }}
+                        >
+                          <RotateCcw size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                          Wiederherstellen
+                        </button>
+                        <button
+                          className="sp-btn sp-btn--ghost"
+                          style={{ fontSize: 'var(--font-size-xs, 12px)', padding: '2px 8px', color: 'var(--color-danger, #dc2626)' }}
+                          onClick={() => setDeleteConfirmFilename(entry.filename)}
+                        >
+                          <Trash2 size={14} style={{ verticalAlign: 'middle' }} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -451,11 +336,11 @@ function BackupsPage() {
       </div>
 
       {/* Restore Confirmation Dialog */}
-      {restoreConfirmId && (
+      {restoreConfirmFilename && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', zIndex: 1050,
-        }} onClick={() => !restoreMutation.isPending && setRestoreConfirmId(null)}>
+        }} onClick={() => !restoreMutation.isPending && setRestoreConfirmFilename(null)}>
           <div
             className="sp-card"
             style={{ width: 480, maxWidth: '90vw', margin: 0 }}
@@ -474,14 +359,14 @@ function BackupsPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
               <button
                 className="sp-btn sp-btn--secondary"
-                onClick={() => setRestoreConfirmId(null)}
+                onClick={() => setRestoreConfirmFilename(null)}
                 disabled={restoreMutation.isPending}
               >
                 Abbrechen
               </button>
               <button
                 className="sp-btn sp-btn--danger"
-                onClick={() => restoreMutation.mutate(restoreConfirmId)}
+                onClick={() => restoreMutation.mutate(restoreConfirmFilename)}
                 disabled={restoreMutation.isPending}
               >
                 {restoreMutation.isPending ? (
@@ -492,6 +377,46 @@ function BackupsPage() {
                 ) : (
                   'Wiederherstellen'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmFilename && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1050,
+        }} onClick={() => !deleteMutation.isPending && setDeleteConfirmFilename(null)}>
+          <div
+            className="sp-card"
+            style={{ width: 420, maxWidth: '90vw', margin: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', marginBottom: 'var(--spacing-4)' }}>
+              <Trash2 size={24} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
+              <h2 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--color-text-primary)' }}>
+                Backup loeschen
+              </h2>
+            </div>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-5) 0', lineHeight: 1.6 }}>
+              Soll das Backup <strong>{deleteConfirmFilename}</strong> endgueltig geloescht werden?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+              <button
+                className="sp-btn sp-btn--secondary"
+                onClick={() => setDeleteConfirmFilename(null)}
+                disabled={deleteMutation.isPending}
+              >
+                Abbrechen
+              </button>
+              <button
+                className="sp-btn sp-btn--danger"
+                onClick={() => deleteMutation.mutate(deleteConfirmFilename)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Loeschen...' : 'Loeschen'}
               </button>
             </div>
           </div>

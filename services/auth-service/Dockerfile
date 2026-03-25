@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOWORK=off go build -ldflags="-s -w" -o /app ./cmd/
 
 # Runtime stage
 FROM alpine:3.19
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata postgresql16-client tar
 WORKDIR /app
 COPY --from=builder /app .
 COPY --from=builder /build/services/auth-service/migrations ./migrations/

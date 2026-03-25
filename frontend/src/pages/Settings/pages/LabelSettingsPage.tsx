@@ -4,7 +4,9 @@ import { configApi } from '../../../services/api'
 import '../Settings.scss'
 
 interface LabelConfig {
-  label_size: '50x25' | '70x35' | '100x50'
+  label_size: '50x25' | '70x35' | '100x50' | 'custom'
+  custom_width_mm?: number
+  custom_height_mm?: number
   show_qr_code: boolean
   show_name: boolean
   show_sku: boolean
@@ -16,6 +18,7 @@ interface LabelConfig {
   font_size: 'small' | 'medium' | 'large'
   qr_size: 'small' | 'medium' | 'large'
   printer_type: 'browser' | 'zebra'
+  printer_profile?: string
 }
 
 const DEFAULT_CONFIG: LabelConfig = {
@@ -37,6 +40,7 @@ const LABEL_DIMENSIONS: Record<string, { w: number; h: number }> = {
   '50x25': { w: 200, h: 100 },
   '70x35': { w: 280, h: 140 },
   '100x50': { w: 400, h: 200 },
+  'custom': { w: 300, h: 150 },
 }
 
 const FONT_SIZES: Record<string, { title: number; body: number; small: number }> = {

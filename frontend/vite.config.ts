@@ -177,6 +177,7 @@ export default defineConfig({
       '/api/v1/users': { target: 'http://localhost:8001', changeOrigin: true },
       '/api/v1/tenants': { target: 'http://localhost:8001', changeOrigin: true },
       '/api/v1/config': { target: 'http://localhost:8001', changeOrigin: true },
+      '/api/v1/system': { target: 'http://localhost:8001', changeOrigin: true },
       '/api/v1/contacts': { target: 'http://localhost:8003', changeOrigin: true },
       '/api/v1/invitations': { target: 'http://localhost:8001', changeOrigin: true },
       // Inventory → inventory-service

@@ -133,9 +133,9 @@ function ScannerDevicesPage() {
           ) : (
             <>
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrToken)}`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`rentflow://qr-login/${qrToken}`)}`}
                 alt="Scanner QR-Login-Code"
-                style={{ width: 300, height: 300, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+                style={{ width: 300, height: 300, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: '#fff' }}
               />
               <div style={{ textAlign: 'center' }}>
                 <div style={{
@@ -149,6 +149,56 @@ function ScannerDevicesPage() {
                 <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', margin: 'var(--spacing-2) 0 0 0' }}>
                   Scannen Sie diesen Code mit der RentFlow Scanner App
                 </p>
+              </div>
+
+              {/* Deep Link for scanner app */}
+              <a
+                href={`rentflow://qr-login/${qrToken}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: 'var(--spacing-2) var(--spacing-4)',
+                  backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                  color: 'var(--color-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(0, 212, 255, 0.2)',
+                }}
+              >
+                Scanner-App oeffnen
+              </a>
+
+              {/* Manual token entry fallback */}
+              <div style={{
+                width: '100%',
+                padding: 'var(--spacing-3) var(--spacing-4)',
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--color-border)',
+              }}>
+                <p style={{ margin: '0 0 var(--spacing-2) 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                  Alternativ: Token manuell eingeben
+                </p>
+                <div
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 'var(--font-size-lg)',
+                    fontWeight: 'var(--font-weight-bold)',
+                    textAlign: 'center',
+                    letterSpacing: '0.15em',
+                    color: 'var(--color-text-primary)',
+                    wordBreak: 'break-all',
+                    userSelect: 'all',
+                    cursor: 'text',
+                    padding: 'var(--spacing-2) 0',
+                  }}
+                  title="Klicken zum Markieren"
+                >
+                  {qrToken}
+                </div>
               </div>
               <button
                 className="sp-btn sp-btn--secondary"

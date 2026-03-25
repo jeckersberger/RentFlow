@@ -1,11 +1,63 @@
+import { useQuery } from '@tanstack/react-query'
+import { projectApi } from '../../../services/api'
+
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  planning: { label: 'Planung', color: '#3b82f6' },
+  confirmed: { label: 'Bestätigt', color: '#8b5cf6' },
+  active: { label: 'Aktiv', color: '#10b981' },
+  in_progress: { label: 'Aktiv', color: '#10b981' },
+  loading: { label: 'Laden', color: '#f59e0b' },
+  on_site: { label: 'Vor Ort', color: '#06b6d4' },
+  completed: { label: 'Abgeschlossen', color: '#6b7280' },
+  cancelled: { label: 'Storniert', color: '#ef4444' },
+  draft: { label: 'Entwurf', color: '#9ca3af' },
+}
+
 export function ProjectStatusWidget() {
-  const statuses = [
-    { label: 'Planung', count: 3, color: '#3b82f6', percentage: 25 },
-    { label: 'Aktiv', count: 5, color: '#10b981', percentage: 42 },
-    { label: 'Abgeschlossen', count: 3, color: '#6b7280', percentage: 25 },
-    { label: 'Storniert', count: 1, color: '#ef4444', percentage: 8 },
-  ]
+  const { data: projectData, isLoading } = useQuery({
+    queryKey: ['dashboard-project-status'],
+    queryFn: async () => {
+      try {
+        const res = await projectApi.list(1, 200)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const projects: any[] = res?.items || []
+        if (!Array.isArray(projects)) return []
+        const counts: Record<string, number> = {}
+        for (const p of projects) {
+          const status = p.status || 'draft'
+          counts[status] = (counts[status] || 0) + 1
+        }
+        return Object.entries(counts).map(([status, count]) => {
+          const config = STATUS_CONFIG[status] || { label: status, color: '#9ca3af' }
+          return { label: config.label, count, color: config.color }
+        })
+      } catch {
+        return []
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const statuses = projectData || []
   const total = statuses.reduce((sum, s) => sum + s.count, 0)
+
+  if (isLoading) {
+    return (
+      <div className="project-status-widget">
+        <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>Laden...</p>
+      </div>
+    )
+  }
+
+  if (total === 0) {
+    return (
+      <div className="project-status-widget">
+        <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>
+          Noch keine Projekte vorhanden.
+        </p>
+      </div>
+    )
+  }
 
   // Build donut chart with SVG
   const radius = 50

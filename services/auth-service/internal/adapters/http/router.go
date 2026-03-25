@@ -32,6 +32,7 @@ func SetupRoutes(
 	handlers := NewHandlers(userService, tenantService, setupService, log)
 	handlers.sessionMgr = sessionMgr
 	configHandlers := NewConfigHandlers(configService, log)
+	backupHandlers := NewBackupHandlers(log)
 
 	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login und Register
 	loginRateLimiter := NewRateLimiter(10, 1*time.Minute, log)
@@ -92,6 +93,14 @@ func SetupRoutes(
 	// System endpoints (authenticated)
 	mux.HandleFunc("GET /api/v1/system/version", authMiddleware(http.HandlerFunc(handlers.GetSystemVersion)).ServeHTTP)
 	mux.HandleFunc("POST /api/v1/system/update", authMiddleware(http.HandlerFunc(handlers.TriggerUpdate)).ServeHTTP)
+
+	// Backup endpoints (authenticated, admin only)
+	mux.HandleFunc("POST /api/v1/system/backup", authMiddleware(http.HandlerFunc(backupHandlers.CreateBackup)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/system/backups", authMiddleware(http.HandlerFunc(backupHandlers.ListBackups)).ServeHTTP)
+	mux.HandleFunc("POST /api/v1/system/backups/upload", authMiddleware(http.HandlerFunc(backupHandlers.UploadBackup)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/system/backups/{filename}", authMiddleware(http.HandlerFunc(backupHandlers.DownloadBackup)).ServeHTTP)
+	mux.HandleFunc("POST /api/v1/system/backups/{filename}/restore", authMiddleware(http.HandlerFunc(backupHandlers.RestoreBackup)).ServeHTTP)
+	mux.HandleFunc("DELETE /api/v1/system/backups/{filename}", authMiddleware(http.HandlerFunc(backupHandlers.DeleteBackup)).ServeHTTP)
 
 	// Tenant config (authenticated)
 	mux.HandleFunc("GET /api/v1/config", authMiddleware(http.HandlerFunc(configHandlers.GetAllConfigs)).ServeHTTP)

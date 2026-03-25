@@ -10,7 +10,7 @@ export function QuickActionsWidget() {
     { key: 'scanner', icon: '📱', label: 'Scannen', path: '/scanner' },
     { key: 'warehouse', icon: '🏭', label: 'Lager öffnen', path: '/warehouse' },
     { key: 'calendar', icon: '📅', label: 'Kalender', path: '/calendar' },
-    { key: 'fleet', icon: '🚛', label: 'Fuhrpark', path: '/fleet' },
+    { key: 'transport', icon: '🚛', label: 'Fuhrpark', path: '/transport' },
     { key: 'maintenance', icon: '🔧', label: 'Wartungen', path: '/maintenance' },
   ]
 

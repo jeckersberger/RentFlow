@@ -164,6 +164,7 @@ services:
       - "8001:8001"
     volumes:
       - update_trigger:/update-trigger
+      - backups_data:/backups
     depends_on:
       migrations: { condition: service_completed_successfully }
       postgres: { condition: service_healthy }
@@ -876,6 +877,7 @@ volumes:
   traefik_certs:
   prometheus_data:
   update_trigger:
+  backups_data:
 
 networks:
   rentflow:

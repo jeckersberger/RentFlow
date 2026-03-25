@@ -10,7 +10,7 @@ interface QRLoginModalProps {
 }
 
 export function QRLoginModal({ isOpen, onClose }: QRLoginModalProps) {
-  const [, setQrToken] = useState<string | null>(null)
+  const [qrToken, setQrToken] = useState<string | null>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [, setExpiresAt] = useState<Date | null>(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
@@ -46,8 +46,8 @@ export function QRLoginModal({ isOpen, onClose }: QRLoginModalProps) {
       setExpiresAt(expires)
       setStatus('ready')
 
-      // Generate QR code as data URL
-      const dataUrl = await QRCode.toDataURL(token, {
+      // Generate QR code as data URL (encode deep link for scanner app)
+      const dataUrl = await QRCode.toDataURL(`rentflow://qr-login/${token}`, {
         width: 280,
         margin: 2,
         color: {
@@ -135,6 +135,28 @@ export function QRLoginModal({ isOpen, onClose }: QRLoginModalProps) {
             <p className="qr-login-modal__hint">
               Der Code ist 5 Minuten gueltig und kann nur einmal verwendet werden.
             </p>
+
+            {/* Deep link for scanner app */}
+            {qrToken && (
+              <a
+                href={`rentflow://qr-login/${qrToken}`}
+                className="qr-login-modal__deep-link"
+              >
+                Scanner-App oeffnen
+              </a>
+            )}
+
+            {/* Manual token entry fallback */}
+            {qrToken && (
+              <div className="qr-login-modal__token-fallback">
+                <p className="qr-login-modal__token-label">
+                  Alternativ: Token manuell eingeben
+                </p>
+                <div className="qr-login-modal__token-value">
+                  {qrToken}
+                </div>
+              </div>
+            )}
           </>
         )}
 

@@ -26,13 +26,38 @@ export function EquipmentUtilizationWidget() {
   const inUse = total - available
   const utilization = total > 0 ? Math.round((inUse / total) * 100) : 0
 
-  const categories = [
-    { name: 'Audio', utilization: 78, total: 24 },
-    { name: 'Licht', utilization: 65, total: 18 },
-    { name: 'Video', utilization: 82, total: 12 },
-    { name: 'Rigging', utilization: 45, total: 8 },
-    { name: 'Strom', utilization: 55, total: 15 },
-  ]
+  // Build category breakdown from real equipment data
+  const { data: categoryStats } = useQuery({
+    queryKey: ['dashboard-equipment-categories'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/api/v1/equipment')
+        const equipment = res.data?.data || res.data?.items || res.data || []
+        if (!Array.isArray(equipment) || equipment.length === 0) return []
+        const catMap: Record<string, { total: number; inUse: number }> = {}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const e of equipment as any[]) {
+          const cat = e.category_name || e.category || 'Sonstige'
+          if (!catMap[cat]) catMap[cat] = { total: 0, inUse: 0 }
+          catMap[cat].total++
+          if (e.status !== 'available') catMap[cat].inUse++
+        }
+        return Object.entries(catMap)
+          .map(([name, { total, inUse }]) => ({
+            name,
+            utilization: total > 0 ? Math.round((inUse / total) * 100) : 0,
+            total,
+          }))
+          .sort((a, b) => b.total - a.total)
+          .slice(0, 6)
+      } catch {
+        return []
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const categories = categoryStats || []
 
   return (
     <div className="utilization-widget">

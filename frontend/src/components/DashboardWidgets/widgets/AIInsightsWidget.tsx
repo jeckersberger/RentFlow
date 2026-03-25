@@ -1,38 +1,32 @@
+import { useQuery } from '@tanstack/react-query'
+import { api } from '../../../services/api'
+
+interface AIInsight {
+  id: string
+  type: string
+  title: string
+  description: string
+  priority: string
+  icon: string
+}
+
 export function AIInsightsWidget() {
-  const insights = [
-    {
-      id: 'i1',
-      type: 'optimization',
-      title: 'Equipment-Auslastung optimieren',
-      description: 'Die Lichtausrüstung hat eine 35% höhere Nachfrage als Verfügbarkeit. Erwägen Sie zusätzliche Moving Heads.',
-      priority: 'high',
-      icon: '💡',
+  const { data: insightsData } = useQuery<AIInsight[]>({
+    queryKey: ['dashboard-ai-insights'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/api/v1/ai/insights')
+        const data = res.data?.data || res.data?.items || res.data || []
+        if (Array.isArray(data)) return data
+        return []
+      } catch {
+        return []
+      }
     },
-    {
-      id: 'i2',
-      type: 'warning',
-      title: 'Wartung überfällig',
-      description: 'MA Lighting grandMA3 ist 2 Wochen über dem geplanten Wartungsintervall.',
-      priority: 'critical',
-      icon: '⚠️',
-    },
-    {
-      id: 'i3',
-      type: 'trend',
-      title: 'Umsatztrend positiv',
-      description: 'Der Umsatz ist in den letzten 3 Monaten um 18% gestiegen. Hochsaison beginnt im April.',
-      priority: 'info',
-      icon: '📈',
-    },
-    {
-      id: 'i4',
-      type: 'suggestion',
-      title: 'Cross-Selling Möglichkeit',
-      description: 'Kunden die Audio mieten, buchen zu 72% auch Lichtequipment. Bundle-Angebote empfohlen.',
-      priority: 'medium',
-      icon: '🎯',
-    },
-  ]
+    staleTime: 1000 * 60 * 15,
+  })
+
+  const insights = insightsData || []
 
   const priorityClass = (p: string) => {
     switch (p) {
@@ -41,6 +35,32 @@ export function AIInsightsWidget() {
       case 'medium': return 'ai-insight--medium'
       default: return 'ai-insight--info'
     }
+  }
+
+  if (!insightsData) {
+    return (
+      <div className="ai-insights-widget">
+        <div className="ai-insights-widget__badge">
+          <span className="ai-insights-widget__badge-icon">✨</span>
+          KI-Empfehlungen
+        </div>
+        <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '1rem' }}>Laden...</p>
+      </div>
+    )
+  }
+
+  if (insights.length === 0) {
+    return (
+      <div className="ai-insights-widget">
+        <div className="ai-insights-widget__badge">
+          <span className="ai-insights-widget__badge-icon">✨</span>
+          KI-Empfehlungen
+        </div>
+        <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '1rem' }}>
+          Noch keine KI-Empfehlungen verfügbar.
+        </p>
+      </div>
+    )
   }
 
   return (

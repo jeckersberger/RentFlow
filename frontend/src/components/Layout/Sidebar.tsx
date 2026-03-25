@@ -83,6 +83,7 @@ const navGroups: NavGroup[] = [
     labelKey: 'nav.team',
     items: [
       { labelKey: 'nav.crew', href: '/crew', icon: Users },
+      { labelKey: 'nav.contacts', href: '/contacts', icon: Contact },
       { labelKey: 'nav.time_tracking', href: '/time-tracking', icon: Clock },
       { labelKey: 'nav.transport', href: '/transport', icon: Truck },
     ],
@@ -94,7 +95,6 @@ const navGroups: NavGroup[] = [
       { labelKey: 'nav.invoices', href: '/invoices', icon: Receipt },
       { labelKey: 'nav.expenses', href: '/expenses', icon: CreditCard },
       { labelKey: 'nav.banking', href: '/banking', icon: Landmark },
-      { labelKey: 'nav.contacts', href: '/contacts', icon: Contact },
     ],
   },
   {
