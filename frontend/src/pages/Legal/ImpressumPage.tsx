@@ -1,18 +1,17 @@
 import { Link } from 'react-router-dom'
 import './Legal.scss'
 
-// TODO: Diese Platzhalter durch echte Tenant-Config-Daten ersetzen
 const COMPANY = {
-  name: '[Firmenname]',
-  street: '[Strasse Nr.]',
-  zip: '[PLZ]',
-  city: '[Stadt]',
+  name: 'JE-Sound&Light',
+  street: 'Buehlstrasse 2',
+  zip: '90610',
+  city: 'Winkelhaid',
   country: 'Deutschland',
-  ceo: '[Vorname Nachname]',
-  email: '[email@example.com]',
-  phone: '[+49 XXX XXXXXXX]',
-  ustIdNr: '[DE XXXXXXXXX]', // leer lassen wenn nicht vorhanden
-  handelsregister: '[Amtsgericht XXX, HRB XXXXX]', // leer lassen wenn nicht vorhanden
+  ceo: 'Janis Eckersberger',
+  email: 'j.eckersberger@je-soundulight.de',
+  phone: '+49 1523 7858522',
+  ustIdNr: '', // Kleinunternehmer — keine USt-IdNr
+  handelsregister: '', // Einzelunternehmen — kein HR-Eintrag
 }
 
 function ImpressumPage() {
