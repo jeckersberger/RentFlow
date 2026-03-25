@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -170,10 +171,10 @@ func TestCreateExpense_Entertainment(t *testing.T) {
 	// 70/30 split: base = 200 - 20 = 180
 	expectedDeductible := 180.0 * 0.70
 	expectedNonDeductible := 180.0 * 0.30
-	if dto.EntertainmentDeductible != expectedDeductible {
+	if math.Abs(dto.EntertainmentDeductible-expectedDeductible) > 0.001 {
 		t.Errorf("expected Deductible %f, got %f", expectedDeductible, dto.EntertainmentDeductible)
 	}
-	if dto.EntertainmentNonDeductible != expectedNonDeductible {
+	if math.Abs(dto.EntertainmentNonDeductible-expectedNonDeductible) > 0.001 {
 		t.Errorf("expected NonDeductible %f, got %f", expectedNonDeductible, dto.EntertainmentNonDeductible)
 	}
 }
@@ -342,10 +343,10 @@ func TestUpdateExpense_EntertainmentUpdate(t *testing.T) {
 	}
 
 	// base = 100 - 10 = 90
-	if updated.EntertainmentDeductible != 63.0 {
+	if math.Abs(updated.EntertainmentDeductible-63.0) > 0.001 {
 		t.Errorf("expected Deductible 63.0, got %f", updated.EntertainmentDeductible)
 	}
-	if updated.EntertainmentNonDeductible != 27.0 {
+	if math.Abs(updated.EntertainmentNonDeductible-27.0) > 0.001 {
 		t.Errorf("expected NonDeductible 27.0, got %f", updated.EntertainmentNonDeductible)
 	}
 }

@@ -33,8 +33,9 @@ func SetupRoutes(
 	handlers.sessionMgr = sessionMgr
 	configHandlers := NewConfigHandlers(configService, log)
 
-	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login
+	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login und Register
 	loginRateLimiter := NewRateLimiter(10, 1*time.Minute, log)
+	registerRateLimiter := NewRateLimiter(5, 1*time.Minute, log)
 
 	// Setup routes (no authentication required, always accessible)
 	mux.HandleFunc("GET /api/v1/setup/status", handlers.GetSetupStatus)
@@ -46,7 +47,8 @@ func SetupRoutes(
 	protectedLogin := BruteForceMiddleware(sessionMgr, log)(RateLimitMiddleware(loginRateLimiter)(loginHandler))
 	mux.Handle("POST /api/v1/auth/login", protectedLogin)
 
-	mux.HandleFunc("POST /api/v1/auth/register", handlers.Register)
+	registerHandler := http.HandlerFunc(handlers.Register)
+	mux.Handle("POST /api/v1/auth/register", RateLimitMiddleware(registerRateLimiter)(registerHandler))
 	mux.HandleFunc("POST /api/v1/auth/refresh", handlers.Refresh)
 	mux.HandleFunc("POST /api/v1/auth/qr-login", handlers.QRLogin)
 	mux.HandleFunc("GET /api/v1/auth/qr-status/{token}", handlers.QRStatus)

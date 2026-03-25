@@ -97,7 +97,7 @@ func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "TENANT_NOT_FOUND", "Tenant not found")
 		default:
 			h.logger.Error("register error", err)
-			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		}
 		return
 	}
@@ -143,7 +143,7 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusForbidden, "USER_LOCKED", "User account is locked")
 		default:
 			h.logger.Error("login error", err)
-			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		}
 		return
 	}
@@ -306,7 +306,7 @@ func (h *Handlers) ChangePassword(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Current password is incorrect")
 		default:
 			h.logger.Error("change password error", err)
-			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		}
 		return
 	}
@@ -359,7 +359,7 @@ func (h *Handlers) ListUsers(w http.ResponseWriter, r *http.Request) {
 	result, err := h.userService.ListUsers(r.Context(), query)
 	if err != nil {
 		h.logger.Error("list users error", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -417,7 +417,7 @@ func (h *Handlers) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	cmd.UserID = userID
 	if err := h.userService.UpdateProfile(r.Context(), cmd); err != nil {
 		h.logger.Error("update profile error", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -460,7 +460,7 @@ func (h *Handlers) AssignRole(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.userService.AssignRole(r.Context(), cmd); err != nil {
 		h.logger.Error("assign role error", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -495,7 +495,7 @@ func (h *Handlers) DeactivateUser(w http.ResponseWriter, r *http.Request) {
 		TenantID: tenantID,
 	}); err != nil {
 		h.logger.Error("deactivate user error", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -523,7 +523,7 @@ func (h *Handlers) ActivateUser(w http.ResponseWriter, r *http.Request) {
 		TenantID: tenantID,
 	}); err != nil {
 		h.logger.Error("activate user error", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -561,7 +561,7 @@ func (h *Handlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		TenantID: tenantID,
 	}); err != nil {
 		h.logger.Error("delete user error", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -584,7 +584,7 @@ func (h *Handlers) CreateTenant(w http.ResponseWriter, r *http.Request) {
 	tenant, err := h.tenantService.CreateTenant(r.Context(), cmd)
 	if err != nil {
 		h.logger.Error("create tenant error", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -645,7 +645,7 @@ func (h *Handlers) UpdateTenant(w http.ResponseWriter, r *http.Request) {
 	tenant, err := h.tenantService.UpdateTenant(r.Context(), cmd)
 	if err != nil {
 		h.logger.Error("update tenant error", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -867,7 +867,7 @@ func (h *Handlers) GenerateQRToken(w http.ResponseWriter, r *http.Request) {
 	token, expiresAt, err := h.userService.GenerateQRToken(r.Context(), userID, tenantID)
 	if err != nil {
 		h.logger.Error("failed to generate QR token", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -893,7 +893,7 @@ func (h *Handlers) QRStatus(w http.ResponseWriter, r *http.Request) {
 	status, redeemed, err := h.userService.QRTokenStatus(r.Context(), token)
 	if err != nil {
 		h.logger.Error("failed to check QR token status", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -992,8 +992,8 @@ func (h *Handlers) TriggerUpdate(w http.ResponseWriter, r *http.Request) {
 	if err := os.WriteFile(triggerFile, []byte(time.Now().UTC().Format(time.RFC3339)), 0644); err != nil {
 		h.logger.Error("Failed to write update trigger", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
-			"data":    map[string]interface{}{"success": false, "error": err.Error()},
-			"message": "Update-Trigger konnte nicht geschrieben werden",
+			"data":    map[string]interface{}{"success": false},
+			"message": "Internal server error",
 		})
 		return
 	}
@@ -1080,7 +1080,7 @@ func (h *Handlers) GetSetupStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := h.setupService.GetStatus(r.Context())
 	if err != nil {
 		h.logger.Error("failed to get setup status", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		return
 	}
 
@@ -1119,7 +1119,7 @@ func (h *Handlers) CompleteSetup(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "WEAK_PASSWORD", "Password does not meet requirements")
 		default:
 			h.logger.Error("setup error", err)
-			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 		}
 		return
 	}

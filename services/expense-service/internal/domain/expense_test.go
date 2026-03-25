@@ -1,11 +1,16 @@
 package domain
 
 import (
+	"math"
 	"testing"
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/events"
 )
+
+func floatEq(a, b float64) bool {
+	return math.Abs(a-b) < 0.001
+}
 
 func newTestExpense() *Expense {
 	return NewExpense(
@@ -102,10 +107,10 @@ func TestCalculateTax_7Percent(t *testing.T) {
 
 	expectedTax := 107.00 * 0.07
 	expectedNet := 107.00 - expectedTax
-	if exp.TaxAmount != expectedTax {
+	if !floatEq(exp.TaxAmount, expectedTax) {
 		t.Errorf("expected TaxAmount %f, got %f", expectedTax, exp.TaxAmount)
 	}
-	if exp.NetAmount != expectedNet {
+	if !floatEq(exp.NetAmount, expectedNet) {
 		t.Errorf("expected NetAmount %f, got %f", expectedNet, exp.NetAmount)
 	}
 }

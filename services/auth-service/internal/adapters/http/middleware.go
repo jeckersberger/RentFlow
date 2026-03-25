@@ -102,8 +102,12 @@ func BruteForceMiddleware(sm *application.SessionManager, log logger.Logger) fun
 			blocked, err := sm.IsIPBlocked(r.Context(), ip)
 			if err != nil {
 				log.Error("brute-force check fehlgeschlagen", err)
-				// Bei Fehler durchlassen (fail-open)
-				next.ServeHTTP(w, r)
+				// Bei Fehler blockieren (fail-closed) — Redis nicht erreichbar = kein Login
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(nethttp.StatusServiceUnavailable)
+				json.NewEncoder(w).Encode(map[string]string{
+					"error": "Dienst voruebergehend nicht verfuegbar. Bitte versuche es spaeter erneut.",
+				})
 				return
 			}
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import DOMPurify from 'dompurify'
 import { mailApi } from '../../services/api'
 import styles from './Mail.module.scss'
 
@@ -176,7 +177,7 @@ function MailSentPage() {
               </div>
               <div className={styles.detailBody}>
                 {selectedEmail.body ? (
-                  <div dangerouslySetInnerHTML={{ __html: selectedEmail.body }} />
+                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedEmail.body) }} />
                 ) : (
                   <>
                     <p>{selectedEmail.preview}</p>

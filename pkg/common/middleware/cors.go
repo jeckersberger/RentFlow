@@ -45,8 +45,10 @@ func CORSMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 	}
 }
 
-// SimpleCORSMiddleware creates a basic CORS middleware with default settings
-// Allows all origins, common HTTP methods, and standard headers
+// SimpleCORSMiddleware creates a basic CORS middleware with default settings.
+//
+// Deprecated: SimpleCORSMiddleware allows all origins (*) and is insecure for production use.
+// Use CORSMiddleware(cfg) with explicit allowed origins instead.
 func SimpleCORSMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

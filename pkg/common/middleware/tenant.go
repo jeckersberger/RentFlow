@@ -29,8 +29,9 @@ func TenantMiddleware() func(http.Handler) http.Handler {
 				tenantID = claims.TenantID
 			}
 
-			// Fall back to header
-			if tenantID == "" {
+			// Fall back to header — only accept X-Tenant-ID from internal service-to-service calls.
+			// Internal services must set the X-Internal-Service header to authenticate the override.
+			if tenantID == "" && r.Header.Get("X-Internal-Service") == "rentflow" {
 				tenantID = r.Header.Get("X-Tenant-ID")
 			}
 
