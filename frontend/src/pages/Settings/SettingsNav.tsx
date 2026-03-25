@@ -22,6 +22,7 @@ import {
   Blocks,
   QrCode,
   Smartphone,
+  Download,
   type LucideIcon,
 } from 'lucide-react'
 import './Settings.scss'
@@ -47,6 +48,7 @@ const settingsNavGroups: SettingsNavGroup[] = [
       { label: 'Rollen', href: '/settings/roles', icon: ShieldCheck },
       { label: 'Integrationen', href: '/settings/integrations', icon: Puzzle },
       { label: 'Backups', href: '/settings/backups', icon: Database },
+      { label: 'Software-Update', href: '/settings/update', icon: Download },
     ],
   },
   {

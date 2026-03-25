@@ -41,9 +41,8 @@ const (
 	userSessionsKeyPrefix = "user_sessions:"
 	bruteforceKeyPrefix   = "bruteforce:"
 	sessionTTL            = 7 * 24 * time.Hour  // 7 Tage
-	bruteforceTTL         = 15 * time.Minute     // 15 Minuten Sperre
 	maxRotations          = 50
-	maxFailedLogins       = 5
+	maxFailedLogins       = 10
 )
 
 // NewSessionManager erstellt einen neuen SessionManager
@@ -185,7 +184,24 @@ func (sm *SessionManager) InvalidateAllUserSessions(ctx context.Context, userID 
 	return nil
 }
 
-// RecordFailedLogin zaehlt fehlgeschlagene Logins pro IP
+// bruteforceTTLForCount berechnet den verlaengernden Timeout basierend auf Fehlversuchen
+// 1-9 Versuche: 1 Minute, 10: 5 Min, 15: 15 Min, 20: 30 Min, 25+: 1 Stunde
+func bruteforceTTLForCount(count int) time.Duration {
+	switch {
+	case count < maxFailedLogins:
+		return 1 * time.Minute
+	case count < 15:
+		return 5 * time.Minute
+	case count < 20:
+		return 15 * time.Minute
+	case count < 25:
+		return 30 * time.Minute
+	default:
+		return 1 * time.Hour
+	}
+}
+
+// RecordFailedLogin zaehlt fehlgeschlagene Logins pro IP mit verlaengerndem Timeout
 func (sm *SessionManager) RecordFailedLogin(ctx context.Context, ipAddress string) (int, error) {
 	if ipAddress == "" {
 		return 0, fmt.Errorf("ipAddress ist erforderlich")
@@ -200,12 +216,13 @@ func (sm *SessionManager) RecordFailedLogin(ctx context.Context, ipAddress strin
 
 	count++
 
-	// Counter mit TTL speichern
-	if err := sm.cache.Set(ctx, bruteforceKey, strconv.Itoa(count), bruteforceTTL); err != nil {
+	// Counter mit verlaengerndem TTL speichern
+	ttl := bruteforceTTLForCount(count)
+	if err := sm.cache.Set(ctx, bruteforceKey, strconv.Itoa(count), ttl); err != nil {
 		return 0, fmt.Errorf("brute-force counter speichern fehlgeschlagen: %w", err)
 	}
 
-	sm.logger.Warn("fehlgeschlagener Login", "ipAddress", ipAddress, "count", count)
+	sm.logger.Warn("fehlgeschlagener Login", "ipAddress", ipAddress, "count", count, "lockout", ttl.String())
 	return count, nil
 }
 

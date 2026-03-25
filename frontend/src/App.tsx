@@ -58,6 +58,7 @@ const UsersPage = lazy(() => import('./pages/Settings/pages/UsersPage'))
 const RolesPage = lazy(() => import('./pages/Settings/pages/RolesPage'))
 const IntegrationsPage = lazy(() => import('./pages/Settings/pages/IntegrationsPage'))
 const BackupsPage = lazy(() => import('./pages/Settings/pages/BackupsPage'))
+const UpdatePage = lazy(() => import('./pages/Settings/pages/UpdatePage'))
 const LocalePage = lazy(() => import('./pages/Settings/pages/LocalePage'))
 const NumberSequencesPage = lazy(() => import('./pages/Settings/pages/NumberSequencesPage'))
 const ProjectTypesPage = lazy(() => import('./pages/Settings/pages/ProjectTypesPage'))
@@ -331,6 +332,7 @@ function App() {
               <Route path="roles" element={<RolesPage />} />
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="backups" element={<BackupsPage />} />
+              <Route path="update" element={<UpdatePage />} />
               <Route path="locale" element={<LocalePage />} />
               <Route path="number-sequences" element={<NumberSequencesPage />} />
               <Route path="project-types" element={<ProjectTypesPage />} />
