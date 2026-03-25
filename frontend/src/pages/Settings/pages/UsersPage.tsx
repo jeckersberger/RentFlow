@@ -246,7 +246,6 @@ function UsersPage() {
             <tbody>
               {users.map((user) => {
                 const status = getUserStatus(user)
-                const _isSelf = isCurrentUser(user)
                 const isDeactivated = isUserDeactivated(user)
                 return (
                   <tr key={user.id} style={isDeactivated ? { opacity: 0.6 } : undefined}>
