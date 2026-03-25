@@ -30,6 +30,7 @@ type Project struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	CreatedByUserID string
+	IsDryHire       bool
 }
 
 type ProjectStatus string

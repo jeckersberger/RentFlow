@@ -20,7 +20,7 @@ func NewOfflineQueuePostgres(db *database.PostgresPool) ports.OfflineQueueReposi
 
 func (r *OfflineQueuePostgres) Create(ctx context.Context, item *domain.OfflineQueueItem) error {
 	query := `
-		INSERT INTO offline_queue
+		INSERT INTO scanner.offline_queue
 		(id, tenant_id, device_id, payload, created_at, sync_status)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
@@ -40,7 +40,7 @@ func (r *OfflineQueuePostgres) Create(ctx context.Context, item *domain.OfflineQ
 func (r *OfflineQueuePostgres) GetByID(ctx context.Context, id string) (*domain.OfflineQueueItem, error) {
 	query := `
 		SELECT id, tenant_id, device_id, payload, created_at, synced_at, sync_status
-		FROM offline_queue
+		FROM scanner.offline_queue
 		WHERE id = $1
 	`
 
@@ -51,7 +51,7 @@ func (r *OfflineQueuePostgres) GetByID(ctx context.Context, id string) (*domain.
 func (r *OfflineQueuePostgres) GetPending(ctx context.Context, tenantID string, limit int) ([]*domain.OfflineQueueItem, error) {
 	query := `
 		SELECT id, tenant_id, device_id, payload, created_at, synced_at, sync_status
-		FROM offline_queue
+		FROM scanner.offline_queue
 		WHERE tenant_id = $1 AND sync_status IN ('pending', 'failed')
 		ORDER BY created_at ASC
 		LIMIT $2
@@ -77,7 +77,7 @@ func (r *OfflineQueuePostgres) GetPending(ctx context.Context, tenantID string, 
 
 func (r *OfflineQueuePostgres) Update(ctx context.Context, item *domain.OfflineQueueItem) error {
 	query := `
-		UPDATE offline_queue
+		UPDATE scanner.offline_queue
 		SET sync_status = $1, synced_at = $2
 		WHERE id = $3
 	`
@@ -92,13 +92,13 @@ func (r *OfflineQueuePostgres) Update(ctx context.Context, item *domain.OfflineQ
 }
 
 func (r *OfflineQueuePostgres) DeleteByID(ctx context.Context, id string) error {
-	query := `DELETE FROM offline_queue WHERE id = $1`
+	query := `DELETE FROM scanner.offline_queue WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id)
 	return err
 }
 
 func (r *OfflineQueuePostgres) GetCount(ctx context.Context, tenantID string, status string) (int, error) {
-	query := `SELECT COUNT(*) FROM offline_queue WHERE tenant_id = $1 AND sync_status = $2`
+	query := `SELECT COUNT(*) FROM scanner.offline_queue WHERE tenant_id = $1 AND sync_status = $2 WHERE tenant_id = $1 AND sync_status = $2`
 	var count int
 	err := r.db.QueryRow(ctx, query, tenantID, status).Scan(&count)
 	return count, err

@@ -45,6 +45,7 @@ func main() {
 	equipmentRepo := repositories.NewEquipmentPostgres(dbPool)
 	categoryRepo := repositories.NewCategoryPostgres(dbPool)
 	flightcaseRepo := repositories.NewFlightcasePostgres(dbPool)
+	equipmentTypeRepo := repositories.NewEquipmentTypePostgres(dbPool)
 
 	log.Info("Repositories initialized")
 
@@ -52,11 +53,12 @@ func main() {
 	equipmentSvc := application.NewEquipmentService(equipmentRepo, categoryRepo, nil, log)
 	categorySvc := application.NewCategoryService(categoryRepo, log)
 	flightcaseSvc := application.NewFlightcaseService(flightcaseRepo, equipmentRepo, log)
+	equipmentTypeSvc := application.NewEquipmentTypeService(equipmentTypeRepo, equipmentRepo, categoryRepo, log)
 
 	log.Info("Services initialized")
 
 	// Setup router
-	router := httpAdapter.NewRouter(equipmentSvc, categorySvc, flightcaseSvc, log)
+	router := httpAdapter.NewRouter(equipmentSvc, categorySvc, flightcaseSvc, equipmentTypeSvc, log)
 
 	// Create HTTP server
 	srv := &http.Server{

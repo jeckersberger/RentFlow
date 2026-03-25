@@ -58,6 +58,16 @@ type FlightcaseListResult struct {
 	Offset int
 }
 
+type EquipmentTypeRepository interface {
+	Create(ctx context.Context, equipmentType *domain.EquipmentType) error
+	Update(ctx context.Context, equipmentType *domain.EquipmentType) error
+	GetByID(ctx context.Context, tenantID, id string) (*domain.EquipmentType, error)
+	List(ctx context.Context, tenantID, categoryID string, limit, offset int) ([]*domain.EquipmentType, int64, error)
+	Delete(ctx context.Context, tenantID, id string) error
+	CountItems(ctx context.Context, tenantID, typeID string) (int64, error)
+	NextItemNumber(ctx context.Context, tenantID, typeID string) (int, error)
+}
+
 type EquipmentHistoryRepository interface {
 	Create(ctx context.Context, history *domain.EquipmentHistory) error
 	GetByEquipmentID(ctx context.Context, tenantID, equipmentID string, limit, offset int) ([]*domain.EquipmentHistory, int64, error)

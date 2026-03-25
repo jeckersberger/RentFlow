@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
@@ -135,6 +136,7 @@ func (s *SessionService) ProcessSessionScan(ctx context.Context, cmd ProcessSess
 		cmd.DeviceID,
 		cmd.DeviceType,
 	)
+	event.SessionID = cmd.SessionID
 	event.ProjectID = session.ProjectID
 	event.Latitude = cmd.Latitude
 	event.Longitude = cmd.Longitude
@@ -201,11 +203,10 @@ func (s *SessionService) GetSessionProtocol(ctx context.Context, tenantID, sessi
 	}
 
 	query := &ports.ScanListQuery{
-		Limit:  1000,
-		Offset: 0,
+		SessionID: &sessionID,
+		Limit:     1000,
+		Offset:    0,
 	}
-	_ = sessionID // used for filtering in future
-	// We need to filter by device_id association; for now return all scans in time range
 	result, err := s.scanRepo.List(ctx, tenantID, query)
 	if err != nil {
 		return nil, domain.NewDomainError("QUERY_ERROR", "failed to get session protocol", err)
@@ -217,6 +218,29 @@ func (s *SessionService) GetSessionProtocol(ctx context.Context, tenantID, sessi
 	}
 
 	return dtos, nil
+}
+
+func (s *SessionService) UploadSignature(ctx context.Context, tenantID, sessionID, signatureData string) error {
+	if tenantID == "" {
+		return domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+	if sessionID == "" {
+		return domain.NewDomainError("SESSION_ID_REQUIRED", "session ID is required", nil)
+	}
+
+	session, err := s.sessionRepo.GetByID(ctx, tenantID, sessionID)
+	if err != nil {
+		return domain.NewDomainError("NOT_FOUND", "scan session not found", err)
+	}
+
+	session.SignatureData = signatureData
+	session.UpdatedAt = time.Now()
+	if err := s.sessionRepo.Update(ctx, session); err != nil {
+		return domain.NewDomainError("UPDATE_ERROR", "failed to save signature", err)
+	}
+
+	s.logger.Info("Signature uploaded for session", "id", sessionID)
+	return nil
 }
 
 func (s *SessionService) QueueOfflineScan(ctx context.Context, tenantID, deviceID string, scanCmd ProcessScanCommand) (*OfflineQueueDTO, error) {

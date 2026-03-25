@@ -11,10 +11,11 @@ func NewRouter(
 	equipmentSvc *application.EquipmentService,
 	categorySvc *application.CategoryService,
 	flightcaseSvc *application.FlightcaseService,
+	equipmentTypeSvc *application.EquipmentTypeService,
 	logger logger.Logger,
 ) *http.ServeMux {
 	router := http.NewServeMux()
-	handler := NewHandler(equipmentSvc, categorySvc, flightcaseSvc, logger)
+	handler := NewHandler(equipmentSvc, categorySvc, flightcaseSvc, equipmentTypeSvc, logger)
 
 	// Health & readiness
 	router.HandleFunc("GET /health", healthHandler)
@@ -50,6 +51,14 @@ func NewRouter(
 	router.HandleFunc("GET /api/v1/categories/{id}", handler.GetCategory)
 	router.HandleFunc("PUT /api/v1/categories/{id}", handler.UpdateCategory)
 	router.HandleFunc("DELETE /api/v1/categories/{id}", handler.DeleteCategory)
+
+	// Equipment Type routes
+	router.HandleFunc("POST /api/v1/equipment-types", handler.CreateEquipmentType)
+	router.HandleFunc("GET /api/v1/equipment-types", handler.ListEquipmentTypes)
+	router.HandleFunc("GET /api/v1/equipment-types/{id}", handler.GetEquipmentType)
+	router.HandleFunc("PUT /api/v1/equipment-types/{id}", handler.UpdateEquipmentType)
+	router.HandleFunc("DELETE /api/v1/equipment-types/{id}", handler.DeleteEquipmentType)
+	router.HandleFunc("POST /api/v1/equipment-types/{id}/create-items", handler.CreateItemsFromType)
 
 	// Flightcase routes
 	router.HandleFunc("POST /api/v1/flightcases", handler.CreateFlightcase)

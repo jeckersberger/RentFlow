@@ -69,8 +69,14 @@ func main() {
 
 	log.Info("Services initialized")
 
+	// JWT secret
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "rentflow-dev-secret-change-in-production"
+	}
+
 	// Setup router
-	router := httpAdapter.NewRouter(scanSvc, sessionSvc, log)
+	router := httpAdapter.NewRouter(scanSvc, sessionSvc, log, jwtSecret)
 
 	// Create HTTP server
 	srv := &http.Server{

@@ -45,7 +45,8 @@ const projectSelectColumns = `id, tenant_id, name,
 			   COALESCE(currency, 'USD') as currency,
 			   COALESCE(notes, '') as notes,
 			   tags, created_at, updated_at,
-			   COALESCE(created_by_user_id, '') as created_by_user_id`
+			   COALESCE(created_by_user_id, '') as created_by_user_id,
+			   COALESCE(is_dry_hire, false) as is_dry_hire`
 
 func (r *ProjectPostgres) scanProject(scanner interface{ Scan(...interface{}) error }) (*domain.Project, error) {
 	p := &domain.Project{}
@@ -57,7 +58,7 @@ func (r *ProjectPostgres) scanProject(scanner interface{ Scan(...interface{}) er
 		&p.VenueAddress.PostalCode, &p.VenueAddress.Country, &p.VenueAddress.Coordinates,
 		&p.Status, &p.StartDate, &p.EndDate, &p.SetupDate, &p.TeardownDate,
 		&p.ProjectManager, &p.Budget, &p.Currency, &p.Notes, pq.Array(&p.Tags),
-		&p.CreatedAt, &p.UpdatedAt, &p.CreatedByUserID,
+		&p.CreatedAt, &p.UpdatedAt, &p.CreatedByUserID, &p.IsDryHire,
 	)
 	return p, err
 }
@@ -71,11 +72,11 @@ func (r *ProjectPostgres) Create(ctx context.Context, p *domain.Project) error {
 			venue_street, venue_city, venue_state, venue_postal_code,
 			venue_country, venue_coordinates, status, start_date, end_date,
 			setup_date, teardown_date, project_manager, budget, currency,
-			notes, tags, created_at, updated_at, created_by_user_id
+			notes, tags, created_at, updated_at, created_by_user_id, is_dry_hire
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
 			$15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
-			$27, $28, $29, $30, $31, $32
+			$27, $28, $29, $30, $31, $32, $33
 		)
 	`
 
@@ -87,7 +88,7 @@ func (r *ProjectPostgres) Create(ctx context.Context, p *domain.Project) error {
 		p.VenueAddress.PostalCode, p.VenueAddress.Country, p.VenueAddress.Coordinates,
 		string(p.Status), p.StartDate, p.EndDate, p.SetupDate, p.TeardownDate,
 		p.ProjectManager, p.Budget, p.Currency, p.Notes, pq.Array(p.Tags),
-		p.CreatedAt, p.UpdatedAt, p.CreatedByUserID,
+		p.CreatedAt, p.UpdatedAt, p.CreatedByUserID, p.IsDryHire,
 	)
 
 	if err != nil {
@@ -107,7 +108,8 @@ func (r *ProjectPostgres) Update(ctx context.Context, p *domain.Project) error {
 			venue_state = $16, venue_postal_code = $17, venue_country = $18,
 			venue_coordinates = $19, status = $20, start_date = $21, end_date = $22,
 			setup_date = $23, teardown_date = $24, project_manager = $25,
-			budget = $26, currency = $27, notes = $28, tags = $29, updated_at = $30
+			budget = $26, currency = $27, notes = $28, tags = $29, updated_at = $30,
+			is_dry_hire = $31
 		WHERE id = $1 AND tenant_id = $2
 	`
 
@@ -119,6 +121,7 @@ func (r *ProjectPostgres) Update(ctx context.Context, p *domain.Project) error {
 		p.VenueAddress.PostalCode, p.VenueAddress.Country, p.VenueAddress.Coordinates,
 		string(p.Status), p.StartDate, p.EndDate, p.SetupDate, p.TeardownDate,
 		p.ProjectManager, p.Budget, p.Currency, p.Notes, pq.Array(p.Tags), p.UpdatedAt,
+		p.IsDryHire,
 	)
 
 	if err != nil {

@@ -50,6 +50,7 @@ type ScanEvent struct {
 	EquipmentID string
 	ProjectID   *string
 	LocationID  *string
+	SessionID   string
 	UserID      string
 	DeviceID    string
 	DeviceType  DeviceType
@@ -114,20 +115,21 @@ func (s *ScanEvent) MarkSynced() {
 }
 
 type ScanSession struct {
-	ID             string
-	TenantID       string
-	UserID         string
-	Context        ScanContext
-	ProjectID      *string
-	StartedAt      time.Time
-	EndedAt        *time.Time
-	DeviceType     DeviceType
-	DeviceID       string
-	TotalScans     int
+	ID              string
+	TenantID        string
+	UserID          string
+	Context         ScanContext
+	ProjectID       *string
+	StartedAt       time.Time
+	EndedAt         *time.Time
+	DeviceType      DeviceType
+	DeviceID        string
+	TotalScans      int
 	SuccessfulScans int
-	FailedScans    int
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	FailedScans     int
+	SignatureData   string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 func NewScanSession(

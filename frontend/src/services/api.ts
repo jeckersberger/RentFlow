@@ -226,7 +226,7 @@ const mockStockMovements = [
 
 // Equipment API endpoints
 export const equipmentApi = {
-  list: (params: { limit?: number; offset?: number; status?: string; category_id?: string; location_id?: string } = {}) =>
+  list: (params: { limit?: number; offset?: number; status?: string; category_id?: string; location_id?: string; type_id?: string } = {}) =>
     MOCK_MODE
       ? mockDelay({ data: mockEquipment.slice(params.offset || 0, (params.offset || 0) + (params.limit || 20)), total: mockEquipment.length, limit: params.limit || 20, offset: params.offset || 0 })
       : api.get('/api/v1/equipment', { params }).then(res => res.data),
@@ -319,6 +319,27 @@ export const equipmentApi = {
       const data = res.data
       return Array.isArray(data) ? data : (data?.data ?? data?.items ?? [])
     }),
+}
+
+// Equipment Type API endpoints (Typ/Instanz-Hierarchie)
+export const equipmentTypeApi = {
+  list: (params: { limit?: number; offset?: number; category_id?: string } = {}) =>
+    api.get('/api/v1/equipment-types', { params }).then(res => res.data),
+
+  getById: (id: string) =>
+    api.get(`/api/v1/equipment-types/${id}`).then(res => res.data),
+
+  create: (data: object) =>
+    api.post('/api/v1/equipment-types', data).then(res => res.data),
+
+  update: (id: string, data: object) =>
+    api.put(`/api/v1/equipment-types/${id}`, data).then(res => res.data),
+
+  delete: (id: string) =>
+    api.delete(`/api/v1/equipment-types/${id}`).then(res => res.data),
+
+  createItems: (id: string, count: number) =>
+    api.post(`/api/v1/equipment-types/${id}/create-items`, { count }).then(res => res.data),
 }
 
 // Tenant API endpoints

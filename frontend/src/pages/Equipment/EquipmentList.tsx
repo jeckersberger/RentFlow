@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
-import { Package } from 'lucide-react'
-import { equipmentApi, categoryApi } from '../../services/api'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { Package, ArrowLeft, Plus } from 'lucide-react'
+import { equipmentApi, equipmentTypeApi, categoryApi } from '../../services/api'
 import { DataTable, Column } from '../../components/DataTable/DataTable'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Modal } from '../../components/Modal/Modal'
@@ -15,6 +15,7 @@ import { useNotificationStore } from '../../stores/notificationStore'
 import { Equipment, EquipmentStatus, Category } from '../../types/equipment'
 import { generateCSV, downloadCSV, formatDateForExport } from '../../utils/csvExport'
 import './Equipment.scss'
+import './EquipmentTypes.scss'
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '', label: 'Alle Status' },
@@ -37,6 +38,7 @@ const CONDITION_LABELS: Record<string, string> = {
 
 function EquipmentListPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -46,7 +48,26 @@ function EquipmentListPage() {
   const [selectedStatus, setSelectedStatus] = useState('')
   const [importMessage, setImportMessage] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<Equipment | null>(null)
+  const [createItemsCount, setCreateItemsCount] = useState(1)
+  const [showCreateItems, setShowCreateItems] = useState(false)
   const limit = 20
+
+  // Type filter from URL params
+  const typeId = searchParams.get('type_id') || ''
+  const typeName = searchParams.get('type_name') || ''
+
+  const { mutate: createItemsFromType, isPending: isCreatingItems } = useMutation({
+    mutationFn: () => equipmentTypeApi.createItems(typeId, createItemsCount),
+    onSuccess: () => {
+      addNotification(`${createItemsCount} Einzelartikel erstellt`, 'success', { title: 'Erfolg', duration: 3000 })
+      setShowCreateItems(false)
+      setCreateItemsCount(1)
+      queryClient.invalidateQueries({ queryKey: ['equipment-list'] })
+    },
+    onError: () => {
+      addNotification('Fehler beim Erstellen der Einzelartikel', 'error', { title: 'Fehler', duration: 5000 })
+    },
+  })
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -148,7 +169,7 @@ function EquipmentListPage() {
   const offset = (page - 1) * limit
 
   const { data: equipmentData, isLoading, error } = useQuery({
-    queryKey: ['equipment-list', page, searchQuery, selectedCategory, selectedStatus],
+    queryKey: ['equipment-list', page, searchQuery, selectedCategory, selectedStatus, typeId],
     queryFn: async () => {
       if (searchQuery) {
         return equipmentApi.search(searchQuery, limit, offset)
@@ -156,6 +177,7 @@ function EquipmentListPage() {
       const params: Record<string, unknown> = { limit, offset }
       if (selectedCategory) params.category_id = selectedCategory
       if (selectedStatus) params.status = selectedStatus
+      if (typeId) params.type_id = typeId
       return equipmentApi.list(params as { limit?: number; offset?: number; status?: string; category_id?: string })
     },
     staleTime: 1000 * 60 * 5,
@@ -234,51 +256,93 @@ function EquipmentListPage() {
 
   return (
     <div className="equipment-list-page">
+      {/* Breadcrumb when filtered by type */}
+      {typeId && (
+        <div className="et-breadcrumb" style={{ marginBottom: 'var(--spacing-2)' }}>
+          <Link to="/equipment-types" className="et-breadcrumb__link" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <ArrowLeft size={14} />
+            Equipment-Katalog
+          </Link>
+          <span className="et-breadcrumb__separator">/</span>
+          <span className="et-breadcrumb__current">{typeName || 'Typ'}</span>
+          <span className="et-breadcrumb__separator">/</span>
+          <span className="et-breadcrumb__current">Einzelartikel</span>
+        </div>
+      )}
+
       <div className="page-header">
         <div>
-          <h1 className="page-title">Ausrüstungsverwaltung</h1>
-          <p className="page-subtitle">Verwalten Sie Ihre Ausrüstung und verfügbaren Ressourcen</p>
+          <h1 className="page-title">
+            {typeId ? `${typeName || 'Typ'} - Einzelartikel` : 'Ausrüstungsverwaltung'}
+          </h1>
+          <p className="page-subtitle">
+            {typeId
+              ? 'Alle Einzelartikel dieses Equipment-Typs'
+              : 'Verwalten Sie Ihre Ausrüstung und verfügbaren Ressourcen'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
-          <button
-            className="btn btn--secondary"
-            onClick={() => navigate('/equipment/timeline')}
-            style={{ background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)', borderColor: 'rgba(0, 212, 255, 0.3)' }}
-          >
-            Zeitleiste öffnen
-          </button>
-          <button
-            className="btn btn--secondary"
-            onClick={() => navigate('/equipment/labels')}
-          >
-            Labels drucken
-          </button>
-          <button
-            className="btn btn--secondary"
-            onClick={exportEquipmentCSV}
-            disabled={items.length === 0}
-          >
-            Exportieren
-          </button>
-          <button
-            className="btn btn--secondary"
-            onClick={() => navigate('/equipment/import')}
-          >
-            CSV importieren
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            style={{ display: 'none' }}
-            onChange={handleFileSelect}
-          />
-          <button
-            className="btn btn--primary"
-            onClick={() => navigate('/equipment/new')}
-          >
-            + Neue Ausrüstung
-          </button>
+          {typeId && (
+            <button
+              className="btn btn--secondary"
+              onClick={() => navigate('/equipment-types')}
+            >
+              <ArrowLeft size={14} />
+              Zum Katalog
+            </button>
+          )}
+          {typeId && (
+            <button
+              className="btn btn--primary"
+              onClick={() => setShowCreateItems(true)}
+            >
+              <Plus size={14} />
+              Einzelartikel erstellen
+            </button>
+          )}
+          {!typeId && (
+            <>
+              <button
+                className="btn btn--secondary"
+                onClick={() => navigate('/equipment/timeline')}
+                style={{ background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)', borderColor: 'rgba(0, 212, 255, 0.3)' }}
+              >
+                Zeitleiste öffnen
+              </button>
+              <button
+                className="btn btn--secondary"
+                onClick={() => navigate('/equipment/labels')}
+              >
+                Labels drucken
+              </button>
+              <button
+                className="btn btn--secondary"
+                onClick={exportEquipmentCSV}
+                disabled={items.length === 0}
+              >
+                Exportieren
+              </button>
+              <button
+                className="btn btn--secondary"
+                onClick={() => navigate('/equipment/import')}
+              >
+                CSV importieren
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                style={{ display: 'none' }}
+                onChange={handleFileSelect}
+              />
+              <button
+                className="btn btn--primary"
+                onClick={() => navigate('/equipment/new')}
+              >
+                + Neue Ausrüstung
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -383,6 +447,45 @@ function EquipmentListPage() {
         <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>
           Möchten Sie <strong>{deleteTarget?.name}</strong> wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
         </p>
+      </Modal>
+
+      {/* Create Items from Type Modal */}
+      <Modal
+        isOpen={showCreateItems}
+        onClose={() => setShowCreateItems(false)}
+        title="Einzelartikel erstellen"
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => setShowCreateItems(false)}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={() => createItemsFromType()}
+              disabled={isCreatingItems || createItemsCount < 1}
+            >
+              {isCreatingItems ? 'Wird erstellt...' : `${createItemsCount} Artikel erstellen`}
+            </button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+          <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>
+            Wie viele Einzelartikel vom Typ <strong>{typeName}</strong> sollen erstellt werden?
+          </p>
+          <Input
+            label="Anzahl"
+            type="number"
+            min="1"
+            max="100"
+            value={String(createItemsCount)}
+            onChange={(e) => setCreateItemsCount(Math.max(1, parseInt(e.target.value) || 1))}
+          />
+        </div>
       </Modal>
     </div>
   )

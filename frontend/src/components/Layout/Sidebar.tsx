@@ -12,6 +12,7 @@ import {
   FolderKanban,
   AlertTriangle,
   Package,
+  Boxes,
   Warehouse,
   ScanLine,
   Wrench,
@@ -71,6 +72,7 @@ const navGroups: NavGroup[] = [
   {
     labelKey: 'nav.warehouse',
     items: [
+      { labelKey: 'nav.equipment_catalog', href: '/equipment-types', icon: Boxes },
       { labelKey: 'nav.equipment', href: '/equipment', icon: Package },
       { labelKey: 'nav.warehouse_nav', href: '/warehouse', icon: Warehouse },
       { labelKey: 'nav.scanner', href: '/scanner', icon: ScanLine },
@@ -122,7 +124,7 @@ const navGroups: NavGroup[] = [
 
 // Mapping of module IDs to their nav item paths
 const MODULE_NAV_PATHS: Record<string, string[]> = {
-  warehouse: ['/', '/equipment', '/scanner', '/warehouse'],
+  warehouse: ['/', '/equipment-types', '/equipment', '/scanner', '/warehouse'],
   projects: ['/projects', '/calendar', '/shortages'],
   finance: ['/invoices', '/quotes', '/contacts', '/expenses'],
   team: ['/crew', '/time-tracking', '/transport'],

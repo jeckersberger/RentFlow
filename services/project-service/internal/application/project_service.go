@@ -72,6 +72,7 @@ func (s *ProjectService) CreateProject(ctx context.Context, cmd CreateProjectCom
 	project.Currency = cmd.Currency
 	project.Notes = cmd.Notes
 	project.Tags = cmd.Tags
+	project.IsDryHire = cmd.IsDryHire
 
 	if err := project.Validate(); err != nil {
 		return nil, domain.NewDomainError("VALIDATION_ERROR", err.Error(), nil)
@@ -124,6 +125,7 @@ func (s *ProjectService) UpdateProject(ctx context.Context, cmd UpdateProjectCom
 	project.Currency = cmd.Currency
 	project.Notes = cmd.Notes
 	project.Tags = cmd.Tags
+	project.IsDryHire = cmd.IsDryHire
 
 	if err := s.repo.Update(ctx, project); err != nil {
 		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to update project", err)
@@ -315,6 +317,7 @@ func (s *ProjectService) CopyProject(ctx context.Context, projectID, tenantID, n
 	newProject.Currency = project.Currency
 	newProject.Notes = project.Notes
 	newProject.Tags = project.Tags
+	newProject.IsDryHire = project.IsDryHire
 
 	// Parse new dates
 	startTime, err := parseDate(newStartDateStr)

@@ -847,6 +847,195 @@ func (h *Handler) SubmitInventoryCount(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, result)
 }
 
+// =====================================================
+// Scanner App: Inventory Jobs API (maps to inventory checks)
+// =====================================================
+
+// ListInventoryJobs handles GET /api/v1/inventory/jobs
+// Returns open/in-progress inventory checks as "jobs" for the Scanner App.
+func (h *Handler) ListInventoryJobs(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	result, err := h.inventoryCheckSvc.ListChecks(r.Context(), tenantID, 100, 0)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	checks, ok := result.Data.([]*application.InventoryCheckDTO)
+	if !ok {
+		h.respondError(w, http.StatusInternalServerError, "unexpected data type")
+		return
+	}
+
+	type JobEntry struct {
+		ID            string `json:"id"`
+		Name          string `json:"name"`
+		Zone          string `json:"zone"`
+		Status        string `json:"status"`
+		ExpectedCount int    `json:"expectedCount"`
+		ScannedCount  int    `json:"scannedCount"`
+		CreatedAt     string `json:"createdAt"`
+	}
+
+	jobs := make([]JobEntry, 0)
+	for _, check := range checks {
+		// Only include non-completed checks (open or in_progress)
+		if check.Status == "completed" {
+			continue
+		}
+
+		// Map status: "planned" -> "open", keep "in_progress" as is
+		status := check.Status
+		if status == "planned" {
+			status = "open"
+		}
+
+		zone := ""
+		if check.LocationID != nil {
+			zone = *check.LocationID
+		}
+
+		expectedCount := 0
+		scannedCount := 0
+		for _, item := range check.Items {
+			expectedCount += item.ExpectedCount
+			if item.ActualCount > 0 {
+				scannedCount++
+			}
+		}
+
+		jobs = append(jobs, JobEntry{
+			ID:            check.ID,
+			Name:          check.Name,
+			Zone:          zone,
+			Status:        status,
+			ExpectedCount: expectedCount,
+			ScannedCount:  scannedCount,
+			CreatedAt:     check.CreatedAt,
+		})
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"data": jobs,
+	})
+}
+
+// GetInventoryJobItems handles GET /api/v1/inventory/jobs/{id}/items
+// Returns the expected items for an inventory job as equipment-like objects.
+func (h *Handler) GetInventoryJobItems(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	jobID := r.PathValue("id")
+	check, err := h.inventoryCheckSvc.GetCheck(r.Context(), tenantID, jobID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	type ItemEntry struct {
+		ID       string `json:"id"`
+		Barcode  string `json:"barcode"`
+		Name     string `json:"name"`
+		Category string `json:"category"`
+		Status   string `json:"status"`
+		Location string `json:"location"`
+	}
+
+	items := make([]ItemEntry, 0, len(check.Items))
+	for _, item := range check.Items {
+		location := ""
+		if check.LocationID != nil {
+			location = *check.LocationID
+		}
+
+		items = append(items, ItemEntry{
+			ID:       item.EquipmentID,
+			Barcode:  item.EquipmentID,
+			Name:     item.EquipmentID,
+			Category: "",
+			Status:   "AVAILABLE",
+			Location: location,
+		})
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"data": items,
+	})
+}
+
+// CompleteInventoryJob handles POST /api/v1/inventory/jobs/{id}/complete
+// Accepts scanned/missing/unexpected barcodes and completes the inventory check.
+func (h *Handler) CompleteInventoryJob(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	jobID := r.PathValue("id")
+
+	var payload struct {
+		ScannedBarcodes    []string `json:"scannedBarcodes"`
+		MissingBarcodes    []string `json:"missingBarcodes"`
+		UnexpectedBarcodes []string `json:"unexpectedBarcodes"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Scan each barcode into the inventory check
+	for _, barcode := range payload.ScannedBarcodes {
+		scanCmd := application.ScanInventoryItemCommand{
+			TenantID:    tenantID,
+			CheckID:     jobID,
+			EquipmentID: barcode,
+		}
+		// Best-effort scan — item may not exist in check (unexpected items)
+		_, _ = h.inventoryCheckSvc.ScanItem(r.Context(), scanCmd)
+	}
+
+	// Complete the check
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		userID = "scanner-app"
+	}
+
+	cmd := application.CompleteInventoryCheckCommand{
+		TenantID:    tenantID,
+		CheckID:     jobID,
+		CompletedBy: userID,
+	}
+
+	_, err := h.inventoryCheckSvc.CompleteCheck(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.logger.Info("Inventory job completed via scanner",
+		"job_id", jobID,
+		"scanned", len(payload.ScannedBarcodes),
+		"missing", len(payload.MissingBarcodes),
+		"unexpected", len(payload.UnexpectedBarcodes),
+	)
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    nil,
+		"message": "Inventory completed",
+	})
+}
+
 // Helper methods
 
 func (h *Handler) respondJSON(w http.ResponseWriter, statusCode int, data interface{}) {

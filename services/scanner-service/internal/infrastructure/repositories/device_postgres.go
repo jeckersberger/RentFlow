@@ -20,7 +20,7 @@ func NewDevicePostgres(db *database.PostgresPool) ports.DeviceRepository {
 
 func (r *DevicePostgres) Create(ctx context.Context, device *domain.Device) error {
 	query := `
-		INSERT INTO devices
+		INSERT INTO scanner.devices
 		(id, tenant_id, name, type, serial, active, location, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
@@ -43,7 +43,7 @@ func (r *DevicePostgres) Create(ctx context.Context, device *domain.Device) erro
 func (r *DevicePostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.Device, error) {
 	query := `
 		SELECT id, tenant_id, name, type, serial, active, location, created_at, updated_at
-		FROM devices
+		FROM scanner.devices
 		WHERE tenant_id = $1 AND id = $2
 	`
 
@@ -54,7 +54,7 @@ func (r *DevicePostgres) GetByID(ctx context.Context, tenantID, id string) (*dom
 func (r *DevicePostgres) GetBySerial(ctx context.Context, tenantID, serial string) (*domain.Device, error) {
 	query := `
 		SELECT id, tenant_id, name, type, serial, active, location, created_at, updated_at
-		FROM devices
+		FROM scanner.devices
 		WHERE tenant_id = $1 AND serial = $2
 	`
 
@@ -65,7 +65,7 @@ func (r *DevicePostgres) GetBySerial(ctx context.Context, tenantID, serial strin
 func (r *DevicePostgres) List(ctx context.Context, tenantID string, limit, offset int) ([]*domain.Device, int, error) {
 	query := `
 		SELECT id, tenant_id, name, type, serial, active, location, created_at, updated_at
-		FROM devices
+		FROM scanner.devices
 		WHERE tenant_id = $1
 		ORDER BY created_at DESC
 		LIMIT $2 OFFSET $3
@@ -87,7 +87,7 @@ func (r *DevicePostgres) List(ctx context.Context, tenantID string, limit, offse
 	}
 
 	// Get total count
-	countQuery := "SELECT COUNT(*) FROM devices WHERE tenant_id = $1"
+	countQuery := "SELECT COUNT(*) FROM scanner.devices WHERE tenant_id = $1 WHERE tenant_id = $1"
 	var total int
 	if err := r.db.QueryRow(ctx, countQuery, tenantID).Scan(&total); err != nil {
 		return nil, 0, err
@@ -98,7 +98,7 @@ func (r *DevicePostgres) List(ctx context.Context, tenantID string, limit, offse
 
 func (r *DevicePostgres) Update(ctx context.Context, device *domain.Device) error {
 	query := `
-		UPDATE devices
+		UPDATE scanner.devices
 		SET name = $1, active = $2, location = $3, updated_at = $4
 		WHERE id = $5 AND tenant_id = $6
 	`
@@ -116,7 +116,7 @@ func (r *DevicePostgres) Update(ctx context.Context, device *domain.Device) erro
 }
 
 func (r *DevicePostgres) Delete(ctx context.Context, tenantID, id string) error {
-	query := `DELETE FROM devices WHERE tenant_id = $1 AND id = $2`
+	query := `DELETE FROM scanner.devices WHERE tenant_id = $1 AND id = $2`
 	_, err := r.db.Exec(ctx, query, tenantID, id)
 	return err
 }

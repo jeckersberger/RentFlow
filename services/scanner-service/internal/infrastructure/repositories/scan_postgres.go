@@ -20,10 +20,10 @@ func NewScanEventPostgres(db *database.PostgresPool) *ScanEventPostgres {
 
 func (r *ScanEventPostgres) Create(ctx context.Context, event *domain.ScanEvent) error {
 	query := `
-		INSERT INTO scan_events
+		INSERT INTO scanner.scan_events
 		(id, tenant_id, barcode, scan_type, equipment_id, project_id, location_id,
-		 user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		 session_id, user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	`
 
 	_, err := r.db.Exec(ctx, query,
@@ -34,6 +34,7 @@ func (r *ScanEventPostgres) Create(ctx context.Context, event *domain.ScanEvent)
 		event.EquipmentID,
 		event.ProjectID,
 		event.LocationID,
+		event.SessionID,
 		event.UserID,
 		event.DeviceID,
 		string(event.DeviceType),
@@ -51,8 +52,8 @@ func (r *ScanEventPostgres) Create(ctx context.Context, event *domain.ScanEvent)
 func (r *ScanEventPostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.ScanEvent, error) {
 	query := `
 		SELECT id, tenant_id, barcode, scan_type, equipment_id, project_id, location_id,
-		       user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at
-		FROM scan_events
+		       session_id, user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at
+		FROM scanner.scan_events
 		WHERE tenant_id = $1 AND id = $2
 	`
 
@@ -63,8 +64,8 @@ func (r *ScanEventPostgres) GetByID(ctx context.Context, tenantID, id string) (*
 func (r *ScanEventPostgres) GetByBarcode(ctx context.Context, tenantID, barcode string) (*domain.ScanEvent, error) {
 	query := `
 		SELECT id, tenant_id, barcode, scan_type, equipment_id, project_id, location_id,
-		       user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at
-		FROM scan_events
+		       session_id, user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at
+		FROM scanner.scan_events
 		WHERE tenant_id = $1 AND barcode = $2
 		ORDER BY created_at DESC
 		LIMIT 1
@@ -99,6 +100,11 @@ func (r *ScanEventPostgres) List(ctx context.Context, tenantID string, query *po
 		args = append(args, *query.DeviceID)
 		argIndex++
 	}
+	if query.SessionID != nil {
+		where += fmt.Sprintf(" AND session_id = $%d", argIndex)
+		args = append(args, *query.SessionID)
+		argIndex++
+	}
 	if query.Status != nil {
 		where += fmt.Sprintf(" AND status = $%d", argIndex)
 		args = append(args, *query.Status)
@@ -106,7 +112,7 @@ func (r *ScanEventPostgres) List(ctx context.Context, tenantID string, query *po
 	}
 
 	// Count query
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM scan_events %s", where)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM scanner.scan_events %s", where)
 	var total int
 	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, err
@@ -115,8 +121,8 @@ func (r *ScanEventPostgres) List(ctx context.Context, tenantID string, query *po
 	// List query
 	listQuery := fmt.Sprintf(`
 		SELECT id, tenant_id, barcode, scan_type, equipment_id, project_id, location_id,
-		       user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at
-		FROM scan_events
+		       session_id, user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at
+		FROM scanner.scan_events
 		%s
 		ORDER BY created_at DESC
 		LIMIT $%d OFFSET $%d
@@ -149,7 +155,7 @@ func (r *ScanEventPostgres) List(ctx context.Context, tenantID string, query *po
 
 func (r *ScanEventPostgres) Update(ctx context.Context, event *domain.ScanEvent) error {
 	query := `
-		UPDATE scan_events
+		UPDATE scanner.scan_events
 		SET equipment_id = $1, project_id = $2, location_id = $3,
 		    notes = $4, status = $5
 		WHERE id = $6 AND tenant_id = $7
@@ -178,6 +184,7 @@ func scanRowToEvent(row *sql.Row) (*domain.ScanEvent, error) {
 		&event.EquipmentID,
 		&event.ProjectID,
 		&event.LocationID,
+		&event.SessionID,
 		&event.UserID,
 		&event.DeviceID,
 		(*string)(&event.DeviceType),
@@ -207,6 +214,7 @@ func scanRowsToEvent(rows *sql.Rows) (*domain.ScanEvent, error) {
 		&event.EquipmentID,
 		&event.ProjectID,
 		&event.LocationID,
+		&event.SessionID,
 		&event.UserID,
 		&event.DeviceID,
 		(*string)(&event.DeviceType),

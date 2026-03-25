@@ -26,6 +26,7 @@ type CreateProjectCommand struct {
 	Notes           string     `json:"notes"`
 	Tags            []string   `json:"tags"`
 	CreatedByUserID string     `json:"created_by_user_id"`
+	IsDryHire       bool       `json:"is_dry_hire"`
 }
 
 type UpdateProjectCommand struct {
@@ -46,6 +47,7 @@ type UpdateProjectCommand struct {
 	Currency      string     `json:"currency"`
 	Notes         string     `json:"notes"`
 	Tags          []string   `json:"tags"`
+	IsDryHire     bool       `json:"is_dry_hire"`
 }
 
 type ChangeProjectStatusCommand struct {

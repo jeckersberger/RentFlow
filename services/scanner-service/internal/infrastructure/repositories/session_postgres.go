@@ -20,10 +20,10 @@ func NewScanSessionPostgres(db *database.PostgresPool) ports.ScanSessionReposito
 
 func (r *ScanSessionPostgres) Create(ctx context.Context, session *domain.ScanSession) error {
 	query := `
-		INSERT INTO scan_sessions
+		INSERT INTO scanner.scan_sessions
 		(id, tenant_id, user_id, context, project_id, started_at, ended_at,
-		 device_type, device_id, total_scans, successful_scans, failed_scans, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		 device_type, device_id, total_scans, successful_scans, failed_scans, signature_data, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	`
 
 	_, err := r.db.Exec(ctx, query,
@@ -39,6 +39,7 @@ func (r *ScanSessionPostgres) Create(ctx context.Context, session *domain.ScanSe
 		session.TotalScans,
 		session.SuccessfulScans,
 		session.FailedScans,
+		session.SignatureData,
 		session.CreatedAt,
 		session.UpdatedAt,
 	)
@@ -49,8 +50,8 @@ func (r *ScanSessionPostgres) Create(ctx context.Context, session *domain.ScanSe
 func (r *ScanSessionPostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.ScanSession, error) {
 	query := `
 		SELECT id, tenant_id, user_id, context, project_id, started_at, ended_at,
-		       device_type, device_id, total_scans, successful_scans, failed_scans, created_at, updated_at
-		FROM scan_sessions
+		       device_type, device_id, total_scans, successful_scans, failed_scans, signature_data, created_at, updated_at
+		FROM scanner.scan_sessions
 		WHERE tenant_id = $1 AND id = $2
 	`
 
@@ -60,11 +61,11 @@ func (r *ScanSessionPostgres) GetByID(ctx context.Context, tenantID, id string) 
 
 func (r *ScanSessionPostgres) Update(ctx context.Context, session *domain.ScanSession) error {
 	query := `
-		UPDATE scan_sessions
+		UPDATE scanner.scan_sessions
 		SET user_id = $1, context = $2, project_id = $3, started_at = $4, ended_at = $5,
 		    device_type = $6, device_id = $7, total_scans = $8, successful_scans = $9,
-		    failed_scans = $10, updated_at = $11
-		WHERE id = $12 AND tenant_id = $13
+		    failed_scans = $10, signature_data = $11, updated_at = $12
+		WHERE id = $13 AND tenant_id = $14
 	`
 
 	_, err := r.db.Exec(ctx, query,
@@ -78,6 +79,7 @@ func (r *ScanSessionPostgres) Update(ctx context.Context, session *domain.ScanSe
 		session.TotalScans,
 		session.SuccessfulScans,
 		session.FailedScans,
+		session.SignatureData,
 		session.UpdatedAt,
 		session.ID,
 		session.TenantID,
@@ -89,8 +91,8 @@ func (r *ScanSessionPostgres) Update(ctx context.Context, session *domain.ScanSe
 func (r *ScanSessionPostgres) List(ctx context.Context, tenantID string, limit, offset int) ([]*domain.ScanSession, int, error) {
 	query := `
 		SELECT id, tenant_id, user_id, context, project_id, started_at, ended_at,
-		       device_type, device_id, total_scans, successful_scans, failed_scans, created_at, updated_at
-		FROM scan_sessions
+		       device_type, device_id, total_scans, successful_scans, failed_scans, signature_data, created_at, updated_at
+		FROM scanner.scan_sessions
 		WHERE tenant_id = $1
 		ORDER BY created_at DESC
 		LIMIT $2 OFFSET $3
@@ -112,7 +114,7 @@ func (r *ScanSessionPostgres) List(ctx context.Context, tenantID string, limit, 
 	}
 
 	// Get total count
-	countQuery := "SELECT COUNT(*) FROM scan_sessions WHERE tenant_id = $1"
+	countQuery := "SELECT COUNT(*) FROM scanner.scan_sessions WHERE tenant_id = $1"
 	var total int
 	if err := r.db.QueryRow(ctx, countQuery, tenantID).Scan(&total); err != nil {
 		return nil, 0, err
@@ -124,8 +126,8 @@ func (r *ScanSessionPostgres) List(ctx context.Context, tenantID string, limit, 
 func (r *ScanSessionPostgres) GetByUserAndContext(ctx context.Context, tenantID, userID string, context domain.ScanContext) (*domain.ScanSession, error) {
 	query := `
 		SELECT id, tenant_id, user_id, context, project_id, started_at, ended_at,
-		       device_type, device_id, total_scans, successful_scans, failed_scans, created_at, updated_at
-		FROM scan_sessions
+		       device_type, device_id, total_scans, successful_scans, failed_scans, signature_data, created_at, updated_at
+		FROM scanner.scan_sessions
 		WHERE tenant_id = $1 AND user_id = $2 AND context = $3 AND ended_at IS NULL
 		ORDER BY created_at DESC
 		LIMIT 1
@@ -137,6 +139,7 @@ func (r *ScanSessionPostgres) GetByUserAndContext(ctx context.Context, tenantID,
 
 func sessionRowToSession(row *sql.Row) (*domain.ScanSession, error) {
 	session := &domain.ScanSession{}
+	var signatureData sql.NullString
 	err := row.Scan(
 		&session.ID,
 		&session.TenantID,
@@ -150,9 +153,13 @@ func sessionRowToSession(row *sql.Row) (*domain.ScanSession, error) {
 		&session.TotalScans,
 		&session.SuccessfulScans,
 		&session.FailedScans,
+		&signatureData,
 		&session.CreatedAt,
 		&session.UpdatedAt,
 	)
+	if signatureData.Valid {
+		session.SignatureData = signatureData.String
+	}
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("scan session not found")
@@ -164,6 +171,7 @@ func sessionRowToSession(row *sql.Row) (*domain.ScanSession, error) {
 
 func sessionRowsToSession(rows *sql.Rows) (*domain.ScanSession, error) {
 	session := &domain.ScanSession{}
+	var signatureData sql.NullString
 	err := rows.Scan(
 		&session.ID,
 		&session.TenantID,
@@ -177,8 +185,12 @@ func sessionRowsToSession(rows *sql.Rows) (*domain.ScanSession, error) {
 		&session.TotalScans,
 		&session.SuccessfulScans,
 		&session.FailedScans,
+		&signatureData,
 		&session.CreatedAt,
 		&session.UpdatedAt,
 	)
+	if signatureData.Valid {
+		session.SignatureData = signatureData.String
+	}
 	return session, err
 }

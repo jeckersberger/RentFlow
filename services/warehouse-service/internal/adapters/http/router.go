@@ -58,6 +58,11 @@ func NewRouter(
 	// Scanner App contract: submit inventory count
 	router.HandleFunc("POST /api/v1/warehouse/inventory", handler.SubmitInventoryCount)
 
+	// Scanner App contract: inventory jobs (maps to inventory checks)
+	router.HandleFunc("GET /api/v1/inventory/jobs", handler.ListInventoryJobs)
+	router.HandleFunc("GET /api/v1/inventory/jobs/{id}/items", handler.GetInventoryJobItems)
+	router.HandleFunc("POST /api/v1/inventory/jobs/{id}/complete", handler.CompleteInventoryJob)
+
 	// Rack routes
 	router.HandleFunc("POST /api/v1/racks", handler.CreateRack)
 

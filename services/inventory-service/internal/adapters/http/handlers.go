@@ -12,23 +12,26 @@ import (
 )
 
 type Handler struct {
-	equipmentSvc  *application.EquipmentService
-	categorySvc   *application.CategoryService
-	flightcaseSvc *application.FlightcaseService
-	logger        logger.Logger
+	equipmentSvc     *application.EquipmentService
+	categorySvc      *application.CategoryService
+	flightcaseSvc    *application.FlightcaseService
+	equipmentTypeSvc *application.EquipmentTypeService
+	logger           logger.Logger
 }
 
 func NewHandler(
 	equipmentSvc *application.EquipmentService,
 	categorySvc *application.CategoryService,
 	flightcaseSvc *application.FlightcaseService,
+	equipmentTypeSvc *application.EquipmentTypeService,
 	logger logger.Logger,
 ) *Handler {
 	return &Handler{
-		equipmentSvc:  equipmentSvc,
-		categorySvc:   categorySvc,
-		flightcaseSvc: flightcaseSvc,
-		logger:        logger,
+		equipmentSvc:     equipmentSvc,
+		categorySvc:      categorySvc,
+		flightcaseSvc:    flightcaseSvc,
+		equipmentTypeSvc: equipmentTypeSvc,
+		logger:           logger,
 	}
 }
 
@@ -1073,4 +1076,164 @@ func (h *Handler) GetEquipmentHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.respondJSON(w, http.StatusOK, response)
+}
+
+// Equipment Type Handlers
+
+func (h *Handler) CreateEquipmentType(w http.ResponseWriter, r *http.Request) {
+	var cmd application.CreateEquipmentTypeCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+	cmd.TenantID = tenantID
+
+	dto, err := h.equipmentTypeSvc.CreateType(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) GetEquipmentType(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	dto, err := h.equipmentTypeSvc.GetType(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) ListEquipmentTypes(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	limit := 20
+	offset := 0
+
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	if o := r.URL.Query().Get("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	categoryID := r.URL.Query().Get("category_id")
+
+	result, err := h.equipmentTypeSvc.ListTypes(r.Context(), tenantID, categoryID, limit, offset)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) UpdateEquipmentType(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var cmd application.UpdateEquipmentTypeCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	cmd.ID = id
+	cmd.TenantID = tenantID
+
+	dto, err := h.equipmentTypeSvc.UpdateType(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
+func (h *Handler) DeleteEquipmentType(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	if err := h.equipmentTypeSvc.DeleteType(r.Context(), tenantID, id); err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) CreateItemsFromType(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+
+	var payload struct {
+		Quantity int `json:"quantity"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.Quantity <= 0 {
+		h.respondError(w, http.StatusBadRequest, "quantity must be greater than 0")
+		return
+	}
+
+	cmd := application.CreateItemsFromTypeCommand{
+		TenantID:        tenantID,
+		TypeID:          id,
+		Quantity:        payload.Quantity,
+		CreatedByUserID: userID,
+	}
+
+	items, err := h.equipmentTypeSvc.CreateItemsFromType(r.Context(), cmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, map[string]interface{}{
+		"created": len(items),
+		"items":   items,
+	})
 }

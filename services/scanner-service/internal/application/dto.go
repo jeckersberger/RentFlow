@@ -11,6 +11,7 @@ func ScanEventToDTO(event *domain.ScanEvent) *ScanEventDTO {
 		EquipmentID: event.EquipmentID,
 		ProjectID:   event.ProjectID,
 		LocationID:  event.LocationID,
+		SessionID:   event.SessionID,
 		UserID:      event.UserID,
 		DeviceID:    event.DeviceID,
 		DeviceType:  string(event.DeviceType),

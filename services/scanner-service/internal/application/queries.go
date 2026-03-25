@@ -31,6 +31,7 @@ type ScanEventDTO struct {
 	EquipmentID string   `json:"equipment_id"`
 	ProjectID   *string  `json:"project_id"`
 	LocationID  *string  `json:"location_id"`
+	SessionID   string   `json:"session_id"`
 	UserID      string   `json:"user_id"`
 	DeviceID    string   `json:"device_id"`
 	DeviceType  string   `json:"device_type"`

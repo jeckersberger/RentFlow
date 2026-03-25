@@ -20,7 +20,7 @@ func NewScannerDevicePostgres(db *database.PostgresPool) ports.ScannerDeviceRepo
 
 func (r *ScannerDevicePostgres) Upsert(ctx context.Context, device *ports.ScannerDevice) error {
 	query := `
-		INSERT INTO scanner_devices (tenant_id, device_id, device_name, device_type, fcm_token, last_seen, created_at)
+		INSERT INTO scanner.scanner_devices (tenant_id, device_id, device_name, device_type, fcm_token, last_seen, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (tenant_id, device_id) DO UPDATE
 		SET device_name = EXCLUDED.device_name,
@@ -55,7 +55,7 @@ func (r *ScannerDevicePostgres) List(ctx context.Context, tenantID string) ([]*p
 	query := `
 		SELECT id, tenant_id, device_id, device_name, device_type, fcm_token,
 		       ring_requested, last_seen, created_at
-		FROM scanner_devices
+		FROM scanner.scanner_devices
 		WHERE tenant_id = $1
 		ORDER BY last_seen DESC NULLS LAST
 	`
@@ -82,7 +82,7 @@ func (r *ScannerDevicePostgres) GetByDeviceID(ctx context.Context, tenantID, dev
 	query := `
 		SELECT id, tenant_id, device_id, device_name, device_type, fcm_token,
 		       ring_requested, last_seen, created_at
-		FROM scanner_devices
+		FROM scanner.scanner_devices
 		WHERE tenant_id = $1 AND device_id = $2
 	`
 
@@ -94,7 +94,7 @@ func (r *ScannerDevicePostgres) GetByID(ctx context.Context, id string) (*ports.
 	query := `
 		SELECT id, tenant_id, device_id, device_name, device_type, fcm_token,
 		       ring_requested, last_seen, created_at
-		FROM scanner_devices
+		FROM scanner.scanner_devices
 		WHERE id::text = $1
 	`
 
@@ -103,13 +103,13 @@ func (r *ScannerDevicePostgres) GetByID(ctx context.Context, id string) (*ports.
 }
 
 func (r *ScannerDevicePostgres) SetRingRequested(ctx context.Context, id string, requested bool) error {
-	query := `UPDATE scanner_devices SET ring_requested = $1 WHERE id::text = $2`
+	query := `UPDATE scanner.scanner_devices SET ring_requested = $1 WHERE id::text = $2`
 	_, err := r.db.Exec(ctx, query, requested, id)
 	return err
 }
 
 func (r *ScannerDevicePostgres) UpdateLastSeen(ctx context.Context, tenantID, deviceID string) error {
-	query := `UPDATE scanner_devices SET last_seen = $1 WHERE tenant_id = $2 AND device_id = $3`
+	query := `UPDATE scanner.scanner_devices SET last_seen = $1 WHERE tenant_id = $2 AND device_id = $3`
 	_, err := r.db.Exec(ctx, query, time.Now(), tenantID, deviceID)
 	return err
 }

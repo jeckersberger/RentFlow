@@ -2,13 +2,23 @@ package http
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
+	"github.com/jeckersberger/rentflow/pkg/common/middleware"
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/application"
 	"github.com/jeckersberger/rentflow/services/scanner-service/internal/domain"
 )
+
+// getTenantID extracts tenant ID from JWT claims (set by middleware), falls back to X-Tenant-ID header
+func (h *Handler) getTenantID(r *http.Request) string {
+	if tid := middleware.GetTenantID(r.Context()); tid != "" {
+		return tid
+	}
+	return r.Header.Get("X-Tenant-ID")
+}
 
 type Handler struct {
 	scanSvc    *application.ScanService
@@ -25,7 +35,7 @@ func NewHandler(scanSvc *application.ScanService, sessionSvc *application.Sessio
 }
 
 func (h *Handler) ProcessScan(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -73,7 +83,7 @@ func (h *Handler) ProcessScan(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ProcessBatch(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -133,7 +143,7 @@ func (h *Handler) ProcessBatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SyncOfflineScans(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -193,7 +203,7 @@ func (h *Handler) SyncOfflineScans(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetHistory(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -244,7 +254,7 @@ func (h *Handler) GetHistory(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ResolveBarcode(w http.ResponseWriter, r *http.Request) {
 	barcode := r.PathValue("barcode")
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -260,7 +270,7 @@ func (h *Handler) ResolveBarcode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListDevices(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -291,7 +301,7 @@ func (h *Handler) ListDevices(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RegisterDevice(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -332,7 +342,7 @@ func (h *Handler) RegisterDevice(w http.ResponseWriter, r *http.Request) {
 
 // RegisterScannerDevice handles POST /api/v1/scanner/devices/register
 func (h *Handler) RegisterScannerDevice(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -369,7 +379,7 @@ func (h *Handler) RegisterScannerDevice(w http.ResponseWriter, r *http.Request) 
 
 // ListScannerDevices handles GET /api/v1/scanner/devices
 func (h *Handler) ListScannerDevices(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -408,7 +418,7 @@ func (h *Handler) RingScannerDevice(w http.ResponseWriter, r *http.Request) {
 // CheckRingRequest handles GET /api/v1/scanner/devices/{device_id}/ring
 func (h *Handler) CheckRingRequest(w http.ResponseWriter, r *http.Request) {
 	deviceID := r.PathValue("device_id")
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -432,7 +442,7 @@ func (h *Handler) CheckRingRequest(w http.ResponseWriter, r *http.Request) {
 // AckRing handles POST /api/v1/scanner/devices/{device_id}/ring-ack
 func (h *Handler) AckRing(w http.ResponseWriter, r *http.Request) {
 	deviceID := r.PathValue("device_id")
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -502,7 +512,7 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 // ScannerScan handles POST /api/v1/scanner/scan
 // Resolves a barcode/RFID to full equipment detail.
 func (h *Handler) ScannerScan(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -541,7 +551,7 @@ func (h *Handler) ScannerScan(w http.ResponseWriter, r *http.Request) {
 // ScannerCheckout handles POST /api/v1/scanner/checkout
 // Checks out equipment to a project.
 func (h *Handler) ScannerCheckout(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -584,7 +594,7 @@ func (h *Handler) ScannerCheckout(w http.ResponseWriter, r *http.Request) {
 // ScannerCheckin handles POST /api/v1/scanner/checkin
 // Checks in equipment with condition ratings.
 func (h *Handler) ScannerCheckin(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -622,7 +632,7 @@ func (h *Handler) ScannerCheckin(w http.ResponseWriter, r *http.Request) {
 // ScannerBulk handles POST /api/v1/scanner/bulk
 // Processes batch offline actions idempotently.
 func (h *Handler) ScannerBulk(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -654,7 +664,7 @@ func (h *Handler) ScannerBulk(w http.ResponseWriter, r *http.Request) {
 // AdhocBooking handles POST /api/v1/scanner/adhoc-booking
 // Creates a reservation on-the-fly from the scanner app.
 func (h *Handler) AdhocBooking(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -699,7 +709,7 @@ func (h *Handler) AdhocBooking(w http.ResponseWriter, r *http.Request) {
 // Session handlers
 
 func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -737,7 +747,7 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) EndSession(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -764,7 +774,7 @@ func (h *Handler) EndSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ProcessSessionScan(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -811,7 +821,7 @@ func (h *Handler) ProcessSessionScan(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetSessionProtocol(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -836,7 +846,7 @@ func (h *Handler) GetSessionProtocol(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SyncOfflineQueue(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -859,7 +869,7 @@ func (h *Handler) SyncOfflineQueue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) QueueOfflineScan(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
+	tenantID := h.getTenantID(r)
 	if tenantID == "" {
 		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
 		return
@@ -904,4 +914,41 @@ func (h *Handler) QueueOfflineScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.respondJSON(w, http.StatusCreated, dto)
+}
+
+func (h *Handler) UploadSignature(w http.ResponseWriter, r *http.Request) {
+	tenantID := h.getTenantID(r)
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	sessionID := r.PathValue("id")
+	if sessionID == "" {
+		h.respondError(w, http.StatusBadRequest, "session ID required")
+		return
+	}
+
+	var payload struct {
+		Signature string `json:"signature"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 5*1024*1024)).Decode(&payload); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if payload.Signature == "" {
+		h.respondError(w, http.StatusBadRequest, "signature data required")
+		return
+	}
+
+	if err := h.sessionSvc.UploadSignature(r.Context(), tenantID, sessionID, payload.Signature); err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, map[string]interface{}{
+		"data":    nil,
+		"message": "Signature uploaded",
+	})
 }

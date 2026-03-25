@@ -19,6 +19,7 @@ type ScanListQuery struct {
 	ProjectID   *string
 	UserID      *string
 	DeviceID    *string
+	SessionID   *string
 	Status      *string
 	Limit       int
 	Offset      int

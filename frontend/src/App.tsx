@@ -35,6 +35,7 @@ const EquipmentFormPage = lazy(() => import('./pages/Equipment/EquipmentForm'))
 const EquipmentLabelsPage = lazy(() => import('./pages/Equipment/EquipmentLabels'))
 const EquipmentImportPage = lazy(() => import('./pages/Equipment/EquipmentImport'))
 const EquipmentTimelinePage = lazy(() => import('./pages/Equipment/EquipmentTimeline'))
+const EquipmentTypesPage = lazy(() => import('./pages/Equipment/EquipmentTypes'))
 
 // Project Pages
 const ProjectListPage = lazy(() => import('./pages/Projects/ProjectList'))
@@ -243,6 +244,9 @@ function App() {
 
             {/* Calendar */}
             <Route path="calendar" element={<CalendarPage />} />
+
+            {/* Equipment Type Routes (Katalog) */}
+            <Route path="equipment-types" element={<EquipmentTypesPage />} />
 
             {/* Equipment Routes */}
             <Route path="equipment" element={<EquipmentListPage />} />

@@ -29,6 +29,7 @@ type ProjectDTO struct {
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	CreatedByUserID string     `json:"created_by_user_id"`
+	IsDryHire       bool       `json:"is_dry_hire"`
 }
 
 type AddressDTO struct {
@@ -169,6 +170,7 @@ func ProjectToDTO(p *domain.Project) *ProjectDTO {
 		CreatedAt:       p.CreatedAt,
 		UpdatedAt:       p.UpdatedAt,
 		CreatedByUserID: p.CreatedByUserID,
+		IsDryHire:       p.IsDryHire,
 	}
 }
 
