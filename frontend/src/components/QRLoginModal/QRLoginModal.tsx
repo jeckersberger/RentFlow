@@ -12,7 +12,7 @@ interface QRLoginModalProps {
 export function QRLoginModal({ isOpen, onClose }: QRLoginModalProps) {
   const [qrToken, setQrToken] = useState<string | null>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
-  const [expiresAt, setExpiresAt] = useState<Date | null>(null)
+  const [, setExpiresAt] = useState<Date | null>(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [status, setStatus] = useState<'loading' | 'ready' | 'redeemed' | 'expired' | 'error'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
