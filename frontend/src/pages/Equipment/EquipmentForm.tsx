@@ -147,10 +147,10 @@ function EquipmentFormPage() {
         status: equipment.status || 'available',
         condition: equipment.condition || 'good',
       })
-    }
-    // Show existing image if available
-    if (equipment.image_url) {
-      setImagePreview(equipment.image_url)
+      // Show existing image if available
+      if (equipment.image_url) {
+        setImagePreview(equipment.image_url)
+      }
     }
   }, [equipment, isEditing])
 
