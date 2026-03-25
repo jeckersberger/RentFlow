@@ -71,6 +71,9 @@ type TimeRecordRepository interface {
 	// ListByCrewMemberAndDate retrieves time records for a crew member on a specific date
 	ListByCrewMemberAndDate(ctx context.Context, crewMemberID string, date interface{}) ([]*domain.TimeRecord, error)
 
+	// ListByTenant retrieves all time records for a tenant
+	ListByTenant(ctx context.Context, tenantID string) ([]*domain.TimeRecord, error)
+
 	// Save persists a time record (creates or updates)
 	Save(ctx context.Context, record *domain.TimeRecord) error
 

@@ -65,6 +65,7 @@ func SetupRoutes(
 	mux.HandleFunc("POST /api/v1/crew/bookings/{token}/respond", handlers.RespondToBooking)
 
 	// Alias routes for frontend compatibility (time-entries -> time-records)
+	mux.HandleFunc("POST /api/v1/time-entries", handlers.CreateTimeEntry)
 	mux.HandleFunc("POST /api/v1/time-entries/start", handlers.StartTimeRecord)
 	mux.HandleFunc("POST /api/v1/time-entries/{id}/stop", handlers.StopTimeRecord)
 	mux.HandleFunc("GET /api/v1/time-entries", handlers.GetTimeRecords)

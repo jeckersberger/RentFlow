@@ -186,6 +186,57 @@ func (s *InvoiceService) ListInvoices(ctx context.Context, query ListInvoicesQue
 	}, nil
 }
 
+// UpdateInvoice updates a draft invoice
+func (s *InvoiceService) UpdateInvoice(ctx context.Context, cmd UpdateInvoiceCommand) (*InvoiceDTO, error) {
+	if cmd.TenantID == "" {
+		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
+	}
+
+	invoice, err := s.invoiceRepo.GetByID(ctx, cmd.TenantID, cmd.ID)
+	if err != nil {
+		return nil, domain.NewDomainError("NOT_FOUND", "invoice not found", err)
+	}
+
+	if invoice.IsFinalized() {
+		return nil, domain.NewDomainError("CANNOT_MODIFY", "cannot modify finalized invoice", nil)
+	}
+
+	if cmd.ClientName != "" {
+		invoice.ClientName = cmd.ClientName
+	}
+	if cmd.ClientEmail != "" {
+		invoice.ClientEmail = cmd.ClientEmail
+	}
+	if cmd.ClientTaxID != "" {
+		invoice.ClientTaxID = cmd.ClientTaxID
+	}
+	invoice.ClientAddress = cmd.ClientAddress
+	if cmd.TaxRate > 0 {
+		if err := invoice.SetTaxRate(cmd.TaxRate); err != nil {
+			return nil, domain.NewDomainError("INVALID_TAX_RATE", err.Error(), err)
+		}
+	}
+	if !cmd.DueDate.IsZero() {
+		invoice.DueDate = cmd.DueDate
+	}
+	invoice.Notes = cmd.Notes
+	invoice.InternalNotes = cmd.InternalNotes
+
+	if err := invoice.CalculateTotals(); err != nil {
+		return nil, domain.NewDomainError("CALCULATION_ERROR", err.Error(), err)
+	}
+
+	invoice.Hash = invoice.ComputeHash()
+	invoice.UpdatedAt = time.Now()
+
+	if err := s.invoiceRepo.Update(ctx, invoice); err != nil {
+		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to update invoice", err)
+	}
+
+	s.logger.Info("Invoice updated", "id", cmd.ID, "tenant_id", cmd.TenantID)
+	return InvoiceToDTO(invoice), nil
+}
+
 // SendInvoice transitions invoice to Sent
 func (s *InvoiceService) SendInvoice(ctx context.Context, cmd SendInvoiceCommand) (*InvoiceDTO, error) {
 	if cmd.TenantID == "" {

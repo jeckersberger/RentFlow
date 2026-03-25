@@ -72,29 +72,31 @@ func (h *Handlers) StopTimeRecord(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto)
 }
 
-// GetTimeRecords lists time records for a crew member
+// GetTimeRecords lists time records for a crew member or all for tenant
 func (h *Handlers) GetTimeRecords(w http.ResponseWriter, r *http.Request) {
 	crewMemberID := r.URL.Query().Get("member_id")
 	dateStr := r.URL.Query().Get("date")
-
-	if crewMemberID == "" {
-		writeError(w, http.StatusBadRequest, "missing_param", "member_id query parameter is required")
-		return
-	}
+	tenantID := r.Header.Get("X-Tenant-ID")
 
 	var dtos []*application.TimeRecordDTO
 	var err error
 
-	if dateStr != "" {
-		// Parse and validate date
-		date, parseErr := time.Parse("2006-01-02", dateStr)
-		if parseErr != nil {
-			writeError(w, http.StatusBadRequest, "invalid_date", "invalid date format (expected YYYY-MM-DD)")
-			return
+	if crewMemberID != "" {
+		if dateStr != "" {
+			date, parseErr := time.Parse("2006-01-02", dateStr)
+			if parseErr != nil {
+				writeError(w, http.StatusBadRequest, "invalid_date", "invalid date format (expected YYYY-MM-DD)")
+				return
+			}
+			dtos, err = h.timeRecordSvc.ListTimeRecordsByDate(r.Context(), crewMemberID, date)
+		} else {
+			dtos, err = h.timeRecordSvc.ListTimeRecordsByCrewMember(r.Context(), crewMemberID)
 		}
-		dtos, err = h.timeRecordSvc.ListTimeRecordsByDate(r.Context(), crewMemberID, date)
+	} else if tenantID != "" {
+		dtos, err = h.timeRecordSvc.ListTimeRecordsByTenant(r.Context(), tenantID)
 	} else {
-		dtos, err = h.timeRecordSvc.ListTimeRecordsByCrewMember(r.Context(), crewMemberID)
+		writeJSON(w, http.StatusOK, []*application.TimeRecordDTO{})
+		return
 	}
 
 	if err != nil {
@@ -104,6 +106,61 @@ func (h *Handlers) GetTimeRecords(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, dtos)
+}
+
+// CreateTimeEntry creates a completed time record (manual entry)
+func (h *Handlers) CreateTimeEntry(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		writeError(w, http.StatusBadRequest, "missing_tenant_id", "X-Tenant-ID header is required")
+		return
+	}
+
+	var payload struct {
+		CrewMemberID string `json:"crew_member_id"`
+		Date         string `json:"date"`
+		StartTime    string `json:"start_time"`
+		EndTime      string `json:"end_time"`
+		Notes        string `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_json", "invalid request body")
+		return
+	}
+
+	// Validate date format
+	if _, err := time.Parse("2006-01-02", payload.Date); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_date", "invalid date format (expected YYYY-MM-DD)")
+		return
+	}
+
+	cmd := application.StartTimeRecordCommand{
+		TenantID:     tenantID,
+		CrewMemberID: payload.CrewMemberID,
+		Date:         payload.Date,
+		Notes:        payload.Notes,
+	}
+
+	// Start the record
+	dto, err := h.timeRecordSvc.StartTimeRecord(r.Context(), cmd)
+	if err != nil {
+		h.logger.Error("failed to create time entry", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to create time entry")
+		return
+	}
+
+	// Immediately stop it with the end time
+	stopCmd := application.StopTimeRecordCommand{
+		ID: dto.ID,
+	}
+	dto, err = h.timeRecordSvc.StopTimeRecord(r.Context(), stopCmd)
+	if err != nil {
+		h.logger.Error("failed to stop time entry", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to complete time entry")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, dto)
 }
 
 // ApproveTimeRecord approves a time record

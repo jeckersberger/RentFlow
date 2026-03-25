@@ -26,8 +26,11 @@ func NewPostgresTenantRepository(db *sql.DB, log logger.Logger) *PostgresTenantR
 // FindByID retrieves a tenant by ID
 func (r *PostgresTenantRepository) FindByID(ctx context.Context, id string) (*domain.Tenant, error) {
 	query := `
-		SELECT id, name, slug, address_street, address_city, address_zip, address_country,
-		       logo, default_language, currency, tax_rate, invoice_prefix, status, created_at, updated_at
+		SELECT id, COALESCE(name, ''), COALESCE(slug, ''),
+		       COALESCE(address_street, ''), COALESCE(address_city, ''), COALESCE(address_zip, ''), COALESCE(address_country, ''),
+		       COALESCE(logo, ''), COALESCE(default_language, 'de'), COALESCE(currency, 'EUR'),
+		       COALESCE(tax_rate, 0), COALESCE(invoice_prefix, 'RE'), COALESCE(status, 'active'),
+		       created_at, updated_at
 		FROM auth.tenants
 		WHERE id = $1
 	`
@@ -39,8 +42,11 @@ func (r *PostgresTenantRepository) FindByID(ctx context.Context, id string) (*do
 // FindBySlug retrieves a tenant by slug
 func (r *PostgresTenantRepository) FindBySlug(ctx context.Context, slug string) (*domain.Tenant, error) {
 	query := `
-		SELECT id, name, slug, address_street, address_city, address_zip, address_country,
-		       logo, default_language, currency, tax_rate, invoice_prefix, status, created_at, updated_at
+		SELECT id, COALESCE(name, ''), COALESCE(slug, ''),
+		       COALESCE(address_street, ''), COALESCE(address_city, ''), COALESCE(address_zip, ''), COALESCE(address_country, ''),
+		       COALESCE(logo, ''), COALESCE(default_language, 'de'), COALESCE(currency, 'EUR'),
+		       COALESCE(tax_rate, 0), COALESCE(invoice_prefix, 'RE'), COALESCE(status, 'active'),
+		       created_at, updated_at
 		FROM auth.tenants
 		WHERE slug = $1
 	`
@@ -64,8 +70,11 @@ func (r *PostgresTenantRepository) List(ctx context.Context, page, perPage int) 
 
 	// Query tenants
 	query := `
-		SELECT id, name, slug, address_street, address_city, address_zip, address_country,
-		       logo, default_language, currency, tax_rate, invoice_prefix, status, created_at, updated_at
+		SELECT id, COALESCE(name, ''), COALESCE(slug, ''),
+		       COALESCE(address_street, ''), COALESCE(address_city, ''), COALESCE(address_zip, ''), COALESCE(address_country, ''),
+		       COALESCE(logo, ''), COALESCE(default_language, 'de'), COALESCE(currency, 'EUR'),
+		       COALESCE(tax_rate, 0), COALESCE(invoice_prefix, 'RE'), COALESCE(status, 'active'),
+		       created_at, updated_at
 		FROM auth.tenants
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2

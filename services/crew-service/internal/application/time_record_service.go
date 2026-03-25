@@ -153,6 +153,22 @@ func (s *TimeRecordService) ListTimeRecordsByDate(ctx context.Context, crewMembe
 	return dtos, nil
 }
 
+// ListTimeRecordsByTenant lists all time records for a tenant
+func (s *TimeRecordService) ListTimeRecordsByTenant(ctx context.Context, tenantID string) ([]*TimeRecordDTO, error) {
+	records, err := s.timeRecordRepo.ListByTenant(ctx, tenantID)
+	if err != nil {
+		s.logger.Error("failed to list time records by tenant", err)
+		return nil, err
+	}
+
+	dtos := make([]*TimeRecordDTO, len(records))
+	for i, record := range records {
+		dtos[i] = ToTimeRecordDTO(record)
+	}
+
+	return dtos, nil
+}
+
 // ApproveTimeRecord approves a time record
 func (s *TimeRecordService) ApproveTimeRecord(ctx context.Context, cmd ApproveTimeRecordCommand) (*TimeRecordDTO, error) {
 	timeRecord, err := s.timeRecordRepo.FindByID(ctx, cmd.ID)

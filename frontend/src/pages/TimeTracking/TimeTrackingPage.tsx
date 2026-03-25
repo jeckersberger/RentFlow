@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { timeTrackingApi } from '../../services/api'
 import { SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import styles from './TimeTracking.module.scss'
@@ -73,6 +73,12 @@ function TimeTrackingPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('hours')
   const [searchQuery, setSearchQuery] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0])
+  const [formStart, setFormStart] = useState('08:00')
+  const [formEnd, setFormEnd] = useState('17:00')
+  const [formNotes, setFormNotes] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const queryClient = useQueryClient()
 
   const { data: timeEntries = [], isLoading: isLoadingEntries } = useQuery({
     queryKey: ['time-entries'],
@@ -364,16 +370,16 @@ function TimeTrackingPage() {
             <div className={styles.modalBody}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Datum</label>
-                <input type="date" className={styles.formInput} defaultValue={new Date().toISOString().split('T')[0]} />
+                <input type="date" className={styles.formInput} value={formDate} onChange={e => setFormDate(e.target.value)} />
               </div>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Start</label>
-                  <input type="time" className={styles.formInput} defaultValue="08:00" />
+                  <input type="time" className={styles.formInput} value={formStart} onChange={e => setFormStart(e.target.value)} />
                 </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Ende</label>
-                  <input type="time" className={styles.formInput} defaultValue="17:00" />
+                  <input type="time" className={styles.formInput} value={formEnd} onChange={e => setFormEnd(e.target.value)} />
                 </div>
               </div>
               <div className={styles.formGroup}>
@@ -400,12 +406,29 @@ function TimeTrackingPage() {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Notizen</label>
-                <textarea className={styles.formTextarea} rows={2} placeholder="Optionale Notizen..." />
+                <textarea className={styles.formTextarea} rows={2} placeholder="Optionale Notizen..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
               </div>
             </div>
             <div className={styles.modalFooter}>
               <button className={styles.btnSecondary} onClick={() => setShowModal(false)}>Abbrechen</button>
-              <button className={styles.btnPrimary} onClick={() => setShowModal(false)}>Speichern</button>
+              <button className={styles.btnPrimary} disabled={isSaving} onClick={async () => {
+                setIsSaving(true)
+                try {
+                  await timeTrackingApi.createEntry({
+                    date: formDate,
+                    start_time: formStart,
+                    end_time: formEnd,
+                    notes: formNotes,
+                  })
+                  queryClient.invalidateQueries({ queryKey: ['time-entries'] })
+                  setShowModal(false)
+                  setFormNotes('')
+                } catch (err) {
+                  console.error('Failed to save time entry', err)
+                } finally {
+                  setIsSaving(false)
+                }
+              }}>{isSaving ? 'Speichert...' : 'Speichern'}</button>
             </div>
           </div>
         </div>

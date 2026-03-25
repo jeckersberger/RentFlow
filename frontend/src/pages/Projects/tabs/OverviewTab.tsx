@@ -78,8 +78,7 @@ export function OverviewTab({ project }: OverviewTabProps) {
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>Budget</span>
               <span className={styles.infoValue}>
-                {project.currency === 'EUR' ? '\u20AC' : project.currency || '\u20AC'}
-                {project.budget.toFixed(2)}
+                {project.budget.toLocaleString('de-DE', { style: 'currency', currency: project.currency || 'EUR' })}
               </span>
             </div>
           )}

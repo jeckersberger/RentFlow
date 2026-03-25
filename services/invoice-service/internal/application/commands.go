@@ -9,43 +9,43 @@ import (
 // Invoice Commands
 
 type CreateInvoiceCommand struct {
-	TenantID           string
-	ProjectID          *string
-	ClientName         string
-	ClientAddress      domain.Address
-	ClientEmail        string
-	ClientTaxID        string
-	Items              []CreateInvoiceItemCommand
-	TaxRate            float64
-	IsKleinunternehmer bool
-	Currency           string
-	IssueDate          time.Time
-	DueDate            time.Time
-	Notes              string
-	InternalNotes      string
-	CreatedByUserID    string
+	TenantID           string              `json:"tenant_id"`
+	ProjectID          *string             `json:"project_id"`
+	ClientName         string              `json:"client_name"`
+	ClientAddress      domain.Address      `json:"client_address"`
+	ClientEmail        string              `json:"client_email"`
+	ClientTaxID        string              `json:"client_tax_id"`
+	Items              []CreateInvoiceItemCommand `json:"items"`
+	TaxRate            float64             `json:"tax_rate"`
+	IsKleinunternehmer bool                `json:"is_kleinunternehmer"`
+	Currency           string              `json:"currency"`
+	IssueDate          time.Time           `json:"issue_date"`
+	DueDate            time.Time           `json:"due_date"`
+	Notes              string              `json:"notes"`
+	InternalNotes      string              `json:"internal_notes"`
+	CreatedByUserID    string              `json:"created_by_user_id"`
 }
 
 type CreateInvoiceItemCommand struct {
-	Description string
-	Quantity    float64
-	Unit        string
-	UnitPrice   float64
-	TaxRate     float64  // per-item tax rate; 0 means use invoice default
-	EquipmentID *string
+	Description string  `json:"description"`
+	Quantity    float64 `json:"quantity"`
+	Unit        string  `json:"unit"`
+	UnitPrice   float64 `json:"unit_price"`
+	TaxRate     float64 `json:"tax_rate"`
+	EquipmentID *string `json:"equipment_id"`
 }
 
 type UpdateInvoiceCommand struct {
-	ID            string
-	TenantID      string
-	ClientName    string
-	ClientAddress domain.Address
-	ClientEmail   string
-	ClientTaxID   string
-	TaxRate       float64
-	DueDate       time.Time
-	Notes         string
-	InternalNotes string
+	ID            string         `json:"id"`
+	TenantID      string         `json:"tenant_id"`
+	ClientName    string         `json:"client_name"`
+	ClientAddress domain.Address `json:"client_address"`
+	ClientEmail   string         `json:"client_email"`
+	ClientTaxID   string         `json:"client_tax_id"`
+	TaxRate       float64        `json:"tax_rate"`
+	DueDate       time.Time      `json:"due_date"`
+	Notes         string         `json:"notes"`
+	InternalNotes string         `json:"internal_notes"`
 }
 
 type SendInvoiceCommand struct {

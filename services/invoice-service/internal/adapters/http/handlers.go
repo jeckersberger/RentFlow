@@ -71,6 +71,62 @@ func (h *Handler) CreateInvoice(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusCreated, dto)
 }
 
+func (h *Handler) UpdateInvoice(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var cmd application.CreateInvoiceCommand
+	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+	cmd.TenantID = tenantID
+
+	if strings.TrimSpace(cmd.ClientName) == "" {
+		h.respondError(w, http.StatusBadRequest, "client name is required")
+		return
+	}
+
+	// Get existing invoice to preserve invoice number and GoBD hash chain
+	existing, err := h.invoiceSvc.GetInvoice(r.Context(), tenantID, id)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	// Only allow updates on draft invoices
+	if existing.Status != "draft" {
+		h.respondError(w, http.StatusConflict, "can only update draft invoices")
+		return
+	}
+
+	// Update via service
+	updateCmd := application.UpdateInvoiceCommand{
+		ID:            id,
+		TenantID:      tenantID,
+		ClientName:    cmd.ClientName,
+		ClientAddress: cmd.ClientAddress,
+		ClientEmail:   cmd.ClientEmail,
+		ClientTaxID:   cmd.ClientTaxID,
+		TaxRate:       cmd.TaxRate,
+		DueDate:       cmd.DueDate,
+		Notes:         cmd.Notes,
+		InternalNotes: cmd.InternalNotes,
+	}
+
+	dto, err := h.invoiceSvc.UpdateInvoice(r.Context(), updateCmd)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto)
+}
+
 func (h *Handler) GetInvoice(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	tenantID := r.Header.Get("X-Tenant-ID")

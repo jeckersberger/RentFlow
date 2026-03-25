@@ -107,7 +107,7 @@ function ProjectListPage() {
       key: 'budget',
       label: 'Budget',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      render: (budget: any) => (budget ? `€${budget.toFixed(2)}` : '—'),
+      render: (budget: any) => (budget ? budget.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) : '—'),
     },
   ]
 

@@ -27,6 +27,7 @@ func NewRouter(
 	router.HandleFunc("GET /api/v1/invoices", handler.ListInvoices)
 	router.HandleFunc("GET /api/v1/invoices/open", handler.GetOpenInvoices)
 	router.HandleFunc("POST /api/v1/invoices/actions/from-project/{projectId}", handler.CreateInvoiceFromProject)
+	router.HandleFunc("PUT /api/v1/invoices/{id}", handler.UpdateInvoice)
 	router.HandleFunc("GET /api/v1/invoices/{id}", handler.GetInvoice)
 	router.HandleFunc("GET /api/v1/invoices/{id}/pdf", handler.GetInvoicePDF)
 	router.HandleFunc("POST /api/v1/invoices/{id}/send", handler.SendInvoice)

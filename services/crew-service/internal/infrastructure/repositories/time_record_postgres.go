@@ -130,6 +130,47 @@ func (r *PostgresTimeRecordRepository) ListByCrewMemberAndDate(ctx context.Conte
 	return records, nil
 }
 
+// ListByTenant retrieves all time records for a tenant
+func (r *PostgresTimeRecordRepository) ListByTenant(ctx context.Context, tenantID string) ([]*domain.TimeRecord, error) {
+	query := `
+		SELECT id, tenant_id, crew_member_id, assignment_id, date, start_time,
+		       end_time, COALESCE(break_minutes, 0), COALESCE(overtime_minutes, 0), status, COALESCE(notes, ''), created_at, updated_at
+		FROM time_records
+		WHERE tenant_id = $1
+		ORDER BY date DESC, start_time DESC
+		LIMIT 100
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, tenantID)
+	if err != nil {
+		r.logger.Error("failed to query time records by tenant", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var records []*domain.TimeRecord
+	for rows.Next() {
+		var record domain.TimeRecord
+		if err := rows.Scan(
+			&record.ID, &record.TenantID, &record.CrewMemberID, &record.AssignmentID,
+			&record.Date, &record.StartTime, &record.EndTime, &record.BreakMinutes,
+			&record.OvertimeMinutes, &record.Status, &record.Notes,
+			&record.CreatedAt, &record.UpdatedAt,
+		); err != nil {
+			r.logger.Error("failed to scan time record", err)
+			return nil, err
+		}
+		records = append(records, &record)
+	}
+
+	if err = rows.Err(); err != nil {
+		r.logger.Error("error iterating time records", err)
+		return nil, err
+	}
+
+	return records, nil
+}
+
 // Save persists a time record (creates or updates)
 func (r *PostgresTimeRecordRepository) Save(ctx context.Context, record *domain.TimeRecord) error {
 	query := `
