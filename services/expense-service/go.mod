@@ -1,6 +1,6 @@
 module github.com/jeckersberger/rentflow/services/expense-service
 
-go 1.22
+go 1.23
 
 require (
 	github.com/jeckersberger/rentflow/pkg/common v0.0.0
@@ -19,7 +19,7 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
 	google.golang.org/grpc v1.61.0 // indirect
-	google.golang.org/protobuf v1.32.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )
 
 replace github.com/jeckersberger/rentflow/pkg/common => ../../pkg/common
