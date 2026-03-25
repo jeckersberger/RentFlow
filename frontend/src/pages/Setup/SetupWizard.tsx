@@ -22,6 +22,10 @@ interface FormData extends Partial<SetupRequest> {
   ust_id?: string
   handelsregister?: string
   geschaeftsfuehrer?: string
+  street?: string
+  zip?: string
+  city?: string
+  country?: string
 }
 
 interface ModuleDefinition {
@@ -143,6 +147,10 @@ function SetupWizard() {
     ust_id: '',
     handelsregister: '',
     geschaeftsfuehrer: '',
+    street: '',
+    zip: '',
+    city: '',
+    country: 'Deutschland',
   })
 
   const setupMutation = useMutation({
@@ -408,16 +416,89 @@ function SetupWizard() {
             </div>
 
             <div className="setup-form__group">
-              <label htmlFor="company_address" className="setup-form__label">
-                Firmenadresse
+              <label htmlFor="street" className="setup-form__label">
+                Strasse + Hausnummer
               </label>
-              <textarea
-                id="company_address"
-                className="setup-form__textarea"
-                value={formData.company_address || ''}
-                onChange={(e) => setFormData({ ...formData, company_address: e.target.value })}
-                placeholder="Straße, Stadt, PLZ, Land"
-                rows={3}
+              <input
+                id="street"
+                type="text"
+                className="setup-form__input"
+                value={formData.street || ''}
+                onChange={(e) => {
+                  const street = e.target.value
+                  setFormData(prev => ({
+                    ...prev,
+                    street,
+                    company_address: `${street}, ${prev.zip || ''} ${prev.city || ''}, ${prev.country || 'Deutschland'}`.trim(),
+                  }))
+                }}
+                placeholder="z.B. Musterstrasse 12"
+              />
+            </div>
+
+            <div className="setup-form__row">
+              <div className="setup-form__group">
+                <label htmlFor="zip" className="setup-form__label">
+                  PLZ
+                </label>
+                <input
+                  id="zip"
+                  type="text"
+                  className="setup-form__input"
+                  value={formData.zip || ''}
+                  onChange={(e) => {
+                    const zip = e.target.value
+                    setFormData(prev => ({
+                      ...prev,
+                      zip,
+                      company_address: `${prev.street || ''}, ${zip} ${prev.city || ''}, ${prev.country || 'Deutschland'}`.trim(),
+                    }))
+                  }}
+                  placeholder="z.B. 80331"
+                  maxLength={10}
+                />
+              </div>
+
+              <div className="setup-form__group">
+                <label htmlFor="city" className="setup-form__label">
+                  Stadt
+                </label>
+                <input
+                  id="city"
+                  type="text"
+                  className="setup-form__input"
+                  value={formData.city || ''}
+                  onChange={(e) => {
+                    const city = e.target.value
+                    setFormData(prev => ({
+                      ...prev,
+                      city,
+                      company_address: `${prev.street || ''}, ${prev.zip || ''} ${city}, ${prev.country || 'Deutschland'}`.trim(),
+                    }))
+                  }}
+                  placeholder="z.B. Muenchen"
+                />
+              </div>
+            </div>
+
+            <div className="setup-form__group">
+              <label htmlFor="country" className="setup-form__label">
+                Land
+              </label>
+              <input
+                id="country"
+                type="text"
+                className="setup-form__input"
+                value={formData.country || 'Deutschland'}
+                onChange={(e) => {
+                  const country = e.target.value
+                  setFormData(prev => ({
+                    ...prev,
+                    country,
+                    company_address: `${prev.street || ''}, ${prev.zip || ''} ${prev.city || ''}, ${country}`.trim(),
+                  }))
+                }}
+                placeholder="z.B. Deutschland"
               />
             </div>
 
