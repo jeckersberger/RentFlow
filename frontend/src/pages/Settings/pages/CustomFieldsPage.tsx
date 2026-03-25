@@ -43,7 +43,17 @@ function CustomFieldsPage() {
     setNewField({ entity: 'equipment', name: '', type: 'text', required: false })
   }
 
-  const removeField = (id: string) => setFields((prev) => prev.filter((f) => f.id !== id))
+  const removeField = (id: string) => {
+    if (!confirm('Eigenes Feld wirklich loeschen?')) return
+    const updated = fields.filter((f) => f.id !== id)
+    setFields(updated)
+    // Sofort speichern
+    configApi.set('custom-fields', { fields: updated }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['config', 'custom-fields'] })
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    })
+  }
 
   const entityLabels: Record<string, string> = {
     equipment: 'Equipment',
@@ -119,7 +129,7 @@ function CustomFieldsPage() {
               </tr>
             </thead>
             <tbody>
-              {fields.map((f) => (
+              {[...fields].sort((a, b) => a.entity.localeCompare(b.entity) || a.name.localeCompare(b.name)).map((f) => (
                 <tr key={f.id}>
                   <td><span className="badge badge--secondary">{entityLabels[f.entity] || f.entity}</span></td>
                   <td>{f.name}</td>
