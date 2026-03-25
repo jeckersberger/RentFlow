@@ -3,6 +3,8 @@ import { useAuthStore } from '../../stores/authStore'
 import { useThemeStore } from '../../stores/themeStore'
 import { useModuleStore } from '../../stores/moduleStore'
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { systemApi } from '../../services/api'
 import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
@@ -169,6 +171,12 @@ function Sidebar() {
   const badgeCounts = useBadgeCounts()
   const markSeen = useMarkSectionSeen()
   const [collapsed, setCollapsed] = useState(false)
+  const { data: versionInfo } = useQuery({
+    queryKey: ['system-version'],
+    queryFn: systemApi.getVersion,
+    staleTime: 30 * 60 * 1000,
+    retry: false,
+  })
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -382,7 +390,7 @@ function Sidebar() {
             )}
           </div>
 
-          {!collapsed && <p className="sidebar__version">v1.1.0</p>}
+          {!collapsed && <p className="sidebar__version">v{versionInfo?.current_version || '...'}</p>}
         </div>
       </aside>
 

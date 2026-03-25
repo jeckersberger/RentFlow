@@ -199,7 +199,7 @@ function LoginPage() {
       </div>
 
       <div className="login-version">
-        RentFlow v1.1.0
+        RentFlow
       </div>
     </div>
   )

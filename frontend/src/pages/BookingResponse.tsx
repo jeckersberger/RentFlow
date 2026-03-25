@@ -221,7 +221,7 @@ function BookingResponse() {
       </div>
 
       <div className="booking-version">
-        RentFlow v1.1.0
+        RentFlow
       </div>
     </div>
   )
