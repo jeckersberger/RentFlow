@@ -99,7 +99,7 @@ jobs:
           - expense-service
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: services/${{ matrix.service }}/Dockerfile
