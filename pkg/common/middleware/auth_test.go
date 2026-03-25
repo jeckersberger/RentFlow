@@ -2,7 +2,11 @@ package middleware
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -510,4 +514,391 @@ func TestAuthError_Error(t *testing.T) {
 	if err.Error() != "Test message" {
 		t.Errorf("expected 'Test message', got '%s'", err.Error())
 	}
+}
+
+// --- Extended JWT / Auth Tests ---
+
+func TestVerifyToken_DifferentSecret(t *testing.T) {
+	jwtCreator := NewSimpleJWT("secret-A")
+	jwtVerifier := NewSimpleJWT("secret-B")
+
+	claims := &Claims{
+		UserID:   "user123",
+		TenantID: "tenant456",
+	}
+
+	token, err := jwtCreator.CreateToken(claims)
+	if err != nil {
+		t.Fatalf("failed to create token: %v", err)
+	}
+
+	_, err = jwtVerifier.VerifyToken(token)
+	if err != ErrInvalidSignature {
+		t.Errorf("expected ErrInvalidSignature when verifying with wrong secret, got %v", err)
+	}
+}
+
+func TestVerifyToken_ExpiredToken_Manual(t *testing.T) {
+	// Manually construct a token with past expiration to bypass CreateToken's auto-set
+	jwt := NewSimpleJWT("test-secret")
+
+	claims := &Claims{
+		UserID:    "user123",
+		TenantID:  "tenant456",
+		Email:     "user@example.com",
+		Roles:     []string{"admin"},
+		IssuedAt:  time.Now().Add(-2 * time.Hour).Unix(),
+		ExpiresAt: time.Now().Add(-1 * time.Hour).Unix(),
+		Issuer:    "rentflow",
+	}
+
+	// Manually build a token with expired claims (replicate CreateToken logic without overwriting times)
+	header := map[string]string{"alg": "HS256", "typ": "JWT"}
+	headerJSON, _ := json.Marshal(header)
+	headerB64 := base64EncodeRawURL(headerJSON)
+
+	payloadJSON, _ := json.Marshal(claims)
+	payloadB64 := base64EncodeRawURL(payloadJSON)
+
+	message := headerB64 + "." + payloadB64
+	signature := hmacSHA256([]byte(jwt.secret), []byte(message))
+	signatureB64 := base64EncodeRawURL(signature)
+
+	expiredToken := message + "." + signatureB64
+
+	_, err := jwt.VerifyToken(expiredToken)
+	if err != ErrTokenExpired {
+		t.Errorf("expected ErrTokenExpired, got %v", err)
+	}
+}
+
+func TestVerifyToken_TenantIDExtraction(t *testing.T) {
+	jwt := NewSimpleJWT("test-secret")
+	claims := &Claims{
+		UserID:   "user-abc",
+		TenantID: "f6f63dc5-d253-58a7-8e1d-ab57e309120e",
+		Email:    "admin@rentflow.de",
+		Roles:    []string{"admin"},
+	}
+
+	token, err := jwt.CreateToken(claims)
+	if err != nil {
+		t.Fatalf("failed to create token: %v", err)
+	}
+
+	verified, err := jwt.VerifyToken(token)
+	if err != nil {
+		t.Fatalf("failed to verify token: %v", err)
+	}
+
+	if verified.TenantID != "f6f63dc5-d253-58a7-8e1d-ab57e309120e" {
+		t.Errorf("expected TenantID 'f6f63dc5-d253-58a7-8e1d-ab57e309120e', got '%s'", verified.TenantID)
+	}
+}
+
+func TestJWTAuthMiddleware_TenantIDInContext(t *testing.T) {
+	jwt := NewSimpleJWT("test-secret")
+	claims := &Claims{
+		UserID:   "user-abc",
+		TenantID: "tenant-xyz-123",
+		Email:    "test@test.de",
+		Roles:    []string{"user"},
+	}
+
+	token, _ := jwt.CreateToken(claims)
+
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tenantID := GetTenantIDFromClaims(r.Context())
+		if tenantID != "tenant-xyz-123" {
+			t.Errorf("expected TenantID 'tenant-xyz-123' in context, got '%s'", tenantID)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	middleware := JWTAuthMiddleware("test-secret")
+	handler := middleware(testHandler)
+
+	req := httptest.NewRequest("GET", "/api/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+}
+
+func TestJWTAuthMiddleware_EmptyBearerToken(t *testing.T) {
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	middleware := JWTAuthMiddleware("test-secret")
+	handler := middleware(testHandler)
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Authorization", "Bearer ")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401 for empty bearer token, got %d", w.Code)
+	}
+}
+
+func TestJWTAuthMiddleware_InvalidSignatureViaMiddleware(t *testing.T) {
+	// Create a token with one secret, try to verify through middleware with another
+	jwtOther := NewSimpleJWT("other-secret")
+	claims := &Claims{
+		UserID: "user123",
+		Roles:  []string{"admin"},
+	}
+	token, _ := jwtOther.CreateToken(claims)
+
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("handler should not be called for invalid signature")
+		w.WriteHeader(http.StatusOK)
+	})
+
+	middleware := JWTAuthMiddleware("correct-secret")
+	handler := middleware(testHandler)
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", w.Code)
+	}
+
+	body, _ := io.ReadAll(w.Body)
+	var response map[string]interface{}
+	json.Unmarshal(body, &response)
+
+	if response["code"] != "INVALID_SIGNATURE" {
+		t.Errorf("expected code 'INVALID_SIGNATURE', got '%v'", response["code"])
+	}
+}
+
+func TestJWTAuthMiddleware_ExpiredTokenViaMiddleware(t *testing.T) {
+	secret := "test-secret"
+	jwt := NewSimpleJWT(secret)
+
+	// Build an expired token manually
+	claims := &Claims{
+		UserID:    "user123",
+		TenantID:  "tenant456",
+		IssuedAt:  time.Now().Add(-2 * time.Hour).Unix(),
+		ExpiresAt: time.Now().Add(-1 * time.Hour).Unix(),
+	}
+
+	header := map[string]string{"alg": "HS256", "typ": "JWT"}
+	headerJSON, _ := json.Marshal(header)
+	headerB64 := base64EncodeRawURL(headerJSON)
+	payloadJSON, _ := json.Marshal(claims)
+	payloadB64 := base64EncodeRawURL(payloadJSON)
+	message := headerB64 + "." + payloadB64
+	signature := hmacSHA256([]byte(jwt.secret), []byte(message))
+	signatureB64 := base64EncodeRawURL(signature)
+	expiredToken := message + "." + signatureB64
+
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("handler should not be called for expired token")
+		w.WriteHeader(http.StatusOK)
+	})
+
+	middleware := JWTAuthMiddleware(secret)
+	handler := middleware(testHandler)
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Authorization", "Bearer "+expiredToken)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401 for expired token, got %d", w.Code)
+	}
+
+	body, _ := io.ReadAll(w.Body)
+	var response map[string]interface{}
+	json.Unmarshal(body, &response)
+
+	if response["code"] != "TOKEN_EXPIRED" {
+		t.Errorf("expected code 'TOKEN_EXPIRED', got '%v'", response["code"])
+	}
+}
+
+func TestJWTAuthMiddleware_AllClaimsInContext(t *testing.T) {
+	jwt := NewSimpleJWT("test-secret")
+	claims := &Claims{
+		UserID:   "user-999",
+		TenantID: "tenant-888",
+		Email:    "all@claims.test",
+		Roles:    []string{"admin", "manager"},
+	}
+
+	token, _ := jwt.CreateToken(claims)
+
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if GetUserID(ctx) != "user-999" {
+			t.Errorf("UserID mismatch: got '%s'", GetUserID(ctx))
+		}
+		if GetTenantIDFromClaims(ctx) != "tenant-888" {
+			t.Errorf("TenantID mismatch: got '%s'", GetTenantIDFromClaims(ctx))
+		}
+		if GetEmail(ctx) != "all@claims.test" {
+			t.Errorf("Email mismatch: got '%s'", GetEmail(ctx))
+		}
+		roles := GetRoles(ctx)
+		if len(roles) != 2 || roles[0] != "admin" || roles[1] != "manager" {
+			t.Errorf("Roles mismatch: got %v", roles)
+		}
+		if !HasRole(ctx, "admin") {
+			t.Error("expected HasRole('admin') to be true")
+		}
+		if !HasRole(ctx, "manager") {
+			t.Error("expected HasRole('manager') to be true")
+		}
+		if HasRole(ctx, "superadmin") {
+			t.Error("expected HasRole('superadmin') to be false")
+		}
+
+		w.WriteHeader(http.StatusOK)
+	})
+
+	middleware := JWTAuthMiddleware("test-secret")
+	handler := middleware(testHandler)
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+}
+
+func TestJWTAuthMiddleware_OnlyBearerScheme(t *testing.T) {
+	schemes := []string{
+		"Token abc123",
+		"bearer abc123",
+		"BEARER abc123",
+		"Basic dXNlcjpwYXNz",
+		"Digest username=test",
+	}
+
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("handler should not be called for non-Bearer scheme")
+	})
+
+	middleware := JWTAuthMiddleware("test-secret")
+	handler := middleware(testHandler)
+
+	for _, scheme := range schemes {
+		t.Run(scheme, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/", nil)
+			req.Header.Set("Authorization", scheme)
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+
+			if w.Code != http.StatusUnauthorized {
+				t.Errorf("expected 401 for scheme '%s', got %d", scheme, w.Code)
+			}
+		})
+	}
+}
+
+func TestVerifyToken_EmptyString(t *testing.T) {
+	jwt := NewSimpleJWT("test-secret")
+	_, err := jwt.VerifyToken("")
+	if err != ErrInvalidToken {
+		t.Errorf("expected ErrInvalidToken for empty token, got %v", err)
+	}
+}
+
+func TestVerifyToken_PreservesAllFields(t *testing.T) {
+	jwt := NewSimpleJWT("test-secret")
+	claims := &Claims{
+		UserID:   "uid-001",
+		TenantID: "tid-002",
+		Email:    "preserve@test.de",
+		Roles:    []string{"role1", "role2", "role3"},
+		Issuer:   "rentflow-auth",
+	}
+
+	token, _ := jwt.CreateToken(claims)
+	verified, err := jwt.VerifyToken(token)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if verified.UserID != claims.UserID {
+		t.Errorf("UserID: got '%s', want '%s'", verified.UserID, claims.UserID)
+	}
+	if verified.TenantID != claims.TenantID {
+		t.Errorf("TenantID: got '%s', want '%s'", verified.TenantID, claims.TenantID)
+	}
+	if verified.Email != claims.Email {
+		t.Errorf("Email: got '%s', want '%s'", verified.Email, claims.Email)
+	}
+	if verified.Issuer != claims.Issuer {
+		t.Errorf("Issuer: got '%s', want '%s'", verified.Issuer, claims.Issuer)
+	}
+	if len(verified.Roles) != 3 {
+		t.Errorf("expected 3 roles, got %d", len(verified.Roles))
+	}
+}
+
+func TestWriteAuthError_WithAuthError(t *testing.T) {
+	w := httptest.NewRecorder()
+	writeAuthError(w, http.StatusUnauthorized, &AuthError{Code: "CUSTOM", Message: "custom msg"})
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", w.Code)
+	}
+
+	body, _ := io.ReadAll(w.Body)
+	var response map[string]interface{}
+	json.Unmarshal(body, &response)
+
+	if response["code"] != "CUSTOM" {
+		t.Errorf("expected code 'CUSTOM', got '%v'", response["code"])
+	}
+}
+
+func TestWriteAuthError_WithGenericError(t *testing.T) {
+	w := httptest.NewRecorder()
+	genericErr := fmt.Errorf("something went wrong")
+	writeAuthError(w, http.StatusInternalServerError, genericErr)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", w.Code)
+	}
+
+	body, _ := io.ReadAll(w.Body)
+	var response map[string]interface{}
+	json.Unmarshal(body, &response)
+
+	if response["code"] != "UNKNOWN_ERROR" {
+		t.Errorf("expected code 'UNKNOWN_ERROR' for generic error, got '%v'", response["code"])
+	}
+	if response["message"] != "something went wrong" {
+		t.Errorf("expected message 'something went wrong', got '%v'", response["message"])
+	}
+}
+
+// Helper functions for manually constructing tokens in tests
+
+func base64EncodeRawURL(data []byte) string {
+	return base64.RawURLEncoding.EncodeToString(data)
+}
+
+func hmacSHA256(key, message []byte) []byte {
+	h := hmac.New(sha256.New, key)
+	h.Write(message)
+	return h.Sum(nil)
 }
