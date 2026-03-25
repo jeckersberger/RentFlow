@@ -65,6 +65,9 @@ func main() {
 		log,
 	)
 
+	// Create Receipt Vision service
+	visionSvc := application.NewReceiptVisionService(providerSvc, log)
+
 	// Setup router
 	router := nethttp.NewServeMux()
 
@@ -73,14 +76,14 @@ func main() {
 	router.HandleFunc("GET /ready", readyHandler(serviceName, db, log))
 
 	// Setup API routes
-	aihttp.SetupRoutes(router, aiService, log)
+	aihttp.SetupRoutes(router, aiService, visionSvc, log)
 
 	// Create HTTP server
 	srv := &nethttp.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.ServicePort),
 		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 90 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 

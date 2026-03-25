@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,15 +13,17 @@ import (
 
 // Handlers handles HTTP requests
 type Handlers struct {
-	aiService *application.AIService
-	log       logger.Logger
+	aiService      *application.AIService
+	visionService  *application.ReceiptVisionService
+	log            logger.Logger
 }
 
 // NewHandlers creates a new handlers instance
-func NewHandlers(aiService *application.AIService, log logger.Logger) *Handlers {
+func NewHandlers(aiService *application.AIService, visionService *application.ReceiptVisionService, log logger.Logger) *Handlers {
 	return &Handlers{
-		aiService: aiService,
-		log:       log,
+		aiService:     aiService,
+		visionService: visionService,
+		log:           log,
 	}
 }
 
@@ -323,4 +326,64 @@ func (h *Handlers) GetDashboard(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dashboard)
+}
+
+// AnalyzeReceipt handles POST /api/v1/ai/analyze-receipt
+// Accepts multipart form with "file" field (image or PDF)
+func (h *Handlers) AnalyzeReceipt(w http.ResponseWriter, r *http.Request) {
+	if h.visionService == nil {
+		http.Error(w, "Vision service not available", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Max 20 MB
+	if err := r.ParseMultipartForm(20 << 20); err != nil {
+		http.Error(w, "File too large (max 20MB)", http.StatusBadRequest)
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "File required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Read file data
+	data, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "Failed to read file", http.StatusInternalServerError)
+		return
+	}
+
+	// Determine MIME type
+	mimeType := header.Header.Get("Content-Type")
+	if mimeType == "" {
+		// Detect from content
+		mimeType = http.DetectContentType(data)
+	}
+
+	// Validate MIME type
+	allowedTypes := map[string]bool{
+		"image/jpeg":      true,
+		"image/png":       true,
+		"image/webp":      true,
+		"image/gif":       true,
+		"application/pdf": true,
+	}
+	if !allowedTypes[mimeType] {
+		http.Error(w, "Unsupported file type. Allowed: JPEG, PNG, WebP, GIF, PDF", http.StatusBadRequest)
+		return
+	}
+
+	// Analyze with Claude Vision
+	result, err := h.visionService.AnalyzeReceiptImage(r.Context(), data, mimeType)
+	if err != nil {
+		h.log.Error("failed to analyze receipt", err)
+		http.Error(w, "Failed to analyze receipt: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }

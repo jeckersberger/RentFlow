@@ -1282,6 +1282,28 @@ export const aiApi = {
     MOCK_MODE
       ? mockDelay({ ...data, id: String(Date.now()) })
       : api.post('/api/v1/ai/providers', data).then(res => res.data),
+
+  analyzeReceipt: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return MOCK_MODE
+      ? mockDelay({
+          is_invoice: true,
+          document_type: 'invoice',
+          confidence: 0.95,
+          vendor: 'Mock GmbH',
+          gross_amount: 119.00,
+          net_amount: 100.00,
+          tax_rate: 19.0,
+          tax_amount: 19.00,
+          currency: 'EUR',
+          invoice_date: '2026-03-20',
+        })
+      : api.post('/api/v1/ai/analyze-receipt', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 90000,
+        }).then(res => res.data)
+  },
 }
 
 // Workflow Service (port 8014)

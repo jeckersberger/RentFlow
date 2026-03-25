@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { expenseApi, projectApi, invoiceApi } from '../../services/api'
+import { expenseApi, projectApi, invoiceApi, aiApi } from '../../services/api'
 import { Modal } from '../../components/Modal/Modal'
 import { Input } from '../../components/Form/Input'
 import { useNotificationStore } from '../../stores/notificationStore'
@@ -53,6 +53,23 @@ interface ExpenseForm {
   category: string
   project_id: string
   notes: string
+  // Neue Felder
+  type: 'invoice' | 'receipt' | 'entertainment'
+  vendor: string
+  vendor_address: string
+  vendor_vat_id: string
+  vendor_iban: string
+  invoice_number: string
+  booking_account: string
+  due_date: string
+  discount_percent: string
+  discount_days: string
+  payment_method: string
+  // Bewirtungsbeleg
+  entertainment_location: string
+  entertainment_reason: string
+  entertainment_guests: string
+  entertainment_tip: string
 }
 
 const emptyForm: ExpenseForm = {
@@ -63,6 +80,21 @@ const emptyForm: ExpenseForm = {
   category: 'sonstig',
   project_id: '',
   notes: '',
+  type: 'invoice',
+  vendor: '',
+  vendor_address: '',
+  vendor_vat_id: '',
+  vendor_iban: '',
+  invoice_number: '',
+  booking_account: '',
+  due_date: '',
+  discount_percent: '',
+  discount_days: '',
+  payment_method: 'bank_transfer',
+  entertainment_location: '',
+  entertainment_reason: '',
+  entertainment_guests: '',
+  entertainment_tip: '',
 }
 
 function ExpensesPage() {
@@ -75,6 +107,60 @@ function ExpensesPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [aiConfidence, setAiConfidence] = useState<number | null>(null)
+
+  // KI-Beleganalyse: Datei an Claude Vision senden und Formular auto-befuellen
+  const analyzeReceipt = useCallback(async (file: File) => {
+    setIsAnalyzing(true)
+    setAiConfidence(null)
+    try {
+      const result = await aiApi.analyzeReceipt(file)
+      if (!result.is_invoice && result.document_type === 'other') {
+        addNotification('Das Dokument wurde nicht als Rechnung/Beleg erkannt.', 'error', { title: 'Nicht erkannt' })
+        setIsAnalyzing(false)
+        return
+      }
+
+      // Formular auto-befuellen
+      setForm(prev => ({
+        ...prev,
+        type: result.document_type === 'entertainment' ? 'entertainment' : (result.document_type === 'receipt' ? 'receipt' : 'invoice'),
+        vendor: result.vendor || prev.vendor,
+        vendor_address: result.vendor_address || prev.vendor_address,
+        vendor_vat_id: result.vendor_vat_id || prev.vendor_vat_id,
+        vendor_iban: result.vendor_iban || prev.vendor_iban,
+        description: result.description || prev.description,
+        amount: result.gross_amount ? String(result.gross_amount) : prev.amount,
+        vat_rate: result.tax_rate || prev.vat_rate,
+        invoice_number: result.invoice_number || prev.invoice_number,
+        date: result.invoice_date || prev.date,
+        due_date: result.due_date || prev.due_date,
+        discount_percent: result.discount_percent ? String(result.discount_percent) : prev.discount_percent,
+        discount_days: result.discount_days ? String(result.discount_days) : prev.discount_days,
+        payment_method: result.payment_method || prev.payment_method,
+        booking_account: result.suggested_skr03 || prev.booking_account,
+        category: result.suggested_category || prev.category,
+        entertainment_location: result.entertainment_location || prev.entertainment_location,
+        entertainment_tip: result.tip ? String(result.tip) : prev.entertainment_tip,
+      }))
+
+      setAiConfidence(result.confidence)
+      addNotification(
+        `Beleg erkannt: ${result.vendor || 'Unbekannt'} - ${result.gross_amount?.toFixed(2) || '?'} EUR (${Math.round((result.confidence || 0) * 100)}% Konfidenz)`,
+        'success',
+        { title: 'KI-Analyse abgeschlossen' }
+      )
+    } catch (err: any) {
+      addNotification(
+        `KI-Analyse fehlgeschlagen: ${err?.message || 'Unbekannter Fehler'}`,
+        'error',
+        { title: 'Analysefehler' }
+      )
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }, [addNotification])
 
   const { data: expensesData, isLoading } = useQuery({
     queryKey: ['expenses'],
@@ -610,20 +696,109 @@ function ExpensesPage() {
         }
       >
         <div className="form-grid">
+          {/* KI-Scan Bereich */}
+          <div className="form-group form-group--full" style={{
+            padding: '1rem',
+            background: 'rgba(0, 212, 255, 0.06)',
+            border: '1px dashed rgba(0, 212, 255, 0.3)',
+            borderRadius: '8px',
+            marginBottom: '0.5rem',
+          }}>
+            <label className="form-label" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
+              KI-Beleganalyse (Foto/PDF hochladen)
+            </label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.gif"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null
+                  setReceiptFile(file)
+                  if (file) analyzeReceipt(file)
+                }}
+                style={{
+                  flex: 1,
+                  padding: '0.5rem',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '6px',
+                  color: 'inherit',
+                }}
+              />
+              {receiptFile && !isAnalyzing && (
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => analyzeReceipt(receiptFile)}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+                >
+                  Erneut analysieren
+                </button>
+              )}
+            </div>
+            {isAnalyzing && (
+              <div style={{
+                marginTop: '0.75rem',
+                padding: '0.75rem',
+                background: 'rgba(0, 212, 255, 0.1)',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                color: 'var(--color-primary)',
+                fontWeight: 500,
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }}>
+                KI analysiert Beleg... (Claude Vision)
+              </div>
+            )}
+            {aiConfidence !== null && !isAnalyzing && (
+              <div style={{
+                marginTop: '0.5rem',
+                fontSize: '0.8rem',
+                color: aiConfidence > 0.8 ? '#10b981' : aiConfidence > 0.5 ? '#f59e0b' : '#ef4444',
+              }}>
+                KI-Konfidenz: {Math.round(aiConfidence * 100)}% — Bitte Daten pruefen und ggf. korrigieren
+              </div>
+            )}
+          </div>
+
+          {/* Belegart */}
+          <div className="form-group">
+            <label className="form-label">Belegart</label>
+            <select
+              className="form-input"
+              value={form.type}
+              onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value as any }))}
+            >
+              <option value="invoice">Rechnung</option>
+              <option value="receipt">Quittung</option>
+              <option value="entertainment">Bewirtungsbeleg</option>
+            </select>
+          </div>
+
           <Input
             label="Datum *"
             type="date"
             value={form.date}
             onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
           />
+
+          <Input
+            label="Lieferant / Vendor *"
+            value={form.vendor}
+            onChange={(e) => setForm(prev => ({ ...prev, vendor: e.target.value }))}
+            placeholder="z.B. Thomann GmbH"
+          />
+
           <Input
             label="Beschreibung *"
             value={form.description}
             onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="z.B. Tankrechnung LKW"
+            placeholder="z.B. Mikrofonkabel 10m"
           />
+
           <Input
-            label="Betrag (Netto, EUR) *"
+            label="Betrag (Brutto, EUR) *"
             type="number"
             value={form.amount}
             onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
@@ -631,6 +806,7 @@ function ExpensesPage() {
             min="0"
             step="0.01"
           />
+
           <div className="form-group">
             <label className="form-label">MwSt-Satz</label>
             <select
@@ -643,6 +819,35 @@ function ExpensesPage() {
               ))}
             </select>
           </div>
+
+          <Input
+            label="Rechnungsnummer"
+            value={form.invoice_number}
+            onChange={(e) => setForm(prev => ({ ...prev, invoice_number: e.target.value }))}
+            placeholder="RE-2026-001"
+          />
+
+          <Input
+            label="USt-IdNr Lieferant"
+            value={form.vendor_vat_id}
+            onChange={(e) => setForm(prev => ({ ...prev, vendor_vat_id: e.target.value }))}
+            placeholder="DE123456789"
+          />
+
+          <Input
+            label="IBAN Lieferant"
+            value={form.vendor_iban}
+            onChange={(e) => setForm(prev => ({ ...prev, vendor_iban: e.target.value }))}
+            placeholder="DE89..."
+          />
+
+          <Input
+            label="Buchungskonto (SKR03)"
+            value={form.booking_account}
+            onChange={(e) => setForm(prev => ({ ...prev, booking_account: e.target.value }))}
+            placeholder="z.B. 4930"
+          />
+
           <div className="form-group">
             <label className="form-label">Kategorie</label>
             <select
@@ -655,6 +860,51 @@ function ExpensesPage() {
               ))}
             </select>
           </div>
+
+          <Input
+            label="Zahlungsziel"
+            type="date"
+            value={form.due_date}
+            onChange={(e) => setForm(prev => ({ ...prev, due_date: e.target.value }))}
+          />
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ flex: 1 }}>
+              <Input
+                label="Skonto %"
+                type="number"
+                value={form.discount_percent}
+                onChange={(e) => setForm(prev => ({ ...prev, discount_percent: e.target.value }))}
+                placeholder="2"
+                min="0"
+                step="0.5"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <Input
+                label="Skonto Tage"
+                type="number"
+                value={form.discount_days}
+                onChange={(e) => setForm(prev => ({ ...prev, discount_days: e.target.value }))}
+                placeholder="10"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Zahlungsart</label>
+            <select
+              className="form-input"
+              value={form.payment_method}
+              onChange={(e) => setForm(prev => ({ ...prev, payment_method: e.target.value }))}
+            >
+              <option value="bank_transfer">Ueberweisung</option>
+              <option value="cash">Bar</option>
+              <option value="card">Karte</option>
+            </select>
+          </div>
+
           <div className="form-group">
             <label className="form-label">Projekt (optional)</label>
             <select
@@ -668,28 +918,69 @@ function ExpensesPage() {
               ))}
             </select>
           </div>
-          <div className="form-group form-group--full">
-            <label className="form-label">Beleg-Upload (Foto/PDF)</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.gif"
-              onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-              style={{
-                padding: '0.5rem',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '6px',
-                color: 'inherit',
-                width: '100%',
-              }}
-            />
-            {receiptFile && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'block' }}>
-                Ausgewaehlt: {receiptFile.name}
-              </span>
-            )}
-          </div>
+
+          <Input
+            label="Lieferant-Adresse"
+            value={form.vendor_address}
+            onChange={(e) => setForm(prev => ({ ...prev, vendor_address: e.target.value }))}
+            placeholder="Strasse, PLZ Ort"
+          />
+
+          {/* Bewirtungsbeleg-Felder */}
+          {form.type === 'entertainment' && (
+            <>
+              <div className="form-group form-group--full" style={{
+                padding: '0.75rem',
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.2)',
+                borderRadius: '8px',
+              }}>
+                <label style={{ fontWeight: 600, color: '#f59e0b', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>
+                  Bewirtungsbeleg-Angaben (steuerlich erforderlich)
+                </label>
+                <div className="form-grid" style={{ gap: '0.75rem' }}>
+                  <Input
+                    label="Ort der Bewirtung"
+                    value={form.entertainment_location}
+                    onChange={(e) => setForm(prev => ({ ...prev, entertainment_location: e.target.value }))}
+                    placeholder="z.B. Restaurant Maximilians, Muenchen"
+                  />
+                  <Input
+                    label="Trinkgeld (EUR)"
+                    type="number"
+                    value={form.entertainment_tip}
+                    onChange={(e) => setForm(prev => ({ ...prev, entertainment_tip: e.target.value }))}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                  <div className="form-group form-group--full">
+                    <Input
+                      label="Anlass der Bewirtung *"
+                      value={form.entertainment_reason}
+                      onChange={(e) => setForm(prev => ({ ...prev, entertainment_reason: e.target.value }))}
+                      placeholder="z.B. Projektbesprechung Stadtfest 2026"
+                    />
+                  </div>
+                  <div className="form-group form-group--full">
+                    <Input
+                      label="Teilnehmer (komma-separiert) *"
+                      value={form.entertainment_guests}
+                      onChange={(e) => setForm(prev => ({ ...prev, entertainment_guests: e.target.value }))}
+                      placeholder="z.B. Max Mueller, Lisa Schmidt, Janis Eckersberger"
+                    />
+                  </div>
+                </div>
+                {form.amount && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+                    70% absetzbar: {(parseFloat(form.amount || '0') * 0.70).toFixed(2)} EUR |
+                    30% nicht absetzbar: {(parseFloat(form.amount || '0') * 0.30).toFixed(2)} EUR
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
           <div className="form-group form-group--full">
             <label className="form-label">Bemerkungen</label>
             <textarea

@@ -11,9 +11,10 @@ import (
 func SetupRoutes(
 	mux *http.ServeMux,
 	aiSvc *application.AIService,
+	visionSvc *application.ReceiptVisionService,
 	log logger.Logger,
 ) {
-	handlers := NewHandlers(aiSvc, log)
+	handlers := NewHandlers(aiSvc, visionSvc, log)
 
 	// AI request routes
 	mux.HandleFunc("POST /api/v1/ai/complete", handlers.CreateAIRequest)
@@ -42,4 +43,7 @@ func SetupRoutes(
 
 	// Dashboard route
 	mux.HandleFunc("GET /api/v1/ai/dashboard", handlers.GetDashboard)
+
+	// Receipt/Invoice Vision Analysis
+	mux.HandleFunc("POST /api/v1/ai/analyze-receipt", handlers.AnalyzeReceipt)
 }

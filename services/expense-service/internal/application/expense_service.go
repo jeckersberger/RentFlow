@@ -32,10 +32,43 @@ func (s *ExpenseService) CreateExpense(ctx context.Context, cmd CreateExpenseCom
 	exp.ProjectID = cmd.ProjectID
 	exp.Notes = cmd.Notes
 
+	// Neue Felder
+	if cmd.Type != "" {
+		exp.Type = domain.ExpenseType(cmd.Type)
+	}
+	exp.VendorAddress = cmd.VendorAddress
+	exp.VendorVATID = cmd.VendorVATID
+	exp.VendorIBAN = cmd.VendorIBAN
+	exp.BookingAccount = cmd.BookingAccount
+	exp.ServicePeriodFrom = cmd.ServicePeriodFrom
+	exp.ServicePeriodTo = cmd.ServicePeriodTo
+	exp.DueDate = cmd.DueDate
+	exp.DiscountPercent = cmd.DiscountPercent
+	exp.DiscountDays = cmd.DiscountDays
+	exp.InvoiceNumber = cmd.InvoiceNumber
+	exp.ReceiptChecksum = cmd.ReceiptChecksum
+	exp.ReceiptNASPath = cmd.ReceiptNASPath
+	exp.OCRConfidence = cmd.OCRConfidence
+	exp.EmailRef = cmd.EmailRef
+	if cmd.Source != "" {
+		exp.Source = cmd.Source
+	}
+	if cmd.OCRData != nil {
+		exp.OCRData = cmd.OCRData
+	}
+
+	// Bewirtungsbeleg
+	exp.EntertainmentLocation = cmd.EntertainmentLocation
+	exp.EntertainmentReason = cmd.EntertainmentReason
+	exp.EntertainmentGuests = cmd.EntertainmentGuests
+	exp.EntertainmentTip = cmd.EntertainmentTip
+
 	if cmd.TaxRate > 0 {
 		exp.TaxRate = cmd.TaxRate
 	}
 	exp.CalculateTax()
+	exp.CalculateEntertainmentSplit()
+	exp.CalculateDiscountDeadline()
 
 	if err := exp.Validate(); err != nil {
 		return nil, domain.NewDomainError("VALIDATION_ERROR", err.Error(), nil)
@@ -89,8 +122,20 @@ func (s *ExpenseService) UpdateExpense(ctx context.Context, cmd UpdateExpenseCom
 		return nil, domain.NewDomainError("NOT_FOUND", "expense not found", err)
 	}
 
+	if cmd.Type != "" {
+		exp.Type = domain.ExpenseType(cmd.Type)
+	}
 	if cmd.Vendor != "" {
 		exp.Vendor = cmd.Vendor
+	}
+	if cmd.VendorAddress != "" {
+		exp.VendorAddress = cmd.VendorAddress
+	}
+	if cmd.VendorVATID != "" {
+		exp.VendorVATID = cmd.VendorVATID
+	}
+	if cmd.VendorIBAN != "" {
+		exp.VendorIBAN = cmd.VendorIBAN
 	}
 	if cmd.Amount > 0 {
 		exp.Amount = cmd.Amount
@@ -99,12 +144,49 @@ func (s *ExpenseService) UpdateExpense(ctx context.Context, cmd UpdateExpenseCom
 	if cmd.CategoryCode != "" {
 		exp.CategoryCode = cmd.CategoryCode
 	}
+	if cmd.BookingAccount != "" {
+		exp.BookingAccount = cmd.BookingAccount
+	}
+	if cmd.DueDate != nil {
+		exp.DueDate = cmd.DueDate
+	}
+	if cmd.DiscountPercent > 0 {
+		exp.DiscountPercent = cmd.DiscountPercent
+	}
+	if cmd.DiscountDays > 0 {
+		exp.DiscountDays = cmd.DiscountDays
+		exp.CalculateDiscountDeadline()
+	}
 	if cmd.PaymentMethod != "" {
 		exp.PaymentMethod = cmd.PaymentMethod
+	}
+	if cmd.PaymentStatus != "" {
+		exp.PaymentStatus = domain.PaymentStatus(cmd.PaymentStatus)
+		if cmd.PaymentStatus == "paid" {
+			now := time.Now()
+			exp.PaidAt = &now
+		}
+	}
+	if cmd.InvoiceNumber != "" {
+		exp.InvoiceNumber = cmd.InvoiceNumber
 	}
 	if cmd.Notes != "" {
 		exp.Notes = cmd.Notes
 	}
+	// Bewirtungsbeleg
+	if cmd.EntertainmentLocation != "" {
+		exp.EntertainmentLocation = cmd.EntertainmentLocation
+	}
+	if cmd.EntertainmentReason != "" {
+		exp.EntertainmentReason = cmd.EntertainmentReason
+	}
+	if cmd.EntertainmentGuests != "" {
+		exp.EntertainmentGuests = cmd.EntertainmentGuests
+	}
+	if cmd.EntertainmentTip > 0 {
+		exp.EntertainmentTip = cmd.EntertainmentTip
+	}
+	exp.CalculateEntertainmentSplit()
 
 	if err := s.expRepo.UpdateExpense(ctx, exp); err != nil {
 		return nil, domain.NewDomainError("UPDATE_FAILED", "failed to update expense", err)
