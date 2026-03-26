@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { projectApi, contactApi } from '../../services/api'
+import { useIndustry } from '../../hooks/useIndustry'
 import { Input } from '../../components/Form/Input'
 import { Select } from '../../components/Form/Select'
 import { TextArea } from '../../components/Form/TextArea'
@@ -33,6 +34,9 @@ interface Contact {
 }
 
 function ProjectFormPage() {
+  const { label } = useIndustry()
+  const projectLabel = label('project') || 'Projekt'
+  const locationLabel = label('location') || 'Veranstaltungsort'
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isEditing = !!id
@@ -108,7 +112,7 @@ function ProjectFormPage() {
       const errorMessage =
         (error as any)?.response?.data?.error ||
         (error as any)?.response?.data?.message ||
-        'Fehler beim Speichern des Projekts'
+        `Fehler beim Speichern`
       setErrors({ submit: errorMessage })
     },
   })
@@ -168,7 +172,7 @@ function ProjectFormPage() {
     const newErrors: Record<string, string> = {}
 
     if (!formData.name?.trim()) {
-      newErrors.name = 'Projektname ist erforderlich'
+      newErrors.name = `${projectLabel}name ist erforderlich`
     }
     if (!formData.start_date) {
       newErrors.start_date = 'Startdatum ist erforderlich'
@@ -220,7 +224,7 @@ function ProjectFormPage() {
           <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-3)', animation: 'pulse-active 1.5s infinite' }}>
             ...
           </div>
-          <p style={{ color: 'var(--color-text-secondary)' }}>Projekt wird geladen...</p>
+          <p style={{ color: 'var(--color-text-secondary)' }}>{projectLabel} wird geladen...</p>
         </div>
       </div>
     )
@@ -231,7 +235,7 @@ function ProjectFormPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            {isEditing ? 'Projekt bearbeiten' : 'Neues Projekt'}
+            {isEditing ? `${projectLabel} bearbeiten` : `${projectLabel} erstellen`}
           </h1>
         </div>
       </div>
@@ -246,7 +250,7 @@ function ProjectFormPage() {
         {/* === Essential fields (always visible) === */}
         <div style={{ marginBottom: 'var(--spacing-4)' }}>
           <Input
-            label="Projektname *"
+            label={`${projectLabel}name *`}
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
             placeholder="z.B. Firmenfeier Müller GmbH"
@@ -351,7 +355,7 @@ function ProjectFormPage() {
 
             <div style={{ marginTop: 'var(--spacing-3)' }}>
               <TextArea
-                label="Veranstaltungsort"
+                label={locationLabel}
                 value={[
                   formData.venue_name || '',
                   formData.venue_address?.street || '',
@@ -468,7 +472,7 @@ function ProjectFormPage() {
               ? 'Wird gespeichert...'
               : isEditing
               ? 'Änderungen speichern'
-              : 'Projekt erstellen'}
+              : `${projectLabel} erstellen`}
           </button>
         </div>
       </form>

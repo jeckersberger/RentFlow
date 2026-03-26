@@ -56,6 +56,7 @@ export const INDUSTRY_GROUPS: IndustryGroup[] = [
 // Default labels (fallback)
 export const DEFAULT_LABELS: Record<string, string> = {
   project: 'Projekt',
+  project_plural: 'Projekte',
   checkout: 'Ausgabe',
   checkin: 'Rueckgabe',
   location: 'Lager',
@@ -71,6 +72,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Technik',
     labels: {
       project: 'Veranstaltung',
+      project_plural: 'Veranstaltungen',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Lager',
@@ -96,6 +98,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Technik',
     labels: {
       project: 'Produktion',
+      project_plural: 'Produktionen',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Fundus',
@@ -121,6 +124,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Technik',
     labels: {
       project: 'Auftrag',
+      project_plural: 'Auftraege',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Lager',
@@ -145,6 +149,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Maschinen & Werkzeuge',
     labels: {
       project: 'Baustelle',
+      project_plural: 'Baustellen',
       checkout: 'Lieferung',
       checkin: 'Abholung',
       location: 'Depot',
@@ -169,6 +174,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Maschinen & Werkzeuge',
     labels: {
       project: 'Auftrag',
+      project_plural: 'Auftraege',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Lager',
@@ -192,6 +198,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Maschinen & Werkzeuge',
     labels: {
       project: 'Baustelle',
+      project_plural: 'Baustellen',
       checkout: 'Lieferung',
       checkin: 'Abholung',
       location: 'Lager',
@@ -216,6 +223,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Maschinen & Werkzeuge',
     labels: {
       project: 'Baustelle',
+      project_plural: 'Baustellen',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Lager',
@@ -238,6 +246,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Maschinen & Werkzeuge',
     labels: {
       project: 'Baustelle',
+      project_plural: 'Baustellen',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Lager',
@@ -262,6 +271,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Ausstattung & Mobiliar',
     labels: {
       project: 'Event',
+      project_plural: 'Events',
       checkout: 'Lieferung',
       checkin: 'Abholung',
       location: 'Lager',
@@ -285,6 +295,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Ausstattung & Mobiliar',
     labels: {
       project: 'Messe',
+      project_plural: 'Messen',
       checkout: 'Lieferung',
       checkin: 'Abholung',
       location: 'Lager',
@@ -308,6 +319,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Ausstattung & Mobiliar',
     labels: {
       project: 'Event',
+      project_plural: 'Events',
       checkout: 'Lieferung',
       checkin: 'Abholung',
       location: 'Lager',
@@ -331,6 +343,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Ausstattung & Mobiliar',
     labels: {
       project: 'Produktion',
+      project_plural: 'Produktionen',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Fundus',
@@ -354,6 +367,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Ausstattung & Mobiliar',
     labels: {
       project: 'Veranstaltung',
+      project_plural: 'Veranstaltungen',
       checkout: 'Lieferung',
       checkin: 'Abholung',
       location: 'Lager',
@@ -379,6 +393,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Fahrzeuge & Outdoor',
     labels: {
       project: 'Buchung',
+      project_plural: 'Buchungen',
       checkout: 'Uebergabe',
       checkin: 'Ruecknahme',
       location: 'Standort',
@@ -403,6 +418,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Fahrzeuge & Outdoor',
     labels: {
       project: 'Buchung',
+      project_plural: 'Buchungen',
       checkout: 'Uebergabe',
       checkin: 'Ruecknahme',
       location: 'Standort',
@@ -427,6 +443,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Fahrzeuge & Outdoor',
     labels: {
       project: 'Buchung',
+      project_plural: 'Buchungen',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Lager',
@@ -451,6 +468,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Sonstiges',
     labels: {
       project: 'Baustelle',
+      project_plural: 'Baustellen',
       checkout: 'Lieferung',
       checkin: 'Abholung',
       location: 'Depot',
@@ -474,6 +492,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Sonstiges',
     labels: {
       project: 'Einsatz',
+      project_plural: 'Einsaetze',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Lager',
@@ -499,6 +518,7 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     group: 'Sonstiges',
     labels: {
       project: 'Auftrag',
+      project_plural: 'Auftraege',
       checkout: 'Ausgabe',
       checkin: 'Rueckgabe',
       location: 'Lager',

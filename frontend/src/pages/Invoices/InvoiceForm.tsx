@@ -470,120 +470,76 @@ function InvoiceFormPage() {
           </div>
         )}
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 'var(--spacing-4)' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--color-border)' }}>
-                <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', minWidth: '160px', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Name *
-                </th>
-                <th style={{ textAlign: 'left', padding: 'var(--spacing-2) var(--spacing-3)', minWidth: '140px', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Beschreibung
-                </th>
-                <th style={{ textAlign: 'right', padding: 'var(--spacing-2) var(--spacing-3)', minWidth: '80px', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Menge *
-                </th>
-                <th style={{ textAlign: 'right', padding: 'var(--spacing-2) var(--spacing-3)', minWidth: '120px', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Einzelpreis *
-                </th>
-                {!isKleinunternehmer && (
-                  <th style={{ textAlign: 'right', padding: 'var(--spacing-2) var(--spacing-3)', minWidth: '100px', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                    MwSt-Satz
-                  </th>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--spacing-4)' }}>
+          {lineItems.map((item, index) => {
+            const lineTotal = item.quantity * item.unit_price
+            const inputStyle: React.CSSProperties = {
+              width: '100%', backgroundColor: 'var(--glass-bg-input-strong)',
+              border: '1px solid var(--color-border-strong)', color: 'var(--color-text-primary)',
+              padding: '8px 12px', borderRadius: '8px', fontSize: '14px',
+            }
+            const labelStyle: React.CSSProperties = {
+              fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '2px', display: 'block',
+            }
+            return (
+              <div key={index} style={{
+                background: 'var(--glass-bg-strong, rgba(17,24,39,0.8))',
+                border: '1px solid var(--color-border, #1e293b)',
+                borderRadius: '10px', padding: '14px',
+                position: 'relative',
+              }}>
+                {lineItems.length > 1 && (
+                  <button type="button" onClick={() => removeLineItem(index)}
+                    style={{
+                      position: 'absolute', top: '8px', right: '8px',
+                      background: 'rgba(239,68,68,0.15)', border: 'none',
+                      color: '#ef4444', width: '28px', height: '28px',
+                      borderRadius: '6px', cursor: 'pointer', fontSize: '14px',
+                    }}>✕</button>
                 )}
-                <th style={{ textAlign: 'right', padding: 'var(--spacing-2) var(--spacing-3)', minWidth: '120px', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Gesamt
-                </th>
-                <th style={{ padding: 'var(--spacing-2) var(--spacing-3)', width: '50px' }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {lineItems.map((item, index) => {
-                const lineTotal = item.quantity * item.unit_price
-                return (
-                  <tr key={index} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: 'var(--spacing-2) var(--spacing-3)' }}>
-                      <input
-                        className="form-input"
-                        value={item.name}
-                        onChange={(e) => updateLineItem(index, 'name', e.target.value)}
-                        placeholder="Bezeichnung"
-                        style={{ backgroundColor: 'var(--glass-bg-input-strong)', border: '1px solid var(--color-border-strong)', color: 'var(--color-text-primary)', padding: 'var(--spacing-2)', borderRadius: 'var(--radius-input)' }}
-                      />
-                    </td>
-                    <td style={{ padding: 'var(--spacing-2) var(--spacing-3)' }}>
-                      <input
-                        className="form-input"
-                        value={item.description}
-                        onChange={(e) => updateLineItem(index, 'description', e.target.value)}
-                        placeholder="Beschreibung"
-                        style={{ backgroundColor: 'var(--glass-bg-input-strong)', border: '1px solid var(--color-border-strong)', color: 'var(--color-text-primary)', padding: 'var(--spacing-2)', borderRadius: 'var(--radius-input)' }}
-                      />
-                    </td>
-                    <td style={{ padding: 'var(--spacing-2) var(--spacing-3)' }}>
-                      <input
-                        className="form-input"
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        step="1"
-                        style={{ textAlign: 'right', backgroundColor: 'var(--glass-bg-input-strong)', border: '1px solid var(--color-border-strong)', color: 'var(--color-text-primary)', padding: 'var(--spacing-2)', borderRadius: 'var(--radius-input)' }}
-                      />
-                    </td>
-                    <td style={{ padding: 'var(--spacing-2) var(--spacing-3)' }}>
-                      <input
-                        className="form-input"
-                        type="number"
-                        value={item.unit_price}
-                        onChange={(e) => updateLineItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        step="0.01"
-                        style={{ textAlign: 'right', backgroundColor: 'var(--glass-bg-input-strong)', border: '1px solid var(--color-border-strong)', color: 'var(--color-text-primary)', padding: 'var(--spacing-2)', borderRadius: 'var(--radius-input)' }}
-                      />
-                    </td>
-                    {!isKleinunternehmer && (
-                      <td style={{ padding: 'var(--spacing-2) var(--spacing-3)' }}>
-                        <select
-                          className="form-input"
-                          value={String(item.tax_rate)}
-                          onChange={(e) => updateLineItem(index, 'tax_rate', parseFloat(e.target.value))}
-                          style={{
-                            textAlign: 'right',
-                            minWidth: '90px',
-                            backgroundColor: 'var(--glass-bg-input-strong)',
-                            border: '1px solid var(--color-border-strong)',
-                            color: 'var(--color-text-primary)',
-                            padding: 'var(--spacing-2)',
-                            borderRadius: 'var(--radius-input)',
-                          }}
-                        >
-                          {TAX_RATE_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                      </td>
-                    )}
-                    <td style={{ textAlign: 'right', padding: 'var(--spacing-2) var(--spacing-3)', fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-primary)' }}>
-                      {formatCurrency(lineTotal)}
-                    </td>
-                    <td style={{ padding: 'var(--spacing-2) var(--spacing-3)' }}>
-                      <button
-                        type="button"
-                        className="btn btn--danger btn--sm"
-                        onClick={() => removeLineItem(index)}
-                        disabled={lineItems.length <= 1}
-                        title="Position entfernen"
-                        style={{ padding: 'var(--spacing-1) var(--spacing-2)', fontSize: '0.85rem' }}
-                      >
-                        X
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={labelStyle}>Bezeichnung *</label>
+                  <input style={inputStyle} value={item.name}
+                    onChange={(e) => updateLineItem(index, 'name', e.target.value)}
+                    placeholder="z.B. PA-System QSC K12.2" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <div>
+                    <label style={labelStyle}>Menge</label>
+                    <input style={{ ...inputStyle, textAlign: 'right' }} type="number"
+                      value={item.quantity} min="0" step="1"
+                      onChange={(e) => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Einzelpreis (€)</label>
+                    <input style={{ ...inputStyle, textAlign: 'right' }} type="number"
+                      value={item.unit_price} min="0" step="0.01"
+                      onChange={(e) => updateLineItem(index, 'unit_price', parseFloat(e.target.value) || 0)} />
+                  </div>
+                </div>
+                {!isKleinunternehmer && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={labelStyle}>MwSt-Satz</label>
+                    <select style={inputStyle} value={String(item.tax_rate)}
+                      onChange={(e) => updateLineItem(index, 'tax_rate', parseFloat(e.target.value))}>
+                      {TAX_RATE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  paddingTop: '8px', borderTop: '1px solid var(--color-border, #1e293b)',
+                }}>
+                  <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Gesamt</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-primary, #00d4ff)' }}>
+                    {formatCurrency(lineTotal)}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
         </div>
 
         <button

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { FolderOpen } from 'lucide-react'
 import { projectApi } from '../../services/api'
+import { useIndustry } from '../../hooks/useIndustry'
 import { DataTable, Column } from '../../components/DataTable/DataTable'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { Input } from '../../components/Form/Input'
@@ -23,6 +24,9 @@ const STATUS_TABS: Array<{ value: ProjectStatus | ''; label: string }> = [
 ]
 
 function ProjectListPage() {
+  const { label } = useIndustry()
+  const projectLabel = label('project') || 'Projekt'
+  const projectPluralLabel = label('project_plural') || 'Projekte'
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
@@ -115,8 +119,8 @@ function ProjectListPage() {
     <div className="project-list-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Projekte</h1>
-          <p className="page-subtitle">Verwalten Sie alle Ihre Veranstaltungsprojekte</p>
+          <h1 className="page-title">{projectPluralLabel}</h1>
+          <p className="page-subtitle">Verwalten Sie alle Ihre {projectPluralLabel}</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
           <button
@@ -130,7 +134,7 @@ function ProjectListPage() {
             className="btn btn--primary"
             onClick={() => navigate('/projects/new')}
           >
-            + Neues Projekt
+            + {projectLabel} erstellen
           </button>
         </div>
       </div>
@@ -191,9 +195,9 @@ function ProjectListPage() {
       ) : _filteredData.length === 0 ? (
         <EmptyState
           icon={FolderOpen}
-          title={selectedStatus ? 'Keine Projekte mit diesem Status' : 'Noch keine Projekte'}
-          description={selectedStatus ? 'Versuchen Sie einen anderen Filter.' : 'Erstellen Sie Ihr erstes Projekt, um loszulegen.'}
-          action={selectedStatus ? undefined : { label: 'Neues Projekt', href: '/projects/new' }}
+          title={selectedStatus ? `Keine ${projectPluralLabel} mit diesem Status` : `Noch keine ${projectPluralLabel}`}
+          description={selectedStatus ? 'Versuchen Sie einen anderen Filter.' : `Erstellen Sie Ihr erstes ${projectLabel}, um loszulegen.`}
+          action={selectedStatus ? undefined : { label: `${projectLabel} erstellen`, href: '/projects/new' }}
         />
       ) : viewMode === 'list' ? (
         <DataTable<Project>

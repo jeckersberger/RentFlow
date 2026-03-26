@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode'
 import { equipmentApi, projectApi } from '../../services/api'
+import { useIndustry } from '../../hooks/useIndustry'
 import './Scanner.scss'
 
 // ─── Offline Queue (IndexedDB) ───────────────────────────────────────────────
@@ -90,20 +91,22 @@ interface Project {
 
 type ScanContext = 'check-in' | 'check-out' | 'warehouse-store' | 'inventory' | 'pack-verify'
 
-const CONTEXT_LABELS: Record<ScanContext, string> = {
-  'check-in': 'Check-In',
-  'check-out': 'Check-Out',
-  'warehouse-store': 'Einlagern',
-  'inventory': 'Inventur',
-  'pack-verify': 'Packliste',
-}
-
 // ─── Component ───────────────────────────────────────────────────────────────
 
 function ScannerPage() {
+  const { label } = useIndustry()
   const scanInputRef = useRef<HTMLInputElement>(null)
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null)
   const processBarcodeRef = useRef<((barcode: string) => void) | null>(null)
+
+  // Industry-aware context labels (fallback to defaults)
+  const contextLabels: Record<ScanContext, string> = {
+    'check-in': label('checkin') || 'Check-In',
+    'check-out': label('checkout') || 'Check-Out',
+    'warehouse-store': 'Einlagern',
+    'inventory': 'Inventur',
+    'pack-verify': 'Packliste',
+  }
 
   // Core state
   const [barcode, setBarcode] = useState('')
@@ -314,7 +317,7 @@ function ScannerPage() {
         barcode: scannedBarcode,
         equipmentName: equipment.name,
         status: 'success',
-        message: CONTEXT_LABELS[scanContext],
+        message: contextLabels[scanContext],
         timestamp: new Date().toISOString(),
       }
       setRecentScans(prev => prev.map(s => s.id === scanId ? success : s))
@@ -452,8 +455,8 @@ function ScannerPage() {
             value={scanContext}
             onChange={(e) => setScanContext(e.target.value as ScanContext)}
           >
-            {(Object.keys(CONTEXT_LABELS) as ScanContext[]).map(ctx => (
-              <option key={ctx} value={ctx}>{CONTEXT_LABELS[ctx]}</option>
+            {(Object.keys(contextLabels) as ScanContext[]).map(ctx => (
+              <option key={ctx} value={ctx}>{contextLabels[ctx]}</option>
             ))}
           </select>
 
@@ -463,7 +466,7 @@ function ScannerPage() {
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
             >
-              <option value="">Projekt...</option>
+              <option value="">{label('project') || 'Projekt'}...</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
