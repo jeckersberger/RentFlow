@@ -286,7 +286,7 @@ function Sidebar() {
       <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
         <div className="sidebar__header">
           <div className="sidebar__logo">
-            <div className="sidebar__logo-icon">RF</div>
+            <div className="sidebar__logo-icon">EF</div>
             {!collapsed && <span className="sidebar__logo-text">EquipFlow</span>}
           </div>
           <button
@@ -481,7 +481,7 @@ function Sidebar() {
           <aside className="mobile-overlay__sidebar" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-overlay__header">
               <div className="sidebar__logo">
-                <div className="sidebar__logo-icon">RF</div>
+                <div className="sidebar__logo-icon">EF</div>
                 <span className="sidebar__logo-text">EquipFlow</span>
               </div>
               <button className="mobile-overlay__close" onClick={closeMobileMenu}>

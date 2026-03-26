@@ -669,7 +669,8 @@ services:
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      AI_PROVIDERS: ${AI_PROVIDERS:-ollama}
+      AI_PROVIDERS: ${AI_PROVIDERS:-claude}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OLLAMA_ENDPOINT: ${OLLAMA_ENDPOINT:-http://localhost:11434}
     ports:
       - "8014:8014"
