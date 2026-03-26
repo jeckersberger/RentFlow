@@ -252,7 +252,7 @@ func (g *FPDFGenerator) GenerateInvoicePDFFromData(data *InvoiceData) ([]byte, e
 	pdf.Ln(10)
 	pdf.SetFont("Helvetica", "", 8)
 	pdf.SetTextColor(153, 153, 153)
-	pdf.Cell(0, 4, "Diese Rechnung wurde automatisch von RentFlow erstellt.")
+	pdf.Cell(0, 4, "Diese Rechnung wurde automatisch von EquipFlow erstellt.")
 	pdf.Ln(4)
 	pdf.Cell(0, 4, "Bei Fragen wenden Sie sich bitte an unsere Buchhaltung.")
 

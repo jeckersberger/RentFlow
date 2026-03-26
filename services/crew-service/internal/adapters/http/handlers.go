@@ -478,7 +478,7 @@ func generateICSCalendar(crew *application.CrewMemberDTO, assignments []*applica
 	// Write iCalendar header
 	sb.WriteString("BEGIN:VCALENDAR\r\n")
 	sb.WriteString("VERSION:2.0\r\n")
-	sb.WriteString("PRODID:-//RentFlow//Crew Schedule//EN\r\n")
+	sb.WriteString("PRODID:-//EquipFlow//Crew Schedule//EN\r\n")
 	sb.WriteString(fmt.Sprintf("CALSCALE:GREGORIAN\r\n"))
 	sb.WriteString(fmt.Sprintf("METHOD:PUBLISH\r\n"))
 	sb.WriteString(fmt.Sprintf("X-WR-CALNAME:%s Schedule\r\n", crew.FirstName+" "+crew.LastName))

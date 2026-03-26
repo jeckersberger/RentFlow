@@ -581,7 +581,7 @@ func (s *InvoiceService) SendInvoiceWithPDF(ctx context.Context, cmd SendInvoice
 			<p>anbei erhalten Sie die Rechnung <strong>%s</strong> über <strong>%s %.2f</strong>.</p>
 			<p>Zahlbar bis: <strong>%s</strong></p>
 			<p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
-			<p>Mit freundlichen Grüßen<br>Ihr RentFlow-Team</p>
+			<p>Mit freundlichen Grüßen<br>Ihr EquipFlow-Team</p>
 		</body></html>`,
 			invoice.ClientName,
 			invoice.InvoiceNumber,

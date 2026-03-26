@@ -53,7 +53,7 @@ const emailBaseLayout = `<!DOCTYPE html>
           <!-- Header with gradient -->
           <tr>
             <td style="background:linear-gradient(135deg,#06b6d4,#0891b2);padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">RentFlow</h1>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">EquipFlow</h1>
             </td>
           </tr>
           <!-- Content -->
@@ -66,7 +66,7 @@ const emailBaseLayout = `<!DOCTYPE html>
           <tr>
             <td style="padding:24px 40px;background-color:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
               <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.5;">
-                Diese E-Mail wurde automatisch von RentFlow versendet.<br>
+                Diese E-Mail wurde automatisch von EquipFlow versendet.<br>
                 &copy; {{.Year}} {{.CompanyName}}
               </p>
             </td>
@@ -108,9 +108,9 @@ const bookingRequestContent = `
 </p>`
 
 const invitationContent = `
-<h2 style="margin:0 0 16px;color:#1e293b;font-size:20px;font-weight:600;">Einladung zu RentFlow</h2>
+<h2 style="margin:0 0 16px;color:#1e293b;font-size:20px;font-weight:600;">Einladung zu EquipFlow</h2>
 <p style="margin:0 0 20px;color:#475569;font-size:15px;line-height:1.6;">
-  {{.InviterName}} hat Sie eingeladen, {{.CompanyName}} auf RentFlow beizutreten.
+  {{.InviterName}} hat Sie eingeladen, {{.CompanyName}} auf EquipFlow beizutreten.
 </p>
 <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
   Erstellen Sie jetzt Ihr Konto, um loszulegen:
@@ -168,14 +168,14 @@ func RenderBookingRequestEmail(data BookingRequestData) (subject string, bodyHTM
 
 // RenderInvitationEmail renders the invitation email template
 func RenderInvitationEmail(data InvitationData) (subject string, bodyHTML string, err error) {
-	subject = "Einladung zu RentFlow von " + data.InviterName
+	subject = "Einladung zu EquipFlow von " + data.InviterName
 	bodyHTML, err = renderTemplate("invitation", invitationContent, data, data.CompanyName)
 	return
 }
 
 // RenderPasswordResetEmail renders the password reset email template
 func RenderPasswordResetEmail(data PasswordResetData) (subject string, bodyHTML string, err error) {
-	subject = "Passwort zuruecksetzen - RentFlow"
+	subject = "Passwort zuruecksetzen - EquipFlow"
 	bodyHTML, err = renderTemplate("password_reset", passwordResetContent, data, data.CompanyName)
 	return
 }

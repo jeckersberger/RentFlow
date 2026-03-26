@@ -17,7 +17,7 @@ import (
 	"github.com/jeckersberger/rentflow/services/auth-service/internal/domain"
 )
 
-// CurrentVersion is the hardcoded current version of RentFlow
+// CurrentVersion is the hardcoded current version of EquipFlow
 const CurrentVersion = "1.4.0"
 
 // versionCache caches the GitHub release check result for 6 hours
@@ -936,7 +936,7 @@ func getVersionInfo(log logger.Logger) *VersionInfo {
 	// Try to fetch latest release from GitHub (private repo needs token)
 	client := &http.Client{Timeout: 5 * time.Second}
 	ghToken := os.Getenv("GITHUB_TOKEN")
-	req, _ := http.NewRequest("GET", "https://api.github.com/repos/jeckersberger/RentFlow/releases/latest", nil)
+	req, _ := http.NewRequest("GET", "https://api.github.com/repos/jeckersberger/EquipFlow/releases/latest", nil)
 	if ghToken != "" {
 		req.Header.Set("Authorization", "token "+ghToken)
 	}
