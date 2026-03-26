@@ -1216,11 +1216,17 @@ func (h *Handler) CreateItemsFromType(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
 		Quantity int `json:"quantity"`
+		Count    int `json:"count"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		h.respondError(w, http.StatusBadRequest, "invalid request body")
 		return
+	}
+
+	// Support both "quantity" and "count" field names
+	if payload.Quantity <= 0 && payload.Count > 0 {
+		payload.Quantity = payload.Count
 	}
 
 	if payload.Quantity <= 0 {

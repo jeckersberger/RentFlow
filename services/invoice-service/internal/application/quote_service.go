@@ -292,7 +292,7 @@ func (s *QuoteService) ConvertQuoteToInvoice(ctx context.Context, cmd ConvertQuo
 	}
 
 	now := time.Now()
-	invoiceNumber := fmt.Sprintf("RF-%d-%04d", now.Year(), seq)
+	invoiceNumber := fmt.Sprintf("EF-%d-%04d", now.Year(), seq)
 	invoiceID := fmt.Sprintf("inv_%d_%04d", now.Unix(), seq)
 
 	// Create invoice from quote

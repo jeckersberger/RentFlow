@@ -61,7 +61,7 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, cmd CreateInvoiceCom
 	}
 
 	now := time.Now()
-	invoiceNumber := fmt.Sprintf("RF-%d-%04d", now.Year(), seq)
+	invoiceNumber := fmt.Sprintf("EF-%d-%04d", now.Year(), seq)
 	invoiceID := fmt.Sprintf("inv_%d_%04d", now.Unix(), seq)
 
 	// Create new invoice aggregate
@@ -620,7 +620,7 @@ func (s *InvoiceService) CreateInvoiceFromProject(ctx context.Context, tenantID,
 	}
 
 	now := time.Now()
-	invoiceNumber := fmt.Sprintf("RF-%d-%04d", now.Year(), seq)
+	invoiceNumber := fmt.Sprintf("EF-%d-%04d", now.Year(), seq)
 
 	invoice := domain.NewInvoice(fmt.Sprintf("inv_%d", hashString(tenantID+invoiceNumber)), tenantID, invoiceNumber, clientName, "")
 	invoice.ProjectID = &projectID

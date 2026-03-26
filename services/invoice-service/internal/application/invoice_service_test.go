@@ -302,10 +302,10 @@ func TestCreateInvoice_SequentialNumbers(t *testing.T) {
 		t.Error("invoice numbers should be different")
 	}
 
-	// Both should follow the RF-YEAR-NNNN pattern
+	// Both should follow the EF-YEAR-NNNN pattern
 	year := time.Now().Year()
-	expected1 := fmt.Sprintf("RF-%d-0001", year)
-	expected2 := fmt.Sprintf("RF-%d-0002", year)
+	expected1 := fmt.Sprintf("EF-%d-0001", year)
+	expected2 := fmt.Sprintf("EF-%d-0002", year)
 	if dto1.InvoiceNumber != expected1 {
 		t.Errorf("expected first invoice number %q, got %q", expected1, dto1.InvoiceNumber)
 	}

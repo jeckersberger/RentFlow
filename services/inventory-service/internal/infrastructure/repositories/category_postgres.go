@@ -65,7 +65,7 @@ func (r *CategoryPostgres) Update(ctx context.Context, cat *domain.Category) err
 
 func (r *CategoryPostgres) GetByID(ctx context.Context, tenantID, categoryID string) (*domain.Category, error) {
 	query := `
-		SELECT id, tenant_id, name, parent_id, icon, color, sort_order, created_at, created_by_user_id
+		SELECT id, tenant_id, name, parent_id, COALESCE(icon, ''), COALESCE(color, ''), sort_order, created_at, COALESCE(created_by_user_id, '')
 		FROM inventory.categories
 		WHERE id = $1 AND tenant_id = $2
 	`
@@ -76,7 +76,7 @@ func (r *CategoryPostgres) GetByID(ctx context.Context, tenantID, categoryID str
 
 func (r *CategoryPostgres) List(ctx context.Context, tenantID string) ([]*domain.Category, error) {
 	query := `
-		SELECT id, tenant_id, name, parent_id, icon, color, sort_order, created_at, created_by_user_id
+		SELECT id, tenant_id, name, parent_id, COALESCE(icon, ''), COALESCE(color, ''), sort_order, created_at, COALESCE(created_by_user_id, '')
 		FROM inventory.categories
 		WHERE tenant_id = $1
 		ORDER BY sort_order ASC, created_at ASC

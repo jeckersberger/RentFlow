@@ -219,12 +219,12 @@ func (r *EquipmentTypePostgres) scanEquipmentTypeFields(scanner interface {
 	et := &domain.EquipmentType{}
 	var tags pq.StringArray
 	var customFieldsJSON []byte
-	var description, manufacturer, model, skuPrefix, dimUnit, imageURL sql.NullString
+	var description, categoryID, manufacturer, model, skuPrefix, dimUnit, imageURL sql.NullString
 	var rentalPriceDay, rentalPriceWeek, replacementValue, weight sql.NullFloat64
 	var dimLength, dimWidth, dimHeight sql.NullFloat64
 
 	err := scanner.Scan(
-		&et.ID, &et.TenantID, &et.Name, &description, &et.CategoryID,
+		&et.ID, &et.TenantID, &et.Name, &description, &categoryID,
 		&manufacturer, &model, &skuPrefix,
 		&rentalPriceDay, &rentalPriceWeek, &replacementValue,
 		&weight, &dimLength, &dimWidth, &dimHeight, &dimUnit,
@@ -237,6 +237,7 @@ func (r *EquipmentTypePostgres) scanEquipmentTypeFields(scanner interface {
 	}
 
 	et.Description = description.String
+	et.CategoryID = categoryID.String
 	et.Manufacturer = manufacturer.String
 	et.Model = model.String
 	et.SKUPrefix = skuPrefix.String

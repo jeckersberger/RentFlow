@@ -206,12 +206,17 @@ function App() {
     if (isAuthenticated) {
       configApi.get('modules.enabled')
         .then((data) => {
-          if (Array.isArray(data)) {
-            setEnabledModules(data)
+          // data might be the array directly, or wrapped in { data: [...] }
+          const modules = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : null
+          if (modules) {
+            setEnabledModules(modules)
+          } else {
+            // Config not set yet — use defaults
+            setEnabledModules(['warehouse', 'projects', 'finance'])
           }
         })
         .catch(() => {
-          // API failed — use defaults and mark as loaded so sidebar filters work
+          // API failed (404 or network error) — use defaults so sidebar works
           setEnabledModules(['warehouse', 'projects', 'finance'])
         })
     }
