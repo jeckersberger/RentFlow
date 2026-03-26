@@ -122,9 +122,9 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Basic email validation
-	if cmd.Email == "" || !strings.Contains(cmd.Email, "@") {
-		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid email format")
+	// Basic login validation (accepts username or email)
+	if cmd.Email == "" {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Username or email is required")
 		return
 	}
 
