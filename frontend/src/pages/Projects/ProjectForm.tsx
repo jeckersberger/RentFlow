@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { projectApi, contactApi } from '../../services/api'
@@ -64,6 +64,7 @@ function ProjectFormPage() {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showMoreDetails, setShowMoreDetails] = useState(false)
 
   // Load contacts for customer selector
   const { data: contactsData } = useQuery({
@@ -145,6 +146,24 @@ function ProjectFormPage() {
     }
   }, [project, isEditing])
 
+  // Auto-expand "Mehr Details" when editing and optional fields have data
+  useEffect(() => {
+    if (isEditing && project) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = project as any
+      const hasOptionalData = p.project_type || p.venue_name ||
+        p.venue_address?.street || p.venue_address?.city ||
+        p.budget > 0 || p.notes || p.color !== '#00d4ff'
+      if (hasOptionalData) {
+        setShowMoreDetails(true)
+      }
+    }
+  }, [project, isEditing])
+
+  const toggleMoreDetails = useCallback(() => {
+    setShowMoreDetails((prev) => !prev)
+  }, [])
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
@@ -224,54 +243,19 @@ function ProjectFormPage() {
           </div>
         )}
 
-        <h2 className="form-section__title">Grundinformationen</h2>
-        <div className="form-section__grid">
+        {/* === Essential fields (always visible) === */}
+        <div style={{ marginBottom: 'var(--spacing-4)' }}>
           <Input
             label="Projektname *"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
             placeholder="z.B. Firmenfeier Müller GmbH"
             error={errors.name}
+            style={{ fontSize: '1.1rem' }}
           />
-          <Select
-            label="Projekttyp"
-            options={PROJECT_TYPE_OPTIONS}
-            value={formData.project_type || ''}
-            onChange={(e) => handleInputChange('project_type', e.target.value)}
-            placeholder="Typ auswählen..."
-          />
-          <Select
-            label="Status"
-            options={STATUS_OPTIONS}
-            value={formData.status || 'draft'}
-            onChange={(e) => handleInputChange('status', e.target.value)}
-            placeholder="Status auswählen"
-          />
-          <div className="form-group">
-            <label className="form-label">Farbe</label>
-            <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
-              <input
-                type="color"
-                value={formData.color || '#00d4ff'}
-                onChange={(e) => handleInputChange('color', e.target.value)}
-                style={{
-                  width: '48px',
-                  height: '40px',
-                  padding: '2px',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-bg-tertiary)',
-                  cursor: 'pointer',
-                }}
-              />
-              <Input
-                value={formData.color || '#00d4ff'}
-                onChange={(e) => handleInputChange('color', e.target.value)}
-                placeholder="#00d4ff"
-                style={{ fontFamily: 'monospace' }}
-              />
-            </div>
-          </div>
+        </div>
+
+        <div className="form-section__grid">
           <Input
             label="Startdatum"
             type="date"
@@ -288,19 +272,10 @@ function ProjectFormPage() {
           />
         </div>
 
-        <TextArea
-          label="Beschreibung"
-          value={formData.description || ''}
-          onChange={(e) => handleInputChange('description', e.target.value)}
-          placeholder="Projektbeschreibung..."
-          rows={4}
-        />
-
-        <h2 className="form-section__title">Auftraggeber / Kunde</h2>
-        <div className="form-section__grid">
+        <div style={{ marginTop: 'var(--spacing-4)' }}>
           {contacts.length > 0 ? (
             <Select
-              label="Kontakt auswählen"
+              label="Kunde"
               options={contacts.map((c) => ({
                 value: c.id,
                 label: c.company_name ? `${c.name || ''} (${c.company_name})` : c.name || c.email || c.id,
@@ -316,78 +291,165 @@ function ProjectFormPage() {
                   }
                 }
               }}
-              placeholder="Kontakt aus CRM auswählen..."
+              placeholder="Kunde auswählen oder unten eingeben..."
             />
-          ) : null}
-          <Input
-            label="Kundenname"
-            value={formData.client_name}
-            onChange={(e) => handleInputChange('client_name', e.target.value)}
-            placeholder="z.B. Müller GmbH"
-          />
-          <Input
-            label="E-Mail"
-            type="email"
-            value={formData.client_email || ''}
-            onChange={(e) => handleInputChange('client_email', e.target.value)}
-            placeholder="kunde@beispiel.de"
-          />
-          <Input
-            label="Telefon"
-            type="tel"
-            value={formData.client_phone || ''}
-            onChange={(e) => handleInputChange('client_phone', e.target.value)}
-            placeholder="+43 ..."
-          />
+          ) : (
+            <Input
+              label="Kunde"
+              value={formData.client_name}
+              onChange={(e) => handleInputChange('client_name', e.target.value)}
+              placeholder="z.B. Müller GmbH"
+            />
+          )}
         </div>
 
-        <h2 className="form-section__title">Veranstaltungsort</h2>
-        <div className="form-section__grid">
-          <Input
-            label="Venue / Veranstaltungsort"
-            value={formData.venue_name || ''}
-            onChange={(e) => handleInputChange('venue_name', e.target.value)}
-            placeholder="z.B. Stadthalle Wien"
-          />
-          <Input
-            label="Straße"
-            value={formData.venue_address?.street || ''}
-            onChange={(e) => handleAddressChange('street', e.target.value)}
-            placeholder="z.B. Hauptstraße 1"
-          />
-          <Input
-            label="PLZ"
-            value={formData.venue_address?.postal_code || ''}
-            onChange={(e) => handleAddressChange('postal_code', e.target.value)}
-            placeholder="z.B. 1010"
-          />
-          <Input
-            label="Stadt"
-            value={formData.venue_address?.city || ''}
-            onChange={(e) => handleAddressChange('city', e.target.value)}
-            placeholder="z.B. Wien"
-          />
+        {/* === Expandable "Mehr Details" section === */}
+        <div style={{ marginTop: 'var(--spacing-5)' }}>
+          <button
+            type="button"
+            onClick={toggleMoreDetails}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-2)',
+              background: 'none',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: 'var(--spacing-2) var(--spacing-3)',
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-medium)',
+              width: '100%',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {showMoreDetails ? '▲ Weniger Details' : '▼ Mehr Details'}
+          </button>
         </div>
 
-        <h2 className="form-section__title">Budget & Notizen</h2>
-        <div className="form-section__grid">
-          <Input
-            label="Budget (EUR)"
-            type="number"
-            value={formData.budget || 0}
-            onChange={(e) => handleInputChange('budget', parseFloat(e.target.value) || 0)}
-            step="0.01"
-            min="0"
-          />
-        </div>
+        {showMoreDetails && (
+          <div style={{ marginTop: 'var(--spacing-4)' }}>
+            <h2 className="form-section__title">Details</h2>
+            <div className="form-section__grid">
+              <Select
+                label="Projekttyp"
+                options={PROJECT_TYPE_OPTIONS}
+                value={formData.project_type || ''}
+                onChange={(e) => handleInputChange('project_type', e.target.value)}
+                placeholder="Typ auswählen..."
+              />
+              <Select
+                label="Status"
+                options={STATUS_OPTIONS}
+                value={formData.status || 'draft'}
+                onChange={(e) => handleInputChange('status', e.target.value)}
+                placeholder="Status auswählen"
+              />
+            </div>
 
-        <TextArea
-          label="Notizen"
-          value={formData.notes || ''}
-          onChange={(e) => handleInputChange('notes', e.target.value)}
-          placeholder="Interne Notizen zum Projekt..."
-          rows={4}
-        />
+            <div style={{ marginTop: 'var(--spacing-3)' }}>
+              <TextArea
+                label="Veranstaltungsort"
+                value={[
+                  formData.venue_name || '',
+                  formData.venue_address?.street || '',
+                  [formData.venue_address?.postal_code || '', formData.venue_address?.city || ''].filter(Boolean).join(' '),
+                ].filter(Boolean).join('\n')}
+                onChange={(e) => {
+                  const lines = e.target.value.split('\n')
+                  handleInputChange('venue_name', lines[0] || '')
+                  handleAddressChange('street', lines[1] || '')
+                  // Parse "PLZ Stadt" from line 3
+                  const line3 = lines[2] || ''
+                  const plzMatch = line3.match(/^(\d{4,5})\s*(.*)$/)
+                  if (plzMatch) {
+                    handleAddressChange('postal_code', plzMatch[1])
+                    handleAddressChange('city', plzMatch[2])
+                  } else {
+                    handleAddressChange('city', line3)
+                    handleAddressChange('postal_code', '')
+                  }
+                }}
+                placeholder={"Stadthalle Wien\nHauptstraße 1\n1010 Wien"}
+                rows={3}
+              />
+            </div>
+
+            <div className="form-section__grid" style={{ marginTop: 'var(--spacing-3)' }}>
+              <Input
+                label="Budget (EUR)"
+                type="number"
+                value={formData.budget || 0}
+                onChange={(e) => handleInputChange('budget', parseFloat(e.target.value) || 0)}
+                step="0.01"
+                min="0"
+              />
+              <div className="form-group">
+                <label className="form-label">Farbe</label>
+                <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    value={formData.color || '#00d4ff'}
+                    onChange={(e) => handleInputChange('color', e.target.value)}
+                    style={{
+                      width: '48px',
+                      height: '40px',
+                      padding: '2px',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: 'var(--color-bg-tertiary)',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <Input
+                    value={formData.color || '#00d4ff'}
+                    onChange={(e) => handleInputChange('color', e.target.value)}
+                    placeholder="#00d4ff"
+                    style={{ fontFamily: 'monospace' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Customer details (when selected from dropdown above) */}
+            {contacts.length > 0 && (
+              <div className="form-section__grid" style={{ marginTop: 'var(--spacing-3)' }}>
+                <Input
+                  label="Kundenname"
+                  value={formData.client_name}
+                  onChange={(e) => handleInputChange('client_name', e.target.value)}
+                  placeholder="z.B. Müller GmbH"
+                />
+                <Input
+                  label="E-Mail"
+                  type="email"
+                  value={formData.client_email || ''}
+                  onChange={(e) => handleInputChange('client_email', e.target.value)}
+                  placeholder="kunde@beispiel.de"
+                />
+                <Input
+                  label="Telefon"
+                  type="tel"
+                  value={formData.client_phone || ''}
+                  onChange={(e) => handleInputChange('client_phone', e.target.value)}
+                  placeholder="+43 ..."
+                />
+              </div>
+            )}
+
+            <div style={{ marginTop: 'var(--spacing-3)' }}>
+              <TextArea
+                label="Notizen"
+                value={formData.notes || ''}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="Interne Notizen zum Projekt..."
+                rows={4}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="form-section__footer">
           <button

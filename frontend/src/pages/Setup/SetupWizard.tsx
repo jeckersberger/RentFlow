@@ -11,11 +11,23 @@ import {
   Wrench,
   Bot,
   Globe,
+  Monitor,
+  Sofa,
+  Truck,
   type LucideIcon,
 } from 'lucide-react'
+import { INDUSTRY_GROUPS, INDUSTRY_PROFILES } from '../../config/industryProfiles'
 import './SetupWizard.scss'
 
-type StepType = 'token' | 'company' | 'admin' | 'modules' | 'confirm'
+type StepType = 'token' | 'industry' | 'company' | 'admin' | 'modules' | 'confirm'
+
+const GROUP_ICONS: Record<string, LucideIcon> = {
+  Monitor,
+  Wrench,
+  Sofa,
+  Truck,
+  Package,
+}
 
 interface FormData extends Partial<SetupRequest> {
   confirmPassword?: string
@@ -97,6 +109,7 @@ const MODULES: ModuleDefinition[] = [
 
 const STEPS: { type: StepType; label: string }[] = [
   { type: 'token', label: 'Setup Token' },
+  { type: 'industry', label: 'Branche' },
   { type: 'company', label: 'Firmenangaben' },
   { type: 'admin', label: 'Admin-Konto' },
   { type: 'modules', label: 'Module' },
@@ -130,6 +143,8 @@ function SetupWizard() {
   const [selectedModules, setSelectedModules] = useState<string[]>(
     MODULES.filter((m) => m.default).map((m) => m.id)
   )
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('event_tech')
 
   const [formData, setFormData] = useState<FormData>({
     setup_token: '',
@@ -156,11 +171,14 @@ function SetupWizard() {
   const setupMutation = useMutation({
     mutationFn: async (data: SetupRequest) => {
       const result = await setupApi.complete(data)
-      // Save selected modules to config after setup completes
+      // Save selected modules and industry profile to config after setup completes
       try {
-        await configApi.set('modules.enabled', selectedModules)
+        await Promise.all([
+          configApi.set('modules.enabled', selectedModules),
+          configApi.set('industry_profile', selectedIndustry),
+        ])
       } catch {
-        // Non-critical: modules can be configured later
+        // Non-critical: can be configured later in settings
       }
       return result
     },
@@ -277,6 +295,7 @@ function SetupWizard() {
 
     let isValid = false
     if (currentStep === 'token') isValid = validateToken()
+    if (currentStep === 'industry') isValid = !!selectedIndustry // must pick an industry
     if (currentStep === 'company') isValid = validateCompany()
     if (currentStep === 'admin') isValid = validateAdmin()
     if (currentStep === 'modules') isValid = true // modules step always valid
@@ -363,6 +382,87 @@ function SetupWizard() {
                 <p className="setup-form__error">{fieldErrors.setup_token}</p>
               )}
             </div>
+          </div>
+        )
+
+      case 'industry':
+        return (
+          <div className="setup-step">
+            <h2 className="setup-step__title">Was vermieten/verleihen Sie?</h2>
+            <p className="setup-step__description">
+              Waehlen Sie Ihre Branche, um RentFlow optimal fuer Sie einzurichten.
+            </p>
+
+            {!selectedGroup ? (
+              <div className="module-grid">
+                {INDUSTRY_GROUPS.map((group) => {
+                  const IconComponent = GROUP_ICONS[group.icon] || Package
+                  return (
+                    <div
+                      key={group.id}
+                      className="module-card"
+                      onClick={() => setSelectedGroup(group.id)}
+                    >
+                      <div className="module-card__header">
+                        <div className="module-card__icon">
+                          <IconComponent size={20} />
+                        </div>
+                      </div>
+                      <div className="module-card__name">{group.label}</div>
+                      <div className="module-card__description">
+                        {group.profiles.length} Branchen
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="setup-actions__button setup-actions__button--secondary"
+                  style={{ marginBottom: '1rem', flex: 'none', width: 'auto', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                  onClick={() => setSelectedGroup(null)}
+                >
+                  Zurueck zur Gruppenauswahl
+                </button>
+                <div className="module-grid">
+                  {INDUSTRY_GROUPS.find((g) => g.id === selectedGroup)?.profiles.map((pid) => {
+                    const p = INDUSTRY_PROFILES[pid]
+                    if (!p) return null
+                    const isSelected = selectedIndustry === pid
+                    return (
+                      <div
+                        key={pid}
+                        className={`module-card ${isSelected ? 'module-card--active' : ''}`}
+                        onClick={() => setSelectedIndustry(pid)}
+                      >
+                        <div className="module-card__header">
+                          <div className="module-card__icon">
+                            <Package size={18} />
+                          </div>
+                          {isSelected && (
+                            <div className="module-card__toggle module-card__toggle--on">
+                              <div className="module-card__toggle-knob" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="module-card__name">{p.label}</div>
+                        <div className="module-card__description">
+                          {p.categories.slice(0, 4).join(', ')}...
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
+            {selectedIndustry && INDUSTRY_PROFILES[selectedIndustry] && (
+              <p className="setup-step__hint">
+                Ausgewaehlt: <strong>{INDUSTRY_PROFILES[selectedIndustry].label}</strong> — Sie koennen dies jederzeit in den Einstellungen aendern.
+              </p>
+            )}
           </div>
         )
 
@@ -806,6 +906,16 @@ function SetupWizard() {
             </p>
 
             <div className="setup-summary">
+              <div className="setup-summary__section">
+                <h3 className="setup-summary__heading">Branche</h3>
+                <div className="setup-summary__item">
+                  <span className="setup-summary__label">Branchenprofil:</span>
+                  <span className="setup-summary__value">
+                    {INDUSTRY_PROFILES[selectedIndustry]?.label || 'Veranstaltungstechnik'}
+                  </span>
+                </div>
+              </div>
+
               <div className="setup-summary__section">
                 <h3 className="setup-summary__heading">Firmenangaben</h3>
                 <div className="setup-summary__item">

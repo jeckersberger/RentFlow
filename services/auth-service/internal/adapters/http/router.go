@@ -34,6 +34,7 @@ func SetupRoutes(
 	backupHandlers := NewBackupHandlers(log)
 	handlers.backupHandlers = backupHandlers
 	configHandlers := NewConfigHandlers(configService, log)
+	industryHandlers := NewIndustryHandlers(configService, log)
 
 	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login und Register
 	loginRateLimiter := NewRateLimiter(10, 1*time.Minute, log)
@@ -102,6 +103,10 @@ func SetupRoutes(
 	mux.HandleFunc("GET /api/v1/system/backups/{filename}", authMiddleware(http.HandlerFunc(backupHandlers.DownloadBackup)).ServeHTTP)
 	mux.HandleFunc("POST /api/v1/system/backups/{filename}/restore", authMiddleware(http.HandlerFunc(backupHandlers.RestoreBackup)).ServeHTTP)
 	mux.HandleFunc("DELETE /api/v1/system/backups/{filename}", authMiddleware(http.HandlerFunc(backupHandlers.DeleteBackup)).ServeHTTP)
+
+	// Industry profile endpoints (authenticated) — registered before wildcard config routes
+	mux.HandleFunc("GET /api/v1/config/industry", authMiddleware(http.HandlerFunc(industryHandlers.GetIndustryProfile)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/config/industries", authMiddleware(http.HandlerFunc(industryHandlers.GetAllIndustryProfiles)).ServeHTTP)
 
 	// Tenant config (authenticated)
 	mux.HandleFunc("GET /api/v1/config", authMiddleware(http.HandlerFunc(configHandlers.GetAllConfigs)).ServeHTTP)

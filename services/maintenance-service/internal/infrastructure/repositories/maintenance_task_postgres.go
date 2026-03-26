@@ -37,7 +37,10 @@ func (r *MaintenanceTaskPostgres) Create(ctx context.Context, task *domain.Maint
 
 func (r *MaintenanceTaskPostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.MaintenanceTask, error) {
 	query := `
-		SELECT id, tenant_id, plan_id, equipment_id, assigned_to, status, priority, scheduled_at, started_at, completed_at, notes, checklist_data, created_at, updated_at
+		SELECT id, tenant_id, COALESCE(plan_id, ''), COALESCE(equipment_id, ''), COALESCE(assigned_to, ''),
+		       COALESCE(status, 'pending'), COALESCE(priority, 'normal'),
+		       COALESCE(scheduled_at, NOW()), started_at, completed_at,
+		       COALESCE(notes, ''), checklist_data, created_at, updated_at
 		FROM maintenance_tasks WHERE id = $1 AND tenant_id = $2
 	`
 	row := r.db.QueryRow(ctx, query, id, tenantID)
@@ -62,7 +65,10 @@ func (r *MaintenanceTaskPostgres) GetByID(ctx context.Context, tenantID, id stri
 
 func (r *MaintenanceTaskPostgres) ListByTenant(ctx context.Context, tenantID string) ([]*domain.MaintenanceTask, error) {
 	query := `
-		SELECT id, tenant_id, plan_id, equipment_id, assigned_to, status, priority, scheduled_at, started_at, completed_at, notes, checklist_data, created_at, updated_at
+		SELECT id, tenant_id, COALESCE(plan_id, ''), COALESCE(equipment_id, ''), COALESCE(assigned_to, ''),
+		       COALESCE(status, 'pending'), COALESCE(priority, 'normal'),
+		       COALESCE(scheduled_at, NOW()), started_at, completed_at,
+		       COALESCE(notes, ''), checklist_data, created_at, updated_at
 		FROM maintenance_tasks WHERE tenant_id = $1 ORDER BY scheduled_at DESC
 	`
 	rows, err := r.db.Query(ctx, query, tenantID)

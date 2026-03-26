@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { quoteApi } from '../../services/api'
+import { quoteApi, projectApi } from '../../services/api'
 import { useNotificationStore } from '../../stores/notificationStore'
 import styles from './Quotes.module.scss'
 
@@ -151,6 +151,31 @@ function QuoteDetail() {
     },
   })
 
+  // Create project from quote
+  const { mutate: createProjectFromQuote } = useMutation({
+    mutationFn: async () => {
+      if (!quote) throw new Error('No quote')
+      return projectApi.create({
+        name: `${quote.client_name} — ${quote.quote_number}`,
+        client_name: quote.client_name,
+        client_email: quote.client_email || '',
+        status: 'confirmed',
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        budget: quote.total || 0,
+        notes: `Erstellt aus Angebot ${quote.quote_number}`,
+      })
+    },
+    onSuccess: (data: { id?: string }) => {
+      addNotification('Projekt aus Angebot erstellt', 'success', { title: 'Erfolg', duration: 3000 })
+      if (data?.id) navigate(`/projects/${data.id}`)
+      else navigate('/projects')
+    },
+    onError: () => {
+      addNotification('Fehler beim Erstellen des Projekts', 'error', { title: 'Fehler', duration: 5000 })
+    },
+  })
+
   if (isLoading) {
     return (
       <div className={styles['quote-detail-page']}>
@@ -220,12 +245,20 @@ function QuoteDetail() {
           )}
 
           {(quote.status === 'accepted' || quote.status === 'confirmed') && (
-            <button
-              className={styles.btn + ' ' + styles['btn--success']}
-              onClick={() => convertToInvoice()}
-            >
-              In Rechnung umwandeln
-            </button>
+            <>
+              <button
+                className={styles.btn + ' ' + styles['btn--primary']}
+                onClick={() => createProjectFromQuote()}
+              >
+                Projekt erstellen
+              </button>
+              <button
+                className={styles.btn + ' ' + styles['btn--success']}
+                onClick={() => convertToInvoice()}
+              >
+                In Rechnung umwandeln
+              </button>
+            </>
           )}
         </div>
       </div>

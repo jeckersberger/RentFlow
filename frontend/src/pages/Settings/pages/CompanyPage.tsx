@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tenantApi, configApi } from '../../../services/api'
 import { useAuthStore } from '../../../stores/authStore'
+import { useIndustry } from '../../../hooks/useIndustry'
+import { INDUSTRY_GROUPS, INDUSTRY_PROFILES } from '../../../config/industryProfiles'
 import { SkeletonCard } from '../../../components/Skeleton/SkeletonLoader'
 import '../Settings.scss'
 
@@ -29,6 +31,8 @@ function CompanyPage() {
   const queryClient = useQueryClient()
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState(false)
+  const { profileId, setIndustry, isSettingIndustry } = useIndustry()
+  const [industrySuccess, setIndustrySuccess] = useState(false)
 
   const [form, setForm] = useState({
     name: '',
@@ -138,6 +142,47 @@ function CompanyPage() {
       <div className="sp-header">
         <h1>Firmendaten</h1>
         <p>Verwalten Sie die Stammdaten Ihres Unternehmens.</p>
+      </div>
+
+      <div className="sp-card">
+        <h3 className="sp-card__title">Branche</h3>
+        <div className="sp-grid">
+          <div className="sp-field sp-full">
+            <label className="sp-label">Branchenprofil</label>
+            <select
+              className="sp-select"
+              value={profileId}
+              disabled={isSettingIndustry}
+              onChange={(e) => {
+                setIndustry(e.target.value, {
+                  onSuccess: () => {
+                    setIndustrySuccess(true)
+                    setTimeout(() => setIndustrySuccess(false), 3000)
+                  },
+                })
+              }}
+            >
+              {INDUSTRY_GROUPS.map((group) => (
+                <optgroup key={group.id} label={group.label}>
+                  {group.profiles.map((pid) => {
+                    const p = INDUSTRY_PROFILES[pid]
+                    return p ? (
+                      <option key={pid} value={pid}>
+                        {p.label}
+                      </option>
+                    ) : null
+                  })}
+                </optgroup>
+              ))}
+            </select>
+            <p style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+              Das Branchenprofil bestimmt Bezeichnungen, Funktionen und Kategorien.
+            </p>
+            {industrySuccess && (
+              <span className="sp-msg--success" style={{ display: 'inline-block', marginTop: '0.5rem' }}>Branche gespeichert!</span>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="sp-card">
