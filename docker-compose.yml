@@ -857,7 +857,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: equipflow-frontend
+    container_name: rentflow-frontend
     ports:
       - "3000:80"
     networks:
