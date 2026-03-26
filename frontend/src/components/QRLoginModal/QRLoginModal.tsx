@@ -47,7 +47,10 @@ export function QRLoginModal({ isOpen, onClose }: QRLoginModalProps) {
       setStatus('ready')
 
       // Generate QR code as data URL (encode deep link for scanner app)
-      const dataUrl = await QRCode.toDataURL(`rentflow://qr-login/${token}`, {
+      // Include server URL so the scanner app knows where to connect
+      const serverUrl = window.location.origin
+      const qrData = JSON.stringify({ token, server: serverUrl })
+      const dataUrl = await QRCode.toDataURL(qrData, {
         width: 280,
         margin: 2,
         color: {
@@ -139,7 +142,7 @@ export function QRLoginModal({ isOpen, onClose }: QRLoginModalProps) {
             {/* Deep link for scanner app */}
             {qrToken && (
               <a
-                href={`rentflow://qr-login/${qrToken}`}
+                href={`rentflow://qr-login/${qrToken}?server=${encodeURIComponent(window.location.origin)}`}
                 className="qr-login-modal__deep-link"
               >
                 Scanner-App oeffnen

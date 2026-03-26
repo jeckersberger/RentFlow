@@ -27,7 +27,7 @@ func NewPostgresUserRepository(db *sql.DB, log logger.Logger) *PostgresUserRepos
 // FindByID retrieves a user by ID
 func (r *PostgresUserRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
 	query := `
-		SELECT id, tenant_id, email, password_hash, first_name, last_name,
+		SELECT id, tenant_id, COALESCE(username, ''), COALESCE(email, ''), password_hash, first_name, last_name,
 		       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 		FROM auth.users
 		WHERE id = $1
@@ -38,13 +38,12 @@ func (r *PostgresUserRepository) FindByID(ctx context.Context, id string) (*doma
 
 // FindByEmail retrieves a user by email
 func (r *PostgresUserRepository) FindByEmail(ctx context.Context, tenantID, email string) (*domain.User, error) {
-	// If tenantID is empty, search across all tenants
 	var query string
 	var args []interface{}
 
 	if tenantID != "" {
 		query = `
-			SELECT id, tenant_id, email, password_hash, first_name, last_name,
+			SELECT id, tenant_id, COALESCE(username, ''), COALESCE(email, ''), password_hash, first_name, last_name,
 			       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 			FROM auth.users
 			WHERE tenant_id = $1 AND email = $2
@@ -52,7 +51,7 @@ func (r *PostgresUserRepository) FindByEmail(ctx context.Context, tenantID, emai
 		args = []interface{}{tenantID, email}
 	} else {
 		query = `
-			SELECT id, tenant_id, email, password_hash, first_name, last_name,
+			SELECT id, tenant_id, COALESCE(username, ''), COALESCE(email, ''), password_hash, first_name, last_name,
 			       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 			FROM auth.users
 			WHERE email = $1
@@ -61,6 +60,46 @@ func (r *PostgresUserRepository) FindByEmail(ctx context.Context, tenantID, emai
 	}
 
 	row := r.db.QueryRowContext(ctx, query, args...)
+	return r.scanUserRow(row)
+}
+
+// FindByUsername retrieves a user by username
+func (r *PostgresUserRepository) FindByUsername(ctx context.Context, tenantID, username string) (*domain.User, error) {
+	var query string
+	var args []interface{}
+
+	if tenantID != "" {
+		query = `
+			SELECT id, tenant_id, COALESCE(username, ''), COALESCE(email, ''), password_hash, first_name, last_name,
+			       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
+			FROM auth.users
+			WHERE tenant_id = $1 AND username = $2
+		`
+		args = []interface{}{tenantID, username}
+	} else {
+		query = `
+			SELECT id, tenant_id, COALESCE(username, ''), COALESCE(email, ''), password_hash, first_name, last_name,
+			       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
+			FROM auth.users
+			WHERE username = $1
+		`
+		args = []interface{}{username}
+	}
+
+	row := r.db.QueryRowContext(ctx, query, args...)
+	return r.scanUserRow(row)
+}
+
+// FindByLogin retrieves a user by username or email (auto-detect)
+func (r *PostgresUserRepository) FindByLogin(ctx context.Context, login string) (*domain.User, error) {
+	query := `
+		SELECT id, tenant_id, COALESCE(username, ''), COALESCE(email, ''), password_hash, first_name, last_name,
+		       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
+		FROM auth.users
+		WHERE username = $1 OR email = $1
+		LIMIT 1
+	`
+	row := r.db.QueryRowContext(ctx, query, login)
 	return r.scanUserRow(row)
 }
 
@@ -79,7 +118,7 @@ func (r *PostgresUserRepository) List(ctx context.Context, tenantID string, page
 
 	// Query users (exclude soft-deleted)
 	query := `
-		SELECT id, tenant_id, email, password_hash, first_name, last_name,
+		SELECT id, tenant_id, COALESCE(username, ''), COALESCE(email, ''), password_hash, first_name, last_name,
 		       roles, status, failed_logins, last_login_at, locked_at, created_at, updated_at
 		FROM auth.users
 		WHERE tenant_id = $1 AND status != 'deleted'
@@ -129,12 +168,13 @@ func (r *PostgresUserRepository) Save(ctx context.Context, user *domain.User) er
 		// Update
 		query := `
 			UPDATE auth.users
-			SET email = $2, password_hash = $3, first_name = $4, last_name = $5,
-			    roles = $6, status = $7, failed_logins = $8, last_login_at = $9, locked_at = $10, updated_at = $11
+			SET username = $2, email = $3, password_hash = $4, first_name = $5, last_name = $6,
+			    roles = $7, status = $8, failed_logins = $9, last_login_at = $10, locked_at = $11, updated_at = $12
 			WHERE id = $1
 		`
 		_, err := r.db.ExecContext(ctx, query,
 			user.ID,
+			user.Username,
 			user.Email,
 			user.PasswordHash,
 			user.FirstName,
@@ -154,12 +194,13 @@ func (r *PostgresUserRepository) Save(ctx context.Context, user *domain.User) er
 		// Insert
 		query := `
 			INSERT INTO auth.users
-			(id, tenant_id, email, password_hash, first_name, last_name, roles, status, failed_logins, locked_at, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			(id, tenant_id, username, email, password_hash, first_name, last_name, roles, status, failed_logins, locked_at, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		`
 		_, err := r.db.ExecContext(ctx, query,
 			user.ID,
 			user.TenantID,
+			user.Username,
 			user.Email,
 			user.PasswordHash,
 			user.FirstName,
@@ -199,13 +240,13 @@ func (r *PostgresUserRepository) scanUser(ctx context.Context, query string, arg
 }
 
 func (r *PostgresUserRepository) scanUserRow(row *sql.Row) (*domain.User, error) {
-	var id, tenantID, email, passwordHash, firstName, lastName, status string
+	var id, tenantID, username, email, passwordHash, firstName, lastName, status string
 	var rolesStr sql.NullString
 	var failedLogins int
 	var lastLoginAt, lockedAt sql.NullTime
 	var createdAt, updatedAt time.Time
 
-	err := row.Scan(&id, &tenantID, &email, &passwordHash, &firstName, &lastName,
+	err := row.Scan(&id, &tenantID, &username, &email, &passwordHash, &firstName, &lastName,
 		&rolesStr, &status, &failedLogins, &lastLoginAt, &lockedAt, &createdAt, &updatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -226,6 +267,7 @@ func (r *PostgresUserRepository) scanUserRow(row *sql.Row) (*domain.User, error)
 			Type:    "User",
 			Changes: []interface{}{},
 		},
+		Username:     username,
 		Email:        email,
 		PasswordHash: passwordHash,
 		FirstName:    firstName,
@@ -250,13 +292,13 @@ func (r *PostgresUserRepository) scanUserRow(row *sql.Row) (*domain.User, error)
 }
 
 func (r *PostgresUserRepository) scanUserFromRow(rows *sql.Rows) (*domain.User, error) {
-	var id, tenantID, email, passwordHash, firstName, lastName, status string
+	var id, tenantID, username, email, passwordHash, firstName, lastName, status string
 	var rolesStr sql.NullString
 	var failedLogins int
 	var lastLoginAt, lockedAt sql.NullTime
 	var createdAt, updatedAt time.Time
 
-	err := rows.Scan(&id, &tenantID, &email, &passwordHash, &firstName, &lastName,
+	err := rows.Scan(&id, &tenantID, &username, &email, &passwordHash, &firstName, &lastName,
 		&rolesStr, &status, &failedLogins, &lastLoginAt, &lockedAt, &createdAt, &updatedAt)
 	if err != nil {
 		return nil, err
@@ -274,6 +316,7 @@ func (r *PostgresUserRepository) scanUserFromRow(rows *sql.Rows) (*domain.User, 
 			Type:    "User",
 			Changes: []interface{}{},
 		},
+		Username:     username,
 		Email:        email,
 		PasswordHash: passwordHash,
 		FirstName:    firstName,

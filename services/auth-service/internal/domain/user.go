@@ -41,6 +41,7 @@ const (
 // User represents a user in the auth domain (Aggregate Root for event sourcing)
 type User struct {
 	AggregateRoot
+	Username     string
 	Email        string
 	PasswordHash string
 	FirstName    string

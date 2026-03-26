@@ -8,37 +8,35 @@ import './Login.scss'
 function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
-  const emailInputRef = useRef<HTMLInputElement>(null)
+  const loginInputRef = useRef<HTMLInputElement>(null)
 
-  const [email, setEmail] = useState('')
+  const [loginId, setLoginId] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
+  const [fieldErrors, setFieldErrors] = useState<{ login?: string; password?: string }>({})
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail')
-    if (rememberedEmail) {
-      setEmail(rememberedEmail)
+    const remembered = localStorage.getItem('rememberedLogin')
+    if (remembered) {
+      setLoginId(remembered)
       setRememberMe(true)
     }
-    emailInputRef.current?.focus()
+    loginInputRef.current?.focus()
   }, [])
 
   const validateForm = () => {
     const errors: typeof fieldErrors = {}
 
-    if (!email) {
-      errors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Please enter a valid email'
+    if (!loginId) {
+      errors.login = 'Benutzername oder E-Mail ist erforderlich'
     }
 
     if (!password) {
-      errors.password = 'Password is required'
+      errors.password = 'Passwort ist erforderlich'
     } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters'
+      errors.password = 'Passwort muss mindestens 6 Zeichen haben'
     }
 
     setFieldErrors(errors)
@@ -56,7 +54,8 @@ function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await authApi.login(email, password)
+      // Backend accepts username or email in the "email" field
+      const response = await authApi.login(loginId, password)
       login(response.token, response.user)
 
       // Try to fetch full user profile (non-blocking)
@@ -65,8 +64,8 @@ function LoginPage() {
         if (profile) {
           useAuthStore.getState().setUser({
             id: profile.id || profile.data?.id,
-            email: profile.email || profile.data?.email || email,
-            name: profile.name || profile.data?.name || email.split('@')[0],
+            email: profile.email || profile.data?.email || '',
+            name: profile.name || profile.data?.name || profile.username || loginId,
           })
         }
       } catch {
@@ -74,9 +73,9 @@ function LoginPage() {
       }
 
       if (rememberMe) {
-        localStorage.setItem('rememberedEmail', email)
+        localStorage.setItem('rememberedLogin', loginId)
       } else {
-        localStorage.removeItem('rememberedEmail')
+        localStorage.removeItem('rememberedLogin')
       }
 
       navigate('/')
@@ -86,7 +85,7 @@ function LoginPage() {
       let errorMessage = 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.'
 
       if (errorResponse?.status === 401) {
-        errorMessage = 'Ungültige E-Mail oder Passwort. Bitte versuchen Sie es erneut.'
+        errorMessage = 'Ungültiger Benutzername/E-Mail oder Passwort.'
       } else if (errorResponse?.status === 429) {
         errorMessage = 'Zu viele Anmeldeversuche. Bitte warten Sie ein paar Minuten.'
       } else if (errorResponse?.data?.message) {
@@ -123,19 +122,19 @@ function LoginPage() {
           )}
 
           <Input
-            id="email"
-            ref={emailInputRef}
-            label="E-Mail-Adresse"
-            type="email"
-            value={email}
+            id="login"
+            ref={loginInputRef}
+            label="Benutzername oder E-Mail"
+            type="text"
+            value={loginId}
             onChange={(e) => {
-              setEmail(e.target.value)
-              if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: undefined })
+              setLoginId(e.target.value)
+              if (fieldErrors.login) setFieldErrors({ ...fieldErrors, login: undefined })
             }}
-            placeholder="admin@example.com"
+            placeholder="jeck oder admin@example.com"
             disabled={isLoading}
-            error={fieldErrors.email}
-            autoComplete="email"
+            error={fieldErrors.login}
+            autoComplete="username"
           />
 
           <Input
@@ -162,7 +161,7 @@ function LoginPage() {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 disabled={isLoading}
               />
-              <label htmlFor="remember-me">E-Mail merken</label>
+              <label htmlFor="remember-me">Anmeldedaten merken</label>
             </div>
             <button
               type="button"
@@ -185,9 +184,7 @@ function LoginPage() {
 
         <div className="login-card__footer">
           <div className="login-card__credentials">
-            <p className="login-card__credentials-title">Melden Sie sich mit Ihrem Admin-Konto an.</p>
-            <p className="login-card__credentials-text">
-              Erstellt im Setup-Wizard beim ersten Start.</p>
+            <p className="login-card__credentials-title">Melden Sie sich mit Ihrem Benutzernamen oder E-Mail an.</p>
           </div>
         </div>
       </div>

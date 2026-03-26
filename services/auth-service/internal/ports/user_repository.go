@@ -15,6 +15,12 @@ type UserRepository interface {
 	// FindByEmail retrieves a user by email within a tenant
 	FindByEmail(ctx context.Context, tenantID, email string) (*domain.User, error)
 
+	// FindByUsername retrieves a user by username
+	FindByUsername(ctx context.Context, tenantID, username string) (*domain.User, error)
+
+	// FindByLogin retrieves a user by username or email (auto-detect)
+	FindByLogin(ctx context.Context, login string) (*domain.User, error)
+
 	// List retrieves users in a tenant with pagination
 	List(ctx context.Context, tenantID string, page, perPage int) ([]*domain.User, int, error)
 

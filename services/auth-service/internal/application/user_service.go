@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
@@ -83,24 +84,27 @@ func (s *UserService) Register(ctx context.Context, cmd RegisterUserCommand) (*U
 	user := domain.NewUser(userID, cmd.Email, passwordHash, cmd.FirstName, cmd.LastName, cmd.TenantID)
 	user.AssignRole("readonly") // Default role
 
+	// Generate unique username from first + last name
+	username := s.generateUsername(ctx, cmd.FirstName, cmd.LastName, cmd.TenantID)
+	user.Username = username
+
 	// Save user
 	if err := s.userRepo.Save(ctx, user); err != nil {
 		s.logger.Error("failed to save user", err, "email", cmd.Email)
 		return nil, err
 	}
 
-	s.logger.Info("user registered", "id", userID, "email", cmd.Email, "tenantID", cmd.TenantID)
+	s.logger.Info("user registered", "id", userID, "username", username, "email", cmd.Email, "tenantID", cmd.TenantID)
 
 	return s.toUserDTO(user), nil
 }
 
 // Login authenticates a user and returns tokens
 func (s *UserService) Login(ctx context.Context, cmd LoginCommand) (*TokenPair, error) {
-	// Note: tenantID should come from context or be determined from email
-	// For now, we'll search all tenants
-	user, err := s.userRepo.FindByEmail(ctx, "", cmd.Email)
+	// Login accepts username or email
+	user, err := s.userRepo.FindByLogin(ctx, cmd.Email)
 	if err != nil {
-		s.logger.Error("failed to find user", err, "email", cmd.Email)
+		s.logger.Error("failed to find user", err, "login", cmd.Email)
 		return nil, domain.ErrInvalidCredentials
 	}
 	if user == nil {
@@ -717,6 +721,7 @@ func (s *UserService) QRTokenStatus(ctx context.Context, qrToken string) (string
 func (s *UserService) toUserDTO(user *domain.User) *UserDTO {
 	dto := &UserDTO{
 		ID:        user.ID,
+		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
@@ -924,4 +929,33 @@ func generateID() string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// generateUsername creates a unique username from first+last name
+// Pattern: j + eck (1 char first + 3 chars last), if taken: ja + eck, jan + eck, etc.
+func (s *UserService) generateUsername(ctx context.Context, firstName, lastName, tenantID string) string {
+	first := strings.ToLower(strings.TrimSpace(firstName))
+	last := strings.ToLower(strings.TrimSpace(lastName))
+
+	if first == "" || last == "" {
+		return strings.ToLower(first + last)
+	}
+
+	// Try increasing prefix lengths
+	for fi := 1; fi <= len(first); fi++ {
+		for li := 3; li <= len(last); li++ {
+			candidate := first[:fi] + last[:li]
+			existing, _ := s.userRepo.FindByUsername(ctx, tenantID, candidate)
+			if existing == nil {
+				return candidate
+			}
+			// Only increase last name length on first iteration of first name
+			if fi > 1 {
+				break
+			}
+		}
+	}
+
+	// Fallback: full first + last
+	return first + last
 }
