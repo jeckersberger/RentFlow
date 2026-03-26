@@ -215,8 +215,6 @@ func (e *Equipment) Validate() error {
 	if e.Barcode == "" {
 		return fmt.Errorf("barcode cannot be empty")
 	}
-	if e.CategoryID == "" {
-		return fmt.Errorf("category ID cannot be empty")
-	}
+	// CategoryID is optional — equipment can exist without a category
 	return nil
 }
