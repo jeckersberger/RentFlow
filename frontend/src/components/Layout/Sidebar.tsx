@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Calendar,
   FolderKanban,
-  AlertTriangle,
   Package,
   Warehouse,
   ScanLine,
@@ -21,7 +20,6 @@ import {
   FileText,
   Receipt,
   CreditCard,
-  Landmark,
   Contact,
   Inbox,
   Send,
@@ -60,21 +58,24 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    labelKey: 'nav.planning',
+    labelKey: 'nav.dashboard_group',
     items: [
       { labelKey: 'nav.dashboard', href: '/', icon: LayoutDashboard },
-      { labelKey: 'nav.calendar', href: '/calendar', icon: Calendar },
-      { labelKey: 'nav.projects', href: '/projects', icon: FolderKanban },
-      { labelKey: 'nav.shortages', href: '/shortages', icon: AlertTriangle },
     ],
   },
   {
-    labelKey: 'nav.warehouse',
+    labelKey: 'nav.projects_group',
+    items: [
+      { labelKey: 'nav.projects', href: '/projects', icon: FolderKanban },
+      { labelKey: 'nav.calendar', href: '/calendar', icon: Calendar },
+    ],
+  },
+  {
+    labelKey: 'nav.equipment_warehouse',
     items: [
       { labelKey: 'nav.equipment', href: '/equipment', icon: Package },
       { labelKey: 'nav.warehouse_nav', href: '/warehouse', icon: Warehouse },
       { labelKey: 'nav.scanner', href: '/scanner', icon: ScanLine },
-      { labelKey: 'nav.workshop', href: '/workshop', icon: Wrench },
     ],
   },
   {
@@ -83,47 +84,43 @@ const navGroups: NavGroup[] = [
       { labelKey: 'nav.crew', href: '/crew', icon: Users },
       { labelKey: 'nav.contacts', href: '/contacts', icon: Contact },
       { labelKey: 'nav.time_tracking', href: '/time-tracking', icon: Clock },
-      { labelKey: 'nav.transport', href: '/transport', icon: Truck },
     ],
   },
   {
     labelKey: 'nav.finance',
     items: [
-      { labelKey: 'nav.quotes', href: '/quotes', icon: FileText },
       { labelKey: 'nav.invoices', href: '/invoices', icon: Receipt },
+      { labelKey: 'nav.quotes', href: '/quotes', icon: FileText },
       { labelKey: 'nav.expenses', href: '/expenses', icon: CreditCard },
-      { labelKey: 'nav.banking', href: '/banking', icon: Landmark },
     ],
   },
+]
+
+// "Weitere Module" — collapsed by default, shown at bottom of nav
+const moreNavGroups: NavGroup[] = [
   {
-    labelKey: 'nav.communication',
+    labelKey: 'nav.more_modules',
     items: [
-      { labelKey: 'nav.compose', href: '/mail/compose', icon: PenSquare },
+      { labelKey: 'nav.transport', href: '/transport', icon: Truck },
+      { labelKey: 'nav.workshop', href: '/workshop', icon: Wrench },
       { labelKey: 'nav.inbox', href: '/mail/inbox', icon: Inbox },
+      { labelKey: 'nav.compose', href: '/mail/compose', icon: PenSquare },
       { labelKey: 'nav.sent', href: '/mail/sent', icon: Send },
-    ],
-  },
-  {
-    labelKey: 'nav.analytics',
-    items: [
       { labelKey: 'nav.reports', href: '/reports', icon: BarChart3 },
       { labelKey: 'nav.ai_assistant', href: '/ai', icon: Bot },
-    ],
-  },
-  {
-    labelKey: 'nav.admin',
-    items: [
-      { labelKey: 'nav.settings', href: '/settings', icon: Settings },
       { labelKey: 'nav.federation', href: '/federation', icon: Globe },
       { labelKey: 'nav.audit_log', href: '/audit', icon: Shield },
     ],
   },
 ]
 
+// Settings nav item — always at the very bottom
+const settingsNavItem: NavItem = { labelKey: 'nav.settings', href: '/settings', icon: Settings }
+
 // Mapping of module IDs to their nav item paths
 const MODULE_NAV_PATHS: Record<string, string[]> = {
   warehouse: ['/', '/equipment', '/equipment/items', '/scanner', '/warehouse'],
-  projects: ['/projects', '/calendar', '/shortages'],
+  projects: ['/projects', '/calendar'],
   finance: ['/invoices', '/quotes', '/contacts', '/expenses'],
   team: ['/crew', '/time-tracking', '/transport'],
   communication: ['/mail/compose', '/mail/inbox', '/mail/sent'],
@@ -180,6 +177,7 @@ function Sidebar() {
     retry: false,
   })
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
+  const [moreExpanded, setMoreExpanded] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -251,6 +249,19 @@ function Sidebar() {
       }))
       .filter((group) => group.items.length > 0)
   }, [enabledModules, modulesLoaded])
+
+  // Filter "more" items based on enabled modules
+  const filteredMoreItems = useMemo(() => {
+    if (!modulesLoaded) return moreNavGroups[0]?.items || []
+    return (moreNavGroups[0]?.items || []).filter((item) =>
+      isPathVisibleForModules(item.href, enabledModules)
+    )
+  }, [enabledModules, modulesLoaded])
+
+  // Check if any "more" item is currently active (to auto-expand)
+  const isMoreItemActive = useMemo(() => {
+    return filteredMoreItems.some((item) => isActiveRoute(location.pathname, item.href))
+  }, [filteredMoreItems, location.pathname])
 
   const handleLogout = () => {
     logout()
@@ -341,6 +352,73 @@ function Sidebar() {
               </div>
             )
           })}
+
+          {/* "Weitere Module" collapsible section */}
+          {filteredMoreItems.length > 0 && (
+            <div className="sidebar__nav-group">
+              {!collapsed && (
+                <button
+                  className="sidebar__nav-group-label"
+                  onClick={() => setMoreExpanded(!moreExpanded)}
+                >
+                  <span>{t('nav.more_modules')}</span>
+                  {(moreExpanded || isMoreItemActive) ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </button>
+              )}
+              {(moreExpanded || isMoreItemActive || collapsed) && filteredMoreItems.map((item) => {
+                const IconComponent = item.icon
+                const shortcutHint = NAV_SHORTCUT_HINTS[item.href]
+                const label = t(item.labelKey)
+                const badge = badgeMap[item.href]
+                const sectionKey = sectionKeyMap[item.href]
+                const hasBadge = badge && (badge.count > 0 || (badge.urgentCount && badge.urgentCount > 0))
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={`sidebar__nav-item ${isActiveRoute(location.pathname, item.href) ? 'sidebar__nav-item--active' : ''}`}
+                    title={collapsed ? label : undefined}
+                    onClick={() => sectionKey && markSeen(sectionKey)}
+                  >
+                    <span className="sidebar__nav-icon">
+                      <IconComponent size={18} />
+                      {collapsed && hasBadge && (
+                        <span className={`sidebar__badge sidebar__badge--${badge.urgentCount && badge.urgentCount > 0 ? (badge.urgentVariant || 'danger') : badge.variant} sidebar__badge--dot`} />
+                      )}
+                    </span>
+                    {!collapsed && <span className="sidebar__nav-label">{label}</span>}
+                    {!collapsed && badge?.urgentCount != null && badge.urgentCount > 0 && (
+                      <span className={`sidebar__badge sidebar__badge--${badge.urgentVariant || 'danger'}`}>
+                        {badge.urgentCount}
+                      </span>
+                    )}
+                    {!collapsed && badge && badge.count > 0 && (
+                      <span className={`sidebar__badge sidebar__badge--${badge.variant}`}>
+                        {badge.count}
+                      </span>
+                    )}
+                    {!collapsed && shortcutHint && !hasBadge && (
+                      <span className="sidebar__nav-shortcut">{shortcutHint}</span>
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Settings — always at bottom of nav */}
+          <div className="sidebar__nav-group sidebar__nav-group--settings">
+            <Link
+              to={settingsNavItem.href}
+              className={`sidebar__nav-item ${isActiveRoute(location.pathname, settingsNavItem.href) ? 'sidebar__nav-item--active' : ''}`}
+              title={collapsed ? t(settingsNavItem.labelKey) : undefined}
+            >
+              <span className="sidebar__nav-icon">
+                <Settings size={18} />
+              </span>
+              {!collapsed && <span className="sidebar__nav-label">{t(settingsNavItem.labelKey)}</span>}
+            </Link>
+          </div>
         </nav>
 
         <div className="sidebar__footer">
@@ -442,6 +520,57 @@ function Sidebar() {
                   })}
                 </div>
               ))}
+
+              {/* Weitere Module in mobile overlay */}
+              {filteredMoreItems.length > 0 && (
+                <div className="mobile-overlay__group">
+                  <button
+                    className="mobile-overlay__group-label mobile-overlay__group-label--toggle"
+                    onClick={() => setMoreExpanded(!moreExpanded)}
+                  >
+                    <span>{t('nav.more_modules')}</span>
+                    {(moreExpanded || isMoreItemActive) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                  {(moreExpanded || isMoreItemActive) && filteredMoreItems.map((item) => {
+                    const IconComponent = item.icon
+                    const badge = badgeMap[item.href]
+                    const sectionKey = sectionKeyMap[item.href]
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        className={`mobile-overlay__nav-item ${isActiveRoute(location.pathname, item.href) ? 'mobile-overlay__nav-item--active' : ''}`}
+                        onClick={() => { if (sectionKey) markSeen(sectionKey); closeMobileMenu() }}
+                      >
+                        <IconComponent size={18} />
+                        <span>{t(item.labelKey)}</span>
+                        {badge?.urgentCount != null && badge.urgentCount > 0 && (
+                          <span className={`sidebar__badge sidebar__badge--${badge.urgentVariant || 'danger'}`}>
+                            {badge.urgentCount}
+                          </span>
+                        )}
+                        {badge && badge.count > 0 && (
+                          <span className={`sidebar__badge sidebar__badge--${badge.variant}`}>
+                            {badge.count}
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Settings in mobile overlay */}
+              <div className="mobile-overlay__group">
+                <Link
+                  to={settingsNavItem.href}
+                  className={`mobile-overlay__nav-item ${isActiveRoute(location.pathname, settingsNavItem.href) ? 'mobile-overlay__nav-item--active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  <Settings size={18} />
+                  <span>{t(settingsNavItem.labelKey)}</span>
+                </Link>
+              </div>
             </nav>
 
             <div className="mobile-overlay__footer">

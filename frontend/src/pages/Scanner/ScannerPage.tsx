@@ -1,13 +1,9 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode'
-import { Select } from '../../components/Form/Select'
-import { Input } from '../../components/Form/Input'
 import { equipmentApi, projectApi } from '../../services/api'
-import '../Equipment/Equipment.scss'
 import './Scanner.scss'
 
-// IndexedDB Offline Queue (max 500 scans)
+// ─── Offline Queue (IndexedDB) ───────────────────────────────────────────────
 const OFFLINE_DB_NAME = 'rentflow-scanner-offline'
 const OFFLINE_STORE_NAME = 'scan-queue'
 const MAX_OFFLINE_SCANS = 500
@@ -30,13 +26,11 @@ const addToOfflineQueue = async (scanData: { barcode: string; context: string; t
   const db = await openOfflineDB()
   const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite')
   const store = tx.objectStore(OFFLINE_STORE_NAME)
-
-  // Check count
   const countReq = store.count()
   return new Promise<boolean>((resolve) => {
     countReq.onsuccess = () => {
       if (countReq.result >= MAX_OFFLINE_SCANS) {
-        resolve(false) // Queue full
+        resolve(false)
       } else {
         store.add(scanData)
         resolve(true)
@@ -67,7 +61,6 @@ const syncOfflineQueue = async (): Promise<number> => {
       let synced = 0
       for (const item of items) {
         try {
-          // Would call scannerApi.sync(item) in production
           store.delete(item.id)
           synced++
         } catch { /* retry later */ }
@@ -78,33 +71,15 @@ const syncOfflineQueue = async (): Promise<number> => {
   })
 }
 
-interface EquipmentDetail {
-  id: string
-  name: string
-  status: string
-  category_id?: string
-  barcode?: string
-  rfid_tag?: string
-  rental_price_day?: number
-  rental_price_week?: number
-  condition?: string
-}
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-interface FeedbackMessage {
-  type: 'success' | 'error'
-  text: string
-  timestamp: number
-}
-
-interface ScanEvent {
+interface ScanResult {
   id: string
   barcode: string
-  equipment_name?: string
-  equipment_id?: string
-  scan_type: string
-  timestamp: string
+  equipmentName?: string
   status: 'success' | 'error' | 'pending'
-  error_message?: string
+  message?: string
+  timestamp: string
 }
 
 interface Project {
@@ -113,123 +88,109 @@ interface Project {
   status: string
 }
 
-interface ScanSession {
-  id: string
-  context: 'check-out' | 'check-in' | 'warehouse-store' | 'inventory' | 'pack-verify'
-  project_id?: string
-  started_at: string
-  total_scans: number
-  successful_scans: number
-  failed_scans: number
+type ScanContext = 'check-in' | 'check-out' | 'warehouse-store' | 'inventory' | 'pack-verify'
+
+const CONTEXT_LABELS: Record<ScanContext, string> = {
+  'check-in': 'Check-In',
+  'check-out': 'Check-Out',
+  'warehouse-store': 'Einlagern',
+  'inventory': 'Inventur',
+  'pack-verify': 'Packliste',
 }
 
+// ─── Component ───────────────────────────────────────────────────────────────
+
 function ScannerPage() {
-  const navigate = useNavigate()
   const scanInputRef = useRef<HTMLInputElement>(null)
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null)
-  const [barcode, setBarcode] = useState('')
-  const [scanContext, setScanContext] = useState<'check-out' | 'check-in' | 'warehouse-store' | 'inventory' | 'pack-verify'>('check-in')
-  const [packVerifyResult, setPackVerifyResult] = useState<{ found: boolean; itemName?: string } | null>(null)
-  const [projectId, setProjectId] = useState('')
-  const [projects, setProjects] = useState<Project[]>([])
-  const [recentScans, setRecentScans] = useState<ScanEvent[]>([])
-  const [batchMode, setBatchMode] = useState(false)
-  const [cameraActive, setCameraActive] = useState(false)
-  const [cameraError, setCameraError] = useState<string | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [scanCount, setScanCount] = useState(0)
-  const [successCount, setSuccessCount] = useState(0)
-  const [errorCount, setErrorCount] = useState(0)
-  const [sessionActive, setSessionActive] = useState(false)
-  const [offlineMode, setOfflineMode] = useState(false)
-  const [offlineQueue, setOfflineQueue] = useState(0)
-  const [scannedEquipment, setScannedEquipment] = useState<EquipmentDetail | null>(null)
-  const [feedbackMessage, setFeedbackMessage] = useState<FeedbackMessage | null>(null)
-  const [checkOutCount, setCheckOutCount] = useState(0)
-  const [checkInCount, setCheckInCount] = useState(0)
-  const [showConditionReport, setShowConditionReport] = useState(false)
-  const [conditionRating, setConditionRating] = useState<string>('')
-  const [conditionNotes, setConditionNotes] = useState('')
-  const [conditionEquipmentId, setConditionEquipmentId] = useState<string>('')
-  const [conditionEquipmentName, setConditionEquipmentName] = useState<string>('')
-  const [isSubmittingCondition, setIsSubmittingCondition] = useState(false)
-  const [showCheckOutModal, setShowCheckOutModal] = useState(false)
-  const [checkOutProjectId, setCheckOutProjectId] = useState('')
-  const [flashType, setFlashType] = useState<'success' | 'error' | null>(null)
-
-  // Ref to allow useEffects to call processBarcode without circular dependency
   const processBarcodeRef = useRef<((barcode: string) => void) | null>(null)
 
-  // Audio feedback helper
+  // Core state
+  const [barcode, setBarcode] = useState('')
+  const [scanContext, setScanContext] = useState<ScanContext>('check-in')
+  const [projectId, setProjectId] = useState('')
+  const [projects, setProjects] = useState<Project[]>([])
+  const [recentScans, setRecentScans] = useState<ScanResult[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [scanCount, setScanCount] = useState(0)
+  const [flashType, setFlashType] = useState<'success' | 'error' | null>(null)
+
+  // Advanced options (collapsed by default)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+  const [batchMode, setBatchMode] = useState(false)
+  const [conditionEnabled, setConditionEnabled] = useState(false)
+  const [conditionRating, setConditionRating] = useState(0)
+  const [conditionEquipmentId, setConditionEquipmentId] = useState('')
+  const [showConditionInline, setShowConditionInline] = useState(false)
+
+  // Offline
+  const [offlineMode, setOfflineMode] = useState(false)
+  const [offlineQueue, setOfflineQueue] = useState(0)
+
+  // ─── Audio feedback ──────────────────────────────────────────────────────
   const playBeep = useCallback((type: 'success' | 'error' | 'info') => {
     try {
       const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
-      const oscillator = ctx.createOscillator()
+      const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-      oscillator.connect(gain)
+      osc.connect(gain)
       gain.connect(ctx.destination)
       gain.gain.value = 0.3
-
-      if (type === 'success') {
-        oscillator.frequency.value = 1200
-        oscillator.type = 'sine'
-      } else if (type === 'error') {
-        oscillator.frequency.value = 300
-        oscillator.type = 'square'
-      } else {
-        oscillator.frequency.value = 800
-        oscillator.type = 'sine'
-      }
-
-      oscillator.start()
-      setTimeout(() => {
-        oscillator.stop()
-        ctx.close()
-      }, type === 'error' ? 300 : 150)
-    } catch {
-      // Audio not supported, fall back to vibration only
-    }
+      if (type === 'success') { osc.frequency.value = 1200; osc.type = 'sine' }
+      else if (type === 'error') { osc.frequency.value = 300; osc.type = 'square' }
+      else { osc.frequency.value = 800; osc.type = 'sine' }
+      osc.start()
+      setTimeout(() => { osc.stop(); ctx.close() }, type === 'error' ? 300 : 150)
+    } catch { /* Audio not supported */ }
   }, [])
 
-  // Mock session data
-  const currentSession: ScanSession = {
-    id: 'session-' + Date.now(),
-    context: scanContext,
-    project_id: projectId,
-    started_at: new Date().toISOString(),
-    total_scans: scanCount,
-    successful_scans: successCount,
-    failed_scans: errorCount,
-  }
-
-  // Compute session stats
-  const sessionStats = useMemo(() => ({
-    total: scanCount,
-    successful: successCount,
-    failed: errorCount,
-    successRate: scanCount > 0 ? Math.round((successCount / scanCount) * 100) : 0,
-  }), [scanCount, successCount, errorCount])
-
-  // Zebra DataWedge Integration
+  // ─── Load projects ──────────────────────────────────────────────────────
   useEffect(() => {
-    // DataWedge broadcasts scan results as custom window events
+    projectApi.list(1, 100)
+      .then((data) => {
+        const all = data?.items || data?.data || []
+        setProjects(all.filter(
+          (p: Project) => ['confirmed', 'in_progress', 'active', 'planning', 'draft'].includes(p.status)
+        ))
+      })
+      .catch(() => setProjects([]))
+  }, [])
+
+  // ─── Online/offline detection ───────────────────────────────────────────
+  useEffect(() => {
+    const update = () => {
+      const isOff = !navigator.onLine
+      setOfflineMode(isOff)
+      if (!isOff) {
+        syncOfflineQueue().then(synced => {
+          if (synced > 0) getOfflineQueueCount().then(setOfflineQueue)
+        })
+      }
+    }
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    update()
+    getOfflineQueueCount().then(setOfflineQueue)
+    return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update) }
+  }, [])
+
+  // ─── DataWedge / keyboard wedge ─────────────────────────────────────────
+  useEffect(() => {
     const handleDataWedgeScan = (event: Event) => {
-      const customEvent = event as CustomEvent
-      const barcode = customEvent?.detail?.data || ''
+      const barcode = (event as CustomEvent)?.detail?.data || ''
       if (barcode && !isProcessing && processBarcodeRef.current) {
         processBarcodeRef.current(barcode)
       }
     }
-
-    // Listen for DataWedge intent broadcast
     window.addEventListener('datawedge:scan', handleDataWedgeScan)
 
-    // Also listen for keyboard wedge mode (DataWedge can inject keystrokes)
     let keyBuffer = ''
     let keyTimer: ReturnType<typeof setTimeout> | null = null
-
     const handleKeyPress = (event: KeyboardEvent) => {
-      // DataWedge keyboard wedge fires rapidly - detect fast input
+      // Ignore if user is typing in the input field
+      if (document.activeElement === scanInputRef.current) return
       if (event.key === 'Enter' && keyBuffer.length > 3) {
         if (processBarcodeRef.current) processBarcodeRef.current(keyBuffer)
         keyBuffer = ''
@@ -237,9 +198,8 @@ function ScannerPage() {
       }
       if (keyTimer) clearTimeout(keyTimer)
       keyBuffer += event.key
-      keyTimer = setTimeout(() => { keyBuffer = '' }, 100) // reset after 100ms pause
+      keyTimer = setTimeout(() => { keyBuffer = '' }, 100)
     }
-
     window.addEventListener('keypress', handleKeyPress)
 
     return () => {
@@ -248,68 +208,19 @@ function ScannerPage() {
     }
   }, [isProcessing])
 
-  // Projekte für Check-Out laden
-  useEffect(() => {
-    projectApi.list(1, 100)
-      .then((data) => {
-        const allProjects = data?.items || data?.data || []
-        const projectList = allProjects.filter(
-          (p: Project) => p.status === 'confirmed' || p.status === 'in_progress' || p.status === 'active' || p.status === 'planning' || p.status === 'draft'
-        )
-        setProjects(projectList)
-      })
-      .catch(() => {
-        // Fallback: leere Liste, Projekt-Service evtl. nicht erreichbar
-        setProjects([])
-      })
-  }, [])
-
-  // Online/offline detection and queue syncing
-  useEffect(() => {
-    const updateOnlineStatus = () => {
-      const isOffline = !navigator.onLine
-      setOfflineMode(isOffline)
-      if (!isOffline) {
-        // Back online - sync queue
-        syncOfflineQueue().then(synced => {
-          if (synced > 0) {
-            getOfflineQueueCount().then(setOfflineQueue)
-          }
-        })
-      }
-    }
-
-    const updateQueueCount = () => {
-      getOfflineQueueCount().then(setOfflineQueue)
-    }
-
-    window.addEventListener('online', updateOnlineStatus)
-    window.addEventListener('offline', updateOnlineStatus)
-    updateOnlineStatus()
-    updateQueueCount()
-
-    return () => {
-      window.removeEventListener('online', updateOnlineStatus)
-      window.removeEventListener('offline', updateOnlineStatus)
-    }
-  }, [])
-
-  // WebHID USB Barcode Scanner support
+  // ─── WebHID USB scanner ─────────────────────────────────────────────────
   useEffect(() => {
     if (!('hid' in navigator)) return
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleHIDInput = (event: any) => {
       const data = event?.data
       if (!data) return
       const bytes = new Uint8Array(data.buffer)
-      const barcode = String.fromCharCode(...bytes.filter((b: number) => b > 0))
-      if (barcode.trim() && !isProcessing && processBarcodeRef.current) {
-        processBarcodeRef.current(barcode.trim())
+      const bc = String.fromCharCode(...bytes.filter((b: number) => b > 0))
+      if (bc.trim() && !isProcessing && processBarcodeRef.current) {
+        processBarcodeRef.current(bc.trim())
       }
     }
-
-    // Auto-connect to previously paired devices
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const hid = (navigator as any).hid
     if (hid?.getDevices) {
@@ -317,37 +228,20 @@ function ScannerPage() {
       hid.getDevices().then((devices: any[]) => {
         devices.forEach((device) => {
           if (!device.opened) {
-            device.open().then(() => {
-              device.addEventListener('inputreport', handleHIDInput)
-            })
+            device.open().then(() => { device.addEventListener('inputreport', handleHIDInput) })
           }
         })
       })
     }
-
-    return () => {
-      // Cleanup handled by device disconnect
-    }
   }, [isProcessing])
 
-  // Auto-focus manual input on page load
+  // ─── Auto-focus input ───────────────────────────────────────────────────
   useEffect(() => {
-    const timer = setTimeout(() => {
-      scanInputRef.current?.focus()
-    }, 100)
-    return () => clearTimeout(timer)
+    const t = setTimeout(() => scanInputRef.current?.focus(), 100)
+    return () => clearTimeout(t)
   }, [])
 
-  // Auto-clear feedback message after 3 seconds
-  useEffect(() => {
-    if (!feedbackMessage) return
-    const timer = setTimeout(() => {
-      setFeedbackMessage(null)
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [feedbackMessage])
-
-  // Kamera-Scanner aufräumen beim Unmount
+  // ─── Cleanup camera on unmount ──────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (html5QrcodeRef.current) {
@@ -359,135 +253,90 @@ function ScannerPage() {
     }
   }, [])
 
-  // Equipment per Barcode/QR-Code suchen und Aktion ausführen
+  // ─── Process barcode ────────────────────────────────────────────────────
   const processBarcode = useCallback(async (scannedBarcode: string) => {
     if (!scannedBarcode || isProcessing) return
-
     setIsProcessing(true)
     const scanId = Date.now().toString()
 
-    // Vibrieren als haptisches Feedback (falls verfügbar)
-    if ('vibrate' in navigator) {
-      navigator.vibrate(100)
-    }
-
-    // Play info beep on processing start
+    if ('vibrate' in navigator) navigator.vibrate(100)
     playBeep('info')
 
-    // Pending Scan anzeigen
-    const pendingScan: ScanEvent = {
+    // Add pending entry
+    const pending: ScanResult = {
       id: scanId,
       barcode: scannedBarcode,
-      scan_type: scanContext,
-      timestamp: new Date().toISOString(),
       status: 'pending',
+      timestamp: new Date().toISOString(),
     }
-    setRecentScans((prev) => [pendingScan, ...prev.slice(0, 49)])
-    setScanCount((prev) => prev + 1)
+    setRecentScans(prev => [pending, ...prev.slice(0, 49)])
 
     try {
-      // Schritt 1: Equipment per Barcode/UUID/RFID suchen
-      let equipment: EquipmentDetail | null = null
-
-      // QR-Code-Format prüfen: "rentflow://equipment/{uuid}"
+      // Step 1: Find equipment
+      let equipment: { id: string; name: string; status: string } | null = null
       const qrMatch = scannedBarcode.match(/^rentflow:\/\/equipment\/(.+)$/)
-      // RFID-Tag-Format: hex string 24+ chars, typically starting with E2, 30, etc.
       const isRfidTag = /^[0-9A-Fa-f]{24,}$/.test(scannedBarcode)
+
       if (qrMatch) {
-        const equipmentId = qrMatch[1]
-        equipment = await equipmentApi.getById(equipmentId)
+        equipment = await equipmentApi.getById(qrMatch[1])
       } else if (isRfidTag) {
-        // Als RFID-Tag interpretieren
         equipment = await equipmentApi.getByRfidTag(scannedBarcode)
       } else {
-        // Als Barcode interpretieren
         equipment = await equipmentApi.getByBarcode(scannedBarcode)
       }
 
-      if (!equipment) {
-        throw new Error('Ausrüstung nicht gefunden')
-      }
+      if (!equipment) throw new Error('Equipment nicht gefunden')
 
-      // Store scanned equipment details for display
-      setScannedEquipment(equipment)
-
-      // Schritt 2: Aktion basierend auf Scan-Kontext ausführen
+      // Step 2: Execute action based on context
       if (scanContext === 'check-out') {
-        if (!projectId) {
-          throw new Error('Bitte wählen Sie ein Projekt für das Auschecken')
-        }
+        if (!projectId) throw new Error('Bitte Projekt auswaehlen')
         await equipmentApi.checkOut(equipment.id, projectId)
       } else if (scanContext === 'check-in') {
         await equipmentApi.checkIn(equipment.id)
       } else if (scanContext === 'warehouse-store') {
-        // Warehouse location update (mock)
-        await new Promise(resolve => setTimeout(resolve, 200))
+        await new Promise(r => setTimeout(r, 200))
       } else if (scanContext === 'inventory') {
-        // Inventory check (mock, no action needed)
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(r => setTimeout(r, 100))
       } else if (scanContext === 'pack-verify') {
-        // Pack-verify: check against packing list via global bridge
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const verifyFn = (window as any).__packingListVerify as ((barcode: string) => { found: boolean; item?: { name: string } }) | undefined
         if (verifyFn) {
           const result = verifyFn(scannedBarcode)
-          setPackVerifyResult({ found: result.found, itemName: result.item?.name })
-          if (!result.found) {
-            throw new Error('Nicht in dieser Packliste')
-          }
+          if (!result.found) throw new Error('Nicht in dieser Packliste')
         } else {
-          // No packing list loaded - use barcode lookup as fallback
-          await new Promise(resolve => setTimeout(resolve, 100))
-          setPackVerifyResult({ found: true, itemName: equipment?.name })
+          await new Promise(r => setTimeout(r, 100))
         }
       }
 
-      // Erfolg
-      const successScan: ScanEvent = {
-        ...pendingScan,
-        equipment_name: equipment.name,
-        equipment_id: equipment.id,
+      // Success
+      const success: ScanResult = {
+        id: scanId,
+        barcode: scannedBarcode,
+        equipmentName: equipment.name,
         status: 'success',
+        message: CONTEXT_LABELS[scanContext],
+        timestamp: new Date().toISOString(),
       }
-      setRecentScans((prev) =>
-        prev.map((s) => (s.id === scanId ? successScan : s))
-      )
-      setSuccessCount((prev) => prev + 1)
+      setRecentScans(prev => prev.map(s => s.id === scanId ? success : s))
+      setScanCount(prev => prev + 1)
 
-      // Flash green
       setFlashType('success')
       setTimeout(() => setFlashType(null), 600)
-
-      // Track check-in/check-out counts and show feedback
-      if (scanContext === 'check-out') {
-        setCheckOutCount((prev) => prev + 1)
-        setFeedbackMessage({ type: 'success', text: `${equipment.name} erfolgreich ausgecheckt`, timestamp: Date.now() })
-      } else if (scanContext === 'check-in') {
-        setCheckInCount((prev) => prev + 1)
-        setFeedbackMessage({ type: 'success', text: `${equipment.name} erfolgreich eingecheckt`, timestamp: Date.now() })
-        // Show condition report after successful check-in
-        setConditionEquipmentId(equipment.id)
-        setConditionEquipmentName(equipment.name)
-        setConditionRating('')
-        setConditionNotes('')
-        setShowConditionReport(true)
-      } else {
-        setFeedbackMessage({ type: 'success', text: `${equipment.name} erfolgreich gescannt`, timestamp: Date.now() })
-      }
-
-      // Vibrieren: Erfolg (kurz-kurz)
-      if ('vibrate' in navigator) {
-        navigator.vibrate([50, 50, 50])
-      }
-
-      // Play success beep
       playBeep('success')
+      if ('vibrate' in navigator) navigator.vibrate([50, 50, 50])
+
+      // Condition report inline (if enabled)
+      if (conditionEnabled && scanContext === 'check-in') {
+        setConditionEquipmentId(equipment.id)
+        setConditionRating(0)
+        setShowConditionInline(true)
+      }
+
     } catch (err: unknown) {
       const axiosError = (err as { response?: { data?: { error?: string; detail?: string } } })?.response?.data
       const errorMessage = axiosError?.error || axiosError?.detail ||
         (err instanceof Error ? err.message : 'Unbekannter Fehler')
 
-      // Check if offline and add to queue instead
       if (!navigator.onLine) {
         const queued = await addToOfflineQueue({
           barcode: scannedBarcode,
@@ -497,993 +346,288 @@ function ScannerPage() {
         })
         if (queued) {
           getOfflineQueueCount().then(setOfflineQueue)
-          const queuedScan: ScanEvent = {
-            id: scanId,
-            barcode: scannedBarcode,
-            scan_type: scanContext,
-            timestamp: new Date().toISOString(),
-            status: 'pending',
-            error_message: 'Offline - in Warteschlange gespeichert',
-          }
-          setRecentScans((prev) =>
-            prev.map((s) => (s.id === scanId ? queuedScan : s))
-          )
+          setRecentScans(prev => prev.map(s => s.id === scanId ? {
+            ...s, status: 'pending' as const, message: 'Offline - in Warteschlange',
+          } : s))
           playBeep('info')
         } else {
-          const errorScan: ScanEvent = {
-            ...pendingScan,
-            status: 'error',
-            error_message: 'Offline-Warteschlange voll',
-          }
-          setRecentScans((prev) =>
-            prev.map((s) => (s.id === scanId ? errorScan : s))
-          )
-          setErrorCount((prev) => prev + 1)
+          setRecentScans(prev => prev.map(s => s.id === scanId ? {
+            ...s, status: 'error' as const, message: 'Offline-Queue voll',
+          } : s))
           playBeep('error')
         }
       } else {
-        const errorScan: ScanEvent = {
-          ...pendingScan,
-          status: 'error',
-          error_message: errorMessage,
-        }
-        setRecentScans((prev) =>
-          prev.map((s) => (s.id === scanId ? errorScan : s))
-        )
-        setErrorCount((prev) => prev + 1)
-        setScannedEquipment(null)
-        setFeedbackMessage({ type: 'error', text: errorMessage, timestamp: Date.now() })
-
-        // Flash red
+        setRecentScans(prev => prev.map(s => s.id === scanId ? {
+          ...s, status: 'error' as const, message: errorMessage,
+        } : s))
         setFlashType('error')
         setTimeout(() => setFlashType(null), 600)
-
-        // Play error beep
         playBeep('error')
       }
-
-      // Vibrieren: Fehler (lang)
-      if ('vibrate' in navigator) {
-        navigator.vibrate(300)
-      }
+      if ('vibrate' in navigator) navigator.vibrate(300)
     } finally {
       setIsProcessing(false)
       setBarcode('')
-      if (!cameraActive) {
-        scanInputRef.current?.focus()
-      }
+      if (!cameraActive) scanInputRef.current?.focus()
     }
-  }, [scanContext, projectId, isProcessing, cameraActive, playBeep])
+  }, [scanContext, projectId, isProcessing, cameraActive, playBeep, conditionEnabled])
 
-  // Keep ref in sync so useEffects can call processBarcode
   processBarcodeRef.current = processBarcode
 
-  // Manuelle Eingabe per Enter
-  const handleManualScan = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return
-    const scannedBarcode = barcode.trim()
-    if (scannedBarcode) {
-      processBarcode(scannedBarcode)
+  // ─── Input handlers ─────────────────────────────────────────────────────
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && barcode.trim()) {
+      processBarcode(barcode.trim())
     }
   }
 
-  // Manuelle Eingabe per Button
-  const handleManualScanButton = () => {
-    const scannedBarcode = barcode.trim()
-    if (scannedBarcode) {
-      processBarcode(scannedBarcode)
-    }
-  }
-
-  // Status label/color helpers
-  const getStatusLabel = (status: string) => {
-    const map: Record<string, string> = {
-      available: 'Verfügbar',
-      checked_out: 'Ausgecheckt',
-      in_maintenance: 'In Wartung',
-      reserved: 'Reserviert',
-      damaged: 'Beschädigt',
-    }
-    return map[status] || status
-  }
-
-  const getStatusColor = (status: string) => {
-    const map: Record<string, string> = {
-      available: '#16a34a',
-      checked_out: '#dc2626',
-      in_maintenance: '#d97706',
-      reserved: '#2563eb',
-      damaged: '#991b1b',
-    }
-    return map[status] || '#6b7280'
-  }
-
-  const getCategoryLabel = (categoryId?: string) => {
-    const map: Record<string, string> = {
-      'cat-audio': 'Audio',
-      'cat-lighting': 'Licht',
-      'cat-video': 'Video',
-      'cat-stage': 'Bühne',
-    }
-    return categoryId ? (map[categoryId] || categoryId) : '—'
-  }
-
-  // Kamera starten/stoppen
+  // ─── Camera toggle ──────────────────────────────────────────────────────
   const toggleCamera = async () => {
     if (cameraActive) {
-      // Kamera stoppen
       if (html5QrcodeRef.current) {
-        try {
-          await html5QrcodeRef.current.stop()
-        } catch { /* Ignorieren */ }
+        try { await html5QrcodeRef.current.stop() } catch { /* ignore */ }
       }
       setCameraActive(false)
       setCameraError(null)
       return
     }
-
-    // Kamera starten
     setCameraError(null)
     try {
       if (!html5QrcodeRef.current) {
         html5QrcodeRef.current = new Html5Qrcode('scanner-camera-view')
       }
-
       await html5QrcodeRef.current.start(
-        { facingMode: 'environment' }, // Rückkamera bevorzugen
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-        },
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
         (decodedText) => {
-          // QR-Code/Barcode erkannt
           processBarcode(decodedText)
-
-          // Im Nicht-Batch-Modus Kamera nach erfolgreichem Scan stoppen
           if (!batchMode && html5QrcodeRef.current) {
             html5QrcodeRef.current.stop().catch(() => {})
             setCameraActive(false)
           }
         },
-        () => {
-          // Scan-Fehler (normaler Zustand während des Scannens) – ignorieren
-        }
+        () => {}
       )
       setCameraActive(true)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Kamera konnte nicht gestartet werden'
-      setCameraError(msg)
+      setCameraError(err instanceof Error ? err.message : 'Kamera konnte nicht gestartet werden')
       setCameraActive(false)
     }
   }
 
-  const handleStartSession = () => {
-    setSessionActive(true)
-    setScanCount(0)
-    setSuccessCount(0)
-    setErrorCount(0)
-    setRecentScans([])
-  }
-
-  const handleEndSession = () => {
-    setSessionActive(false)
-  }
-
-  const handleSubmitCondition = async () => {
+  // ─── Condition report submit ────────────────────────────────────────────
+  const submitCondition = async () => {
     if (!conditionRating || !conditionEquipmentId) return
-    setIsSubmittingCondition(true)
+    const ratingMap: Record<number, string> = { 1: 'damaged', 2: 'poor', 3: 'fair', 4: 'good', 5: 'excellent' }
     try {
-      await equipmentApi.updateCondition(conditionEquipmentId, conditionRating, conditionNotes || undefined)
-      setFeedbackMessage({ type: 'success', text: `Zustandsbericht für ${conditionEquipmentName} gespeichert`, timestamp: Date.now() })
+      await equipmentApi.updateCondition(conditionEquipmentId, ratingMap[conditionRating])
       playBeep('success')
     } catch {
-      setFeedbackMessage({ type: 'error', text: 'Zustandsbericht konnte nicht gespeichert werden', timestamp: Date.now() })
       playBeep('error')
-    } finally {
-      setIsSubmittingCondition(false)
-      setShowConditionReport(false)
     }
+    setShowConditionInline(false)
+    setConditionRating(0)
   }
 
-  const handleSkipCondition = () => {
-    setShowConditionReport(false)
-    setConditionRating('')
-    setConditionNotes('')
-  }
+  const showProjectSelector = scanContext === 'check-out' || scanContext === 'pack-verify'
 
-  const conditionOptions: { value: string; label: string; color: string }[] = [
-    { value: 'excellent', label: 'Ausgezeichnet', color: '#059669' },
-    { value: 'good', label: 'Gut', color: '#16a34a' },
-    { value: 'fair', label: 'Akzeptabel', color: '#d97706' },
-    { value: 'poor', label: 'Schlecht', color: '#dc2626' },
-    { value: 'damaged', label: 'Beschädigt', color: '#991b1b' },
-  ]
-
+  // ─── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="scanner-page">
-      {/* Flash overlay for scan feedback */}
-      {flashType && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: flashType === 'success' ? 'rgba(22, 163, 74, 0.15)' : 'rgba(220, 38, 38, 0.15)',
-            zIndex: 9998,
-            pointerEvents: 'none',
-            animation: 'scanFlash 0.6s ease-out forwards',
-          }}
-        />
+    <div className="scanner-page-simple">
+      {/* Flash overlay */}
+      {flashType && <div className={`scan-flash scan-flash--${flashType}`} />}
+
+      {/* Offline banner */}
+      {offlineMode && (
+        <div className="scanner-offline-banner">
+          Offline-Modus — {offlineQueue} Scans in Warteschlange
+        </div>
       )}
 
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Scanner & Bestandsverwaltung</h1>
-          <p className="page-subtitle">
-            Scannen Sie Equipment per Kamera oder geben Sie den Code manuell ein
-          </p>
+      {/* Top bar: context + project dropdowns */}
+      <div className="scanner-top-bar">
+        <div className="scanner-dropdown-group">
+          <select
+            className="scanner-select"
+            value={scanContext}
+            onChange={(e) => setScanContext(e.target.value as ScanContext)}
+          >
+            {(Object.keys(CONTEXT_LABELS) as ScanContext[]).map(ctx => (
+              <option key={ctx} value={ctx}>{CONTEXT_LABELS[ctx]}</option>
+            ))}
+          </select>
+
+          {showProjectSelector && (
+            <select
+              className="scanner-select"
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+            >
+              <option value="">Projekt...</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
         </div>
-        <div className="header-actions">
-          {offlineQueue > 0 && !offlineMode && (
-            <span style={{
-              padding: 'var(--spacing-2) var(--spacing-3)',
-              backgroundColor: 'rgba(245, 158, 11, 0.15)',
-              color: '#fbbf24',
-              borderRadius: 'var(--radius-full)',
-              fontSize: 'var(--font-size-xs)',
-              fontWeight: 'var(--font-weight-semibold)',
-            }}>
-              {offlineQueue} in Warteschlange
-            </span>
-          )}
-          {!sessionActive ? (
-            <button className="btn btn--primary" onClick={handleStartSession}>
-              Sitzung starten
-            </button>
-          ) : (
-            <button className="btn btn--secondary" onClick={handleEndSession}>
-              Sitzung beenden
-            </button>
-          )}
+
+        {offlineQueue > 0 && !offlineMode && (
+          <span className="scanner-queue-badge">{offlineQueue} in Queue</span>
+        )}
+      </div>
+
+      {/* Warning: no project selected */}
+      {showProjectSelector && !projectId && (
+        <div className="scanner-warning">
+          Bitte Projekt auswaehlen bevor du scannst.
+        </div>
+      )}
+
+      {/* Scan area */}
+      <div className="scanner-scan-area">
+        {/* Camera view (hidden when not active) */}
+        <div
+          id="scanner-camera-view"
+          className="scanner-camera"
+          style={{ display: cameraActive ? 'block' : 'none' }}
+        />
+
+        {!cameraActive && (
+          <div className="scanner-scan-prompt">
+            <span className="scanner-scan-icon">{'{ }'}</span>
+            <span className="scanner-scan-label">Barcode scannen oder eingeben</span>
+          </div>
+        )}
+
+        {cameraError && (
+          <div className="scanner-camera-error">Kamera-Fehler: {cameraError}</div>
+        )}
+
+        <div className="scanner-input-row">
+          <input
+            ref={scanInputRef}
+            type="text"
+            className="scanner-barcode-input"
+            placeholder="Barcode / QR-Code hier eingeben..."
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            onKeyDown={handleKeyDown}
+            autoFocus
+            disabled={isProcessing}
+          />
+          <button
+            className="scanner-submit-btn"
+            onClick={() => barcode.trim() && processBarcode(barcode.trim())}
+            disabled={isProcessing || !barcode.trim()}
+          >
+            {isProcessing ? '...' : 'Scan'}
+          </button>
         </div>
       </div>
 
-      {offlineMode && (
-        <div className="offline-banner">
-          <span>📡 Offline-Modus aktiv</span>
-          <span className="offline-queue">Queue: {offlineQueue} Scans</span>
+      {/* Inline condition report (star rating) */}
+      {showConditionInline && (
+        <div className="scanner-condition-inline">
+          <span className="scanner-condition-label">Zustand bewerten:</span>
+          <div className="scanner-stars">
+            {[1, 2, 3, 4, 5].map(star => (
+              <button
+                key={star}
+                className={`scanner-star ${conditionRating >= star ? 'scanner-star--active' : ''}`}
+                onClick={() => setConditionRating(star)}
+              >
+                {conditionRating >= star ? '\u2605' : '\u2606'}
+              </button>
+            ))}
+          </div>
+          <button
+            className="scanner-condition-save"
+            onClick={submitCondition}
+            disabled={conditionRating === 0}
+          >
+            OK
+          </button>
+          <button
+            className="scanner-condition-skip"
+            onClick={() => { setShowConditionInline(false); setConditionRating(0) }}
+          >
+            Skip
+          </button>
         </div>
       )}
 
-      {/* Stats Bar */}
-      {sessionActive && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 'var(--spacing-4)',
-            padding: 'var(--spacing-3) var(--spacing-4)',
-            backgroundColor: 'var(--color-bg-secondary)',
-            borderRadius: 'var(--radius-card)',
-            marginBottom: 'var(--spacing-4)',
-            fontWeight: 'var(--font-weight-semibold)',
-            fontSize: 'var(--font-size-base)',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-          }}
-        >
-          <span>Heute:</span>
-          <span style={{ color: '#dc2626' }}>{checkOutCount} Check-Outs</span>
-          <span style={{ color: '#16a34a' }}>{checkInCount} Check-Ins</span>
-          <span style={{ color: errorCount > 0 ? '#dc2626' : 'var(--color-text-secondary)' }}>{errorCount} Fehler</span>
-        </div>
-      )}
-
-      {/* Feedback Toast */}
-      {feedbackMessage && (
-        <div
-          style={{
-            padding: 'var(--spacing-3) var(--spacing-4)',
-            borderRadius: 'var(--radius-card)',
-            marginBottom: 'var(--spacing-4)',
-            fontWeight: 'var(--font-weight-semibold)',
-            fontSize: 'var(--font-size-base)',
-            backgroundColor: feedbackMessage.type === 'success' ? 'rgba(22, 163, 74, 0.15)' : 'rgba(220, 38, 38, 0.15)',
-            color: feedbackMessage.type === 'success' ? '#34d399' : '#f87171',
-            border: `2px solid ${feedbackMessage.type === 'success' ? 'rgba(22, 163, 74, 0.4)' : 'rgba(220, 38, 38, 0.4)'}`,
-            backdropFilter: 'blur(8px)',
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          {feedbackMessage.type === 'success' ? '✓ ' : '✗ '}
-          {feedbackMessage.text}
-        </div>
-      )}
-
-      <div className="context-selector">
-        <h3 className="context-selector__title">Scan-Kontext</h3>
-        <div className="context-cards">
-          {(['check-in', 'check-out', 'warehouse-store', 'inventory', 'pack-verify'] as const).map((ctx) => (
-            <button
-              key={ctx}
-              className={`context-card ${scanContext === ctx ? 'context-card--active' : ''}`}
-              onClick={() => {
-                setScanContext(ctx)
-                setPackVerifyResult(null)
-              }}
-            >
-              <div className="context-card__icon">
-                {ctx === 'check-in' && '\u{1F4E5}'}
-                {ctx === 'check-out' && '\u{1F4E4}'}
-                {ctx === 'warehouse-store' && '\u{1F3E2}'}
-                {ctx === 'inventory' && '\u{1F4CA}'}
-                {ctx === 'pack-verify' && '\u{1F4E6}'}
-              </div>
-              <div className="context-card__label">
-                {ctx === 'check-in' && 'Einchecken'}
-                {ctx === 'check-out' && 'Auschecken'}
-                {ctx === 'warehouse-store' && 'Lagerort'}
-                {ctx === 'inventory' && 'Inventur'}
-                {ctx === 'pack-verify' && 'Packliste pr\u00FCfen'}
-              </div>
-            </button>
+      {/* Recent scan results */}
+      {recentScans.length > 0 && (
+        <div className="scanner-results">
+          {recentScans.slice(0, 20).map((scan) => (
+            <div key={scan.id} className={`scanner-result-item scanner-result-item--${scan.status}`}>
+              <span className="scanner-result-icon">
+                {scan.status === 'success' ? '\u2705' : scan.status === 'error' ? '\u274C' : '\u23F3'}
+              </span>
+              <span className="scanner-result-text">
+                {scan.equipmentName || scan.barcode}
+                {scan.message && <span className="scanner-result-detail"> — {scan.message}</span>}
+              </span>
+              <span className="scanner-result-time">
+                {new Date(scan.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            </div>
           ))}
         </div>
+      )}
+
+      {/* Simple counter */}
+      <div className="scanner-counter">
+        Gescannt: <strong>{scanCount}</strong>
       </div>
 
-      <div className="scanner-container">
-        <div className="scanner-main">
-          <div className="scanner-panel">
-            <h2 className="scanner-panel__title">Scan-Eingabe</h2>
+      {/* Advanced options (collapsed) */}
+      <button
+        className="scanner-advanced-toggle"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+      >
+        {showAdvanced ? '\u25B2' : '\u25BC'} Erweiterte Optionen
+      </button>
 
-            {(scanContext === 'check-out' || scanContext === 'pack-verify') && (
-              <div className="scanner-panel__section">
-                <Select
-                  label={scanContext === 'pack-verify' ? 'Projekt f\u00FCr Packliste' : 'Projekt ausw\u00E4hlen'}
-                  options={projects.map((p) => ({
-                    value: p.id,
-                    label: p.name,
-                  }))}
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
-                  placeholder={scanContext === 'pack-verify' ? 'Projekt f\u00FCr Packliste w\u00E4hlen...' : 'Projekt f\u00FCr Auschecken...'}
-                />
-              </div>
-            )}
-
-            {/* Pack-Verify Progress Info */}
-            {scanContext === 'pack-verify' && projectId && (
-              <div
-                style={{
-                  padding: 'var(--spacing-3) var(--spacing-4)',
-                  backgroundColor: 'rgba(0, 212, 255, 0.08)',
-                  borderRadius: 'var(--radius-card)',
-                  marginBottom: 'var(--spacing-3)',
-                  border: '1px solid rgba(0, 212, 255, 0.15)',
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  <span style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>
-                    {'\u{1F4E6}'} Packlisten-Scan aktiv
-                  </span>
-                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                    {successCount} Artikel gepr\u00FCft
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                  Scannen Sie Equipment-Barcodes. Artikel auf der Packliste werden automatisch als gepackt markiert.
-                </p>
-              </div>
-            )}
-
-            {/* Pack-Verify Last Result */}
-            {scanContext === 'pack-verify' && packVerifyResult && (
-              <div
-                style={{
-                  padding: 'var(--spacing-3) var(--spacing-4)',
-                  borderRadius: 'var(--radius-card)',
-                  marginBottom: 'var(--spacing-3)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  fontSize: 'var(--font-size-base)',
-                  backgroundColor: packVerifyResult.found ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  color: packVerifyResult.found ? '#34d399' : '#f87171',
-                  border: `2px solid ${packVerifyResult.found ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-                  animation: 'fadeIn 0.2s ease',
-                }}
-              >
-                {packVerifyResult.found
-                  ? `\u2713 ${packVerifyResult.itemName || 'Artikel'} gefunden und als gepackt markiert`
-                  : '\u2717 Nicht in dieser Packliste!'}
-              </div>
-            )}
-
-            {/* Kamera-Scan-Bereich */}
-            <div className="scanner-panel__section">
-              <div
-                id="scanner-camera-view"
-                style={{
-                  width: '100%',
-                  minHeight: cameraActive ? '300px' : '0px',
-                  borderRadius: 'var(--radius-md)',
-                  overflow: 'hidden',
-                  marginBottom: cameraActive ? 'var(--spacing-4)' : '0',
-                  transition: 'min-height 0.3s ease',
-                }}
-              />
-
-              {!cameraActive && (
-                <div
-                  style={{
-                    padding: 'var(--spacing-4)',
-                    backgroundColor: 'var(--color-primary-50)',
-                    borderRadius: 'var(--radius-md)',
-                    textAlign: 'center',
-                    marginBottom: 'var(--spacing-4)',
-                    cursor: 'pointer',
-                  }}
-                  onClick={toggleCamera}
-                >
-                  <div style={{ fontSize: '2.5rem', marginBottom: 'var(--spacing-2)' }}>
-                    📷
-                  </div>
-                  <p
-                    style={{
-                      margin: '0 0 var(--spacing-2) 0',
-                      color: 'var(--color-text-primary)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                    }}
-                  >
-                    Kamera starten zum Scannen
-                  </p>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--color-text-secondary)',
-                    }}
-                  >
-                    Tippen Sie hier oder nutzen Sie die manuelle Eingabe unten
-                  </p>
-                </div>
-              )}
-
-              {cameraError && (
-                <div
-                  style={{
-                    padding: 'var(--spacing-3)',
-                    backgroundColor: 'var(--color-error-light, #fef2f2)',
-                    color: 'var(--color-error-dark, #991b1b)',
-                    borderRadius: 'var(--radius-md)',
-                    marginBottom: 'var(--spacing-3)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Kamera-Fehler: {cameraError}
-                </div>
-              )}
-
-              {/* Manuelle Eingabe - prominent */}
-              <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'flex-end' }}>
-                <div style={{ flex: 1 }}>
-                  <Input
-                    ref={scanInputRef}
-                    type="text"
-                    label="Barcode / QR-Code manuell eingeben"
-                    placeholder="Code eingeben und Enter drücken..."
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    onKeyDown={handleManualScan}
-                    autoFocus
-                    disabled={isProcessing}
-                    style={{ fontSize: '1.25rem', padding: 'var(--spacing-3) var(--spacing-4)', height: '3.25rem' }}
-                  />
-                </div>
-                <button
-                  className="btn btn--primary"
-                  onClick={handleManualScanButton}
-                  disabled={isProcessing || !barcode.trim()}
-                  style={{
-                    height: '3.25rem',
-                    padding: '0 var(--spacing-6)',
-                    fontSize: '1rem',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Scannen
-                </button>
-              </div>
-
-              {/* Project warning for check-out / pack-verify */}
-              {(scanContext === 'check-out' || scanContext === 'pack-verify') && !projectId && (
-                <div
-                  style={{
-                    marginTop: 'var(--spacing-2)',
-                    padding: 'var(--spacing-2) var(--spacing-3)',
-                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                    color: '#fbbf24',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                  }}
-                >
-                  {'\u26A0'} {scanContext === 'pack-verify'
-                    ? 'Bitte zuerst ein Projekt ausw\u00E4hlen, um die Packliste zu pr\u00FCfen.'
-                    : 'Bitte zuerst ein Projekt ausw\u00E4hlen, bevor Sie Equipment auschecken.'}
-                </div>
-              )}
-            </div>
-
-            <div className="scanner-actions">
-              <button
-                className={`btn ${cameraActive ? 'btn--secondary' : 'btn--primary'}`}
-                onClick={toggleCamera}
-                style={{ width: '100%' }}
-              >
-                {cameraActive ? '⏹ Kamera stoppen' : '📷 Kamera starten'}
-              </button>
-              <label className="scanner-batch-toggle">
-                <input
-                  type="checkbox"
-                  checked={batchMode}
-                  onChange={(e) => setBatchMode(e.target.checked)}
-                />
-                <span>Batch-Modus (Kamera bleibt aktiv)</span>
-              </label>
-            </div>
-
-            {isProcessing && (
-              <div
-                style={{
-                  marginTop: 'var(--spacing-3)',
-                  padding: 'var(--spacing-3)',
-                  backgroundColor: 'var(--color-primary-50)',
-                  borderRadius: 'var(--radius-md)',
-                  textAlign: 'center',
-                  fontSize: 'var(--font-size-sm)',
-                }}
-              >
-                Verarbeite Scan...
-              </div>
-            )}
-
-            {/* Scanned Equipment Details */}
-            {scannedEquipment && !isProcessing && (
-              <div
-                style={{
-                  marginTop: 'var(--spacing-4)',
-                  padding: 'var(--spacing-5)',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  borderRadius: 'var(--radius-card)',
-                  border: '2px solid var(--color-primary)',
-                }}
-              >
-                <h3 style={{ margin: '0 0 var(--spacing-3) 0', fontSize: '1.5rem', color: 'var(--color-text-primary)' }}>
-                  {scannedEquipment.name}
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-4)' }}>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Status</span>
-                    <div>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: 'var(--spacing-1) var(--spacing-3)',
-                          borderRadius: 'var(--radius-base)',
-                          backgroundColor: getStatusColor(scannedEquipment.status) + '20',
-                          color: getStatusColor(scannedEquipment.status),
-                          fontWeight: 'var(--font-weight-semibold)',
-                          fontSize: 'var(--font-size-sm)',
-                        }}
-                      >
-                        {getStatusLabel(scannedEquipment.status)}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Kategorie</span>
-                    <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{getCategoryLabel(scannedEquipment.category_id)}</div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Barcode</span>
-                    <div style={{ fontFamily: 'monospace', fontWeight: 'var(--font-weight-semibold)' }}>{scannedEquipment.barcode || '—'}</div>
-                  </div>
-                  {scannedEquipment.rfid_tag && (
-                    <div>
-                      <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>RFID Tag</span>
-                      <div style={{ fontFamily: 'monospace', fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-xs)' }}>{scannedEquipment.rfid_tag}</div>
-                    </div>
-                  )}
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Mietpreis</span>
-                    <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
-                      {scannedEquipment.rental_price_day != null ? `${scannedEquipment.rental_price_day} €/Tag` : '—'}
-                      {scannedEquipment.rental_price_week != null && ` · ${scannedEquipment.rental_price_week} €/Woche`}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-2)' }}>
-                  {/* Check-Out an Projekt */}
-                  {(scannedEquipment.status === 'available' || scannedEquipment.status === 'reserved') && (
-                    <button
-                      className="btn btn--primary"
-                      style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}
-                      onClick={() => {
-                        setCheckOutProjectId('')
-                        setShowCheckOutModal(true)
-                      }}
-                    >
-                      Check-Out an Projekt
-                    </button>
-                  )}
-
-                  {/* Check-In */}
-                  {scannedEquipment.status === 'checked_out' && (
-                    <button
-                      className="btn btn--primary"
-                      style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', backgroundColor: '#16a34a', borderColor: '#16a34a' }}
-                      onClick={() => {
-                        equipmentApi.checkIn(scannedEquipment.id).then(() => {
-                          setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} eingecheckt`, timestamp: Date.now() })
-                          setScannedEquipment({ ...scannedEquipment, status: 'available' })
-                          playBeep('success')
-                        }).catch(() => {
-                          setFeedbackMessage({ type: 'error', text: 'Check-In fehlgeschlagen', timestamp: Date.now() })
-                          playBeep('error')
-                        })
-                      }}
-                    >
-                      Check-In
-                    </button>
-                  )}
-
-                  {/* Defekt melden */}
-                  {scannedEquipment.status !== 'damaged' && scannedEquipment.status !== 'in_maintenance' && (
-                    <button
-                      className="btn btn--secondary"
-                      style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: '#dc2626', borderColor: '#dc2626' }}
-                      onClick={() => {
-                        equipmentApi.updateCondition(scannedEquipment.id, 'damaged', 'Per Scanner als defekt gemeldet').then(() => {
-                          setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} als defekt gemeldet`, timestamp: Date.now() })
-                          setScannedEquipment({ ...scannedEquipment, status: 'in_maintenance', condition: 'damaged' })
-                          playBeep('info')
-                        }).catch(() => {
-                          setFeedbackMessage({ type: 'error', text: 'Defektmeldung fehlgeschlagen', timestamp: Date.now() })
-                          playBeep('error')
-                        })
-                      }}
-                    >
-                      Defekt melden
-                    </button>
-                  )}
-
-                  {/* Details anzeigen */}
-                  <button
-                    className="btn btn--secondary"
-                    style={{ padding: 'var(--spacing-3)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}
-                    onClick={() => navigate(`/equipment/${scannedEquipment.id}`)}
-                  >
-                    Details anzeigen
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Check-Out Modal */}
-            {showCheckOutModal && scannedEquipment && (
-              <div
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 9999,
-                  backdropFilter: 'blur(4px)',
-                }}
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) setShowCheckOutModal(false)
-                }}
-              >
-                <div
-                  style={{
-                    background: 'var(--color-bg-primary)',
-                    borderRadius: 'var(--radius-card)',
-                    padding: 'var(--spacing-6)',
-                    width: '100%',
-                    maxWidth: '480px',
-                    margin: 'var(--spacing-4)',
-                    border: '1px solid var(--color-border)',
-                    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.4)',
-                  }}
-                >
-                  <h3 style={{ margin: '0 0 var(--spacing-2) 0', color: 'var(--color-text-primary)', fontSize: '1.25rem' }}>
-                    Check-Out an Projekt
-                  </h3>
-                  <p style={{ margin: '0 0 var(--spacing-4) 0', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                    {scannedEquipment.name} einem Projekt zuweisen
-                  </p>
-
-                  <div style={{ marginBottom: 'var(--spacing-4)' }}>
-                    <Select
-                      label="Projekt auswählen"
-                      options={projects.map((p) => ({
-                        value: p.id,
-                        label: p.name,
-                      }))}
-                      value={checkOutProjectId}
-                      onChange={(e) => setCheckOutProjectId(e.target.value)}
-                      placeholder="Projekt auswählen..."
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
-                    <button
-                      className="btn btn--primary"
-                      style={{ flex: 1, padding: 'var(--spacing-3)' }}
-                      disabled={!checkOutProjectId}
-                      onClick={() => {
-                        equipmentApi.checkOut(scannedEquipment.id, checkOutProjectId).then(() => {
-                          setFeedbackMessage({ type: 'success', text: `${scannedEquipment.name} ausgecheckt`, timestamp: Date.now() })
-                          setScannedEquipment({ ...scannedEquipment, status: 'checked_out' })
-                          setShowCheckOutModal(false)
-                          setCheckOutCount((prev) => prev + 1)
-                          playBeep('success')
-                        }).catch(() => {
-                          setFeedbackMessage({ type: 'error', text: 'Check-Out fehlgeschlagen', timestamp: Date.now() })
-                          playBeep('error')
-                        })
-                      }}
-                    >
-                      Check-Out
-                    </button>
-                    <button
-                      className="btn btn--secondary"
-                      style={{ flex: 1, padding: 'var(--spacing-3)' }}
-                      onClick={() => setShowCheckOutModal(false)}
-                    >
-                      Abbrechen
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Condition Report after Check-In */}
-            {showConditionReport && (
-              <div
-                style={{
-                  marginTop: 'var(--spacing-4)',
-                  padding: 'var(--spacing-5)',
-                  backgroundColor: 'rgba(2, 132, 199, 0.1)',
-                  borderRadius: 'var(--radius-card)',
-                  border: '2px solid rgba(2, 132, 199, 0.3)',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '1.25rem', color: 'var(--color-text-primary)' }}>
-                  Zustandsbericht
-                </h3>
-                <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                  {conditionEquipmentName} — Zustand nach Rückgabe bewerten
-                </p>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-4)' }}>
-                  {conditionOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setConditionRating(opt.value)}
-                      style={{
-                        padding: 'var(--spacing-2) var(--spacing-4)',
-                        borderRadius: 'var(--radius-base)',
-                        border: conditionRating === opt.value ? `2px solid ${opt.color}` : '2px solid var(--color-border)',
-                        backgroundColor: conditionRating === opt.value ? opt.color + '20' : 'var(--color-bg-primary)',
-                        color: conditionRating === opt.value ? opt.color : 'var(--color-text-primary)',
-                        fontWeight: conditionRating === opt.value ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
-                        cursor: 'pointer',
-                        fontSize: 'var(--font-size-base)',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div style={{ marginBottom: 'var(--spacing-4)' }}>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: 'var(--color-text-secondary)',
-                      marginBottom: 'var(--spacing-1)',
-                    }}
-                  >
-                    Anmerkungen (optional)
-                  </label>
-                  <textarea
-                    value={conditionNotes}
-                    onChange={(e) => setConditionNotes(e.target.value)}
-                    placeholder="z.B. Kratzer an der linken Seite..."
-                    rows={3}
-                    style={{
-                      width: '100%',
-                      padding: 'var(--spacing-2) var(--spacing-3)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--color-border)',
-                      fontSize: 'var(--font-size-base)',
-                      fontFamily: 'inherit',
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
-                  <button
-                    className="btn btn--primary"
-                    onClick={handleSubmitCondition}
-                    disabled={!conditionRating || isSubmittingCondition}
-                    style={{
-                      flex: 1,
-                      padding: 'var(--spacing-3)',
-                      fontSize: '1rem',
-                      fontWeight: 'var(--font-weight-semibold)',
-                    }}
-                  >
-                    {isSubmittingCondition ? 'Wird gespeichert...' : 'Speichern'}
-                  </button>
-                  <button
-                    className="btn btn--secondary"
-                    onClick={handleSkipCondition}
-                    disabled={isSubmittingCondition}
-                    style={{
-                      flex: 1,
-                      padding: 'var(--spacing-3)',
-                      fontSize: '1rem',
-                      fontWeight: 'var(--font-weight-semibold)',
-                    }}
-                  >
-                    Überspringen
-                  </button>
-                </div>
-              </div>
-            )}
+      {showAdvanced && (
+        <div className="scanner-advanced">
+          <div className="scanner-advanced-row">
+            <button
+              className={`scanner-adv-btn ${cameraActive ? 'scanner-adv-btn--active' : ''}`}
+              onClick={toggleCamera}
+            >
+              {cameraActive ? 'Kamera stoppen' : 'Kamera starten'}
+            </button>
           </div>
 
-          {/* Scan-Verlauf */}
-          {recentScans.length > 0 && (
-            <div className="scanner-history">
-              <h2 className="scanner-history__title">
-                Scan-Verlauf (letzte {Math.min(recentScans.length, 20)})
-              </h2>
-              <div className="scanner-history__list">
-                {recentScans.slice(0, 20).map((scan, index) => (
-                  <div
-                    key={scan.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--spacing-3)',
-                      padding: 'var(--spacing-3)',
-                      backgroundColor:
-                        scan.status === 'error'
-                          ? 'var(--color-error-light, #fef2f2)'
-                          : scan.status === 'pending'
-                          ? 'var(--color-warning-light, #fffbeb)'
-                          : index === 0
-                          ? 'var(--color-primary-50)'
-                          : 'var(--color-bg-secondary)',
-                      borderRadius: 'var(--radius-md)',
-                      borderLeft:
-                        scan.status === 'error'
-                          ? '3px solid var(--color-error, #dc2626)'
-                          : scan.status === 'pending'
-                          ? '3px solid var(--color-warning, #d97706)'
-                          : index === 0
-                          ? '3px solid var(--color-primary)'
-                          : '3px solid var(--color-border)',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <div style={{ fontSize: '1.5rem' }}>
-                      {scan.status === 'pending'
-                        ? '⏳'
-                        : scan.status === 'error'
-                        ? '❌'
-                        : scan.scan_type === 'check-in'
-                        ? '📥'
-                        : scan.scan_type === 'check-out'
-                        ? '📤'
-                        : '📊'}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p
-                        style={{
-                          margin: '0 0 var(--spacing-1) 0',
-                          fontWeight: 'var(--font-weight-semibold)',
-                          color: 'var(--color-text-primary)',
-                          fontSize: scan.equipment_name ? 'var(--font-size-base)' : 'var(--font-size-sm)',
-                        }}
-                      >
-                        {scan.equipment_name || `Code: ${scan.barcode}`}
-                      </p>
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: 'var(--spacing-2)',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          fontSize: 'var(--font-size-sm)',
-                          color:
-                            scan.status === 'error'
-                              ? 'var(--color-error-dark, #991b1b)'
-                              : 'var(--color-text-secondary)',
-                        }}
-                      >
-                        {scan.status === 'error'
-                          ? <span>{scan.error_message}</span>
-                          : scan.status === 'pending'
-                          ? <span>Wird verarbeitet...</span>
-                          : (
-                            <>
-                              <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>
-                                {scan.scan_type === 'check-in' && 'Check-In'}
-                                {scan.scan_type === 'check-out' && 'Check-Out'}
-                                {scan.scan_type === 'warehouse-store' && 'Lagerort'}
-                                {scan.scan_type === 'inventory' && 'Inventur'}
-                              </span>
-                              <span>•</span>
-                              <span>{new Date(scan.timestamp).toLocaleTimeString('de-DE')}</span>
-                              {scan.barcode && (
-                                <>
-                                  <span>•</span>
-                                  <span style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}>{scan.barcode}</span>
-                                </>
-                              )}
-                            </>
-                          )}
-                      </div>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: 'var(--spacing-1) var(--spacing-2)',
-                        backgroundColor:
-                          scan.status === 'error'
-                            ? 'var(--color-error-light, #fef2f2)'
-                            : scan.status === 'pending'
-                            ? 'var(--color-warning-light, #fffbeb)'
-                            : 'var(--color-success-light)',
-                        color:
-                          scan.status === 'error'
-                            ? 'var(--color-error-dark, #991b1b)'
-                            : scan.status === 'pending'
-                            ? 'var(--color-warning-dark, #92400e)'
-                            : 'var(--color-success-dark)',
-                        borderRadius: 'var(--radius-base)',
-                      }}
-                    >
-                      {scan.status === 'error'
-                        ? '✗ Fehler'
-                        : scan.status === 'pending'
-                        ? '...'
-                        : '✓ OK'}
+          <label className="scanner-advanced-check">
+            <input
+              type="checkbox"
+              checked={batchMode}
+              onChange={(e) => setBatchMode(e.target.checked)}
+            />
+            Batch-Modus (Kamera bleibt aktiv)
+          </label>
+
+          <label className="scanner-advanced-check">
+            <input
+              type="checkbox"
+              checked={conditionEnabled}
+              onChange={(e) => setConditionEnabled(e.target.checked)}
+            />
+            Zustandsbericht bei Check-In (1-5 Sterne)
+          </label>
+
+          {recentScans.length > 5 && (
+            <div className="scanner-history-section">
+              <h4 className="scanner-history-title">Scan-Verlauf ({recentScans.length})</h4>
+              <div className="scanner-history-list">
+                {recentScans.map((scan) => (
+                  <div key={scan.id} className="scanner-history-item">
+                    <span>{scan.status === 'success' ? '\u2713' : scan.status === 'error' ? '\u2717' : '...'}</span>
+                    <span>{scan.equipmentName || scan.barcode}</span>
+                    <span className="scanner-history-time">
+                      {new Date(scan.timestamp).toLocaleTimeString('de-DE')}
                     </span>
                   </div>
                 ))}
@@ -1491,84 +635,7 @@ function ScannerPage() {
             </div>
           )}
         </div>
-
-        <div className="scanner-sidebar">
-          <div className="session-info">
-            <div className="session-info__status">
-              {sessionActive ? (
-                <>
-                  <span className="status-badge status-badge--active">Sitzung aktiv</span>
-                  <span className="session-timer">
-                    {Math.floor(Date.now() / 1000 % 3600 / 60)}m aktiv
-                  </span>
-                </>
-              ) : (
-                <span className="status-badge">Keine Sitzung</span>
-              )}
-            </div>
-          </div>
-
-          <div className="scanner-stats">
-            <div className="stat-box">
-              <p className="stat-box__label">Gesamt gescannt</p>
-              <p className="stat-box__value">{sessionStats.total}</p>
-            </div>
-
-            <div className="stat-box">
-              <p className="stat-box__label">Erfolgreich</p>
-              <p className="stat-box__value" style={{ color: 'var(--color-success)' }}>
-                {sessionStats.successful}
-              </p>
-            </div>
-
-            <div className="stat-box">
-              <p className="stat-box__label">Fehler</p>
-              <p className="stat-box__value" style={{ color: errorCount > 0 ? 'var(--color-danger)' : undefined }}>
-                {sessionStats.failed}
-              </p>
-            </div>
-
-            {sessionStats.total > 0 && (
-              <div className="stat-box">
-                <p className="stat-box__label">Erfolgsquote</p>
-                <p className="stat-box__value" style={{ color: 'var(--color-primary)' }}>
-                  {sessionStats.successRate}%
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="session-protocol">
-            <h3 className="session-protocol__title">Sitzungsprotokoll</h3>
-            <div className="protocol-info">
-              <div className="info-row">
-                <span className="info-label">Kontext</span>
-                <span className="info-value">
-                  {scanContext === 'check-in' && 'Einchecken'}
-                  {scanContext === 'check-out' && 'Auschecken'}
-                  {scanContext === 'warehouse-store' && 'Lagerort'}
-                  {scanContext === 'inventory' && 'Inventur'}
-                </span>
-              </div>
-              {projectId && projects.find(p => p.id === projectId) && (
-                <div className="info-row">
-                  <span className="info-label">Projekt</span>
-                  <span className="info-value">{projects.find(p => p.id === projectId)?.name}</span>
-                </div>
-              )}
-              <div className="info-row">
-                <span className="info-label">Gestartet</span>
-                <span className="info-value">
-                  {new Date(currentSession.started_at).toLocaleTimeString('de-DE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
