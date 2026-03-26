@@ -12,12 +12,12 @@ http:
         browserXssFilter: true
         forceSTSHeader: true
         stsIncludeSubdomains: true
-        stsMaxAge: 63072000
+        stsSeconds: 63072000
         stsPreload: true
         frameDeny: true
         customFrameOptionsValue: "SAMEORIGIN"
         customRequestHeaders:
-          X-RentFlow-Version: "1.0.0"
+          X-EquipFlow-Version: "1.4.0"
           X-Content-Type-Options: "nosniff"
 
     corsHeaders:
