@@ -292,7 +292,7 @@ function ScannerPage() {
 
       // Step 2: Execute action based on context
       if (scanContext === 'check-out') {
-        if (!projectId) throw new Error('Bitte Projekt auswaehlen')
+        if (!projectId) throw new Error(`Bitte ${label('project') || 'Projekt'} auswaehlen`)
         await equipmentApi.checkOut(equipment.id, projectId)
       } else if (scanContext === 'check-in') {
         await equipmentApi.checkIn(equipment.id)
@@ -482,7 +482,7 @@ function ScannerPage() {
       {/* Warning: no project selected */}
       {showProjectSelector && !projectId && (
         <div className="scanner-warning">
-          Bitte Projekt auswaehlen bevor du scannst.
+          Bitte {label('project') || 'Projekt'} auswaehlen bevor du scannst.
         </div>
       )}
 
@@ -618,7 +618,7 @@ function ScannerPage() {
               checked={conditionEnabled}
               onChange={(e) => setConditionEnabled(e.target.checked)}
             />
-            Zustandsbericht bei Check-In (1-5 Sterne)
+            Zustandsbericht bei {label('checkin') || 'Check-In'} (1-5 Sterne)
           </label>
 
           {recentScans.length > 5 && (

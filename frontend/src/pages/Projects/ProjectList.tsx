@@ -173,7 +173,7 @@ function ProjectListPage() {
 
         <Input
           type="text"
-          placeholder="Nach Projektname oder Kunde suchen..."
+          placeholder={`Nach ${projectLabel}name oder Kunde suchen...`}
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value)
@@ -185,8 +185,8 @@ function ProjectListPage() {
       {error ? (
         <ErrorState
           variant="generic"
-          title="Fehler beim Laden der Projekte"
-          description="Die Projektdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+          title={`Fehler beim Laden der ${projectPluralLabel}`}
+          description="Die Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut."
           onRetry={() => window.location.reload()}
           compact
         />
