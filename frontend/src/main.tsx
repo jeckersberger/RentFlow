@@ -4,14 +4,15 @@ import App from './App'
 import './i18n/config'
 import './styles/global.scss'
 
-// Clear stale Service Worker caches on load
+// Force clear ALL Service Worker caches and re-register
 if ('serviceWorker' in navigator) {
+  // Clear ALL caches (not just api-cache)
   caches.keys().then(names => {
-    names.forEach(name => {
-      if (name.includes('api-cache') || name.includes('api-lists-cache')) {
-        caches.delete(name)
-      }
-    })
+    names.forEach(name => caches.delete(name))
+  })
+  // Force SW update
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.update())
   })
 }
 

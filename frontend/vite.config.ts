@@ -111,37 +111,6 @@ export default defineConfig({
         globIgnores: ['**/node_modules/**/*'],
         runtimeCaching: [
           {
-            // Equipment & Projects list API — cache-first for fast offline access
-            urlPattern: /\/api\/(equipment|projects)(\?.*)?$/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'api-lists-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            // All other API calls — network-first with fallback (exclude system endpoints)
-            urlPattern: /\/api\/v1\/(?!system).*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 3,
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
             // Google Fonts or CDN assets
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
             handler: 'CacheFirst',
