@@ -113,8 +113,10 @@ func (r *CategoryPostgres) Delete(ctx context.Context, tenantID, categoryID stri
 
 func (r *CategoryPostgres) scanCategory(row *sql.Row) (*domain.Category, error) {
 	cat := &domain.Category{}
+	var parentID sql.NullString
+
 	err := row.Scan(
-		&cat.ID, &cat.TenantID, &cat.Name, &cat.ParentID, &cat.Icon, &cat.Color,
+		&cat.ID, &cat.TenantID, &cat.Name, &parentID, &cat.Icon, &cat.Color,
 		&cat.SortOrder, &cat.CreatedAt, &cat.CreatedByUserID,
 	)
 
@@ -125,6 +127,10 @@ func (r *CategoryPostgres) scanCategory(row *sql.Row) (*domain.Category, error) 
 		return nil, fmt.Errorf("failed to scan category: %w", err)
 	}
 
+	if parentID.Valid {
+		cat.ParentID = &parentID.String
+	}
+
 	return cat, nil
 }
 
@@ -132,18 +138,17 @@ func (r *CategoryPostgres) scanCategoryRow(rows interface {
 	Scan(...interface{}) error
 }) (*domain.Category, error) {
 	cat := &domain.Category{}
-	var parentID string
+	var parentID sql.NullString
 
 	err := rows.Scan(
 		&cat.ID, &cat.TenantID, &cat.Name, &parentID, &cat.Icon, &cat.Color,
 		&cat.SortOrder, &cat.CreatedAt, &cat.CreatedByUserID,
 	)
-	if parentID != "" {
-		cat.ParentID = &parentID
-	}
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan category: %w", err)
+	}
+	if parentID.Valid {
+		cat.ParentID = &parentID.String
 	}
 
 	return cat, nil
