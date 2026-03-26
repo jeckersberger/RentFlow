@@ -18,7 +18,7 @@ import (
 )
 
 // CurrentVersion is the hardcoded current version of RentFlow
-const CurrentVersion = "1.2.0"
+const CurrentVersion = "1.3.0"
 
 // versionCache caches the GitHub release check result for 6 hours
 var (
