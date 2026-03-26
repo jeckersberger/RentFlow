@@ -65,7 +65,7 @@ func (r *CategoryPostgres) Update(ctx context.Context, cat *domain.Category) err
 
 func (r *CategoryPostgres) GetByID(ctx context.Context, tenantID, categoryID string) (*domain.Category, error) {
 	query := `
-		SELECT id, tenant_id, name, COALESCE(parent_id, ''), COALESCE(icon, ''), COALESCE(color, ''), COALESCE(sort_order, 0), created_at, COALESCE(created_by_user_id, '')
+		SELECT id, tenant_id, name, parent_id, COALESCE(icon, ''), COALESCE(color, ''), COALESCE(sort_order, 0), created_at, COALESCE(created_by_user_id::text, '')
 		FROM inventory.categories
 		WHERE id = $1 AND tenant_id = $2
 	`
@@ -76,7 +76,7 @@ func (r *CategoryPostgres) GetByID(ctx context.Context, tenantID, categoryID str
 
 func (r *CategoryPostgres) List(ctx context.Context, tenantID string) ([]*domain.Category, error) {
 	query := `
-		SELECT id, tenant_id, name, COALESCE(parent_id, ''), COALESCE(icon, ''), COALESCE(color, ''), COALESCE(sort_order, 0), created_at, COALESCE(created_by_user_id, '')
+		SELECT id, tenant_id, name, parent_id, COALESCE(icon, ''), COALESCE(color, ''), COALESCE(sort_order, 0), created_at, COALESCE(created_by_user_id::text, '')
 		FROM inventory.categories
 		WHERE tenant_id = $1
 		ORDER BY sort_order ASC, created_at ASC
@@ -113,15 +113,10 @@ func (r *CategoryPostgres) Delete(ctx context.Context, tenantID, categoryID stri
 
 func (r *CategoryPostgres) scanCategory(row *sql.Row) (*domain.Category, error) {
 	cat := &domain.Category{}
-	var parentID string
-
 	err := row.Scan(
-		&cat.ID, &cat.TenantID, &cat.Name, &parentID, &cat.Icon, &cat.Color,
+		&cat.ID, &cat.TenantID, &cat.Name, &cat.ParentID, &cat.Icon, &cat.Color,
 		&cat.SortOrder, &cat.CreatedAt, &cat.CreatedByUserID,
 	)
-	if parentID != "" {
-		cat.ParentID = &parentID
-	}
 
 	if err != nil {
 		if err == sql.ErrNoRows {
