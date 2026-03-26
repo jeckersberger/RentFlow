@@ -16,7 +16,7 @@ type SMTPConfig struct {
 	Port     int    // SMTP-Port (587 für TLS, 465 für SSL)
 	Username string // SMTP-Benutzername
 	Password string // SMTP-Passwort
-	FromName string // Absendername (z.B. "RentFlow")
+	FromName string // Absendername (z.B. "EquipFlow")
 	FromAddr string // Absender-Email
 }
 

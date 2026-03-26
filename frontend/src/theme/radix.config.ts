@@ -2,7 +2,7 @@ import { Theme } from '@radix-ui/themes'
 
 /**
  * Radix UI Theme Configuration
- * Maps RentFlow design tokens to Radix UI theme colors
+ * Maps EquipFlow design tokens to Radix UI theme colors
  */
 export const radixThemeConfig: Partial<React.ComponentProps<typeof Theme>> = {
   appearance: 'inherit',
@@ -13,7 +13,7 @@ export const radixThemeConfig: Partial<React.ComponentProps<typeof Theme>> = {
 }
 
 /**
- * Color palette mapping from RentFlow SCSS tokens to Radix UI colors
+ * Color palette mapping from EquipFlow SCSS tokens to Radix UI colors
  * Used for consistent styling across the application
  */
 export const colorPalette = {

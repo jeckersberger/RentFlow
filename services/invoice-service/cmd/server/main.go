@@ -78,7 +78,7 @@ func main() {
 			Port:     smtpPort,
 			Username: os.Getenv("SMTP_USERNAME"),
 			Password: os.Getenv("SMTP_PASSWORD"),
-			FromName: getEnvOrDefault("SMTP_FROM_NAME", "RentFlow"),
+			FromName: getEnvOrDefault("SMTP_FROM_NAME", "EquipFlow"),
 			FromAddr: os.Getenv("SMTP_FROM_ADDRESS"),
 		})
 		invoiceSvc.SetEmailSender(emailSender)

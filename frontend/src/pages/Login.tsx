@@ -107,7 +107,7 @@ function LoginPage() {
           <div className="login-card__logo">
             <span className="login-card__logo-icon">📦</span>
           </div>
-          <h1 className="login-card__title">RentFlow</h1>
+          <h1 className="login-card__title">EquipFlow</h1>
           <p className="login-card__tagline">Professionelle Vermietungssoftware</p>
           <p className="login-card__subtitle">
             Verwaltung von Veranstaltungsausstattung
@@ -196,7 +196,7 @@ function LoginPage() {
       </div>
 
       <div className="login-version">
-        RentFlow
+        EquipFlow
       </div>
     </div>
   )

@@ -338,7 +338,7 @@ function EquipmentLabelsPage() {
         }
       }
 
-      pdf.save(`RentFlow-Labels-${new Date().toISOString().slice(0, 10)}.pdf`)
+      pdf.save(`EquipFlow-Labels-${new Date().toISOString().slice(0, 10)}.pdf`)
     } catch (err) {
       console.error('PDF generation failed:', err)
     } finally {

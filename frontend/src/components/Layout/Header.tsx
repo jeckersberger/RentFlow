@@ -34,7 +34,7 @@ function getPageTitle(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname]
   // Try matching the base path (e.g., /equipment/123 -> /equipment)
   const basePath = '/' + pathname.split('/')[1]
-  return pageTitles[basePath] || 'RentFlow'
+  return pageTitles[basePath] || 'EquipFlow'
 }
 
 function Header() {

@@ -7,7 +7,7 @@ services:
 
   traefik:
     image: traefik:v3.1
-    container_name: rentflow-traefik
+    container_name: equipflow-traefik
     ports:
       - "80:80"
       - "443:443"
@@ -29,7 +29,7 @@ services:
 
   kurrentdb:
     image: eventstore/eventstore:latest
-    container_name: rentflow-kurrentdb
+    container_name: equipflow-kurrentdb
     environment:
       EVENTSTORE_CLUSTER_SIZE: 1
       EVENTSTORE_RUN_PROJECTIONS: All
@@ -52,10 +52,10 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: rentflow-postgres
+    container_name: equipflow-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-rentflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     ports:
       - "5432:5432"
@@ -73,8 +73,8 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: rentflow-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD:-rentflow_dev}
+    container_name: equipflow-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-equipflow_dev}
     ports:
       - "6379:6379"
     volumes:
@@ -90,7 +90,7 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: rentflow-prometheus
+    container_name: equipflow-prometheus
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -114,12 +114,12 @@ services:
 
   migrations:
     image: postgres:16-alpine
-    container_name: rentflow-migrations
+    container_name: equipflow-migrations
     environment:
       PGHOST: postgres
       PGPORT: "5432"
       PGUSER: ${POSTGRES_USER:-rentflow}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
     volumes:
       - ./scripts:/scripts:ro
       - ./services:/services:ro
@@ -138,7 +138,7 @@ services:
     build:
       context: .
       dockerfile: services/auth-service/Dockerfile
-    container_name: rentflow-auth-service
+    container_name: equipflow-auth-service
     environment:
       SERVICE_NAME: auth-service
       SERVICE_PORT: "8001"
@@ -146,15 +146,15 @@ services:
       DB_PORT: "5432"
       DB_NAME: auth_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       KURRENTDB_USER: admin
-      KURRENTDB_PASSWORD: ${KURRENTDB_PASSWORD:-rentflow_dev}
+      KURRENTDB_PASSWORD: ${KURRENTDB_PASSWORD:-equipflow_dev}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       REDIS_DB: "0"
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       JWT_EXPIRY_HOURS: "24"
@@ -188,7 +188,7 @@ services:
     build:
       context: .
       dockerfile: services/inventory-service/Dockerfile
-    container_name: rentflow-inventory-service
+    container_name: equipflow-inventory-service
     environment:
       SERVICE_NAME: inventory-service
       SERVICE_PORT: "8002"
@@ -196,13 +196,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: inventory_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       REDIS_DB: "0"
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
@@ -228,7 +228,7 @@ services:
     build:
       context: .
       dockerfile: services/project-service/Dockerfile
-    container_name: rentflow-project-service
+    container_name: equipflow-project-service
     environment:
       SERVICE_NAME: project-service
       SERVICE_PORT: "8003"
@@ -236,13 +236,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: project_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8003:8003"
@@ -267,7 +267,7 @@ services:
     build:
       context: .
       dockerfile: services/scanner-service/Dockerfile
-    container_name: rentflow-scanner-service
+    container_name: equipflow-scanner-service
     environment:
       SERVICE_NAME: scanner-service
       SERVICE_PORT: "8004"
@@ -275,10 +275,10 @@ services:
       DB_PORT: "5432"
       DB_NAME: scanner_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       INVENTORY_SERVICE_URL: http://inventory-service:8002
     ports:
@@ -305,7 +305,7 @@ services:
     build:
       context: .
       dockerfile: services/warehouse-service/Dockerfile
-    container_name: rentflow-warehouse-service
+    container_name: equipflow-warehouse-service
     environment:
       SERVICE_NAME: warehouse-service
       SERVICE_PORT: "8005"
@@ -313,13 +313,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: warehouse_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8005:8005"
@@ -344,7 +344,7 @@ services:
     build:
       context: .
       dockerfile: services/invoice-service/Dockerfile
-    container_name: rentflow-invoice-service
+    container_name: equipflow-invoice-service
     environment:
       SERVICE_NAME: invoice-service
       SERVICE_PORT: "8006"
@@ -352,13 +352,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: invoice_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8006:8006"
@@ -383,7 +383,7 @@ services:
     build:
       context: .
       dockerfile: services/document-service/Dockerfile
-    container_name: rentflow-document-service
+    container_name: equipflow-document-service
     environment:
       SERVICE_NAME: document-service
       SERVICE_PORT: "8007"
@@ -391,13 +391,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: document_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8007:8007"
@@ -422,7 +422,7 @@ services:
     build:
       context: .
       dockerfile: services/crew-service/Dockerfile
-    container_name: rentflow-crew-service
+    container_name: equipflow-crew-service
     environment:
       SERVICE_NAME: crew-service
       SERVICE_PORT: "8008"
@@ -430,13 +430,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: crew_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8008:8008"
@@ -461,7 +461,7 @@ services:
     build:
       context: .
       dockerfile: services/federation-service/Dockerfile
-    container_name: rentflow-federation-service
+    container_name: equipflow-federation-service
     environment:
       SERVICE_NAME: federation-service
       SERVICE_PORT: "8009"
@@ -469,13 +469,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: federation_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8009:8009"
@@ -500,7 +500,7 @@ services:
     build:
       context: .
       dockerfile: services/maintenance-service/Dockerfile
-    container_name: rentflow-maintenance-service
+    container_name: equipflow-maintenance-service
     environment:
       SERVICE_NAME: maintenance-service
       SERVICE_PORT: "8010"
@@ -508,13 +508,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: maintenance_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8010:8010"
@@ -539,7 +539,7 @@ services:
     build:
       context: .
       dockerfile: services/transport-service/Dockerfile
-    container_name: rentflow-transport-service
+    container_name: equipflow-transport-service
     environment:
       SERVICE_NAME: transport-service
       SERVICE_PORT: "8011"
@@ -547,13 +547,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: transport_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8011:8011"
@@ -578,7 +578,7 @@ services:
     build:
       context: .
       dockerfile: services/insurance-service/Dockerfile
-    container_name: rentflow-insurance-service
+    container_name: equipflow-insurance-service
     environment:
       SERVICE_NAME: insurance-service
       SERVICE_PORT: "8012"
@@ -586,13 +586,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: insurance_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8012:8012"
@@ -617,7 +617,7 @@ services:
     build:
       context: .
       dockerfile: services/workflow-service/Dockerfile
-    container_name: rentflow-workflow-service
+    container_name: equipflow-workflow-service
     environment:
       SERVICE_NAME: workflow-service
       SERVICE_PORT: "8013"
@@ -625,13 +625,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: workflow_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8013:8013"
@@ -656,7 +656,7 @@ services:
     build:
       context: .
       dockerfile: services/ai-service/Dockerfile
-    container_name: rentflow-ai-service
+    container_name: equipflow-ai-service
     environment:
       SERVICE_NAME: ai-service
       SERVICE_PORT: "8014"
@@ -664,10 +664,10 @@ services:
       DB_PORT: "5432"
       DB_NAME: ai_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       AI_PROVIDERS: ${AI_PROVIDERS:-ollama}
       OLLAMA_ENDPOINT: ${OLLAMA_ENDPOINT:-http://localhost:11434}
@@ -694,7 +694,7 @@ services:
     build:
       context: .
       dockerfile: services/notification-service/Dockerfile
-    container_name: rentflow-notification-service
+    container_name: equipflow-notification-service
     environment:
       SERVICE_NAME: notification-service
       SERVICE_PORT: "8015"
@@ -702,10 +702,10 @@ services:
       DB_PORT: "5432"
       DB_NAME: notification_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -739,7 +739,7 @@ services:
     build:
       context: .
       dockerfile: services/reporting-service/Dockerfile
-    container_name: rentflow-reporting-service
+    container_name: equipflow-reporting-service
     environment:
       SERVICE_NAME: reporting-service
       SERVICE_PORT: "8016"
@@ -747,10 +747,10 @@ services:
       DB_PORT: "5432"
       DB_NAME: reporting_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8016:8016"
@@ -775,7 +775,7 @@ services:
     build:
       context: .
       dockerfile: services/audit-service/Dockerfile
-    container_name: rentflow-audit-service
+    container_name: equipflow-audit-service
     environment:
       SERVICE_NAME: audit-service
       SERVICE_PORT: "8017"
@@ -783,13 +783,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: audit_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8017:8017"
@@ -814,7 +814,7 @@ services:
     build:
       context: .
       dockerfile: services/expense-service/Dockerfile
-    container_name: rentflow-expense-service
+    container_name: equipflow-expense-service
     environment:
       SERVICE_NAME: expense-service
       SERVICE_PORT: "8018"
@@ -822,13 +822,13 @@ services:
       DB_PORT: "5432"
       DB_NAME: expense_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-rentflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: "2113"
       KURRENTDB_SCHEME: "http"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-rentflow_dev}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "8018:8018"
@@ -857,7 +857,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: rentflow-frontend
+    container_name: equipflow-frontend
     ports:
       - "3000:80"
     networks:

@@ -111,7 +111,7 @@ func (h *SystemEmailHandler) SendBookingRequest(w nethttp.ResponseWriter, r *net
 		CompanyName:   req.CompanyName,
 	}
 	if data.CompanyName == "" {
-		data.CompanyName = "RentFlow"
+		data.CompanyName = "EquipFlow"
 	}
 
 	if err := h.emailService.SendBookingRequest(req.To, data); err != nil {
@@ -148,7 +148,7 @@ func (h *SystemEmailHandler) SendInvitation(w nethttp.ResponseWriter, r *nethttp
 		Link:           req.Link,
 	}
 	if data.CompanyName == "" {
-		data.CompanyName = "RentFlow"
+		data.CompanyName = "EquipFlow"
 	}
 	if data.InviterName == "" {
 		data.InviterName = "Ein Administrator"
@@ -188,7 +188,7 @@ func (h *SystemEmailHandler) SendPasswordReset(w nethttp.ResponseWriter, r *neth
 		ExpiresIn:     req.ExpiresIn,
 	}
 	if data.CompanyName == "" {
-		data.CompanyName = "RentFlow"
+		data.CompanyName = "EquipFlow"
 	}
 	if data.ExpiresIn == "" {
 		data.ExpiresIn = "1 Stunde"

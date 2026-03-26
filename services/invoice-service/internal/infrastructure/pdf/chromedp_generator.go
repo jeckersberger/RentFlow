@@ -63,7 +63,7 @@ func (g *FPDFGenerator) GeneratePDF(_ context.Context, html string) ([]byte, err
 
 	// Titel
 	pdf.SetFont("Helvetica", "B", 18)
-	pdf.Cell(0, 12, "RentFlow - Dokument")
+	pdf.Cell(0, 12, "EquipFlow - Dokument")
 	pdf.Ln(20)
 
 	// HTML-Tags entfernen und Text rendern

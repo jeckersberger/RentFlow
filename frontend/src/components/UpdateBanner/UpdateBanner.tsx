@@ -64,7 +64,7 @@ function UpdateBanner() {
         {updateStatus === 'idle' ? (
           <>
             <span className="update-banner__text">
-              RentFlow <strong>v{latestVersion}</strong> ist verfuegbar! (aktuell: v{versionInfo.current_version})
+              EquipFlow <strong>v{latestVersion}</strong> ist verfuegbar! (aktuell: v{versionInfo.current_version})
             </span>
             <button
               className="update-banner__update-btn"

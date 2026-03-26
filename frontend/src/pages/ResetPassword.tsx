@@ -176,7 +176,7 @@ function ResetPasswordPage() {
         )}
       </div>
 
-      <div className="login-version">RentFlow</div>
+      <div className="login-version">EquipFlow</div>
     </div>
   )
 }

@@ -1,23 +1,23 @@
-# RentFlow
+# EquipFlow
 
-[![Version](https://img.shields.io/github/v/release/jeckersberger/RentFlow?style=flat-square)](https://github.com/jeckersberger/RentFlow/releases)
+[![Version](https://img.shields.io/github/v/release/jeckersberger/EquipFlow?style=flat-square)](https://github.com/jeckersberger/EquipFlow/releases)
 [![License](https://img.shields.io/badge/license-proprietary-blue?style=flat-square)](LICENSE)
 
 **Self-hosted Lagerverwaltung & Rechnungssoftware fuer Veranstaltungstechnik**
 
 ---
 
-## Was ist RentFlow?
+## Was ist EquipFlow?
 
-RentFlow ist eine **moderne, selbst gehostete Lagerverwaltungs- und Rechnungssoftware** speziell fuer Veranstaltungstechnik-Firmen (1-100 Mitarbeiter) in der DACH-Region.
+EquipFlow ist eine **moderne, selbst gehostete Lagerverwaltungs- und Rechnungssoftware** speziell fuer Veranstaltungstechnik-Firmen (1-100 Mitarbeiter) in der DACH-Region.
 
-Statt teure Cloud-Loesungen mit Lizenzgebuehren und Vendor Lock-in nutzen VT-Profis RentFlow auf ihrem eigenen Server -- mit voller Kontrolle ueber ihre Daten, DATEV-Integration und einem innovativen **Federation-API fuer unternehmensuebergreifendes Equipment-Sharing** (Peer-to-Peer, keine zentrale Instanz).
+Statt teure Cloud-Loesungen mit Lizenzgebuehren und Vendor Lock-in nutzen VT-Profis EquipFlow auf ihrem eigenen Server -- mit voller Kontrolle ueber ihre Daten, DATEV-Integration und einem innovativen **Federation-API fuer unternehmensuebergreifendes Equipment-Sharing** (Peer-to-Peer, keine zentrale Instanz).
 
 ---
 
 ## Server-Empfehlung
 
-RentFlow laeuft auf jedem Linux-Server mit Docker. Unsere Empfehlung:
+EquipFlow laeuft auf jedem Linux-Server mit Docker. Unsere Empfehlung:
 
 | Server | Spezifikation | Preis | Fuer wen |
 |--------|--------------|-------|----------|
@@ -68,12 +68,12 @@ apt install -y fail2ban unattended-upgrades
 systemctl enable fail2ban
 ```
 
-### Schritt 2: RentFlow installieren
+### Schritt 2: EquipFlow installieren
 
 ```bash
 # Repository klonen
 cd /opt
-git clone https://github.com/jeckersberger/RentFlow.git rentflow
+git clone https://github.com/jeckersberger/EquipFlow.git rentflow
 cd rentflow
 
 # Environment konfigurieren
@@ -135,7 +135,7 @@ docker run -d --name cloudflare-tunnel \
 
 ## Updates
 
-RentFlow prueft automatisch auf neue Versionen. Wenn ein Update verfuegbar ist, erscheint ein **Banner im Dashboard** mit einem "Jetzt aktualisieren" Button.
+EquipFlow prueft automatisch auf neue Versionen. Wenn ein Update verfuegbar ist, erscheint ein **Banner im Dashboard** mit einem "Jetzt aktualisieren" Button.
 
 **Was passiert beim Update:**
 1. Automatisches Datenbank-Backup
@@ -393,13 +393,13 @@ Clients (Browser / PWA / Scanner)
 4. **Push**: `git push origin feature/dein-feature`
 5. **Pull Request erstellen**
 
-**Bug-Reports & Feature-Requests:** [GitHub Issues](https://github.com/jeckersberger/RentFlow/issues)
+**Bug-Reports & Feature-Requests:** [GitHub Issues](https://github.com/jeckersberger/EquipFlow/issues)
 
 ---
 
-## Warum RentFlow statt Rentman/Easyjob?
+## Warum EquipFlow statt Rentman/Easyjob?
 
-| Feature | RentFlow | Rentman | Easyjob |
+| Feature | EquipFlow | Rentman | Easyjob |
 |---------|----------|---------|---------|
 | **Self-Hosted** | Ja | Nein (Cloud) | Nein (Cloud) |
 | **Lizenzkosten** | Kostenlos | 200-500 EUR/Monat | 150-400 EUR/Monat |
@@ -418,6 +418,6 @@ Clients (Browser / PWA / Scanner)
 
 ## Support & Community
 
-- **Fragen & Diskussionen**: [GitHub Discussions](https://github.com/jeckersberger/RentFlow/discussions)
-- **Bug-Reports**: [GitHub Issues](https://github.com/jeckersberger/RentFlow/issues)
+- **Fragen & Diskussionen**: [GitHub Discussions](https://github.com/jeckersberger/EquipFlow/discussions)
+- **Bug-Reports**: [GitHub Issues](https://github.com/jeckersberger/EquipFlow/issues)
 - **Dokumentation**: [docs/](docs/)

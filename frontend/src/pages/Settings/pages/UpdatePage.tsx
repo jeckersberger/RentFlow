@@ -56,7 +56,7 @@ function UpdatePage() {
       <div className="sp-header">
         <div>
           <h2 className="sp-title">Software-Update</h2>
-          <p className="sp-subtitle">RentFlow Version und Updates verwalten</p>
+          <p className="sp-subtitle">EquipFlow Version und Updates verwalten</p>
         </div>
       </div>
 

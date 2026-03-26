@@ -254,7 +254,7 @@ function FederationPage() {
               <h3 className={styles.emptyTitle}>Keine Partner gefunden</h3>
               <p className={styles.emptyText}>
                 {partners.length === 0
-                  ? 'Verbinden Sie sich mit anderen RentFlow-Firmen um Equipment zu teilen und Ihre Reichweite zu erhoehen.'
+                  ? 'Verbinden Sie sich mit anderen EquipFlow-Firmen um Equipment zu teilen und Ihre Reichweite zu erhoehen.'
                   : 'Keine Partner mit der gewaehlten Vertrauensstufe gefunden.'}
               </p>
               {partners.length === 0 && (
@@ -556,9 +556,9 @@ function FederationPage() {
               {connectStep === 1 && (
                 <div className={styles.wizardContent}>
                   <h3>Partner-URL eingeben</h3>
-                  <p>Geben Sie die RentFlow-URL des Partners ein, mit dem Sie sich verbinden moechten.</p>
+                  <p>Geben Sie die EquipFlow-URL des Partners ein, mit dem Sie sich verbinden moechten.</p>
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Partner RentFlow URL</label>
+                    <label className={styles.formLabel}>Partner EquipFlow URL</label>
                     <input
                       type="url"
                       className={styles.formInput}

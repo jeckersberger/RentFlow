@@ -1,7 +1,7 @@
 {
-  "name": "rentflow-frontend",
+  "name": "equipflow-frontend",
   "version": "1.4.0",
-  "description": "RentFlow - Professional Event & Equipment Rental Management System Frontend",
+  "description": "EquipFlow - Professional Event & Equipment Rental Management System Frontend",
   "type": "module",
   "scripts": {
     "dev": "vite",

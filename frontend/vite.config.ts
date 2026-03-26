@@ -15,8 +15,8 @@ export default defineConfig({
         'icons/*.png',
       ],
       manifest: {
-        name: 'RentFlow — Vermietungssoftware',
-        short_name: 'RentFlow',
+        name: 'EquipFlow — Vermietungssoftware',
+        short_name: 'EquipFlow',
         description: 'Professionelle Lagerverwaltung und Rechnungssoftware für Veranstaltungstechnik',
         theme_color: '#0a0f1a',
         background_color: '#0a0f1a',

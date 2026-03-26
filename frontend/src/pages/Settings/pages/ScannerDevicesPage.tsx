@@ -147,7 +147,7 @@ function ScannerDevicesPage() {
                   {formatTime(qrExpiry)}
                 </div>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', margin: 'var(--spacing-2) 0 0 0' }}>
-                  Scannen Sie diesen Code mit der RentFlow Scanner App
+                  Scannen Sie diesen Code mit der EquipFlow Scanner App
                 </p>
               </div>
 
@@ -230,7 +230,7 @@ function ScannerDevicesPage() {
           <div className="sp-loading">Lade Geraete...</div>
         ) : !devices || devices.length === 0 ? (
           <div className="sp-empty">
-            Keine Scanner-Geraete registriert. Generieren Sie einen QR-Code und scannen Sie ihn mit der RentFlow Scanner App.
+            Keine Scanner-Geraete registriert. Generieren Sie einen QR-Code und scannen Sie ihn mit der EquipFlow Scanner App.
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>

@@ -44,7 +44,7 @@ func (s *CertificateService) GenerateCertPair(ctx context.Context, tenantID uuid
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
-			CommonName:   "RentFlow Federation",
+			CommonName:   "EquipFlow Federation",
 			Organization: []string{tenantID.String()},
 		},
 		NotBefore: time.Now(),
