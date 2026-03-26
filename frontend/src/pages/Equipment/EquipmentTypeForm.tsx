@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { equipmentTypeApi, categoryApi } from '../../services/api'
+import { equipmentTypeApi, categoryApi, api } from '../../services/api'
 import { Category } from '../../types/equipment'
 import { Modal } from '../../components/Modal/Modal'
-import { Input } from '../../components/Form/Input'
-import { Select } from '../../components/Form/Select'
 import { useNotificationStore } from '../../stores/notificationStore'
+import { ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react'
 import './EquipmentTypes.scss'
 
 interface EquipmentType {
@@ -34,22 +33,22 @@ function EquipmentTypeForm({ type, onClose, onSuccess }: Props) {
   const { addNotification } = useNotificationStore()
   const isEdit = !!type
 
-  const [form, setForm] = useState({
-    name: '',
-    manufacturer: '',
-    model: '',
-    category_id: '',
-    sku_prefix: '',
-    rental_price_day: '',
-    rental_price_week: '',
-    replacement_value: '',
-    weight: '',
-    dimensions: '',
-    image_url: '',
-    tags: '',
-  })
-  const [itemCount, setItemCount] = useState(0)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  // Minimal fields (always visible)
+  const [name, setName] = useState('')
+  const [itemCount, setItemCount] = useState(1)
+
+  // Advanced fields (expandable)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [manufacturer, setManufacturer] = useState('')
+  const [model, setModel] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [rentalPriceDay, setRentalPriceDay] = useState('')
+  const [rentalPriceWeek, setRentalPriceWeek] = useState('')
+  const [weight, setWeight] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+
+  // KI lookup state
+  const [aiLoading, setAiLoading] = useState(false)
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -57,48 +56,31 @@ function EquipmentTypeForm({ type, onClose, onSuccess }: Props) {
     staleTime: 1000 * 60 * 10,
   })
 
-  const categoryOptions = (categories || []).map((cat: Category) => ({
-    value: cat.id,
-    label: cat.name,
-  }))
-
   useEffect(() => {
     if (type) {
-      setForm({
-        name: type.name || '',
-        manufacturer: type.manufacturer || '',
-        model: type.model || '',
-        category_id: type.category_id || '',
-        sku_prefix: type.sku_prefix || '',
-        rental_price_day: type.rental_price_day != null ? String(type.rental_price_day) : '',
-        rental_price_week: type.rental_price_week != null ? String(type.rental_price_week) : '',
-        replacement_value: type.replacement_value != null ? String(type.replacement_value) : '',
-        weight: type.weight != null ? String(type.weight) : '',
-        dimensions: type.dimensions || '',
-        image_url: type.image_url || '',
-        tags: (type.tags || []).join(', '),
-      })
+      setName(type.name || '')
+      setManufacturer(type.manufacturer || '')
+      setModel(type.model || '')
+      setCategoryId(type.category_id || '')
+      setRentalPriceDay(type.rental_price_day ? String(type.rental_price_day) : '')
+      setRentalPriceWeek(type.rental_price_week ? String(type.rental_price_week) : '')
+      setWeight(type.weight ? String(type.weight) : '')
+      setImageUrl(type.image_url || '')
+      setShowAdvanced(true)
+      setItemCount(0)
     }
   }, [type])
 
-  const { mutate: saveType, isPending: isSaving } = useMutation({
+  const { mutate: save, isPending } = useMutation({
     mutationFn: async () => {
-      const payload: Record<string, unknown> = {
-        name: form.name.trim(),
-      }
-      if (form.manufacturer.trim()) payload.manufacturer = form.manufacturer.trim()
-      if (form.model.trim()) payload.model = form.model.trim()
-      if (form.category_id) payload.category_id = form.category_id
-      if (form.sku_prefix.trim()) payload.sku_prefix = form.sku_prefix.trim()
-      if (form.rental_price_day) payload.rental_price_day = parseFloat(form.rental_price_day)
-      if (form.rental_price_week) payload.rental_price_week = parseFloat(form.rental_price_week)
-      if (form.replacement_value) payload.replacement_value = parseFloat(form.replacement_value)
-      if (form.weight) payload.weight = parseFloat(form.weight)
-      if (form.dimensions.trim()) payload.dimensions = form.dimensions.trim()
-      if (form.image_url.trim()) payload.image_url = form.image_url.trim()
-      if (form.tags.trim()) {
-        payload.tags = form.tags.split(',').map(t => t.trim()).filter(Boolean)
-      }
+      const payload: Record<string, unknown> = { name: name.trim() }
+      if (manufacturer.trim()) payload.manufacturer = manufacturer.trim()
+      if (model.trim()) payload.model = model.trim()
+      if (categoryId) payload.category_id = categoryId
+      if (rentalPriceDay) payload.rental_price_day = parseFloat(rentalPriceDay)
+      if (rentalPriceWeek) payload.rental_price_week = parseFloat(rentalPriceWeek)
+      if (weight) payload.weight = parseFloat(weight)
+      if (imageUrl.trim()) payload.image_url = imageUrl.trim()
 
       let result
       if (isEdit) {
@@ -107,213 +89,183 @@ function EquipmentTypeForm({ type, onClose, onSuccess }: Props) {
         result = await equipmentTypeApi.create(payload)
       }
 
-      // Create items if requested (only on create)
       if (!isEdit && itemCount > 0 && result?.id) {
         await equipmentTypeApi.createItems(result.id, itemCount)
+      }
+
+      // Trigger KI auto-fill in background (non-blocking)
+      if (!isEdit && result?.id && !manufacturer && !weight) {
+        triggerAIAutoFill(result.id, name.trim())
       }
 
       return result
     },
     onSuccess: () => {
-      const message = isEdit
-        ? 'Equipment-Typ erfolgreich aktualisiert'
-        : `Equipment-Typ erstellt${itemCount > 0 ? ` mit ${itemCount} Einzelartikel(n)` : ''}`
-      addNotification(message, 'success', { title: 'Erfolg', duration: 3000 })
+      addNotification(
+        isEdit
+          ? 'Gespeichert'
+          : `${name} erstellt${itemCount > 0 ? ` — ${itemCount} Artikel angelegt` : ''}`,
+        'success',
+        { duration: 3000 }
+      )
       onSuccess()
     },
-    onError: (err: unknown) => {
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        || 'Fehler beim Speichern des Equipment-Typs'
-      addNotification(message, 'error', { title: 'Fehler', duration: 5000 })
+    onError: () => {
+      addNotification('Fehler beim Speichern', 'error', { duration: 5000 })
     },
   })
 
-  const validate = () => {
-    const newErrors: Record<string, string> = {}
-    if (!form.name.trim()) newErrors.name = 'Name ist erforderlich'
-    if (form.rental_price_day && isNaN(parseFloat(form.rental_price_day))) {
-      newErrors.rental_price_day = 'Ungueltige Zahl'
-    }
-    if (form.rental_price_week && isNaN(parseFloat(form.rental_price_week))) {
-      newErrors.rental_price_week = 'Ungueltige Zahl'
-    }
-    if (form.replacement_value && isNaN(parseFloat(form.replacement_value))) {
-      newErrors.replacement_value = 'Ungueltige Zahl'
-    }
-    if (form.weight && isNaN(parseFloat(form.weight))) {
-      newErrors.weight = 'Ungueltige Zahl'
-    }
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = () => {
-    if (validate()) {
-      saveType()
+  const triggerAIAutoFill = async (typeId: string, equipmentName: string) => {
+    try {
+      const res = await api.post('/api/v1/ai/asset-lookup', { name: equipmentName })
+      const data = res.data
+      if (data && (data.manufacturer || data.weight || data.image_url)) {
+        const updates: Record<string, unknown> = {}
+        if (data.manufacturer) updates.manufacturer = data.manufacturer
+        if (data.model) updates.model = data.model
+        if (data.weight) updates.weight = data.weight
+        if (data.image_url) updates.image_url = data.image_url
+        if (data.rental_price_day) updates.rental_price_day = data.rental_price_day
+        if (data.category) updates.category_id = data.category
+        await equipmentTypeApi.update(typeId, updates)
+        addNotification(`KI hat Details zu "${equipmentName}" ergänzt`, 'success', { duration: 4000 })
+      }
+    } catch {
+      // KI nicht verfügbar — kein Problem, User kann manuell ausfüllen
     }
   }
 
-  const updateField = (field: string, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => {
-        const next = { ...prev }
-        delete next[field]
-        return next
-      })
+  const handleAILookup = async () => {
+    if (!name.trim()) return
+    setAiLoading(true)
+    try {
+      const res = await api.post('/api/v1/ai/asset-lookup', { name: name.trim() })
+      const data = res.data
+      if (data) {
+        if (data.manufacturer) setManufacturer(data.manufacturer)
+        if (data.model) setModel(data.model)
+        if (data.weight) setWeight(String(data.weight))
+        if (data.image_url) setImageUrl(data.image_url)
+        if (data.rental_price_day) setRentalPriceDay(String(data.rental_price_day))
+        if (data.rental_price_week) setRentalPriceWeek(String(data.rental_price_week))
+        setShowAdvanced(true)
+        addNotification('KI-Daten geladen', 'success', { duration: 2000 })
+      }
+    } catch {
+      addNotification('KI-Suche nicht verfügbar — bitte API-Key eintragen', 'warning', { duration: 4000 })
+    } finally {
+      setAiLoading(false)
     }
   }
 
   return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      title={isEdit ? 'Equipment-Typ bearbeiten' : 'Neuen Equipment-Typ erstellen'}
-      size="lg"
-      footer={
-        <div style={{ display: 'flex', gap: 'var(--spacing-3)', justifyContent: 'flex-end' }}>
-          <button className="btn btn--secondary" onClick={onClose}>
-            Abbrechen
-          </button>
+    <Modal isOpen onClose={onClose} title={isEdit ? 'Equipment bearbeiten' : 'Neues Equipment'} size="md">
+      <div className="et-quick-form">
+        {/* HAUPTFELDER — immer sichtbar */}
+        <div className="et-quick-form__main">
+          <div className="et-quick-form__name-row">
+            <div style={{ flex: 1 }}>
+              <label className="et-quick-form__label">Was möchten Sie anlegen?</label>
+              <input
+                className="et-quick-form__input"
+                type="text"
+                placeholder='z.B. "QSC K12.2" oder "XLR Kabel 10m"'
+                value={name}
+                onChange={e => setName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <button
+              className="et-quick-form__ai-btn"
+              onClick={handleAILookup}
+              disabled={!name.trim() || aiLoading}
+              title="KI sucht Details automatisch"
+            >
+              {aiLoading ? <Loader2 size={18} className="spin" /> : <Sparkles size={18} />}
+            </button>
+          </div>
+
+          {!isEdit && (
+            <div>
+              <label className="et-quick-form__label">Anzahl</label>
+              <input
+                className="et-quick-form__input et-quick-form__input--small"
+                type="number"
+                min={0}
+                max={100}
+                value={itemCount}
+                onChange={e => setItemCount(parseInt(e.target.value) || 0)}
+              />
+              <span className="et-quick-form__hint">
+                {itemCount > 0
+                  ? `${itemCount} Einzelartikel werden mit automatischer Seriennummer erstellt`
+                  : 'Nur den Typ anlegen, Artikel später erstellen'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* ERWEITERTE FELDER — aufklappbar */}
+        <button
+          className="et-quick-form__expand"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          type="button"
+        >
+          {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          {showAdvanced ? 'Weniger Details' : 'Mehr Details (optional)'}
+        </button>
+
+        {showAdvanced && (
+          <div className="et-quick-form__advanced">
+            <div className="et-quick-form__grid">
+              <div>
+                <label className="et-quick-form__label">Hersteller</label>
+                <input className="et-quick-form__input" value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="z.B. QSC" />
+              </div>
+              <div>
+                <label className="et-quick-form__label">Modell</label>
+                <input className="et-quick-form__input" value={model} onChange={e => setModel(e.target.value)} placeholder="z.B. K12.2" />
+              </div>
+              <div>
+                <label className="et-quick-form__label">Kategorie</label>
+                <select className="et-quick-form__input" value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+                  <option value="">Keine Kategorie</option>
+                  {(categories || []).map((cat: Category) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="et-quick-form__label">Gewicht (kg)</label>
+                <input className="et-quick-form__input" type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} placeholder="0.0" />
+              </div>
+              <div>
+                <label className="et-quick-form__label">Tagespreis (€)</label>
+                <input className="et-quick-form__input" type="number" step="0.01" value={rentalPriceDay} onChange={e => setRentalPriceDay(e.target.value)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className="et-quick-form__label">Wochenpreis (€)</label>
+                <input className="et-quick-form__input" type="number" step="0.01" value={rentalPriceWeek} onChange={e => setRentalPriceWeek(e.target.value)} placeholder="0.00" />
+              </div>
+            </div>
+            <div>
+              <label className="et-quick-form__label">Bild-URL</label>
+              <input className="et-quick-form__input" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="https://..." />
+            </div>
+          </div>
+        )}
+
+        {/* AKTIONEN */}
+        <div className="et-quick-form__actions">
+          <button className="btn btn--secondary" onClick={onClose}>Abbrechen</button>
           <button
             className="btn btn--primary"
-            onClick={handleSubmit}
-            disabled={isSaving}
+            disabled={!name.trim() || isPending}
+            onClick={() => save()}
           >
-            {isSaving ? 'Wird gespeichert...' : isEdit ? 'Aktualisieren' : 'Erstellen'}
+            {isPending ? 'Wird erstellt...' : isEdit ? 'Speichern' : `Erstellen${itemCount > 0 ? ` (${itemCount} Artikel)` : ''}`}
           </button>
         </div>
-      }
-    >
-      <div className="et-form">
-        {/* Basic info */}
-        <Input
-          label="Name *"
-          value={form.name}
-          onChange={(e) => updateField('name', e.target.value)}
-          placeholder="z.B. Shure SM58"
-          error={errors.name}
-        />
-
-        <div className="et-form__row">
-          <Input
-            label="Hersteller"
-            value={form.manufacturer}
-            onChange={(e) => updateField('manufacturer', e.target.value)}
-            placeholder="z.B. Shure"
-          />
-          <Input
-            label="Modell"
-            value={form.model}
-            onChange={(e) => updateField('model', e.target.value)}
-            placeholder="z.B. SM58"
-          />
-        </div>
-
-        <div className="et-form__row">
-          <Select
-            label="Kategorie"
-            options={categoryOptions}
-            value={form.category_id}
-            onChange={(e) => updateField('category_id', e.target.value)}
-            placeholder="Kategorie waehlen"
-          />
-          <Input
-            label="SKU Praefix"
-            value={form.sku_prefix}
-            onChange={(e) => updateField('sku_prefix', e.target.value)}
-            placeholder="z.B. SM58"
-            helperText="Wird fuer automatische SKU-Generierung genutzt"
-          />
-        </div>
-
-        {/* Pricing */}
-        <h4 className="et-form__section-title">Preise</h4>
-        <div className="et-form__row">
-          <Input
-            label="Tagespreis (EUR)"
-            type="number"
-            step="0.01"
-            min="0"
-            value={form.rental_price_day}
-            onChange={(e) => updateField('rental_price_day', e.target.value)}
-            placeholder="0.00"
-            error={errors.rental_price_day}
-          />
-          <Input
-            label="Wochenpreis (EUR)"
-            type="number"
-            step="0.01"
-            min="0"
-            value={form.rental_price_week}
-            onChange={(e) => updateField('rental_price_week', e.target.value)}
-            placeholder="0.00"
-            error={errors.rental_price_week}
-          />
-        </div>
-        <Input
-          label="Wiederbeschaffungswert (EUR)"
-          type="number"
-          step="0.01"
-          min="0"
-          value={form.replacement_value}
-          onChange={(e) => updateField('replacement_value', e.target.value)}
-          placeholder="0.00"
-          error={errors.replacement_value}
-        />
-
-        {/* Details */}
-        <h4 className="et-form__section-title">Details</h4>
-        <div className="et-form__row">
-          <Input
-            label="Gewicht (kg)"
-            type="number"
-            step="0.01"
-            min="0"
-            value={form.weight}
-            onChange={(e) => updateField('weight', e.target.value)}
-            placeholder="0.00"
-            error={errors.weight}
-          />
-          <Input
-            label="Abmessungen"
-            value={form.dimensions}
-            onChange={(e) => updateField('dimensions', e.target.value)}
-            placeholder="z.B. 30x20x15 cm"
-          />
-        </div>
-
-        <Input
-          label="Bild-URL"
-          type="url"
-          value={form.image_url}
-          onChange={(e) => updateField('image_url', e.target.value)}
-          placeholder="https://..."
-        />
-
-        <Input
-          label="Tags"
-          value={form.tags}
-          onChange={(e) => updateField('tags', e.target.value)}
-          placeholder="Kommagetrennt, z.B. Audio, Mikrofon, Live"
-          helperText="Mehrere Tags mit Komma trennen"
-        />
-
-        {/* Item creation (only on create) */}
-        {!isEdit && (
-          <>
-            <h4 className="et-form__section-title">Einzelartikel erstellen</h4>
-            <Input
-              label="Anzahl Einzelartikel"
-              type="number"
-              min="0"
-              max="100"
-              value={String(itemCount)}
-              onChange={(e) => setItemCount(Math.max(0, parseInt(e.target.value) || 0))}
-              helperText="Optional: Sofort N Einzelartikel aus diesem Typ generieren"
-            />
-          </>
-        )}
       </div>
     </Modal>
   )
