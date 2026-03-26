@@ -36,7 +36,6 @@ import {
   LogOut,
   ChevronDown,
   ChevronUp,
-  Menu,
   X,
   User,
   type LucideIcon,
@@ -148,8 +147,8 @@ const mobileNavItems: NavItem[] = [
   { labelKey: 'nav.dashboard', href: '/', icon: LayoutDashboard },
   { labelKey: 'nav.equipment', href: '/equipment', icon: Package },
   { labelKey: 'nav.scanner', href: '/scanner', icon: ScanLine },
-  { labelKey: 'nav.projects', href: '/projects', icon: FolderKanban },
-  // "Menu" item is handled separately in the component (opens overlay)
+  { labelKey: 'nav.crew', href: '/crew', icon: Users },
+  { labelKey: 'nav.invoices', href: '/invoices', icon: Receipt },
 ]
 
 function isActiveRoute(pathname: string, href: string): boolean {
@@ -614,16 +613,6 @@ function Sidebar() {
             </Link>
           )
         })}
-        {/* Menu / Hamburger button */}
-        <button
-          className={`mobile-nav__item ${mobileMenuOpen ? 'mobile-nav__item--active' : ''}`}
-          onClick={() => setMobileMenuOpen(true)}
-        >
-          <span className="mobile-nav__icon">
-            <Menu size={20} />
-          </span>
-          <span className="mobile-nav__label">{t('nav.menu')}</span>
-        </button>
       </nav>
     </>
   )

@@ -36,13 +36,17 @@ func SetupRoutes(
 	configHandlers := NewConfigHandlers(configService, log)
 	industryHandlers := NewIndustryHandlers(configService, log)
 
-	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login und Register
+	// Rate-Limiter: pro IP pro Minute fuer oeffentliche Endpoints
 	loginRateLimiter := NewRateLimiter(10, 1*time.Minute, log)
 	registerRateLimiter := NewRateLimiter(5, 1*time.Minute, log)
+	passwordResetRateLimiter := NewRateLimiter(5, 1*time.Minute, log)
+	setupRateLimiter := NewRateLimiter(10, 1*time.Minute, log)
 
-	// Setup routes (no authentication required, always accessible)
-	mux.HandleFunc("GET /api/v1/setup/status", handlers.GetSetupStatus)
-	mux.HandleFunc("POST /api/v1/setup/complete", handlers.CompleteSetup)
+	// Setup routes (no authentication required, always accessible, rate-limited)
+	setupStatusHandler := http.HandlerFunc(handlers.GetSetupStatus)
+	mux.Handle("GET /api/v1/setup/status", RateLimitMiddleware(setupRateLimiter)(setupStatusHandler))
+	setupCompleteHandler := http.HandlerFunc(handlers.CompleteSetup)
+	mux.Handle("POST /api/v1/setup/complete", RateLimitMiddleware(setupRateLimiter)(setupCompleteHandler))
 
 	// Auth routes (no authentication required)
 	// Login mit Rate-Limiting und Brute-Force-Schutz
@@ -55,8 +59,10 @@ func SetupRoutes(
 	mux.HandleFunc("POST /api/v1/auth/refresh", handlers.Refresh)
 	mux.HandleFunc("POST /api/v1/auth/qr-login", handlers.QRLogin)
 	mux.HandleFunc("GET /api/v1/auth/qr-status/{token}", handlers.QRStatus)
-	mux.HandleFunc("POST /api/v1/auth/forgot-password", handlers.ForgotPassword)
-	mux.HandleFunc("POST /api/v1/auth/reset-password", handlers.ResetPassword)
+	forgotPasswordHandler := http.HandlerFunc(handlers.ForgotPassword)
+	mux.Handle("POST /api/v1/auth/forgot-password", RateLimitMiddleware(passwordResetRateLimiter)(forgotPasswordHandler))
+	resetPasswordHandler := http.HandlerFunc(handlers.ResetPassword)
+	mux.Handle("POST /api/v1/auth/reset-password", RateLimitMiddleware(passwordResetRateLimiter)(resetPasswordHandler))
 
 	// Authenticated routes - use a wrapper that supports RS256
 	authMiddleware := createRS256Middleware(tokenMgr.PublicKeyPEM(), log)

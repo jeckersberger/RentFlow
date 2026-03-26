@@ -1032,6 +1032,51 @@ func (h *Handler) GetQuotePDF(w http.ResponseWriter, r *http.Request) {
 	w.Write(pdfBytes)
 }
 
+func (h *Handler) GenerateDeliveryNotePDF(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var data application.DeliveryNoteData
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if data.DeliveryNoteNumber == "" {
+		h.respondError(w, http.StatusBadRequest, "delivery note number is required")
+		return
+	}
+
+	// Check if HTML format is requested
+	if r.URL.Query().Get("format") == "html" {
+		html, err := h.invoiceSvc.GenerateDeliveryNoteHTML(r.Context(), &data)
+		if err != nil {
+			h.respondError(w, http.StatusInternalServerError, "failed to generate delivery note: "+err.Error())
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(html))
+		return
+	}
+
+	// Default: generate PDF
+	pdfBytes, err := h.invoiceSvc.GenerateDeliveryNotePDF(r.Context(), &data)
+	if err != nil {
+		h.respondError(w, http.StatusInternalServerError, "failed to generate delivery note PDF: "+err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="Lieferschein_%s.pdf"`, data.DeliveryNoteNumber))
+	w.Header().Set("Content-Length", strconv.Itoa(len(pdfBytes)))
+	w.WriteHeader(http.StatusOK)
+	w.Write(pdfBytes)
+}
+
 func (h *Handler) CreateInvoiceFromProject(w http.ResponseWriter, r *http.Request) {
 	projectID := r.PathValue("projectId")
 	tenantID := r.Header.Get("X-Tenant-ID")

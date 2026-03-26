@@ -61,6 +61,9 @@ func NewRouter(
 	router.HandleFunc("POST /api/v1/invoices/{id}/dunning", handler.CreateInvoiceDunning)
 	router.HandleFunc("GET /api/v1/invoices/{id}/dunning", handler.GetInvoiceDunningHistory)
 
+	// Delivery note (Lieferschein) routes
+	router.HandleFunc("POST /api/v1/delivery-notes/pdf", handler.GenerateDeliveryNotePDF)
+
 	// Export routes
 	router.HandleFunc("GET /api/v1/export/datev", handler.ExportDATEV)
 	router.HandleFunc("GET /api/v1/export/csv", handler.ExportCSV)

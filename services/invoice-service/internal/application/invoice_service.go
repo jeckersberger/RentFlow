@@ -1,8 +1,10 @@
 package application
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"time"
 
 	"github.com/jeckersberger/rentflow/pkg/common/logger"
@@ -828,6 +830,85 @@ func buildQuoteHTML(quote *domain.Quote) string {
 </html>`
 
 	return html
+}
+
+// DeliveryNoteData holds all data for the delivery note template
+type DeliveryNoteData struct {
+	CompanyName        string             `json:"company_name"`
+	CompanyStreet      string             `json:"company_street"`
+	CompanyPostCode    string             `json:"company_post_code"`
+	CompanyCity        string             `json:"company_city"`
+	CompanyPhone       string             `json:"company_phone"`
+	CompanyEmail       string             `json:"company_email"`
+	CompanyWebsite     string             `json:"company_website"`
+	ManagingDirector   string             `json:"managing_director"`
+	LogoURL            string             `json:"logo_url"`
+	ClientName         string             `json:"client_name"`
+	ClientStreet       string             `json:"client_street"`
+	ClientPostCode     string             `json:"client_post_code"`
+	ClientCity         string             `json:"client_city"`
+	ContactPerson      string             `json:"contact_person"`
+	ContactPhone       string             `json:"contact_phone"`
+	DeliveryNoteNumber string             `json:"delivery_note_number"`
+	DeliveryDate       string             `json:"delivery_date"`
+	ProjectReference   string             `json:"project_reference"`
+	ProjectName        string             `json:"project_name"`
+	InvoiceNumber      string             `json:"invoice_number"`
+	DeliveryLocation   string             `json:"delivery_location"`
+	ReturnDate         string             `json:"return_date"`
+	Notes              string             `json:"notes"`
+	Items              []DeliveryNoteItem `json:"items"`
+}
+
+// DeliveryNoteItem represents a single item on the delivery note
+type DeliveryNoteItem struct {
+	Description       string `json:"description"`
+	Category          string `json:"category"`
+	SerialNumber      string `json:"serial_number"`
+	QuantityFormatted string `json:"quantity_formatted"`
+	Unit              string `json:"unit"`
+	Condition         string `json:"condition"`
+	Note              string `json:"note"`
+}
+
+// GenerateDeliveryNoteHTML renders the delivery_note.html template with the given data
+func (s *InvoiceService) GenerateDeliveryNoteHTML(ctx context.Context, data *DeliveryNoteData) (string, error) {
+	tmplPath := "services/invoice-service/internal/infrastructure/pdf/templates/delivery_note.html"
+
+	funcMap := template.FuncMap{
+		"inc": func(i int) int { return i + 1 },
+	}
+
+	tmpl, err := template.New("delivery_note.html").Funcs(funcMap).ParseFiles(tmplPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse delivery note template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", fmt.Errorf("failed to execute delivery note template: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+// GenerateDeliveryNotePDF generates a PDF from the delivery note template
+func (s *InvoiceService) GenerateDeliveryNotePDF(ctx context.Context, data *DeliveryNoteData) ([]byte, error) {
+	html, err := s.GenerateDeliveryNoteHTML(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.pdfGenerator != nil {
+		pdfBytes, err := s.pdfGenerator.GeneratePDF(ctx, html)
+		if err != nil {
+			s.logger.Error("Delivery note PDF generation failed, falling back to HTML", err)
+			return []byte(html), nil
+		}
+		return pdfBytes, nil
+	}
+
+	return []byte(html), nil
 }
 
 func hashString(s string) int64 {

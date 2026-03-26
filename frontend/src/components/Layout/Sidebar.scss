@@ -483,15 +483,14 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: auto;
-    background: var(--glass-bg-strong);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    height: 56px;
+    background: #111827;
     border-top: 1px solid rgba(0, 212, 255, 0.1);
     z-index: var(--z-sticky);
-    padding: var(--spacing-2) var(--spacing-3);
-    padding-bottom: calc(var(--spacing-2) + env(safe-area-inset-bottom, 0px));
+    padding: 0 var(--spacing-3);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     justify-content: space-around;
+    align-items: center;
     gap: var(--spacing-1);
   }
 
@@ -514,7 +513,7 @@
     justify-content: center;
 
     &--active {
-      color: var(--color-primary);
+      color: #00d4ff;
       font-weight: var(--font-weight-semibold);
 
       .mobile-nav__icon {
