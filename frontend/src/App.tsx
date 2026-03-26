@@ -109,6 +109,9 @@ const ContactsPage = lazy(() => import('./pages/Contacts/ContactsPage'))
 // Expenses Pages
 const ExpensesPage = lazy(() => import('./pages/Expenses/ExpensesPage'))
 
+// Banking Page
+const BankingPage = lazy(() => import('./pages/Banking/BankingPage'))
+
 // Quotes Pages
 const QuotesPage = lazy(() => import('./pages/Quotes/QuotesPage'))
 const QuoteNewPage = lazy(() => import('./pages/Quotes/QuoteNew'))
@@ -281,6 +284,9 @@ function App() {
 
             {/* Expenses */}
             <Route path="expenses" element={<ExpensesPage />} />
+
+            {/* Banking / Zahlungsabgleich */}
+            <Route path="banking" element={<BankingPage />} />
 
             {/* Transport Routes */}
             <Route path="transport" element={<TransportPage />} />

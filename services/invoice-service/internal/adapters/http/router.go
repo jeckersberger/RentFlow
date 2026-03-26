@@ -64,6 +64,10 @@ func NewRouter(
 	// Delivery note (Lieferschein) routes
 	router.HandleFunc("POST /api/v1/delivery-notes/pdf", handler.GenerateDeliveryNotePDF)
 
+	// Payment matching routes
+	router.HandleFunc("POST /api/v1/invoices/payments/match", handler.MatchPayment)
+	router.HandleFunc("POST /api/v1/invoices/payments/import-csv", handler.ImportPaymentsCSV)
+
 	// Export routes
 	router.HandleFunc("GET /api/v1/export/datev", handler.ExportDATEV)
 	router.HandleFunc("GET /api/v1/export/csv", handler.ExportCSV)

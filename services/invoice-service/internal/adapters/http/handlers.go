@@ -1,8 +1,11 @@
 package http
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -942,6 +945,238 @@ func formatDATEVRow(row *application.DATEVExportRow) string {
 		row.Umsatz, row.SollHaben, row.WKZUmsatz, row.Konto,
 		row.Gegenkonto, row.Belegdatum, row.Belegnummer, row.Buchungstext,
 	)
+}
+
+// Payment Matching types
+
+type BankTransaction struct {
+	Amount    float64 `json:"amount"`
+	Reference string  `json:"reference"`
+	Date      string  `json:"date"`
+	Payer     string  `json:"payer"`
+}
+
+type PaymentMatchResult struct {
+	Transaction BankTransaction      `json:"transaction"`
+	Confidence  string               `json:"confidence"` // "exact", "probable", "no_match"
+	Invoice     *application.InvoiceDTO `json:"invoice,omitempty"`
+	MatchReason string               `json:"match_reason,omitempty"`
+}
+
+type BulkImportResult struct {
+	Imported     int                  `json:"imported"`
+	Transactions []BankTransaction    `json:"transactions"`
+}
+
+// MatchPayment tries to match a bank transaction to an open invoice
+func (h *Handler) MatchPayment(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	var tx BankTransaction
+	if err := json.NewDecoder(r.Body).Decode(&tx); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Get all open invoices (sent, overdue, partially_paid)
+	openSummary, err := h.invoiceSvc.GetOpenInvoices(r.Context(), tenantID)
+	if err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	result := h.matchTransaction(tx, openSummary.Invoices)
+	h.respondJSON(w, http.StatusOK, result)
+}
+
+// ImportPaymentsCSV imports bank transactions from CSV
+func (h *Handler) ImportPaymentsCSV(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		h.respondError(w, http.StatusUnauthorized, "tenant ID required")
+		return
+	}
+
+	// Parse multipart form (max 10MB)
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid form data")
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		h.respondError(w, http.StatusBadRequest, "file required")
+		return
+	}
+	defer file.Close()
+
+	// Read all file content so we can retry with different delimiters
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		h.respondError(w, http.StatusBadRequest, "failed to read file")
+		return
+	}
+
+	// Try semicolon first (German standard), then comma
+	transactions := parseCSVTransactions(string(fileBytes), ';')
+	if len(transactions) == 0 {
+		transactions = parseCSVTransactions(string(fileBytes), ',')
+	}
+
+	_ = tenantID
+
+	h.respondJSON(w, http.StatusOK, BulkImportResult{
+		Imported:     len(transactions),
+		Transactions: transactions,
+	})
+}
+
+// matchTransaction tries to match a single transaction to open invoices
+func (h *Handler) matchTransaction(tx BankTransaction, openInvoices []*application.InvoiceDTO) *PaymentMatchResult {
+	result := &PaymentMatchResult{
+		Transaction: tx,
+		Confidence:  "no_match",
+	}
+
+	if len(openInvoices) == 0 {
+		return result
+	}
+
+	refUpper := strings.ToUpper(tx.Reference)
+	payerUpper := strings.ToUpper(tx.Payer)
+
+	// Strategy 1: Exact invoice number in reference text
+	for _, inv := range openInvoices {
+		invNumUpper := strings.ToUpper(inv.InvoiceNumber)
+		if invNumUpper != "" && strings.Contains(refUpper, invNumUpper) {
+			result.Confidence = "exact"
+			result.Invoice = inv
+			result.MatchReason = fmt.Sprintf("Rechnungsnummer %s im Verwendungszweck gefunden", inv.InvoiceNumber)
+			return result
+		}
+	}
+
+	// Strategy 2: Exact amount match with open invoices
+	var amountMatches []*application.InvoiceDTO
+	for _, inv := range openInvoices {
+		matchAmount := inv.RemainingAmount
+		if matchAmount == 0 {
+			matchAmount = inv.Total
+		}
+		if math.Abs(tx.Amount-matchAmount) < 0.01 {
+			amountMatches = append(amountMatches, inv)
+		}
+	}
+
+	if len(amountMatches) == 1 {
+		result.Confidence = "probable"
+		result.Invoice = amountMatches[0]
+		result.MatchReason = fmt.Sprintf("Betrag %.2f EUR stimmt mit Rechnung %s ueberein", tx.Amount, amountMatches[0].InvoiceNumber)
+		return result
+	}
+
+	// Strategy 3: Client name match
+	for _, inv := range openInvoices {
+		clientUpper := strings.ToUpper(inv.ClientName)
+		if clientUpper != "" && (strings.Contains(payerUpper, clientUpper) || strings.Contains(clientUpper, payerUpper)) {
+			// If we also have an amount match within the name matches, prefer that
+			for _, amtMatch := range amountMatches {
+				if amtMatch.ID == inv.ID {
+					result.Confidence = "exact"
+					result.Invoice = inv
+					result.MatchReason = fmt.Sprintf("Kundenname '%s' und Betrag %.2f EUR stimmen ueberein", inv.ClientName, tx.Amount)
+					return result
+				}
+			}
+			result.Confidence = "probable"
+			result.Invoice = inv
+			result.MatchReason = fmt.Sprintf("Kundenname '%s' im Auftraggeber gefunden", inv.ClientName)
+			return result
+		}
+	}
+
+	// If multiple amount matches but no name match, return first as probable
+	if len(amountMatches) > 1 {
+		result.Confidence = "probable"
+		result.Invoice = amountMatches[0]
+		result.MatchReason = fmt.Sprintf("Betrag %.2f EUR stimmt mit %d Rechnungen ueberein", tx.Amount, len(amountMatches))
+		return result
+	}
+
+	return result
+}
+
+// parseGermanAmount parses amounts like "1.234,56" or "1234.56"
+func parseGermanAmount(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	s = strings.ReplaceAll(s, " ", "")
+	s = strings.TrimSuffix(s, "EUR")
+	s = strings.TrimSuffix(s, "€")
+	s = strings.TrimSpace(s)
+
+	// German format: 1.234,56 -> convert to 1234.56
+	if strings.Contains(s, ",") {
+		s = strings.ReplaceAll(s, ".", "")
+		s = strings.Replace(s, ",", ".", 1)
+	}
+
+	return strconv.ParseFloat(s, 64)
+}
+
+// parseCSVTransactions parses bank transactions from CSV content with a given delimiter
+func parseCSVTransactions(content string, delimiter rune) []BankTransaction {
+	reader := csv.NewReader(strings.NewReader(content))
+	reader.Comma = delimiter
+	reader.LazyQuotes = true
+	reader.FieldsPerRecord = -1 // allow variable number of fields
+
+	var transactions []BankTransaction
+	lineNum := 0
+
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			continue
+		}
+		lineNum++
+
+		// Skip header row
+		if lineNum == 1 {
+			lower := strings.ToLower(strings.Join(record, " "))
+			if strings.Contains(lower, "datum") || strings.Contains(lower, "date") ||
+				strings.Contains(lower, "betrag") || strings.Contains(lower, "amount") {
+				continue
+			}
+		}
+
+		// Expect at least 4 columns: Date, Amount, Reference, Payer
+		if len(record) < 4 {
+			continue
+		}
+
+		amount, err := parseGermanAmount(strings.TrimSpace(record[1]))
+		if err != nil {
+			continue
+		}
+
+		tx := BankTransaction{
+			Date:      strings.TrimSpace(record[0]),
+			Amount:    amount,
+			Reference: strings.TrimSpace(record[2]),
+			Payer:     strings.TrimSpace(record[3]),
+		}
+
+		transactions = append(transactions, tx)
+	}
+
+	return transactions
 }
 
 // New Invoice Service Methods

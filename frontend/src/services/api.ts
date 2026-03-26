@@ -557,6 +557,25 @@ export const invoiceApi = {
 }
 
 // ============================================================================
+// BANKING / PAYMENT MATCHING API endpoints
+// ============================================================================
+export const bankingApi = {
+  matchPayment: (transaction: { amount: number; reference: string; date: string; payer: string }) =>
+    api.post('/api/v1/invoices/payments/match', transaction).then(res => res.data),
+
+  importCSV: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/api/v1/invoices/payments/import-csv', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(res => res.data)
+  },
+
+  markInvoicePaid: (invoiceId: string, paymentMethod: string, paymentRef: string) =>
+    api.post(`/api/v1/invoices/${invoiceId}/mark-paid`, { payment_method: paymentMethod, payment_ref: paymentRef }).then(res => res.data),
+}
+
+// ============================================================================
 // MAIL API endpoints
 // ============================================================================
 export const mailApi = {
