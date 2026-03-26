@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/jeckersberger/rentflow/pkg/common/config"
@@ -45,14 +46,26 @@ func CORSMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 	}
 }
 
-// SimpleCORSMiddleware creates a basic CORS middleware with default settings.
-//
-// Deprecated: SimpleCORSMiddleware allows all origins (*) and is insecure for production use.
-// Use CORSMiddleware(cfg) with explicit allowed origins instead.
+// SimpleCORSMiddleware creates a CORS middleware that reads ALLOWED_ORIGINS from env.
+// Falls back to restrictive "same-origin only" if not set.
 func SimpleCORSMiddleware() func(http.Handler) http.Handler {
+	allowedStr := os.Getenv("ALLOWED_ORIGINS")
+	var allowed []string
+	if allowedStr != "" {
+		for _, o := range strings.Split(allowedStr, ",") {
+			allowed = append(allowed, strings.TrimSpace(o))
+		}
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			origin := r.Header.Get("Origin")
+
+			if len(allowed) > 0 && isOriginAllowed(origin, allowed) {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			}
+
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID, X-Tenant-ID")
 			w.Header().Set("Access-Control-Max-Age", "3600")
