@@ -21,6 +21,9 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY proxy_params /etc/nginx/proxy_params
 
+# Remove default nginx config that conflicts with ours
+RUN rm -f /etc/nginx/conf.d/default.conf
+
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
