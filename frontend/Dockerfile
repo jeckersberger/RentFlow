@@ -27,9 +27,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Create directory for health check
 RUN mkdir -p /usr/share/nginx/html
 
-# Health check
+# Health check — use simple file check since nginx serves static files
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:80/health || exit 1
+  CMD wget -qO- http://localhost/index.html || exit 1
 
 # Expose port
 EXPOSE 80
