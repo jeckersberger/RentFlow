@@ -15,9 +15,9 @@ export default defineConfig({
         'icons/*.png',
       ],
       manifest: {
-        name: 'RentFlow \u2014 Vermietungssoftware',
+        name: 'RentFlow — Vermietungssoftware',
         short_name: 'RentFlow',
-        description: 'Professionelle Lagerverwaltung und Rechnungssoftware f\u00fcr Veranstaltungstechnik',
+        description: 'Professionelle Lagerverwaltung und Rechnungssoftware für Veranstaltungstechnik',
         theme_color: '#0a0f1a',
         background_color: '#0a0f1a',
         display: 'standalone',
@@ -126,8 +126,8 @@ export default defineConfig({
             },
           },
           {
-            // All other API calls — network-first with fallback
-            urlPattern: /\/api\/.*/i,
+            // All other API calls — network-first with fallback (exclude system endpoints)
+            urlPattern: /\/api\/v1\/(?!system).*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
