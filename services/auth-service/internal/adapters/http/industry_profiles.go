@@ -129,15 +129,17 @@ var industryProfileList = []IndustryProfile{
 		Label: "Veranstaltungstechnik",
 		Group: "Technik",
 		Labels: map[string]string{
-			"project":  "Veranstaltung",
-			"checkout": "Ausgabe",
-			"checkin":  "Rueckgabe",
-			"location": "Lager",
-			"crew":     "Crew",
-			"worker":   "Techniker",
+			"project":        "Veranstaltung",
+			"project_plural": "Veranstaltungen",
+			"checkout":       "Check-Out",
+			"checkin":        "Check-In",
+			"location":       "Veranstaltungsort",
+			"crew":           "Crew",
+			"worker":         "Techniker",
 		},
 		Features: map[string]bool{
 			"packing_lists":   true,
+			"rfid_assign":     true,
 			"operating_hours": false,
 			"fuel_tracking":   false,
 			"cleaning_status": false,
@@ -146,7 +148,7 @@ var industryProfileList = []IndustryProfile{
 			"cable_tracking":  true,
 			"power_distro":    true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "packing_list", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory", "rfid_assign", "new_project"},
 		Categories:       []string{"Licht", "Ton", "Video", "Rigging", "Strom", "Buehne", "Kabel", "Zubehoer"},
 	},
 	{
@@ -171,7 +173,7 @@ var industryProfileList = []IndustryProfile{
 			"cable_tracking":  true,
 			"serial_tracking": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "packing_list", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "packing_list", "inventory"},
 		Categories:       []string{"Kamera", "Objektive", "Licht", "Ton", "Grip", "Strom", "Kabel", "Zubehoer"},
 	},
 	{
@@ -195,7 +197,7 @@ var industryProfileList = []IndustryProfile{
 			"asset_tags":      true,
 			"software_config": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory"},
 		Categories:       []string{"Laptops", "Monitore", "Drucker", "Netzwerk", "Server", "Zubehoer", "Kabel", "Moebel"},
 	},
 	{
@@ -219,7 +221,7 @@ var industryProfileList = []IndustryProfile{
 			"maintenance":     true,
 			"weight_tracking": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "damage_report", "operating_hours"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "damage_report", "operating_hours"},
 		Categories:       []string{"Bagger", "Radlader", "Krane", "Verdichter", "Generatoren", "Anhaenger", "Kleingeraete", "Zubehoer"},
 	},
 	{
@@ -242,7 +244,7 @@ var industryProfileList = []IndustryProfile{
 			"maintenance":     true,
 			"calibration":     true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory"},
 		Categories:       []string{"Bohrmaschinen", "Saegen", "Schleifer", "Messgeraete", "Elektrowerkzeug", "Handwerkzeug", "Zubehoer"},
 	},
 	{
@@ -266,7 +268,7 @@ var industryProfileList = []IndustryProfile{
 			"weight_tracking":  true,
 			"safety_inspection": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory", "piece_count"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory", "piece_count"},
 		Categories:       []string{"Rahmen", "Riegel", "Diagonalen", "Boeden", "Kupplungen", "Konsolen", "Treppen", "Zubehoer"},
 	},
 	{
@@ -288,7 +290,7 @@ var industryProfileList = []IndustryProfile{
 			"cleaning_status": true,
 			"maintenance":     true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "operating_hours"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "operating_hours"},
 		Categories:       []string{"Maeher", "Heckenscheren", "Motorsaegen", "Haecksler", "Pumpen", "Anhaenger", "Handgeraete", "Zubehoer"},
 	},
 	{
@@ -312,7 +314,7 @@ var industryProfileList = []IndustryProfile{
 			"safety_inspection": true,
 			"cable_tracking":  true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory"},
 		Categories:       []string{"Messgeraete", "Werkzeuge", "Kabel", "Verteiler", "Steckverbinder", "Sicherheitstechnik", "Zubehoer"},
 	},
 	{
@@ -335,7 +337,7 @@ var industryProfileList = []IndustryProfile{
 			"piece_counting":  true,
 			"damage_report":   true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "packing_list", "piece_count"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "packing_list", "piece_count"},
 		Categories:       []string{"Tische", "Stuehle", "Zelte", "Geschirr", "Besteck", "Dekoration", "Textilien", "Zubehoer"},
 	},
 	{
@@ -358,7 +360,7 @@ var industryProfileList = []IndustryProfile{
 			"modular_systems": true,
 			"floor_plans":     true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "packing_list", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "packing_list", "inventory"},
 		Categories:       []string{"Waende", "Boeden", "Tresen", "Vitrinen", "Beleuchtung", "Grafik", "Elektrik", "Zubehoer"},
 	},
 	{
@@ -381,7 +383,7 @@ var industryProfileList = []IndustryProfile{
 			"piece_counting":   true,
 			"hygiene_tracking": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "piece_count"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "piece_count"},
 		Categories:       []string{"Kuehlgeraete", "Kochgeraete", "Spuelmaschinen", "Warmhaltung", "Zapfanlagen", "Geschirr", "Moebel", "Zubehoer"},
 	},
 	{
@@ -404,7 +406,7 @@ var industryProfileList = []IndustryProfile{
 			"size_tracking":   true,
 			"condition_notes": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory"},
 		Categories:       []string{"Kostueme", "Anzuege", "Kleider", "Schuhe", "Accessoires", "Stoffe", "Requisiten", "Zubehoer"},
 	},
 	{
@@ -429,7 +431,7 @@ var industryProfileList = []IndustryProfile{
 			"safety_inspection": true,
 			"static_calc":      true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory", "piece_count"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory", "piece_count"},
 		Categories:       []string{"Buehnenelemente", "Tribuenen", "Podeste", "Treppen", "Gelaender", "Verkleidungen", "Daecher", "Zubehoer"},
 	},
 	{
@@ -453,7 +455,7 @@ var industryProfileList = []IndustryProfile{
 			"mileage_tracking": true,
 			"insurance":        true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "damage_report", "operating_hours"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "damage_report", "operating_hours"},
 		Categories:       []string{"PKW", "Transporter", "LKW", "Anhaenger", "Spezialfahrzeuge", "E-Fahrzeuge", "Zubehoer"},
 	},
 	{
@@ -477,7 +479,7 @@ var industryProfileList = []IndustryProfile{
 			"mileage_tracking": true,
 			"inventory_check":  true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "damage_report", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "damage_report", "inventory"},
 		Categories:       []string{"Wohnmobile", "Wohnwagen", "Dachzelte", "Campingmoebel", "Kochausruestung", "Outdoor", "Zubehoer"},
 	},
 	{
@@ -501,7 +503,7 @@ var industryProfileList = []IndustryProfile{
 			"damage_report":   true,
 			"maintenance":     true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory"},
 		Categories:       []string{"Ski", "Snowboard", "Fahrraeder", "Boote", "Surfbretter", "Klettern", "Fitness", "Zubehoer"},
 	},
 	{
@@ -524,7 +526,7 @@ var industryProfileList = []IndustryProfile{
 			"damage_report":    true,
 			"location_tracking": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "damage_report"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "damage_report"},
 		Categories:       []string{"Buerocontainer", "Lagercontainer", "Sanitaercontainer", "Wohncontainer", "Spezialcontainer", "Zubehoer"},
 	},
 	{
@@ -549,7 +551,7 @@ var industryProfileList = []IndustryProfile{
 			"hygiene_tracking": true,
 			"safety_inspection": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory"},
 		Categories:       []string{"Diagnostik", "Therapie", "Monitoring", "Beatmung", "Chirurgie", "Labor", "Mobilitaet", "Zubehoer"},
 	},
 	{
@@ -570,7 +572,7 @@ var industryProfileList = []IndustryProfile{
 			"fuel_tracking":   false,
 			"cleaning_status": true,
 		},
-		ScannerHomeCards: []string{"quick_scan", "checkout", "checkin", "inventory"},
+		ScannerHomeCards: []string{"scan_info", "checkout", "checkin", "inventory"},
 		Categories:       []string{"Kategorie 1", "Kategorie 2", "Kategorie 3", "Zubehoer"},
 	},
 }
