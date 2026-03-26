@@ -160,6 +160,7 @@ services:
       JWT_EXPIRY_HOURS: "24"
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     ports:
       - "8001:8001"
     volumes:

@@ -18,7 +18,7 @@ import (
 )
 
 // CurrentVersion is the hardcoded current version of RentFlow
-const CurrentVersion = "1.1.0"
+const CurrentVersion = "1.2.0"
 
 // versionCache caches the GitHub release check result for 6 hours
 var (
@@ -932,9 +932,14 @@ func getVersionInfo(log logger.Logger) *VersionInfo {
 		CheckedAt:       time.Now().UTC().Format(time.RFC3339),
 	}
 
-	// Try to fetch latest release from GitHub
+	// Try to fetch latest release from GitHub (private repo needs token)
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get("https://api.github.com/repos/jeckersberger/RentFlow/releases/latest")
+	ghToken := os.Getenv("GITHUB_TOKEN")
+	req, _ := http.NewRequest("GET", "https://api.github.com/repos/jeckersberger/RentFlow/releases/latest", nil)
+	if ghToken != "" {
+		req.Header.Set("Authorization", "token "+ghToken)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Warn("failed to check GitHub for updates", "error", err.Error())
 		cachedVersionInfo = info

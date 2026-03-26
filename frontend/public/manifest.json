@@ -1,7 +1,7 @@
 {
-  "name": "RentFlow \u2014 Vermietungssoftware",
+  "name": "RentFlow — Vermietungssoftware",
   "short_name": "RentFlow",
-  "description": "Professionelle Lagerverwaltung und Rechnungssoftware f\u00fcr Veranstaltungstechnik",
+  "description": "Professionelle Lagerverwaltung und Rechnungssoftware für Veranstaltungstechnik",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0f1a",
