@@ -31,8 +31,9 @@ func SetupRoutes(
 ) {
 	handlers := NewHandlers(userService, tenantService, setupService, log)
 	handlers.sessionMgr = sessionMgr
-	configHandlers := NewConfigHandlers(configService, log)
 	backupHandlers := NewBackupHandlers(log)
+	handlers.backupHandlers = backupHandlers
+	configHandlers := NewConfigHandlers(configService, log)
 
 	// Rate-Limiter: 10 Anfragen pro Minute pro IP fuer Login und Register
 	loginRateLimiter := NewRateLimiter(10, 1*time.Minute, log)

@@ -47,11 +47,12 @@ type gitHubRelease struct {
 
 // Handlers holds references to all service handlers
 type Handlers struct {
-	userService   *application.UserService
-	tenantService *application.TenantService
-	setupService  *application.SetupService
-	sessionMgr    *application.SessionManager
-	logger        logger.Logger
+	userService    *application.UserService
+	tenantService  *application.TenantService
+	setupService   *application.SetupService
+	sessionMgr     *application.SessionManager
+	backupHandlers *BackupHandlers
+	logger         logger.Logger
 }
 
 // NewHandlers creates a new handlers instance
@@ -990,7 +991,18 @@ func (h *Handlers) TriggerUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("Update triggered via API")
+	h.logger.Info("Update triggered via API — creating backup first")
+
+	// Create backup before update
+	if h.backupHandlers != nil {
+		h.logger.Info("Running pre-update backup...")
+		if err := h.backupHandlers.RunBackup(); err != nil {
+			h.logger.Error("Pre-update backup failed", err)
+			// Continue anyway — better to update than not
+		} else {
+			h.logger.Info("Pre-update backup completed successfully")
+		}
+	}
 
 	// Write trigger file that the host cron/watcher picks up
 	triggerFile := "/update-trigger/update-requested"

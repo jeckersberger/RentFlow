@@ -200,6 +200,62 @@ func (h *BackupHandlers) CreateBackup(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// RunBackup creates a backup programmatically (called before updates)
+func (h *BackupHandlers) RunBackup() error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	timestamp := time.Now().UTC().Format("2006-01-02_15-04-05")
+	backupName := fmt.Sprintf("rentflow_pre_update_%s", timestamp)
+	backupPath := filepath.Join(h.backupDir, backupName)
+
+	if err := os.MkdirAll(backupPath, 0755); err != nil {
+		return fmt.Errorf("failed to create backup directory: %w", err)
+	}
+
+	dbHost := envOrDefault("DB_HOST", "postgres")
+	dbPort := envOrDefault("DB_PORT", "5432")
+	dbUser := envOrDefault("DB_USER", "rentflow")
+	dbPass := envOrDefault("DB_PASSWORD", "rentflow_dev")
+
+	for _, dbName := range allDatabases() {
+		dumpFile := filepath.Join(backupPath, dbName+".sql.gz")
+		cmd := exec.Command("pg_dump", "-h", dbHost, "-p", dbPort, "-U", dbUser, "-d", dbName, "--no-owner", "--no-acl", "--format=plain")
+		cmd.Env = append(os.Environ(), "PGPASSWORD="+dbPass)
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			continue
+		}
+		outFile, err := os.Create(dumpFile)
+		if err != nil {
+			continue
+		}
+		gzWriter := gzip.NewWriter(outFile)
+		if err := cmd.Start(); err != nil {
+			gzWriter.Close()
+			outFile.Close()
+			continue
+		}
+		io.Copy(gzWriter, stdout)
+		gzWriter.Close()
+		outFile.Close()
+		if err := cmd.Wait(); err != nil {
+			os.Remove(dumpFile)
+		}
+	}
+
+	archivePath := filepath.Join(h.backupDir, backupName+".tar.gz")
+	tarCmd := exec.Command("tar", "-czf", archivePath, "-C", h.backupDir, backupName)
+	if err := tarCmd.Run(); err != nil {
+		os.RemoveAll(backupPath)
+		return fmt.Errorf("failed to create archive: %w", err)
+	}
+	os.RemoveAll(backupPath)
+
+	h.logger.Info("pre-update backup created", "file", backupName+".tar.gz")
+	return nil
+}
+
 // ListBackups handles GET /api/v1/system/backups
 func (h *BackupHandlers) ListBackups(w http.ResponseWriter, r *http.Request) {
 	if !middleware.HasRole(r.Context(), "admin") {
