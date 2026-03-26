@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { tenantApi, configApi } from '../../services/api'
+import { useAuthStore } from '../../stores/authStore'
 import './Legal.scss'
 
-const COMPANY = {
+const FALLBACK = {
   name: 'JE-Sound&Light',
   street: 'Buehlstrasse 2',
   zip: '90610',
@@ -10,11 +13,42 @@ const COMPANY = {
   ceo: 'Janis Eckersberger',
   email: 'j.eckersberger@je-soundulight.de',
   phone: '+49 1523 7858522',
-  ustIdNr: '', // Kleinunternehmer — keine USt-IdNr
-  handelsregister: '', // Einzelunternehmen — kein HR-Eintrag
+  ustIdNr: '',
+  taxNumber: '',
+  handelsregister: '',
 }
 
 function ImpressumPage() {
+  const tenantId = useAuthStore((s) => s.tenantId)
+
+  const { data: tenantData } = useQuery({
+    queryKey: ['tenant', tenantId],
+    queryFn: () => tenantApi.getById(tenantId!),
+    enabled: !!tenantId,
+    retry: false,
+  })
+
+  const { data: companyConfig } = useQuery({
+    queryKey: ['config', 'company.details'],
+    queryFn: () => configApi.get('company.details'),
+    enabled: !!tenantId,
+    retry: false,
+  })
+
+  const company = {
+    name: tenantData?.name || FALLBACK.name,
+    street: tenantData?.address_street || FALLBACK.street,
+    zip: tenantData?.address_zip || FALLBACK.zip,
+    city: tenantData?.address_city || FALLBACK.city,
+    country: tenantData?.address_country || FALLBACK.country,
+    ceo: companyConfig?.managing_director || tenantData?.managing_director || FALLBACK.ceo,
+    email: tenantData?.email || FALLBACK.email,
+    phone: tenantData?.phone || FALLBACK.phone,
+    ustIdNr: companyConfig?.vat_id || tenantData?.vat_id || FALLBACK.ustIdNr,
+    taxNumber: companyConfig?.tax_number || FALLBACK.taxNumber,
+    handelsregister: companyConfig?.trade_register || tenantData?.trade_register || FALLBACK.handelsregister,
+  }
+
   return (
     <div className="legal-page">
       <div className="legal-card">
@@ -27,39 +61,46 @@ function ImpressumPage() {
           <section className="legal-section">
             <h2>Angaben gemaess &sect; 5 TMG</h2>
             <p>
-              {COMPANY.name}<br />
-              {COMPANY.street}<br />
-              {COMPANY.zip} {COMPANY.city}<br />
-              {COMPANY.country}
+              {company.name}<br />
+              {company.street}<br />
+              {company.zip} {company.city}<br />
+              {company.country}
             </p>
           </section>
 
           <section className="legal-section">
             <h2>Vertreten durch</h2>
-            <p>Geschaeftsfuehrer: {COMPANY.ceo}</p>
+            <p>Geschaeftsfuehrer: {company.ceo}</p>
           </section>
 
           <section className="legal-section">
             <h2>Kontakt</h2>
             <p>
-              Telefon: {COMPANY.phone}<br />
-              E-Mail: {COMPANY.email}
+              Telefon: {company.phone}<br />
+              E-Mail: {company.email}
             </p>
           </section>
 
-          {COMPANY.handelsregister && (
+          {company.handelsregister && (
             <section className="legal-section">
               <h2>Handelsregister</h2>
-              <p>{COMPANY.handelsregister}</p>
+              <p>{company.handelsregister}</p>
             </section>
           )}
 
-          {COMPANY.ustIdNr && (
+          {company.taxNumber && (
+            <section className="legal-section">
+              <h2>Steuernummer</h2>
+              <p>{company.taxNumber}</p>
+            </section>
+          )}
+
+          {company.ustIdNr && (
             <section className="legal-section">
               <h2>Umsatzsteuer-Identifikationsnummer</h2>
               <p>
                 Umsatzsteuer-Identifikationsnummer gemaess &sect; 27a
-                Umsatzsteuergesetz: {COMPANY.ustIdNr}
+                Umsatzsteuergesetz: {company.ustIdNr}
               </p>
             </section>
           )}
@@ -67,9 +108,9 @@ function ImpressumPage() {
           <section className="legal-section">
             <h2>Verantwortlich fuer den Inhalt nach &sect; 55 Abs. 2 RStV</h2>
             <p>
-              {COMPANY.ceo}<br />
-              {COMPANY.street}<br />
-              {COMPANY.zip} {COMPANY.city}
+              {company.ceo}<br />
+              {company.street}<br />
+              {company.zip} {company.city}
             </p>
           </section>
 

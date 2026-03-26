@@ -76,6 +76,26 @@ func (r *mockUserRepository) Save(ctx context.Context, user *domain.User) error 
 	return nil
 }
 
+func (r *mockUserRepository) FindByUsername(ctx context.Context, tenantID, username string) (*domain.User, error) {
+	for _, u := range r.users {
+		if u.Username == username {
+			if tenantID == "" || u.TenantID == tenantID {
+				return u, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
+func (r *mockUserRepository) FindByLogin(ctx context.Context, login string) (*domain.User, error) {
+	for _, u := range r.users {
+		if u.Email == login || u.Username == login {
+			return u, nil
+		}
+	}
+	return nil, nil
+}
+
 func (r *mockUserRepository) Delete(ctx context.Context, id string) error {
 	delete(r.users, id)
 	return nil
@@ -1052,5 +1072,111 @@ func TestInviteUser_DuplicateEmail(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error when inviting existing user")
+	}
+}
+
+// ===========================================================================
+// Table-Driven Login Tests
+// ===========================================================================
+
+func TestLogin_TableDriven(t *testing.T) {
+	svc, userRepo, _ := newTestUserService(t)
+	ctx := context.Background()
+
+	// Register a user and capture the generated username
+	dto := registerTestUser(t, svc)
+	username := userRepo.users[dto.ID].Username
+
+	// Lock another user to test locked-user scenario
+	svc.Register(ctx, RegisterUserCommand{
+		Email:     "locked@example.com",
+		Password:  testPassword,
+		FirstName: "Locked",
+		LastName:  "User",
+		TenantID:  testTenantID,
+	})
+	for _, u := range userRepo.users {
+		if u.Email == "locked@example.com" {
+			u.Status = domain.UserStatusLocked
+			lockedAt := time.Now().Add(-1 * time.Minute) // recently locked
+			u.LockedAt = &lockedAt
+			break
+		}
+	}
+
+	tests := []struct {
+		name      string
+		login     string
+		password  string
+		wantErr   error
+		wantToken bool
+	}{
+		{
+			name:      "valid email login",
+			login:     "user@example.com",
+			password:  testPassword,
+			wantErr:   nil,
+			wantToken: true,
+		},
+		{
+			name:      "valid username login",
+			login:     username,
+			password:  testPassword,
+			wantErr:   nil,
+			wantToken: true,
+		},
+		{
+			name:      "wrong password returns error",
+			login:     "user@example.com",
+			password:  "TotallyWrong999!",
+			wantErr:   domain.ErrInvalidCredentials,
+			wantToken: false,
+		},
+		{
+			name:      "empty email returns error",
+			login:     "",
+			password:  testPassword,
+			wantErr:   domain.ErrInvalidCredentials,
+			wantToken: false,
+		},
+		{
+			name:      "empty password returns error",
+			login:     "user@example.com",
+			password:  "",
+			wantErr:   domain.ErrInvalidCredentials,
+			wantToken: false,
+		},
+		{
+			name:      "locked user returns error",
+			login:     "locked@example.com",
+			password:  testPassword,
+			wantErr:   domain.ErrUserLocked,
+			wantToken: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tokens, err := svc.Login(ctx, LoginCommand{
+				Email:    tc.login,
+				Password: tc.password,
+			})
+
+			if tc.wantErr != nil {
+				if err != tc.wantErr {
+					t.Errorf("expected error %v, got %v", tc.wantErr, err)
+				}
+				if tokens != nil {
+					t.Error("expected nil tokens on error")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
+				if tc.wantToken && (tokens == nil || tokens.AccessToken == "") {
+					t.Error("expected valid tokens")
+				}
+			}
+		})
 	}
 }

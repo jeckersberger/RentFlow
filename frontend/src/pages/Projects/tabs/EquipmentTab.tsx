@@ -4,6 +4,8 @@ import { Project } from '../../../types/project'
 import { api, equipmentApi, reservationApi } from '../../../services/api'
 import { getStatusLabel } from '../../../utils/statusLabels'
 import { PackingListTab } from './PackingListTab'
+import { SignaturePad } from '../../../components/SignaturePad/SignaturePad'
+import { useNotificationStore } from '../../../stores/notificationStore'
 import styles from '../ProjectDetail.module.scss'
 
 interface EquipmentTabProps {
@@ -47,7 +49,10 @@ interface EquipmentItem {
 
 export function EquipmentTab({ project }: EquipmentTabProps) {
   const queryClient = useQueryClient()
+  const { addNotification } = useNotificationStore()
   const [search, setSearch] = useState('')
+  const [showSignaturePad, setShowSignaturePad] = useState(false)
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null)
   const [showPackingList, setShowPackingList] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [addEquipmentId, setAddEquipmentId] = useState('')
@@ -464,6 +469,78 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
         </div>
       )}
 
+      {/* Uebergabeprotokoll — Signature section for check-out */}
+      {(project.status === 'confirmed' || project.status === 'in_progress') && (
+        <div style={{ marginTop: 'var(--spacing-6, 1.5rem)' }}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Uebergabeprotokoll</h3>
+          </div>
+          {signatureDataUrl ? (
+            <div style={{
+              background: 'var(--color-bg-card, #111827)',
+              borderRadius: 'var(--radius-lg, 12px)',
+              padding: 'var(--spacing-4, 1rem)',
+              border: '1px solid var(--color-border, #1e293b)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-3, 0.75rem)' }}>
+                <span style={{ color: 'var(--color-success, #10b981)', fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>
+                  Unterschrift erfasst
+                </span>
+              </div>
+              <img
+                src={signatureDataUrl}
+                alt="Unterschrift"
+                style={{
+                  maxWidth: '300px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--color-border, #1e293b)',
+                }}
+              />
+              <div style={{ marginTop: 'var(--spacing-3, 0.75rem)' }}>
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => {
+                    setSignatureDataUrl(null)
+                    setShowSignaturePad(true)
+                  }}
+                  style={{ fontSize: 'var(--font-size-sm)' }}
+                >
+                  Unterschrift aendern
+                </button>
+              </div>
+            </div>
+          ) : showSignaturePad ? (
+            <SignaturePad
+              onSave={(dataUrl) => {
+                setSignatureDataUrl(dataUrl)
+                setShowSignaturePad(false)
+                addNotification('Unterschrift wurde erfolgreich gespeichert.', 'success')
+              }}
+              onCancel={() => setShowSignaturePad(false)}
+              title="Unterschrift des Empfaengers"
+            />
+          ) : (
+            <div style={{
+              background: 'var(--color-bg-card, #111827)',
+              borderRadius: 'var(--radius-lg, 12px)',
+              padding: 'var(--spacing-6, 1.5rem)',
+              border: '1px solid var(--color-border, #1e293b)',
+              textAlign: 'center',
+            }}>
+              <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-4, 1rem)', fontSize: 'var(--font-size-sm)' }}>
+                Bei der Uebergabe kann hier eine Unterschrift erfasst werden.
+              </p>
+              <button
+                className="btn btn--primary"
+                onClick={() => setShowSignaturePad(true)}
+              >
+                Unterschrift erfassen
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {showPackingList ? (
         <PackingListTab project={project} />
       ) : (
@@ -576,6 +653,44 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
             </div>
           )}
         </>
+      )}
+
+      {/* Übergabeprotokoll mit Unterschrift */}
+      {(reservations as Reservation[]).length > 0 && (project.status === 'confirmed' || project.status === 'completed') && (
+        <div style={{ marginTop: 'var(--spacing-6)' }}>
+          {signatureDataUrl ? (
+            <div className={styles.glassCard}>
+              <div className={styles.glassCardTitle}>Übergabeprotokoll</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <img src={signatureDataUrl} alt="Unterschrift" style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid var(--color-border)' }} />
+                <div>
+                  <div style={{ color: 'var(--color-success)', fontWeight: 600 }}>Unterschrieben</div>
+                  <button onClick={() => setSignatureDataUrl(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '12px', padding: 0 }}>
+                    Unterschrift löschen
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {showSignaturePad ? (
+                <SignaturePad
+                  title="Übergabe-Unterschrift"
+                  onSave={(dataUrl) => {
+                    setSignatureDataUrl(dataUrl)
+                    setShowSignaturePad(false)
+                    addNotification('Unterschrift gespeichert', 'success', { duration: 3000 })
+                  }}
+                  onCancel={() => setShowSignaturePad(false)}
+                />
+              ) : (
+                <button className="btn btn--secondary" onClick={() => setShowSignaturePad(true)}>
+                  Übergabeprotokoll unterschreiben
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

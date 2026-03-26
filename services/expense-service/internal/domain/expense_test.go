@@ -375,3 +375,179 @@ func TestFullWorkflow_DraftToPendingToRejected(t *testing.T) {
 		t.Fatalf("status after reject should be rejected, got %s", exp.Status)
 	}
 }
+
+// ===========================================================================
+// Table-Driven: CalculateTax
+// ===========================================================================
+
+func TestCalculateTax_TableDriven(t *testing.T) {
+	tests := []struct {
+		name          string
+		amount        float64
+		taxRate       float64
+		wantTaxAmount float64
+		wantNetAmount float64
+	}{
+		{
+			name:          "19% standard rate on 100 EUR",
+			amount:        100.00,
+			taxRate:       0.19,
+			wantTaxAmount: 19.00,
+			wantNetAmount: 81.00,
+		},
+		{
+			name:          "7% reduced rate on 200 EUR",
+			amount:        200.00,
+			taxRate:       0.07,
+			wantTaxAmount: 14.00,
+			wantNetAmount: 186.00,
+		},
+		{
+			name:          "0% Kleinunternehmer on 500 EUR",
+			amount:        500.00,
+			taxRate:       0.00,
+			wantTaxAmount: 0.00,
+			wantNetAmount: 500.00,
+		},
+		{
+			name:          "19% on fractional amount",
+			amount:        119.00,
+			taxRate:       0.19,
+			wantTaxAmount: 22.61,
+			wantNetAmount: 96.39,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			exp := newTestExpense()
+			exp.Amount = tc.amount
+			exp.TaxRate = tc.taxRate
+			exp.CalculateTax()
+
+			if !floatEq(exp.TaxAmount, tc.wantTaxAmount) {
+				t.Errorf("TaxAmount: expected %.2f, got %.2f", tc.wantTaxAmount, exp.TaxAmount)
+			}
+			if !floatEq(exp.NetAmount, tc.wantNetAmount) {
+				t.Errorf("NetAmount: expected %.2f, got %.2f", tc.wantNetAmount, exp.NetAmount)
+			}
+		})
+	}
+}
+
+// ===========================================================================
+// Table-Driven: CalculateEntertainmentSplit
+// ===========================================================================
+
+func TestCalculateEntertainmentSplit_TableDriven(t *testing.T) {
+	tests := []struct {
+		name              string
+		amount            float64
+		tip               float64
+		wantDeductible    float64
+		wantNonDeductible float64
+	}{
+		{
+			name:              "100 EUR no tip: 70/30",
+			amount:            100.00,
+			tip:               0.00,
+			wantDeductible:    70.00,
+			wantNonDeductible: 30.00,
+		},
+		{
+			name:              "110 EUR with 10 EUR tip: base 100, 70/30",
+			amount:            110.00,
+			tip:               10.00,
+			wantDeductible:    70.00,
+			wantNonDeductible: 30.00,
+		},
+		{
+			name:              "500 EUR with 50 EUR tip: base 450, 315/135",
+			amount:            500.00,
+			tip:               50.00,
+			wantDeductible:    315.00,
+			wantNonDeductible: 135.00,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			exp := newTestExpense()
+			exp.Type = ExpenseTypeEntertainment
+			exp.Amount = tc.amount
+			exp.EntertainmentTip = tc.tip
+			exp.CalculateEntertainmentSplit()
+
+			if !floatEq(exp.EntertainmentDeductible, tc.wantDeductible) {
+				t.Errorf("Deductible: expected %.2f, got %.2f", tc.wantDeductible, exp.EntertainmentDeductible)
+			}
+			if !floatEq(exp.EntertainmentNonDeductible, tc.wantNonDeductible) {
+				t.Errorf("NonDeductible: expected %.2f, got %.2f", tc.wantNonDeductible, exp.EntertainmentNonDeductible)
+			}
+		})
+	}
+}
+
+// ===========================================================================
+// Table-Driven: Validate with missing fields
+// ===========================================================================
+
+func TestValidate_MissingFields_TableDriven(t *testing.T) {
+	tests := []struct {
+		name      string
+		modify    func(*Expense)
+		wantError string
+	}{
+		{
+			name:      "valid expense passes",
+			modify:    func(e *Expense) {},
+			wantError: "",
+		},
+		{
+			name:      "empty ID fails",
+			modify:    func(e *Expense) { e.AggregateRoot = *events.NewAggregateRoot("", "expense") },
+			wantError: "expense ID cannot be empty",
+		},
+		{
+			name:      "empty tenant ID fails",
+			modify:    func(e *Expense) { e.TenantID = "" },
+			wantError: "tenant ID cannot be empty",
+		},
+		{
+			name:      "empty vendor fails",
+			modify:    func(e *Expense) { e.Vendor = "" },
+			wantError: "vendor cannot be empty",
+		},
+		{
+			name:      "zero amount fails",
+			modify:    func(e *Expense) { e.Amount = 0 },
+			wantError: "amount must be positive",
+		},
+		{
+			name:      "negative amount fails",
+			modify:    func(e *Expense) { e.Amount = -10 },
+			wantError: "amount must be positive",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			exp := newTestExpense()
+			tc.modify(exp)
+			err := exp.Validate()
+
+			if tc.wantError == "" {
+				if err != nil {
+					t.Errorf("expected no error, got %v", err)
+				}
+			} else {
+				if err == nil {
+					t.Fatalf("expected error %q, got nil", tc.wantError)
+				}
+				if err.Error() != tc.wantError {
+					t.Errorf("expected error %q, got %q", tc.wantError, err.Error())
+				}
+			}
+		})
+	}
+}

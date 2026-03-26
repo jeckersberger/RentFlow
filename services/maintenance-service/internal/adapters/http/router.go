@@ -64,6 +64,9 @@ func NewRouter(
 	// IZYTRON Import
 	router.HandleFunc("POST /api/v1/maintenance/import/izytron", handler.ImportIzytron)
 
+	// E-Check CSV Import (Gossen Metrawatt IZYTRON.IQ CSV)
+	router.HandleFunc("POST /api/v1/maintenance/import-echeck", handler.ImportECheck)
+
 	// Dashboard
 	router.HandleFunc("GET /api/v1/maintenance/dashboard", handler.GetDashboard)
 
