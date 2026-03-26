@@ -427,6 +427,15 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 	cmd.TenantID = tenantID
 
+	// Set created_by_user_id from JWT middleware header
+	userID := r.Header.Get("X-User-ID")
+	if userID != "" {
+		cmd.CreatedByUserID = userID
+	} else {
+		// Fallback: use tenant ID as user ID to satisfy NOT NULL constraint
+		cmd.CreatedByUserID = tenantID
+	}
+
 	dto, err := h.categorySvc.CreateCategory(r.Context(), cmd)
 	if err != nil {
 		h.handleError(w, err)

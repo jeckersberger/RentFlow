@@ -39,14 +39,12 @@ func (s *EquipmentTypeService) CreateType(ctx context.Context, cmd CreateEquipme
 	if cmd.Name == "" {
 		return nil, domain.NewDomainError("NAME_REQUIRED", "equipment type name is required", nil)
 	}
-	if cmd.CategoryID == "" {
-		return nil, domain.NewDomainError("VALIDATION_ERROR", "category ID is required", nil)
-	}
-
-	// Verify category exists
-	_, err := s.catRepo.GetByID(ctx, cmd.TenantID, cmd.CategoryID)
-	if err != nil {
-		return nil, domain.NewDomainError("INVALID_CATEGORY", "category not found", err)
+	// Verify category exists if specified
+	if cmd.CategoryID != "" {
+		_, err := s.catRepo.GetByID(ctx, cmd.TenantID, cmd.CategoryID)
+		if err != nil {
+			return nil, domain.NewDomainError("INVALID_CATEGORY", "category not found", err)
+		}
 	}
 
 	// Generate ID

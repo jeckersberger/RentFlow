@@ -64,8 +64,8 @@ func (s *ProjectService) CreateProject(ctx context.Context, cmd CreateProjectCom
 		Country:     cmd.VenueAddress.Country,
 		Coordinates: cmd.VenueAddress.Coordinates,
 	}
-	project.StartDate = cmd.StartDate
-	project.EndDate = cmd.EndDate
+	project.StartDate = cmd.StartDate.Time
+	project.EndDate = cmd.EndDate.Time
 	project.SetupDate = cmd.SetupDate
 	project.TeardownDate = cmd.TeardownDate
 	project.Budget = cmd.Budget
@@ -73,6 +73,14 @@ func (s *ProjectService) CreateProject(ctx context.Context, cmd CreateProjectCom
 	project.Notes = cmd.Notes
 	project.Tags = cmd.Tags
 	project.IsDryHire = cmd.IsDryHire
+
+	// Allow setting initial status (e.g. "confirmed") if provided
+	if cmd.Status != "" {
+		status := domain.ProjectStatus(cmd.Status)
+		if status != domain.ProjectDraft {
+			project.Status = status
+		}
+	}
 
 	if err := project.Validate(); err != nil {
 		return nil, domain.NewDomainError("VALIDATION_ERROR", err.Error(), nil)
@@ -117,8 +125,8 @@ func (s *ProjectService) UpdateProject(ctx context.Context, cmd UpdateProjectCom
 		Country:     cmd.VenueAddress.Country,
 		Coordinates: cmd.VenueAddress.Coordinates,
 	}
-	project.StartDate = cmd.StartDate
-	project.EndDate = cmd.EndDate
+	project.StartDate = cmd.StartDate.Time
+	project.EndDate = cmd.EndDate.Time
 	project.SetupDate = cmd.SetupDate
 	project.TeardownDate = cmd.TeardownDate
 	project.Budget = cmd.Budget

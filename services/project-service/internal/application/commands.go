@@ -1,10 +1,42 @@
 package application
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jeckersberger/rentflow/services/project-service/internal/domain"
 )
+
+// FlexTime is a time.Time that can unmarshal from RFC3339, date-only ("2006-01-02"), or ISO with offset.
+type FlexTime struct {
+	time.Time
+}
+
+func (ft *FlexTime) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), "\"")
+	if s == "" || s == "null" {
+		ft.Time = time.Time{}
+		return nil
+	}
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05",
+		"2006-01-02",
+	}
+	for _, f := range formats {
+		if t, err := time.Parse(f, s); err == nil {
+			ft.Time = t
+			return nil
+		}
+	}
+	return fmt.Errorf("unable to parse date: %s", s)
+}
+
+func (ft FlexTime) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, ft.Time.Format(time.RFC3339))), nil
+}
 
 // Project Commands
 
@@ -17,14 +49,15 @@ type CreateProjectCommand struct {
 	ClientPhone     string     `json:"client_phone"`
 	ClientAddress   AddressDTO `json:"client_address"`
 	VenueAddress    AddressDTO `json:"venue_address"`
-	StartDate       time.Time  `json:"start_date"`
-	EndDate         time.Time  `json:"end_date"`
+	StartDate       FlexTime   `json:"start_date"`
+	EndDate         FlexTime   `json:"end_date"`
 	SetupDate       *time.Time `json:"setup_date"`
 	TeardownDate    *time.Time `json:"teardown_date"`
 	Budget          float64    `json:"budget"`
 	Currency        string     `json:"currency"`
 	Notes           string     `json:"notes"`
 	Tags            []string   `json:"tags"`
+	Status          string     `json:"status"`
 	CreatedByUserID string     `json:"created_by_user_id"`
 	IsDryHire       bool       `json:"is_dry_hire"`
 }
@@ -39,8 +72,8 @@ type UpdateProjectCommand struct {
 	ClientPhone   string     `json:"client_phone"`
 	ClientAddress AddressDTO `json:"client_address"`
 	VenueAddress  AddressDTO `json:"venue_address"`
-	StartDate     time.Time  `json:"start_date"`
-	EndDate       time.Time  `json:"end_date"`
+	StartDate     FlexTime   `json:"start_date"`
+	EndDate       FlexTime   `json:"end_date"`
 	SetupDate     *time.Time `json:"setup_date"`
 	TeardownDate  *time.Time `json:"teardown_date"`
 	Budget        float64    `json:"budget"`

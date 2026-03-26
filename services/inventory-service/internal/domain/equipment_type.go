@@ -51,8 +51,6 @@ func (et *EquipmentType) Validate() error {
 	if et.Name == "" {
 		return fmt.Errorf("equipment type name cannot be empty")
 	}
-	if et.CategoryID == "" {
-		return fmt.Errorf("category ID cannot be empty")
-	}
+	// CategoryID is optional — equipment types can exist without a category
 	return nil
 }

@@ -56,6 +56,12 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 	cmd.TenantID = tenantID
 
+	// Set created_by_user_id from JWT middleware header
+	userID := r.Header.Get("X-User-ID")
+	if userID != "" {
+		cmd.CreatedByUserID = userID
+	}
+
 	// Basic input validation
 	if strings.TrimSpace(cmd.Name) == "" {
 		h.respondError(w, http.StatusBadRequest, "project name is required")

@@ -73,8 +73,8 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     labels: {
       project: 'Veranstaltung',
       project_plural: 'Veranstaltungen',
-      checkout: 'Ausgabe',
-      checkin: 'Rueckgabe',
+      checkout: 'Check-Out',
+      checkin: 'Check-In',
       location: 'Lager',
       crew: 'Crew',
       worker: 'Techniker',
@@ -99,8 +99,8 @@ export const INDUSTRY_PROFILES: Record<string, IndustryProfile> = {
     labels: {
       project: 'Produktion',
       project_plural: 'Produktionen',
-      checkout: 'Ausgabe',
-      checkin: 'Rueckgabe',
+      checkout: 'Check-Out',
+      checkin: 'Check-In',
       location: 'Fundus',
       crew: 'Team',
       worker: 'Techniker',
