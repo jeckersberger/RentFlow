@@ -245,11 +245,10 @@ function App() {
             {/* Calendar */}
             <Route path="calendar" element={<CalendarPage />} />
 
-            {/* Equipment Type Routes (Katalog) */}
-            <Route path="equipment-types" element={<EquipmentTypesPage />} />
-
-            {/* Equipment Routes */}
-            <Route path="equipment" element={<EquipmentListPage />} />
+            {/* Equipment: Katalog ist die Startseite */}
+            <Route path="equipment" element={<EquipmentTypesPage />} />
+            <Route path="equipment-types" element={<Navigate to="/equipment" replace />} />
+            <Route path="equipment/items" element={<EquipmentListPage />} />
             <Route path="equipment/labels" element={<EquipmentLabelsPage />} />
             <Route path="equipment/import" element={<EquipmentImportPage />} />
             <Route path="equipment/timeline" element={<EquipmentTimelinePage />} />

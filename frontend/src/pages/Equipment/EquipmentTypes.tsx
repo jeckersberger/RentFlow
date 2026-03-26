@@ -96,7 +96,7 @@ function EquipmentTypesPage() {
   })
 
   const handleCardClick = (type: EquipmentType) => {
-    navigate(`/equipment?type_id=${type.id}&type_name=${encodeURIComponent(type.name)}`)
+    navigate(`/equipment/items?type_id=${type.id}&type_name=${encodeURIComponent(type.name)}`)
   }
 
   const handleEdit = (e: React.MouseEvent, type: EquipmentType) => {
@@ -146,9 +146,9 @@ function EquipmentTypesPage() {
       {/* Header */}
       <div className="et-header">
         <div>
-          <h1 className="et-header__title">Equipment-Katalog</h1>
+          <h1 className="et-header__title">Equipment</h1>
           <p className="et-header__subtitle">
-            Verwalten Sie Ihre Equipment-Typen und erstellen Sie Einzelartikel
+            Legen Sie Equipment-Typen an und erstellen Sie daraus Einzelartikel.
           </p>
         </div>
         <button

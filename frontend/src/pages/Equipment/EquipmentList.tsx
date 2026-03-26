@@ -259,9 +259,9 @@ function EquipmentListPage() {
       {/* Breadcrumb when filtered by type */}
       {typeId && (
         <div className="et-breadcrumb" style={{ marginBottom: 'var(--spacing-2)' }}>
-          <Link to="/equipment-types" className="et-breadcrumb__link" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <Link to="/equipment" className="et-breadcrumb__link" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <ArrowLeft size={14} />
-            Equipment-Katalog
+            Equipment
           </Link>
           <span className="et-breadcrumb__separator">/</span>
           <span className="et-breadcrumb__current">{typeName || 'Typ'}</span>
@@ -273,22 +273,22 @@ function EquipmentListPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            {typeId ? `${typeName || 'Typ'} - Einzelartikel` : 'Ausrüstungsverwaltung'}
+            {typeId ? `${typeName || 'Typ'} — Einzelartikel` : 'Alle Einzelartikel'}
           </h1>
           <p className="page-subtitle">
             {typeId
-              ? 'Alle Einzelartikel dieses Equipment-Typs'
-              : 'Verwalten Sie Ihre Ausrüstung und verfügbaren Ressourcen'}
+              ? 'Einzelartikel dieses Typs verwalten'
+              : 'Alle Equipment-Einzelartikel auf einen Blick'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
           {typeId && (
             <button
               className="btn btn--secondary"
-              onClick={() => navigate('/equipment-types')}
+              onClick={() => navigate('/equipment')}
             >
               <ArrowLeft size={14} />
-              Zum Katalog
+              Zurück
             </button>
           )}
           {typeId && (
@@ -337,9 +337,9 @@ function EquipmentListPage() {
               />
               <button
                 className="btn btn--primary"
-                onClick={() => navigate('/equipment/new')}
+                onClick={() => navigate('/equipment')}
               >
-                + Neue Ausrüstung
+                + Neuer Equipment-Typ
               </button>
             </>
           )}
