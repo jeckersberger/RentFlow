@@ -1,0 +1,106 @@
+@use '../../styles/variables' as *;
+
+.detail-card {
+  border-radius: $radius-md;
+  background: $bg-card;
+  backdrop-filter: blur(12px);
+  border: 1px solid $border-subtle;
+  padding: $space-6;
+
+  &__title {
+    font-size: $font-size-base;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 $space-4;
+  }
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: $space-5;
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  &__label {
+    font-size: $font-size-xs;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $text-muted;
+  }
+
+  &__value {
+    font-size: $font-size-sm;
+    color: $text-primary;
+
+    &--mono {
+      font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+      font-size: $font-size-xs;
+    }
+  }
+}
+
+.detail-skeleton {
+  padding: $space-6;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px $space-4;
+  color: $text-muted;
+}
+
+.invoice-totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: $space-4;
+  padding-top: $space-4;
+  border-top: 1px solid $border-subtle;
+
+  &__row {
+    display: flex;
+    gap: 32px;
+    font-size: $font-size-sm;
+    color: $text-secondary;
+
+    span:last-child {
+      min-width: 100px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &--total {
+      font-weight: 700;
+      font-size: $font-size-base;
+      color: $text-primary;
+      padding-top: 6px;
+      border-top: 1px solid $border-subtle;
+    }
+  }
+}
+
+// Right-aligned table headers
+.data-table__th--right {
+  text-align: right;
+}
+
+.data-table__cell--right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table__cell--mono {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: $font-size-xs;
+}

@@ -1,194 +1,79 @@
 package middleware
 
 import (
+	"context"
+	"fmt"
+	"net"
 	"net/http"
-	"sync"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+
+	"github.com/jeckersberger/EquipFlow/pkg/common/response"
 )
 
-// RateLimiter is a simple in-memory rate limiter
-// For production use, consider using Redis for distributed rate limiting
-type RateLimiter struct {
-	requestsPerMinute int
-	window            time.Duration
-	clients           map[string]*clientLimit
-	mu                sync.RWMutex
-	cleanupTicker     *time.Ticker
+// RateLimitConfig configures the Redis-based rate limiter.
+type RateLimitConfig struct {
+	// MaxRequests is the maximum number of requests allowed per window.
+	MaxRequests int
+	// Window is the duration of the rate limit window.
+	Window time.Duration
+	// Client is the Redis client used for storing counters.
+	Client *redis.Client
 }
 
-// clientLimit tracks requests for a single client
-type clientLimit struct {
-	requests  int
-	firstSeen time.Time
-}
-
-// NewRateLimiter creates a new rate limiter
-func NewRateLimiter(requestsPerMinute int) *RateLimiter {
-	rl := &RateLimiter{
-		requestsPerMinute: requestsPerMinute,
-		window:            time.Minute,
-		clients:           make(map[string]*clientLimit),
-	}
-
-	// Start a cleanup goroutine to remove old entries
-	rl.cleanupTicker = time.NewTicker(5 * time.Minute)
-	go rl.cleanup()
-
-	return rl
-}
-
-// Allow checks if the request is allowed based on the rate limit
-// Returns true if the request is allowed, false if it exceeds the limit
-func (rl *RateLimiter) Allow(clientID string) bool {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
-	now := time.Now()
-	limit, exists := rl.clients[clientID]
-
-	// If client doesn't exist or the window has expired, create new entry
-	if !exists || now.Sub(limit.firstSeen) > rl.window {
-		rl.clients[clientID] = &clientLimit{
-			requests:  1,
-			firstSeen: now,
-		}
-		return true
-	}
-
-	// Check if limit is exceeded
-	if limit.requests >= rl.requestsPerMinute {
-		return false
-	}
-
-	// Increment request count
-	limit.requests++
-	return true
-}
-
-// GetRemainingRequests returns the number of remaining requests for a client
-func (rl *RateLimiter) GetRemainingRequests(clientID string) int {
-	rl.mu.RLock()
-	defer rl.mu.RUnlock()
-
-	limit, exists := rl.clients[clientID]
-	if !exists {
-		return rl.requestsPerMinute
-	}
-
-	remaining := rl.requestsPerMinute - limit.requests
-	if remaining < 0 {
-		return 0
-	}
-
-	return remaining
-}
-
-// Reset resets the rate limit for a specific client
-func (rl *RateLimiter) Reset(clientID string) {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
-	delete(rl.clients, clientID)
-}
-
-// cleanup removes expired entries
-func (rl *RateLimiter) cleanup() {
-	for range rl.cleanupTicker.C {
-		rl.mu.Lock()
-
-		now := time.Now()
-		for clientID, limit := range rl.clients {
-			if now.Sub(limit.firstSeen) > rl.window {
-				delete(rl.clients, clientID)
-			}
-		}
-
-		rl.mu.Unlock()
-	}
-}
-
-// Stop stops the cleanup goroutine
-func (rl *RateLimiter) Stop() {
-	if rl.cleanupTicker != nil {
-		rl.cleanupTicker.Stop()
-	}
-}
-
-// RateLimitMiddleware creates a middleware that applies rate limiting
-// It uses the client's IP address as the identifier
-func RateLimitMiddleware(requestsPerMinute int) func(http.Handler) http.Handler {
-	limiter := NewRateLimiter(requestsPerMinute)
-
+// RateLimit returns a middleware that enforces rate limiting per IP + endpoint
+// using a Redis sliding window counter.
+func RateLimit(cfg RateLimitConfig) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Get client identifier (IP address)
-			clientID := getClientIP(r)
+			ctx := r.Context()
+			ip := extractIP(r)
+			key := fmt.Sprintf("ratelimit:%s:%s", ip, r.URL.Path)
 
-			// Check rate limit
-			if !limiter.Allow(clientID) {
-				w.Header().Set("Content-Type", "application/json")
-				w.Header().Set("Retry-After", "60")
-				w.WriteHeader(http.StatusTooManyRequests)
-				w.Write([]byte(`{"code":"RATE_LIMIT_EXCEEDED","message":"Too many requests, please try again later"}`))
+			allowed, err := checkRateLimit(ctx, cfg.Client, key, cfg.MaxRequests, cfg.Window)
+			if err != nil {
+				// If Redis is down, allow the request (fail open).
+				next.ServeHTTP(w, r)
 				return
 			}
 
-			// Add rate limit headers
-			remaining := limiter.GetRemainingRequests(clientID)
-			w.Header().Set("X-RateLimit-Limit", "60")
-			w.Header().Set("X-RateLimit-Remaining", string(rune(remaining)))
-			w.Header().Set("X-RateLimit-Reset", string(rune(time.Now().Add(time.Minute).Unix())))
+			if !allowed {
+				response.Error(w, http.StatusTooManyRequests, "RATE_LIMITED", "Too many requests, please try again later")
+				return
+			}
 
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// RateLimitByUserMiddleware creates a middleware that applies rate limiting per user
-// It uses the user ID from the JWT claims
-func RateLimitByUserMiddleware(requestsPerMinute int) func(http.Handler) http.Handler {
-	limiter := NewRateLimiter(requestsPerMinute)
+func checkRateLimit(ctx context.Context, client *redis.Client, key string, max int, window time.Duration) (bool, error) {
+	pipe := client.Pipeline()
+	incr := pipe.Incr(ctx, key)
+	pipe.Expire(ctx, key, window)
 
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Get user ID from claims
-			userID := GetUserID(r.Context())
-			if userID == "" {
-				userID = getClientIP(r)
-			}
-
-			// Check rate limit
-			if !limiter.Allow(userID) {
-				w.Header().Set("Content-Type", "application/json")
-				w.Header().Set("Retry-After", "60")
-				w.WriteHeader(http.StatusTooManyRequests)
-				w.Write([]byte(`{"code":"RATE_LIMIT_EXCEEDED","message":"Too many requests, please try again later"}`))
-				return
-			}
-
-			// Add rate limit headers
-			remaining := limiter.GetRemainingRequests(userID)
-			w.Header().Set("X-RateLimit-Limit", "60")
-			w.Header().Set("X-RateLimit-Remaining", string(rune(remaining)))
-			w.Header().Set("X-RateLimit-Reset", string(rune(time.Now().Add(time.Minute).Unix())))
-
-			next.ServeHTTP(w, r)
-		})
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return false, err
 	}
+
+	count := incr.Val()
+	return count <= int64(max), nil
 }
 
-// getClientIP extracts the client IP from the request
-func getClientIP(r *http.Request) string {
-	// Check X-Forwarded-For header (for proxies)
-	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-		return forwarded
+func extractIP(r *http.Request) string {
+	// Prefer Cloudflare's trusted header (set by the edge, not spoofable).
+	if cfIP := r.Header.Get("CF-Connecting-IP"); cfIP != "" {
+		return cfIP
 	}
 
-	// Check X-Real-IP header
-	if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
-		return realIP
+	// Fall back to the remote address (set by Traefik / the TCP connection).
+	// We do NOT trust X-Forwarded-For or X-Real-IP from untrusted clients
+	// because they can be spoofed to bypass rate limiting.
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
 	}
-
-	// Fall back to RemoteAddr
-	return r.RemoteAddr
+	return host
 }

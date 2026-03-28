@@ -1,0 +1,408 @@
+package application
+
+import (
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+	"golang.org/x/crypto/argon2"
+
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
+	"github.com/jeckersberger/EquipFlow/services/auth/internal/domain"
+)
+
+// Argon2id parameters.
+const (
+	argon2Time    = 1
+	argon2Memory  = 64 * 1024
+	argon2Threads = 4
+	argon2KeyLen  = 32
+	argon2SaltLen = 16
+)
+
+// TokenPair holds access and refresh tokens returned after authentication.
+type TokenPair struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresAt    int64  `json:"expires_at"`
+}
+
+// LoginRequest represents a login attempt.
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// RefreshRequest carries a refresh token for token rotation.
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+// ChangePasswordRequest carries old and new passwords.
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
+// AuthService orchestrates authentication and token lifecycle.
+type AuthService struct {
+	userRepo      domain.UserRepository
+	sessionRepo   domain.SessionRepository
+	privateKey    *rsa.PrivateKey
+	publicKey     *rsa.PublicKey
+	accessExpiry  time.Duration
+	refreshExpiry time.Duration
+	logger        zerolog.Logger
+}
+
+// NewAuthService creates a new AuthService with all dependencies.
+func NewAuthService(
+	userRepo domain.UserRepository,
+	sessionRepo domain.SessionRepository,
+	privateKey *rsa.PrivateKey,
+	publicKey *rsa.PublicKey,
+	accessExpiry time.Duration,
+	refreshExpiry time.Duration,
+	logger zerolog.Logger,
+) *AuthService {
+	if accessExpiry == 0 {
+		accessExpiry = 1 * time.Hour
+	}
+	if refreshExpiry == 0 {
+		refreshExpiry = 30 * 24 * time.Hour
+	}
+	return &AuthService{
+		userRepo:      userRepo,
+		sessionRepo:   sessionRepo,
+		privateKey:    privateKey,
+		publicKey:     publicKey,
+		accessExpiry:  accessExpiry,
+		refreshExpiry: refreshExpiry,
+		logger:        logger,
+	}
+}
+
+// Login authenticates a user and returns a token pair plus the user.
+func (s *AuthService) Login(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	req LoginRequest,
+	ipAddress, userAgent string,
+) (*TokenPair, *domain.User, error) {
+	user, err := s.userRepo.GetByEmail(ctx, tenantID, req.Email)
+	if err != nil {
+		s.logger.Warn().Str("email", req.Email).Msg("user not found during login")
+		return nil, nil, domain.ErrInvalidCredentials
+	}
+
+	if !user.IsActive {
+		s.logger.Warn().Str("user_id", user.ID.String()).Msg("login attempt on disabled account")
+		return nil, nil, domain.ErrAccountDisabled
+	}
+
+	if user.IsLocked() {
+		s.logger.Warn().Str("user_id", user.ID.String()).Msg("login attempt on locked account")
+		return nil, nil, domain.ErrAccountLocked
+	}
+
+	if !VerifyPassword(user.PasswordHash, req.Password) {
+		if _, err := s.userRepo.IncrementFailedLogins(ctx, user.ID); err != nil {
+			s.logger.Error().Err(err).Msg("failed to increment failed logins")
+		}
+		count := user.FailedLogins + 1
+		s.applyBruteForceLock(ctx, user.ID, count)
+		return nil, nil, domain.ErrInvalidCredentials
+	}
+
+	if err := s.userRepo.ResetFailedLogins(ctx, user.ID); err != nil {
+		s.logger.Error().Err(err).Msg("failed to reset failed logins")
+	}
+	if err := s.userRepo.UpdateLastLogin(ctx, user.ID); err != nil {
+		s.logger.Error().Err(err).Msg("failed to update last login")
+	}
+
+	accessToken, expiresAt, err := s.generateAccessToken(user)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to generate access token")
+		return nil, nil, fmt.Errorf("token generation failed: %w", err)
+	}
+
+	refreshToken, err := generateRefreshToken()
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to generate refresh token")
+		return nil, nil, fmt.Errorf("refresh token generation failed: %w", err)
+	}
+
+	tokenHash := hashToken(refreshToken)
+	session := &domain.Session{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		TenantID:  tenantID,
+		TokenHash: tokenHash,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		IsActive:  true,
+		ExpiresAt: time.Now().Add(s.refreshExpiry),
+		CreatedAt: time.Now(),
+	}
+	if err := s.sessionRepo.Create(ctx, session); err != nil {
+		s.logger.Error().Err(err).Msg("failed to create session")
+		return nil, nil, fmt.Errorf("session creation failed: %w", err)
+	}
+
+	s.logger.Info().Str("user_id", user.ID.String()).Msg("user logged in")
+
+	return &TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresAt:    expiresAt,
+	}, user, nil
+}
+
+// Refresh rotates the refresh token and issues a new access token.
+func (s *AuthService) Refresh(ctx context.Context, req RefreshRequest) (*TokenPair, error) {
+	tokenHash := hashToken(req.RefreshToken)
+
+	session, err := s.sessionRepo.GetByTokenHash(ctx, tokenHash)
+	if err != nil || session == nil || !session.IsActive || time.Now().After(session.ExpiresAt) {
+		return nil, domain.ErrSessionExpired
+	}
+
+	user, err := s.userRepo.GetByID(ctx, session.UserID)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to get user for token refresh")
+		return nil, domain.ErrSessionExpired
+	}
+
+	accessToken, expiresAt, err := s.generateAccessToken(user)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to generate access token on refresh")
+		return nil, fmt.Errorf("token generation failed: %w", err)
+	}
+
+	newRefreshToken, err := generateRefreshToken()
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to generate new refresh token")
+		return nil, fmt.Errorf("refresh token generation failed: %w", err)
+	}
+
+	newTokenHash := hashToken(newRefreshToken)
+	if err := s.sessionRepo.UpdateTokenHash(ctx, session.ID, newTokenHash); err != nil {
+		s.logger.Error().Err(err).Msg("failed to update session token hash")
+		return nil, fmt.Errorf("session update failed: %w", err)
+	}
+
+	s.logger.Info().Str("user_id", session.UserID.String()).Msg("token refreshed")
+
+	return &TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+		ExpiresAt:    expiresAt,
+	}, nil
+}
+
+// Logout deactivates the session associated with the given refresh token.
+func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
+	tokenHash := hashToken(refreshToken)
+
+	session, err := s.sessionRepo.GetByTokenHash(ctx, tokenHash)
+	if err != nil || session == nil {
+		return nil // idempotent — already gone
+	}
+
+	if err := s.sessionRepo.Deactivate(ctx, session.ID); err != nil {
+		s.logger.Error().Err(err).Msg("failed to deactivate session")
+		return fmt.Errorf("logout failed: %w", err)
+	}
+
+	s.logger.Info().Str("session_id", session.ID.String()).Msg("session deactivated")
+	return nil
+}
+
+// ChangePassword verifies the old password, hashes the new one, and invalidates all sessions.
+func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("user not found for password change")
+		return domain.ErrUserNotFound
+	}
+
+	if !VerifyPassword(user.PasswordHash, req.OldPassword) {
+		return domain.ErrInvalidCredentials
+	}
+
+	if err := validatePassword(req.NewPassword); err != nil {
+		return err
+	}
+
+	newHash, err := HashPassword(req.NewPassword)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to hash new password")
+		return fmt.Errorf("password hashing failed: %w", err)
+	}
+
+	if err := s.userRepo.UpdatePassword(ctx, userID, newHash); err != nil {
+		s.logger.Error().Err(err).Msg("failed to update password")
+		return fmt.Errorf("password update failed: %w", err)
+	}
+
+	if err := s.sessionRepo.DeactivateAllForUser(ctx, userID); err != nil {
+		s.logger.Error().Err(err).Msg("failed to deactivate sessions after password change")
+	}
+
+	s.logger.Info().Str("user_id", userID.String()).Msg("password changed, all sessions invalidated")
+	return nil
+}
+
+// ValidateToken parses and validates a JWT, returning the embedded claims.
+func (s *AuthService) ValidateToken(ctx context.Context, tokenString string) (*middleware.Claims, error) {
+	claims := &middleware.Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return s.publicKey, nil
+	})
+	if err != nil || !token.Valid {
+		return nil, domain.ErrInvalidToken
+	}
+	return claims, nil
+}
+
+// --- private helpers ---
+
+func (s *AuthService) generateAccessToken(user *domain.User) (string, int64, error) {
+	now := time.Now()
+	expiresAt := now.Add(s.accessExpiry)
+
+	claims := &middleware.Claims{
+		UserID:   user.ID,
+		TenantID: user.TenantID,
+		Email:    user.Email,
+		Role:     user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			Issuer:    "equipflow-auth",
+			Subject:   user.ID.String(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	signed, err := token.SignedString(s.privateKey)
+	if err != nil {
+		return "", 0, err
+	}
+	return signed, expiresAt.Unix(), nil
+}
+
+func generateRefreshToken() (string, error) {
+	b := make([]byte, 64)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func hashToken(token string) string {
+	h := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(h[:])
+}
+
+// HashPassword hashes a password using Argon2id and returns the PHC-format string.
+func HashPassword(password string) (string, error) {
+	salt := make([]byte, argon2SaltLen)
+	if _, err := rand.Read(salt); err != nil {
+		return "", fmt.Errorf("failed to generate salt: %w", err)
+	}
+
+	hash := argon2.IDKey([]byte(password), salt, argon2Time, argon2Memory, argon2Threads, argon2KeyLen)
+
+	saltB64 := base64.RawStdEncoding.EncodeToString(salt)
+	hashB64 := base64.RawStdEncoding.EncodeToString(hash)
+
+	return fmt.Sprintf("$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s",
+		argon2Memory, argon2Time, argon2Threads, saltB64, hashB64,
+	), nil
+}
+
+// VerifyPassword verifies a password against an Argon2id PHC-format hash.
+func VerifyPassword(phcHash, password string) bool {
+	parts := strings.Split(phcHash, "$")
+	if len(parts) != 6 || parts[1] != "argon2id" {
+		return false
+	}
+
+	var m, t, p uint32
+	_, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &m, &t, &p)
+	if err != nil {
+		return false
+	}
+
+	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
+	if err != nil {
+		return false
+	}
+
+	expectedHash, err := base64.RawStdEncoding.DecodeString(parts[5])
+	if err != nil {
+		return false
+	}
+
+	computed := argon2.IDKey([]byte(password), salt, t, m, uint8(p), uint32(len(expectedHash)))
+
+	if len(computed) != len(expectedHash) {
+		return false
+	}
+	// Constant-time comparison to prevent timing attacks.
+	var diff byte
+	for i := range computed {
+		diff |= computed[i] ^ expectedHash[i]
+	}
+	return diff == 0
+}
+
+func validatePassword(password string) error {
+	if len(password) < 8 {
+		return domain.ErrWeakPassword
+	}
+	return nil
+}
+
+func (s *AuthService) applyBruteForceLock(ctx context.Context, userID uuid.UUID, count int) {
+	var lockDuration time.Duration
+	switch {
+	case count >= 15:
+		lockDuration = 30 * time.Minute
+	case count >= 10:
+		lockDuration = 5 * time.Minute
+	case count >= 5:
+		lockDuration = 1 * time.Minute
+	default:
+		return
+	}
+
+	lockUntil := time.Now().Add(lockDuration)
+	if err := s.userRepo.LockUntil(ctx, userID, lockUntil); err != nil {
+		s.logger.Error().Err(err).
+			Str("user_id", userID.String()).
+			Int("failed_count", count).
+			Msg("failed to apply brute-force lock")
+	} else {
+		s.logger.Warn().
+			Str("user_id", userID.String()).
+			Int("failed_count", count).
+			Dur("lock_duration", lockDuration).
+			Msg("brute-force lock applied")
+	}
+}

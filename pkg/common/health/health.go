@@ -1,73 +1,73 @@
 package health
 
 import (
-	"sync"
+	"context"
+	"encoding/json"
+	"net/http"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
-type Status string
-
-const (
-	StatusHealthy   Status = "healthy"
-	StatusUnhealthy Status = "unhealthy"
-)
-
-type HealthCheck interface {
-	Check() (Status, string)
-	Name() string
+// Checker verifies service dependencies are reachable.
+type Checker interface {
+	Check(ctx context.Context) Status
 }
 
-type HealthChecker struct {
-	checks map[string]HealthCheck
-	mu     sync.RWMutex
+// Status represents the overall health state.
+type Status struct {
+	Status string `json:"status"`
+	DB     string `json:"db"`
+	Redis  string `json:"redis"`
 }
 
-type HealthResponse struct {
-	Status    Status                 `json:"status"`
-	Checks    map[string]CheckResult `json:"checks"`
-	Timestamp time.Time              `json:"timestamp"`
-}
+// Handler returns an http.HandlerFunc that checks DB and Redis health.
+func Handler(pool *pgxpool.Pool, redisClient *redis.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
 
-type CheckResult struct {
-	Status  Status `json:"status"`
-	Message string `json:"message"`
-}
-
-// NewHealthChecker creates a new health checker
-func NewHealthChecker() *HealthChecker {
-	return &HealthChecker{
-		checks: make(map[string]HealthCheck),
-	}
-}
-
-// Register adds a health check
-func (h *HealthChecker) Register(check HealthCheck) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.checks[check.Name()] = check
-}
-
-// Check runs all registered health checks
-func (h *HealthChecker) Check() HealthResponse {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	response := HealthResponse{
-		Status:    StatusHealthy,
-		Checks:    make(map[string]CheckResult),
-		Timestamp: time.Now(),
-	}
-
-	for name, check := range h.checks {
-		status, message := check.Check()
-		response.Checks[name] = CheckResult{
-			Status:  status,
-			Message: message,
+		status := Status{
+			Status: "ok",
+			DB:     "connected",
+			Redis:  "connected",
 		}
-		if status == StatusUnhealthy {
-			response.Status = StatusUnhealthy
-		}
-	}
+		httpStatus := http.StatusOK
 
-	return response
+		// Check PostgreSQL
+		if pool != nil {
+			if err := pool.Ping(ctx); err != nil {
+				status.DB = "disconnected"
+				status.Status = "degraded"
+				httpStatus = http.StatusServiceUnavailable
+			}
+		} else {
+			status.DB = "not_configured"
+		}
+
+		// Check Redis
+		if redisClient != nil {
+			if err := redisClient.Ping(ctx).Err(); err != nil {
+				status.Redis = "disconnected"
+				status.Status = "degraded"
+				httpStatus = http.StatusServiceUnavailable
+			}
+		} else {
+			status.Redis = "not_configured"
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(httpStatus)
+		_ = json.NewEncoder(w).Encode(status)
+	}
+}
+
+// LivenessHandler returns a simple 200 OK for Kubernetes liveness probes.
+func LivenessHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "alive"})
+	}
 }

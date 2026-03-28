@@ -1,0 +1,80 @@
+@use '../../styles/variables' as *;
+
+.scanner-tabs {
+  display: flex;
+  gap: $space-2;
+  margin-bottom: $space-5;
+  border-bottom: 1px solid $border-subtle;
+  padding-bottom: $space-3;
+
+  &__tab {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-2 $space-4;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $text-secondary;
+    transition: all $transition-fast;
+
+    &:hover {
+      color: $text-primary;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &--active {
+      color: $accent-cyan;
+      background: rgba(0, 212, 255, 0.08);
+    }
+  }
+}
+
+.scanner-panel {
+  &__form {
+    display: flex;
+    gap: $space-3;
+    margin-bottom: $space-5;
+  }
+
+  &__input-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    background: $bg-input;
+    border: 1px solid $border-subtle;
+    border-radius: $radius-sm;
+    padding: 0 $space-4;
+    transition: border-color $transition-base;
+
+    &:focus-within {
+      border-color: $accent-cyan;
+    }
+  }
+
+  &__icon {
+    color: $text-muted;
+    flex-shrink: 0;
+  }
+
+  &__input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: $space-3 0;
+    font-size: $font-size-lg;
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    letter-spacing: 0.02em;
+
+    &:focus {
+      outline: none;
+      border: none;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: $space-3;
+  }
+}

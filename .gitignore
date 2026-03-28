@@ -1,22 +1,31 @@
-# Dependencies
-node_modules/
-vendor/
-
-# Build output
-backend/bin/
-frontend/build/
-frontend/dist/
+# Binaries
 *.exe
 *.dll
 *.so
 *.dylib
+services/*/bin/
+__debug_bin*
 
-# Environment & secrets
+# Go
+vendor/
+*.test
+coverage.out
+coverage/
+*.coverprofile
+go.work.sum
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Environment & Secrets
 .env
 .env.local
 .env.*.local
 *.pem
 *.key
+keys/
 
 # IDE
 .idea/
@@ -28,29 +37,26 @@ frontend/dist/
 # OS
 .DS_Store
 Thumbs.db
-
-# Go
-*.test
-__debug_bin*
-coverage.out
-go.work.sum
-
-# Wire generated
-**/wire_gen.go
-
-# Service binaries
-services/*/bin/
-
-# Coverage
-coverage/
-*.coverprofile
-
-# Logs
-*.log
+desktop.ini
 
 # Docker
 docker-compose.override.yml
 
+# Backups
+backups/
+*.sql.gz
+*.enc
+
+# Uploads
+uploads/
+
+# Claude
+.claude/
+.claude-flow/
+.mcp.json
+
 # Temp
 tmp/
 .tmp/
+*.tmp
+*.log

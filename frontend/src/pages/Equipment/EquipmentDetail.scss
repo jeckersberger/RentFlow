@@ -1,0 +1,82 @@
+@use '../../styles/variables' as *;
+
+.detail-skeleton {
+  padding: $space-6;
+}
+
+.skeleton {
+  border-radius: $radius-sm;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+
+  &--heading {
+    height: 22px;
+    width: 200px;
+    margin-bottom: $space-4;
+  }
+
+  &--block {
+    height: 200px;
+    width: 100%;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.detail-card {
+  border-radius: $radius-md;
+  background: $bg-card;
+  backdrop-filter: blur(12px);
+  border: 1px solid $border-subtle;
+  padding: $space-6;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: $space-5;
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  &__label {
+    font-size: $font-size-xs;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $text-muted;
+  }
+
+  &__value {
+    font-size: $font-size-sm;
+    color: $text-primary;
+
+    &--mono {
+      font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+      font-size: $font-size-xs;
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px $space-4;
+  color: $text-muted;
+  font-size: $font-size-base;
+}

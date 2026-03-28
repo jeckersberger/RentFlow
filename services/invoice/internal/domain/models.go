@@ -1,0 +1,91 @@
+package domain
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+const (
+	InvoiceTypeInvoice    = "invoice"
+	InvoiceTypePartial    = "partial"
+	InvoiceTypeAdvance    = "advance"
+	InvoiceTypeCreditNote = "credit_note"
+	InvoiceTypeReversal   = "reversal"
+	InvoiceTypeProforma   = "proforma"
+)
+
+const (
+	StatusDraft       = "draft"
+	StatusFinalized   = "finalized"
+	StatusSent        = "sent"
+	StatusPartialPaid = "partial_paid"
+	StatusPaid        = "paid"
+	StatusOverdue     = "overdue"
+	StatusCancelled   = "cancelled"
+)
+
+type Invoice struct {
+	ID               uuid.UUID  `json:"id"`
+	TenantID         uuid.UUID  `json:"tenant_id"`
+	InvoiceNumber    string     `json:"invoice_number"`
+	InvoiceType      string     `json:"invoice_type"`
+	Status           string     `json:"status"`
+	CustomerName     string     `json:"customer_name"`
+	CustomerEmail    string     `json:"customer_email"`
+	CustomerAddress  string     `json:"customer_address"`
+	InvoiceDate      string     `json:"invoice_date"`
+	DueDate          string     `json:"due_date"`
+	VatRate          int64      `json:"vat_rate"`
+	Kleinunternehmer bool       `json:"kleinunternehmer"`
+	TotalNet         int64      `json:"total_net"`
+	TotalVat         int64      `json:"total_vat"`
+	TotalGross       int64      `json:"total_gross"`
+	AmountPaid       int64      `json:"amount_paid"`
+	Notes            string     `json:"notes"`
+	Hash             string     `json:"hash"`
+	PreviousHash     string     `json:"previous_hash"`
+	FinalizedAt      *time.Time `json:"finalized_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}
+
+type InvoiceItem struct {
+	ID          uuid.UUID `json:"id"`
+	TenantID    uuid.UUID `json:"tenant_id"`
+	InvoiceID   uuid.UUID `json:"invoice_id"`
+	Description string    `json:"description"`
+	Quantity    int64     `json:"quantity"`
+	Unit        string    `json:"unit"`
+	UnitPrice   int64     `json:"unit_price"`
+	Position    int       `json:"position"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type Payment struct {
+	ID            uuid.UUID `json:"id"`
+	TenantID      uuid.UUID `json:"tenant_id"`
+	InvoiceID     uuid.UUID `json:"invoice_id"`
+	Amount        int64     `json:"amount"`
+	PaymentDate   string    `json:"payment_date"`
+	PaymentMethod string    `json:"payment_method"`
+	Reference     string    `json:"reference"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+type NumberSequence struct {
+	ID         uuid.UUID `json:"id"`
+	TenantID   uuid.UUID `json:"tenant_id"`
+	Prefix     string    `json:"prefix"`
+	Year       int       `json:"year"`
+	LastNumber int64     `json:"last_number"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+type InvoiceFilter struct {
+	Page    int    `json:"page"`
+	PerPage int    `json:"per_page"`
+	Status  string `json:"status,omitempty"`
+}

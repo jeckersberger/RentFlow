@@ -1,0 +1,31 @@
+@use '../../styles/variables' as *;
+
+.warehouse-tabs {
+  display: flex;
+  gap: $space-2;
+  margin-bottom: $space-5;
+  border-bottom: 1px solid $border-subtle;
+  padding-bottom: $space-3;
+
+  &__tab {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-2 $space-4;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $text-secondary;
+    transition: all $transition-fast;
+
+    &:hover {
+      color: $text-primary;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &--active {
+      color: $accent-cyan;
+      background: rgba(0, 212, 255, 0.08);
+    }
+  }
+}

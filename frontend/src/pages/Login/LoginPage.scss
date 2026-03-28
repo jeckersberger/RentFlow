@@ -1,0 +1,132 @@
+@use '../../styles/variables' as *;
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, $bg-primary 0%, $bg-secondary 50%, $bg-primary 100%);
+  padding: $space-4;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  border-radius: $radius-lg;
+  background: $bg-card;
+  backdrop-filter: blur(24px);
+  border: 1px solid $border-subtle;
+  box-shadow: $shadow-lg;
+
+  &__header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: 700;
+    color: $accent-cyan;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    font-size: $font-size-sm;
+    color: $text-muted;
+    margin: 0;
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-3 $space-4;
+    margin-bottom: $space-6;
+    border-radius: $radius-sm;
+    background: rgba($error, 0.12);
+    border: 1px solid rgba($error, 0.25);
+    color: #fca5a5;
+    font-size: $font-size-sm;
+    overflow: hidden;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+  }
+
+  &__submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-2;
+    width: 100%;
+    padding: $space-3 $space-6;
+    margin-top: $space-2;
+    border: none;
+    border-radius: $radius-sm;
+    font-size: $font-size-base;
+    font-weight: 600;
+    color: #fff;
+    background: $accent-gradient;
+    cursor: pointer;
+    transition: opacity $transition-base, transform $transition-fast;
+
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: $font-size-xs;
+    font-weight: 500;
+    color: $text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  input {
+    width: 100%;
+    padding: $space-3 $space-4;
+    border: 1px solid $border-subtle;
+    border-radius: $radius-sm;
+    background: $bg-input;
+    color: $text-primary;
+    font-size: $font-size-base;
+    outline: none;
+    transition: border-color $transition-base;
+
+    &::placeholder {
+      color: $text-muted;
+    }
+
+    &:focus {
+      border-color: $accent-cyan;
+      box-shadow: 0 0 0 3px rgba($accent-cyan, 0.15);
+    }
+  }
+}
+
+.form-error {
+  font-size: $font-size-xs;
+  color: #fca5a5;
+}

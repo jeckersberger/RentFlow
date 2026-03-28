@@ -1,23 +1,24 @@
-go 1.24.0
+go 1.24
 
 use (
 	./pkg/common
-	./services/ai-service
-	./services/audit-service
-	./services/auth-service
-	./services/crew-service
-	./services/document-service
-	./services/expense-service
-	./services/federation-service
-	./services/insurance-service
-	./services/inventory-service
-	./services/invoice-service
-	./services/maintenance-service
-	./services/notification-service
-	./services/project-service
-	./services/reporting-service
-	./services/scanner-service
-	./services/transport-service
-	./services/warehouse-service
-	./services/workflow-service
+	./services/ai
+	./services/audit
+	./services/auth
+	./services/crew
+	./services/customer
+	./services/document
+	./services/expense
+	./services/federation
+	./services/insurance
+	./services/inventory
+	./services/invoice
+	./services/maintenance
+	./services/notification
+	./services/project
+	./services/reporting
+	./services/scanner
+	./services/transport
+	./services/warehouse
+	./services/workflow
 )

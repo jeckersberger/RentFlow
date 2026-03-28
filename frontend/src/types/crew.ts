@@ -1,45 +1,41 @@
-export type CrewRole = 'technician' | 'rigger' | 'driver' | 'supervisor' | 'assistant' | 'stagehand' | 'light_tech' | 'sound_tech'
-export type AvailabilityStatus = 'available' | 'busy' | 'on_leave' | 'sick'
-export type QualificationType = 'IPAF' | 'electrical_cert' | 'first_aid' | 'forklift' | 'rope_access'
-
-export interface Qualification {
-  id: string
-  type: QualificationType
-  name: string
-  expiry_date: string
-  is_expired: boolean
-}
-
 export interface CrewMember {
-  id: string
-  name: string
-  email: string
-  phone: string
-  role: CrewRole
-  availability: AvailabilityStatus
-  qualifications: Qualification[]
-  hours_this_week: number
-  current_assignment?: string
-  joined_date: string
+  id: string;
+  tenant_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  role: string;
+  hourly_rate: number;
+  is_active: boolean;
+  notes: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface TimeRecord {
-  id: string
-  crew_member_id: string
-  start_time: string
-  end_time?: string
-  project_id: string
-  project_name: string
-  duration_hours: number
-  status: 'active' | 'completed'
+export interface CrewAssignment {
+  id: string;
+  crew_member_id: string;
+  project_id: string;
+  tenant_id: string;
+  role: string;
+  start_date: string;
+  end_date: string;
+  hours_planned: number;
+  hours_actual: number;
+  status: string;
+  notes: string;
+  created_at: string;
 }
 
-export interface Assignment {
-  id: string
-  crew_member_id: string
-  project_id: string
-  project_name: string
-  start_date: string
-  end_date: string
-  status: 'scheduled' | 'in_progress' | 'completed'
+export interface CrewQualification {
+  id: string;
+  crew_member_id: string;
+  tenant_id: string;
+  name: string;
+  issued_at: string;
+  expires_at: string;
+  certificate_number: string;
+  notes: string;
+  created_at: string;
 }

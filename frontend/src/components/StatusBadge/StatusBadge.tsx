@@ -1,65 +1,39 @@
-import { getStatusLabel } from '../../utils/statusLabels'
-import './StatusBadge.scss'
+import './StatusBadge.scss';
+
+type Variant = 'success' | 'warning' | 'error' | 'info' | 'default';
 
 interface StatusBadgeProps {
-  status: string
-  label?: string
-  size?: 'sm' | 'md' | 'lg'
+  status: string;
+  variant?: Variant;
 }
 
-export function StatusBadge({ status, label, size = 'md' }: StatusBadgeProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available':
-      case 'confirmed':
-      case 'paid':
-      case 'completed':
-        return 'success'
-      case 'reserved':
-      case 'draft':
-      case 'quoted':
-      case 'partial':
-        return 'warning'
-      case 'in_progress':
-      case 'active':
-        return 'cyan'
-      case 'checked_out':
-      case 'rented':
-      case 'sent':
-      case 'planning':
-      case 'invoiced':
-      case 'in_use':
-      case 'in_transit':
-      case 'busy':
-        return 'info'
-      case 'maintenance':
-      case 'in_maintenance':
-      case 'loading':
-        return 'orange'
-      case 'overdue':
-      case 'damaged':
-      case 'sick':
-      case 'lost':
-        return 'danger'
-      case 'retired':
-      case 'cancelled':
-        return 'secondary'
-      case 'planned':
-      case 'on_leave':
-        return 'warning'
-      case 'delivered':
-        return 'success'
-      default:
-        return 'secondary'
-    }
-  }
+const autoVariant: Record<string, Variant> = {
+  available: 'success',
+  active: 'success',
+  paid: 'success',
+  reserved: 'info',
+  confirmed: 'info',
+  partial_paid: 'info',
+  draft: 'default',
+  pending: 'default',
+  damaged: 'error',
+  cancelled: 'error',
+  overdue: 'error',
+  in_maintenance: 'warning',
+};
 
-  const color = getStatusColor(status)
-  const displayLabel = label || getStatusLabel(status) || status.replace(/_/g, ' ')
+function formatLabel(status: string): string {
+  return status
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function StatusBadge({ status, variant }: StatusBadgeProps) {
+  const resolved = variant ?? autoVariant[status] ?? 'default';
 
   return (
-    <span className={`status-badge status-badge--${color} status-badge--${size}`}>
-      {displayLabel}
+    <span className={`status-badge status-badge--${resolved}`}>
+      {formatLabel(status)}
     </span>
-  )
+  );
 }
