@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# EquipFlow — PostgreSQL Init Script
+# CrateDesk — PostgreSQL Init Script
 # Erstellt eine separate Datenbank pro Microservice.
 # Wird automatisch beim ersten Start von PostgreSQL ausgefuehrt.
 # =============================================================================
@@ -29,7 +29,7 @@ DATABASES=(
   customer_service
 )
 
-echo "=== EquipFlow: Erstelle ${#DATABASES[@]} Service-Datenbanken ==="
+echo "=== CrateDesk: Erstelle ${#DATABASES[@]} Service-Datenbanken ==="
 
 for db in "${DATABASES[@]}"; do
   echo "  -> Erstelle Datenbank: $db"
@@ -39,4 +39,4 @@ for db in "${DATABASES[@]}"; do
 SQL
 done
 
-echo "=== EquipFlow: Alle Datenbanken erstellt ==="
+echo "=== CrateDesk: Alle Datenbanken erstellt ==="

@@ -1,5 +1,5 @@
 # =============================================================================
-# EquipFlow — Makefile
+# CrateDesk — Makefile
 # =============================================================================
 
 .PHONY: dev build test lint docker-up docker-down docker-build migrate help
@@ -10,7 +10,7 @@
 # --- Entwicklung ---
 
 dev: ## Frontend + Backend im Dev-Modus starten
-	@echo "=== EquipFlow Dev-Modus ==="
+	@echo "=== CrateDesk Dev-Modus ==="
 	docker compose up -d postgres redis
 	@echo "Infrastruktur laeuft. Services einzeln starten oder docker-up nutzen."
 
@@ -62,7 +62,7 @@ lint: ## Go-Code mit golangci-lint pruefen
 
 docker-up: ## Alle Container starten (Infrastruktur)
 	docker compose up -d
-	@echo "=== EquipFlow laeuft ==="
+	@echo "=== CrateDesk laeuft ==="
 	@echo "  PostgreSQL: localhost:$${POSTGRES_PORT:-5432}"
 	@echo "  Redis:      localhost:$${REDIS_PORT:-6379}"
 	@echo "  Traefik:    localhost:$${TRAEFIK_DASHBOARD_PORT:-8080}"
@@ -82,7 +82,7 @@ migrate: ## Datenbank-Migrationen ausfuehren
 			echo "  -> Migriere $$(basename $$dir)"; \
 			DB_NAME=$$(basename $$dir | tr '-' '_'); \
 			migrate -path "$$dir/migrations" \
-				-database "postgres://$${POSTGRES_USER:-rentflow}:$${POSTGRES_PASSWORD}@localhost:$${POSTGRES_PORT:-5432}/$$DB_NAME?sslmode=disable" \
+				-database "postgres://$${POSTGRES_USER:-cratedesk}:$${POSTGRES_PASSWORD}@localhost:$${POSTGRES_PORT:-5432}/$$DB_NAME?sslmode=disable" \
 				up; \
 		fi; \
 	done
@@ -91,7 +91,7 @@ migrate: ## Datenbank-Migrationen ausfuehren
 # --- Hilfe ---
 
 help: ## Diese Hilfe anzeigen
-	@echo "EquipFlow — Verfuegbare Targets:"
+	@echo "CrateDesk — Verfuegbare Targets:"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'

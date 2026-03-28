@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EquipFlow Project Service — Functional & Security Tests
+CrateDesk Project Service — Functional & Security Tests
 Tests all CRUD operations for Projects, Project Equipment, Packlists, and Reservations.
 """
 
@@ -46,7 +46,7 @@ def headers(token):
 
 def main():
     print("=" * 60)
-    print("EquipFlow Project Service — Test Suite")
+    print("CrateDesk Project Service — Test Suite")
     print("=" * 60)
 
     uid = uuid.uuid4().hex[:6]

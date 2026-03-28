@@ -1,8 +1,8 @@
-# Claude Code Configuration — EquipFlow
+# Claude Code Configuration — CrateDesk
 
 ## Projekt
 
-EquipFlow ist eine selbstgehostete Equipment-Rental-Software fuer die Veranstaltungstechnik-Branche.
+CrateDesk ist eine selbstgehostete Equipment-Rental-Software fuer die Veranstaltungstechnik-Branche.
 Entwickelt als Ersatz fuer Rentman, vollstaendig Open Source, optimiert fuer kleine bis mittlere Verleiher.
 
 ## Architektur
@@ -70,7 +70,7 @@ make migrate
 - Architektur: `docs/architecture/`
 - Service-Specs: `docs/specs/`
 - Planungsdokumente: `docs/planning/`
-- KI-Hirn: `C:\Users\jecke\Documents\Claude\Obsidian Hirn\KI-Hirn\Projekte\RentFlow TODOs.md`
+- KI-Hirn: `C:\Users\jecke\Documents\Claude\Obsidian Hirn\KI-Hirn\Projekte\CrateDesk TODOs.md`
 
 ## Datei-Organisation
 

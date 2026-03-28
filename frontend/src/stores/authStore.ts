@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import type { AuthState, User } from '../types/auth';
 import { login as loginApi } from '../services/auth';
 
-const STORAGE_KEY_TOKEN = 'ef_access_token';
-const STORAGE_KEY_USER = 'ef_user';
+const STORAGE_KEY_TOKEN = 'cd_access_token';
+const STORAGE_KEY_USER = 'cd_user';
 
 interface AuthStore extends AuthState {
   login: (email: string, password: string, tenantSlug: string) => Promise<void>;

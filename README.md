@@ -1,4 +1,4 @@
-# EquipFlow v1.0.0
+# CrateDesk v0.1.0
 
 Selbstgehostete Equipment-Rental-Software fuer die Veranstaltungstechnik.
 Verwaltet Inventar, Projekte, Lager, Rechnungen, Crew und mehr — als Open-Source-Alternative zu Rentman.

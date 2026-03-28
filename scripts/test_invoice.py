@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EquipFlow Invoice Service — Functional & Security Tests
+CrateDesk Invoice Service — Functional & Security Tests
 Tests CRUD operations, items, finalize, payments, and GoBD compliance.
 """
 
@@ -46,7 +46,7 @@ def headers(token):
 
 def main():
     print("=" * 60)
-    print("EquipFlow Invoice Service — Test Suite")
+    print("CrateDesk Invoice Service — Test Suite")
     print("=" * 60)
 
     uid = uuid.uuid4().hex[:6]

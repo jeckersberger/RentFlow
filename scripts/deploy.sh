@@ -1,13 +1,13 @@
 #!/bin/bash
 # =============================================================================
-# EquipFlow — Production Deployment Script
+# CrateDesk — Production Deployment Script
 # Builds services SEQUENTIALLY to avoid OOM on small servers (CX33 = 4GB RAM)
-# Usage: ssh root@46.224.105.10 "cd /opt/rentflow && bash scripts/deploy.sh"
+# Usage: ssh root@46.224.105.10 "cd /opt/cratedesk && bash scripts/deploy.sh"
 # =============================================================================
 
 set -euo pipefail
 
-echo "=== EquipFlow Deployment ==="
+echo "=== CrateDesk Deployment ==="
 echo "  Host: $(hostname)"
 echo "  Date: $(date)"
 echo ""

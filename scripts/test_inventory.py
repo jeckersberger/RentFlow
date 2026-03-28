@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EquipFlow Inventory Service — Functional & Security Tests
+CrateDesk Inventory Service — Functional & Security Tests
 Tests all CRUD operations for Equipment, Categories, Equipment Types, and Flightcases.
 """
 
@@ -46,7 +46,7 @@ def headers(token):
 
 def main():
     print("=" * 60)
-    print("EquipFlow Inventory Service — Test Suite")
+    print("CrateDesk Inventory Service — Test Suite")
     print("=" * 60)
 
     # --- Auth ---

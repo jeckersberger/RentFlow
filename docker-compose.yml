@@ -4,32 +4,32 @@ services:
   # =============================================================================
   postgres:
     image: postgres:16-alpine
-    container_name: equipflow-postgres
+    container_name: cratedesk-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-rentflow}
+      POSTGRES_USER: ${POSTGRES_USER:-cratedesk}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein}
-      POSTGRES_DB: rentflow
+      POSTGRES_DB: cratedesk
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rentflow}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cratedesk}"]
       interval: 5s
       timeout: 3s
       retries: 10
       start_period: 10s
     networks:
-      - equipflow
+      - cratedesk
 
   # =============================================================================
   # Redis 7 — Sessions, Cache, Pub/Sub
   # =============================================================================
   redis:
     image: redis:7-alpine
-    container_name: equipflow-redis
+    container_name: cratedesk-redis
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD muss gesetzt sein} --appendonly yes
     volumes:
@@ -43,20 +43,20 @@ services:
       retries: 10
       start_period: 5s
     networks:
-      - equipflow
+      - cratedesk
 
   # =============================================================================
   # Traefik v3.1 — Reverse Proxy (Production-Routing)
   # =============================================================================
   traefik:
     image: traefik:v3.1
-    container_name: equipflow-traefik
+    container_name: cratedesk-traefik
     restart: unless-stopped
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=equipflow"
+      - "--providers.docker.network=cratedesk"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--log.level=${TRAEFIK_LOG_LEVEL:-INFO}"
@@ -67,7 +67,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
-      - equipflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,12 +81,12 @@ services:
     build:
       context: .
       dockerfile: services/auth/Dockerfile
-    container_name: equipflow-auth
+    container_name: cratedesk-auth
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: auth_service
       DB_SSLMODE: disable
@@ -95,7 +95,7 @@ services:
       JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
-      SETUP_TOKEN: ${SETUP_TOKEN:-equipflow-setup-2026}
+      SETUP_TOKEN: ${SETUP_TOKEN:-cratedesk-setup-2026}
     volumes:
       - ./keys:/app/keys:ro
     ports:
@@ -106,7 +106,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/api/v1/setup`)"
@@ -119,12 +119,12 @@ services:
     build:
       context: .
       dockerfile: services/inventory/Dockerfile
-    container_name: equipflow-inventory
+    container_name: cratedesk-inventory
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: inventory_service
       DB_SSLMODE: disable
@@ -140,7 +140,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/equipment`) || PathPrefix(`/api/v1/categories`) || PathPrefix(`/api/v1/equipment-types`) || PathPrefix(`/api/v1/flightcases`)"
@@ -153,12 +153,12 @@ services:
     build:
       context: .
       dockerfile: services/project/Dockerfile
-    container_name: equipflow-project
+    container_name: cratedesk-project
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: project_service
       DB_SSLMODE: disable
@@ -174,7 +174,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.project.rule=PathPrefix(`/api/v1/projects`) || PathPrefix(`/api/v1/packlists`) || PathPrefix(`/api/v1/reservations`)"
@@ -187,12 +187,12 @@ services:
     build:
       context: .
       dockerfile: services/customer/Dockerfile
-    container_name: equipflow-customer
+    container_name: cratedesk-customer
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: customer_service
       DB_SSLMODE: disable
@@ -208,7 +208,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.customer.rule=PathPrefix(`/api/v1/customers`) || PathPrefix(`/api/v1/contacts`)"
@@ -221,12 +221,12 @@ services:
     build:
       context: .
       dockerfile: services/scanner/Dockerfile
-    container_name: equipflow-scanner
+    container_name: cratedesk-scanner
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: scanner_service
       DB_SSLMODE: disable
@@ -242,7 +242,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.scanner.rule=PathPrefix(`/api/v1/scanner`)"
@@ -255,12 +255,12 @@ services:
     build:
       context: .
       dockerfile: services/warehouse/Dockerfile
-    container_name: equipflow-warehouse
+    container_name: cratedesk-warehouse
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: warehouse_service
       DB_SSLMODE: disable
@@ -276,7 +276,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.warehouse.rule=PathPrefix(`/api/v1/warehouses`) || PathPrefix(`/api/v1/zones`) || PathPrefix(`/api/v1/racks`) || PathPrefix(`/api/v1/locations`) || PathPrefix(`/api/v1/movements`) || PathPrefix(`/api/v1/inventory-checks`)"
@@ -289,12 +289,12 @@ services:
     build:
       context: .
       dockerfile: services/document/Dockerfile
-    container_name: equipflow-document
+    container_name: cratedesk-document
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: document_service
       DB_SSLMODE: disable
@@ -310,7 +310,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.document.rule=PathPrefix(`/api/v1/document-templates`) || PathPrefix(`/api/v1/documents`) || PathPrefix(`/api/v1/attachments`)"
@@ -323,12 +323,12 @@ services:
     build:
       context: .
       dockerfile: services/crew/Dockerfile
-    container_name: equipflow-crew
+    container_name: cratedesk-crew
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: crew_service
       DB_SSLMODE: disable
@@ -344,7 +344,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crew.rule=PathPrefix(`/api/v1/crew`)"
@@ -357,12 +357,12 @@ services:
     build:
       context: .
       dockerfile: services/reporting/Dockerfile
-    container_name: equipflow-reporting
+    container_name: cratedesk-reporting
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: reporting_service
       DB_SSLMODE: disable
@@ -378,7 +378,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.reporting.rule=PathPrefix(`/api/v1/report-definitions`) || PathPrefix(`/api/v1/report-snapshots`) || PathPrefix(`/api/v1/dashboard-widgets`)"
@@ -391,12 +391,12 @@ services:
     build:
       context: .
       dockerfile: services/federation/Dockerfile
-    container_name: equipflow-federation
+    container_name: cratedesk-federation
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: federation_service
       DB_SSLMODE: disable
@@ -412,7 +412,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.federation.rule=PathPrefix(`/api/v1/federation-partners`) || PathPrefix(`/api/v1/shared-listings`) || PathPrefix(`/api/v1/federation-requests`)"
@@ -425,12 +425,12 @@ services:
     build:
       context: .
       dockerfile: services/maintenance/Dockerfile
-    container_name: equipflow-maintenance
+    container_name: cratedesk-maintenance
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: maintenance_service
       DB_SSLMODE: disable
@@ -446,7 +446,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.maintenance.rule=PathPrefix(`/api/v1/maintenance-schedules`) || PathPrefix(`/api/v1/maintenance-tasks`)"
@@ -459,12 +459,12 @@ services:
     build:
       context: .
       dockerfile: services/transport/Dockerfile
-    container_name: equipflow-transport
+    container_name: cratedesk-transport
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: transport_service
       DB_SSLMODE: disable
@@ -480,7 +480,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.transport.rule=PathPrefix(`/api/v1/vehicles`) || PathPrefix(`/api/v1/transport-orders`)"
@@ -493,12 +493,12 @@ services:
     build:
       context: .
       dockerfile: services/insurance/Dockerfile
-    container_name: equipflow-insurance
+    container_name: cratedesk-insurance
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: insurance_service
       DB_SSLMODE: disable
@@ -514,7 +514,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.insurance.rule=PathPrefix(`/api/v1/insurance-policies`) || PathPrefix(`/api/v1/insurance-claims`)"
@@ -527,12 +527,12 @@ services:
     build:
       context: .
       dockerfile: services/workflow/Dockerfile
-    container_name: equipflow-workflow
+    container_name: cratedesk-workflow
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: workflow_service
       DB_SSLMODE: disable
@@ -548,7 +548,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.workflow.rule=PathPrefix(`/api/v1/workflow-definitions`) || PathPrefix(`/api/v1/workflow-instances`)"
@@ -561,12 +561,12 @@ services:
     build:
       context: .
       dockerfile: services/ai/Dockerfile
-    container_name: equipflow-ai
+    container_name: cratedesk-ai
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ai_service
       DB_SSLMODE: disable
@@ -582,7 +582,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ai.rule=PathPrefix(`/api/v1/ai-predictions`) || PathPrefix(`/api/v1/ai-suggestions`) || PathPrefix(`/api/v1/ai-training-data`)"
@@ -595,12 +595,12 @@ services:
     build:
       context: .
       dockerfile: services/notification/Dockerfile
-    container_name: equipflow-notification
+    container_name: cratedesk-notification
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: notification_service
       DB_SSLMODE: disable
@@ -616,7 +616,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.notification.rule=PathPrefix(`/api/v1/notifications`) || PathPrefix(`/api/v1/notification-preferences`)"
@@ -629,12 +629,12 @@ services:
     build:
       context: .
       dockerfile: services/audit/Dockerfile
-    container_name: equipflow-audit
+    container_name: cratedesk-audit
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: audit_service
       DB_SSLMODE: disable
@@ -650,7 +650,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.audit.rule=PathPrefix(`/api/v1/audit-logs`) || PathPrefix(`/api/v1/audit-policies`)"
@@ -663,12 +663,12 @@ services:
     build:
       context: .
       dockerfile: services/expense/Dockerfile
-    container_name: equipflow-expense
+    container_name: cratedesk-expense
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: expense_service
       DB_SSLMODE: disable
@@ -684,7 +684,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.expense.rule=PathPrefix(`/api/v1/expense-categories`) || PathPrefix(`/api/v1/expenses`)"
@@ -697,12 +697,12 @@ services:
     build:
       context: .
       dockerfile: services/invoice/Dockerfile
-    container_name: equipflow-invoice
+    container_name: cratedesk-invoice
     restart: unless-stopped
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_USER: ${POSTGRES_USER:-cratedesk}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: invoice_service
       DB_SSLMODE: disable
@@ -718,7 +718,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.invoice.rule=PathPrefix(`/api/v1/invoices`)"
@@ -731,10 +731,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: equipflow-frontend
+    container_name: cratedesk-frontend
     restart: unless-stopped
     networks:
-      - equipflow
+      - cratedesk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
@@ -754,6 +754,6 @@ volumes:
 # Netzwerk
 # =============================================================================
 networks:
-  equipflow:
-    name: equipflow
+  cratedesk:
+    name: cratedesk
     driver: bridge

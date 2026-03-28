@@ -59,7 +59,7 @@ export default function LoginPage() {
         transition={{ duration: 0.4, ease: 'easeOut' }}
       >
         <div className="login-card__header">
-          <h1 className="login-card__title">EquipFlow</h1>
+          <h1 className="login-card__title">CrateDesk</h1>
           <p className="login-card__subtitle">Equipment-Rental Management</p>
         </div>
 

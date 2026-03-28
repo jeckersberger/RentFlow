@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""End-to-end integration test: cross-service flows for EquipFlow."""
+"""End-to-end integration test: cross-service flows for CrateDesk."""
 
 import urllib.request
 import json

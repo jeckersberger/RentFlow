@@ -9,7 +9,7 @@ const api = axios.create({
 
 // Request interceptor: attach Bearer token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ef_access_token');
+  const token = localStorage.getItem('cd_access_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -24,8 +24,8 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('ef_access_token');
-      localStorage.removeItem('ef_user');
+      localStorage.removeItem('cd_access_token');
+      localStorage.removeItem('cd_user');
       window.location.href = '/login';
     }
     return Promise.reject(error.response?.data ?? error);

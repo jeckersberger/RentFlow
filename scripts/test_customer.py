@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EquipFlow Customer Service — Functional & Security Tests
+CrateDesk Customer Service — Functional & Security Tests
 Tests all CRUD operations for Customers, Contacts, and Contact Notes.
 """
 
@@ -46,7 +46,7 @@ def headers(token):
 
 def main():
     print("=" * 60)
-    print("EquipFlow Customer Service — Test Suite")
+    print("CrateDesk Customer Service — Test Suite")
     print("=" * 60)
 
     uid = uuid.uuid4().hex[:6]

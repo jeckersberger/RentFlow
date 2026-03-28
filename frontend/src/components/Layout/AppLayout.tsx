@@ -24,8 +24,8 @@ export default function AppLayout() {
   const { isExpanded, isPinned, expand, collapse, pin } = useSidebarStore();
 
   const handleLogout = () => {
-    localStorage.removeItem('ef_access_token');
-    localStorage.removeItem('ef_user');
+    localStorage.removeItem('cd_access_token');
+    localStorage.removeItem('cd_user');
     navigate('/login', { replace: true });
   };
 
@@ -37,8 +37,8 @@ export default function AppLayout() {
         onMouseLeave={() => !isPinned && collapse()}
       >
         <div className="sidebar__logo">
-          <span className="sidebar__logo-icon">EF</span>
-          {isExpanded && <span className="sidebar__logo-text">EquipFlow</span>}
+          <span className="sidebar__logo-icon">CD</span>
+          {isExpanded && <span className="sidebar__logo-text">CrateDesk</span>}
         </div>
 
         <nav className="sidebar__nav">
@@ -72,7 +72,7 @@ export default function AppLayout() {
       <div className="app-layout__main">
         <header className="app-header">
           <div className="app-header__left">
-            <h2 className="app-header__title">EquipFlow</h2>
+            <h2 className="app-header__title">CrateDesk</h2>
           </div>
         </header>
 
