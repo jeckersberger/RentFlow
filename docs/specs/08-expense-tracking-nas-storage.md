@@ -1,4 +1,4 @@
-# RentFlow — Implementierungsreife Detailspezifikation
+# CrateDesk — Implementierungsreife Detailspezifikation
 ## Expense Tracking Service (Ausgabenverwaltung) & NAS Storage Architecture
 
 **Stand:** 21. März 2026
@@ -598,7 +598,7 @@ Version: 700
 
 "Konto";"Gegenkonto";"Belegdatum";"Belegdatum bis";"Beleg Rechnungsnummer";"Beleg Beschreibung";"Betrag (EUR)";"Umsatzsteuer";"Steuersatz";"Kostenstelle";"Belegnummer";"Belegart";"Belege RoE";"Belege Scan-Hash";"Belege Pfad"
 
-"4320";"1000";"20260320";"20260320";"REC-001";"REWE Markt - Büromaterial";"47,99";"7,66";"19";"KST001";"kassenbon-20260320.jpg";"Kassenbon";"0";"sha256:abc123...";"nas://rentflow/receipts/2026/03/kassenbon-20260320.jpg"
+"4320";"1000";"20260320";"20260320";"REC-001";"REWE Markt - Büromaterial";"47,99";"7,66";"19";"KST001";"kassenbon-20260320.jpg";"Kassenbon";"0";"sha256:abc123...";"nas://cratedesk/receipts/2026/03/kassenbon-20260320.jpg"
 ```
 
 **B. WISO Steuerung CSV Format:**
@@ -611,7 +611,7 @@ Betrag,Kategorie,Datum,Beschreibung,Belegnummer,USt.-Betrag,USt.-Satz,Zahlart,No
 **C. Interne PDF-Reportierung (für Vorsteuerabzug):**
 
 ```
-RentFlow — Ausgabenbericht Q1 2026
+CrateDesk — Ausgabenbericht Q1 2026
 ═════════════════════════════════════════
 
 Zeitraum: 01.01.2026 — 31.03.2026
@@ -961,7 +961,7 @@ type ReceiptUploadedEvent struct {
   FileName string
   FileSize int64
   MimeType string
-  StorageReference string // NAS-Pfad: /mnt/nas/rentflow/receipts/2026/03/...
+  StorageReference string // NAS-Pfad: /mnt/nas/cratedesk/receipts/2026/03/...
 
   UploadMethod string // "mobile_camera", "file_upload", "email", "api"
   OfflineMode bool
@@ -1521,7 +1521,7 @@ type FileMetadata struct {
 
 type FileReference struct {
   ID string                 // UUID
-  StorageKey string         // Backend-spezifischer Key (/mnt/nas/rentflow/receipts/...)
+  StorageKey string         // Backend-spezifischer Key (/mnt/nas/cratedesk/receipts/...)
   TenantID string
   EntityType string
   EntityID string
@@ -1574,13 +1574,13 @@ type NASStorageAdapter struct {
 }
 
 type NASConfig struct {
-  MountPath string        // "/mnt/nas/rentflow"
+  MountPath string        // "/mnt/nas/cratedesk"
   NASType string          // "smb", "nfs"
   SMBUsername string      // für SMB
   SMBPassword string      // für SMB (encrypted!)
   SMBDomain string        // für SMB
-  SMBAddress string       // \\nas.local\rentflow
-  NFSAddress string       // nas.local:/export/rentflow (für NFS)
+  SMBAddress string       // \\nas.local\cratedesk
+  NFSAddress string       // nas.local:/export/cratedesk (für NFS)
   MaxFileSize int64       // 100 * 1024 * 1024 (100 MB)
   AllowedMimeTypes []string
   VerifySSL bool
@@ -1777,7 +1777,7 @@ type LocalStorageAdapter struct {
 
 func (l *LocalStorageAdapter) Store(ctx context.Context, file io.Reader, metadata FileMetadata) (*FileReference, error) {
   // Ähnlich wie NASStorageAdapter, aber speichert lokal
-  // basePath = "./storage" oder "/var/lib/rentflow/storage"
+  // basePath = "./storage" oder "/var/lib/cratedesk/storage"
   // Für Development und Fallback (falls NAS ausfällt)
 
   // ...
@@ -1787,7 +1787,7 @@ func (l *LocalStorageAdapter) Store(ctx context.Context, file io.Reader, metadat
 ### 4.5 File Organization on NAS (Directory Structure)
 
 ```
-/mnt/nas/rentflow/
+/mnt/nas/cratedesk/
 │
 ├── tenants/
 │   ├── {tenant-uuid-1}/
@@ -1852,7 +1852,7 @@ Browser/Client
     ↓
     [HTTPS/TLS]
     ↓
-RentFlow Service (mit authentication)
+CrateDesk Service (mit authentication)
     │
     ├─ User Authorization Check (RBAC)
     │  └─ User darf Datei sehen?
@@ -1865,12 +1865,12 @@ RentFlow Service (mit authentication)
     │
     └─ Retrieve from NAS
        ├─ storage-adapter.Retrieve()
-       │  └─ Read /mnt/nas/rentflow/...
+       │  └─ Read /mnt/nas/cratedesk/...
        │
        └─ Stream zurück (mit Virus-Scan optional)
 ```
 
-**Keine direkten SMB-Shares nach außen!** SMB-Mount ist nur für RentFlow-Service sichtbar.
+**Keine direkten SMB-Shares nach außen!** SMB-Mount ist nur für CrateDesk-Service sichtbar.
 
 ### 4.7 Encryption & Backup
 
@@ -1883,8 +1883,8 @@ Option 1 (Synology Native):
   └─ Automatic snapshots
 
 Option 2 (File-Level):
-  ├─ LUKS Encrypted Volume (/dev/mapper/nas-rentflow)
-  ├─ Mounted at /mnt/nas/rentflow
+  ├─ LUKS Encrypted Volume (/dev/mapper/nas-cratedesk)
+  ├─ Mounted at /mnt/nas/cratedesk
   └─ Keys in Vault (HashiCorp Vault oder Docker Secrets)
 
 Option 3 (ZFS):
@@ -1917,8 +1917,8 @@ Backup Plan:
 nas_sync:
   image: lsyncd
   volumes:
-    - /mnt/nas/rentflow:/source:ro
-    - /mnt/backup-external/rentflow:/backup
+    - /mnt/nas/cratedesk:/source:ro
+    - /mnt/backup-external/cratedesk:/backup
   environment:
     SYNC_INTERVAL: 86400 # Daily
   command: |
@@ -1933,7 +1933,7 @@ nas_sync:
 
 **Anforderungen:**
 
-| Anforderung | Implementierung in RentFlow |
+| Anforderung | Implementierung in CrateDesk |
 |-------------|---------------------------|
 | **Belegablage** | NAS mit Zugriffskontrolle, keine Modifizierbarkeit |
 | **Datenintegrität** | SHA-256 Checksums in KurrentDB, Verifizierung bei Download |
@@ -2016,7 +2016,7 @@ Folgende Infos MÜSSEN auf dem Beleg sein:
   ✓ Lieferant-Name & Adresse
   ✓ Empfänger-Name (oder implizit = Tenant)
 
-In RentFlow:
+In CrateDesk:
   ├─ OCR extrahiert alle Felder
   ├─ Manual Correction falls OCR ungenau
   ├─ Validation vor Export (keine fehlenden Felder)
@@ -2061,7 +2061,7 @@ func (s *ExportService) ValidateForVorsteuerabzug(expense Expense) error {
 
 services:
   expense-service:
-    image: rentflow/expense-service:latest
+    image: cratedesk/expense-service:latest
     ports:
       - "8018:8018"
     environment:
@@ -2071,12 +2071,12 @@ services:
       KURRENTDB_PASSWORD: "${KURRENTDB_PASSWORD}"
 
       # PostgreSQL
-      DATABASE_URL: "postgres://rentflow:${DB_PASSWORD}@postgres:5432/rentflow?sslmode=disable"
+      DATABASE_URL: "postgres://cratedesk:${DB_PASSWORD}@postgres:5432/cratedesk?sslmode=disable"
       DATABASE_SCHEMA: "expense_schema"
 
       # NAS Storage
       STORAGE_BACKEND: "nas"
-      NAS_MOUNT_PATH: "/mnt/nas/rentflow"
+      NAS_MOUNT_PATH: "/mnt/nas/cratedesk"
       NAS_TYPE: "smb"
       # SMB-Credentials (in .env oder Docker Secrets)
       NAS_SMB_USERNAME: "${NAS_USER}"
@@ -2095,7 +2095,7 @@ services:
       LOG_FORMAT: "json"
 
       # CORS
-      CORS_ALLOWED_ORIGINS: "https://app.rentflow.local"
+      CORS_ALLOWED_ORIGINS: "https://app.cratedesk.local"
 
     depends_on:
       - kurrentdb
@@ -2104,10 +2104,10 @@ services:
       - nas
 
     volumes:
-      - /mnt/nas/rentflow:/mnt/nas/rentflow:rw
+      - /mnt/nas/cratedesk:/mnt/nas/cratedesk:rw
 
     networks:
-      - rentflow
+      - cratedesk
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8018/health"]
@@ -2126,25 +2126,25 @@ services:
     volumes:
       - nas-storage:/var/lib/nas
     networks:
-      - rentflow
+      - cratedesk
 
   # NAS Mount Sidecar (für lokale Tests)
   nas-mount:
     image: alpine:latest
-    command: sh -c "apk add cifs-utils && mount -t cifs //nas/rentflow /mnt/nas/rentflow -o username=$NAS_USER,password=$NAS_PASSWORD,uid=1000,gid=1000"
+    command: sh -c "apk add cifs-utils && mount -t cifs //nas/cratedesk /mnt/nas/cratedesk -o username=$NAS_USER,password=$NAS_PASSWORD,uid=1000,gid=1000"
     volumes:
-      - nas-rentflow:/mnt/nas/rentflow
+      - nas-cratedesk:/mnt/nas/cratedesk
     depends_on:
       - nas
     networks:
-      - rentflow
+      - cratedesk
 
 volumes:
   nas-storage:
-  nas-rentflow:
+  nas-cratedesk:
 
 networks:
-  rentflow:
+  cratedesk:
     driver: bridge
 ```
 
@@ -2156,8 +2156,8 @@ networks:
 server:
   port: 8018
   tlsEnabled: true
-  tlsCertFile: /etc/rentflow/certs/expense-service.crt
-  tlsKeyFile: /etc/rentflow/certs/expense-service.key
+  tlsCertFile: /etc/cratedesk/certs/expense-service.crt
+  tlsKeyFile: /etc/cratedesk/certs/expense-service.key
 
 kurrentdb:
   url: ${KURRENTDB_URL}
@@ -2238,7 +2238,7 @@ logging:
   format: ${LOG_FORMAT} # "json" or "text"
   outputs:
     - stdout
-    - file:///var/log/rentflow/expense-service.log
+    - file:///var/log/cratedesk/expense-service.log
 ```
 
 ### 6.3 Monitoring & Observability
@@ -2251,7 +2251,7 @@ import "github.com/prometheus/client_golang/prometheus"
 var (
   expenseCreatedCounter = prometheus.NewCounterVec(
     prometheus.CounterOpts{
-      Name: "rentflow_expenses_created_total",
+      Name: "cratedesk_expenses_created_total",
       Help: "Total number of expenses created",
     },
     []string{"tenant_id", "status"},
@@ -2259,7 +2259,7 @@ var (
 
   ocrProcessingDuration = prometheus.NewHistogramVec(
     prometheus.HistogramOpts{
-      Name: "rentflow_ocr_processing_duration_seconds",
+      Name: "cratedesk_ocr_processing_duration_seconds",
       Help: "OCR processing duration",
       Buckets: prometheus.ExponentialBuckets(0.1, 2, 8),
     },
@@ -2268,7 +2268,7 @@ var (
 
   nasStorageUsage = prometheus.NewGaugeVec(
     prometheus.GaugeOpts{
-      Name: "rentflow_nas_storage_bytes",
+      Name: "cratedesk_nas_storage_bytes",
       Help: "NAS storage usage",
     },
     []string{"tenant_id", "type"},
@@ -2276,7 +2276,7 @@ var (
 
   approvalQueueLength = prometheus.NewGaugeVec(
     prometheus.GaugeOpts{
-      Name: "rentflow_approval_queue_length",
+      Name: "cratedesk_approval_queue_length",
       Help: "Number of expenses awaiting approval",
     },
     []string{"tenant_id"},
@@ -2297,30 +2297,30 @@ func init() {
 ```json
 {
   "dashboard": {
-    "title": "RentFlow Expense Tracking",
+    "title": "CrateDesk Expense Tracking",
     "panels": [
       {
         "title": "Expenses Created (Last 24h)",
         "targets": [
-          { "expr": "increase(rentflow_expenses_created_total[24h])" }
+          { "expr": "increase(cratedesk_expenses_created_total[24h])" }
         ]
       },
       {
         "title": "OCR Success Rate",
         "targets": [
-          { "expr": "increase(rentflow_ocr_processing_duration_seconds_bucket{status='success'}[24h]) / increase(rentflow_ocr_processing_duration_seconds_count[24h])" }
+          { "expr": "increase(cratedesk_ocr_processing_duration_seconds_bucket{status='success'}[24h]) / increase(cratedesk_ocr_processing_duration_seconds_count[24h])" }
         ]
       },
       {
         "title": "NAS Storage Usage",
         "targets": [
-          { "expr": "rentflow_nas_storage_bytes" }
+          { "expr": "cratedesk_nas_storage_bytes" }
         ]
       },
       {
         "title": "Approval Queue",
         "targets": [
-          { "expr": "rentflow_approval_queue_length" }
+          { "expr": "cratedesk_approval_queue_length" }
         ]
       }
     ]
@@ -2362,15 +2362,15 @@ jobs:
         with:
           go-version: '1.22'
       - run: go build -o expense-service ./services/expense-service/cmd
-      - run: docker build -t rentflow/expense-service:${{ github.sha }} .
-      - run: docker push ghcr.io/rentflow/expense-service:${{ github.sha }}
+      - run: docker build -t cratedesk/expense-service:${{ github.sha }} .
+      - run: docker push ghcr.io/cratedesk/expense-service:${{ github.sha }}
 
   security:
     runs-on: ubuntu-latest
     steps:
       - uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ghcr.io/rentflow/expense-service:${{ github.sha }}
+          image-ref: ghcr.io/cratedesk/expense-service:${{ github.sha }}
           format: 'sarif'
 ```
 

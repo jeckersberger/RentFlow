@@ -293,7 +293,7 @@ func (s *AuthService) generateAccessToken(user *domain.User) (string, int64, err
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
-			Issuer:    "equipflow-auth",
+			Issuer:    "cratedesk-auth",
 			Subject:   user.ID.String(),
 		},
 	}

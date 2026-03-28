@@ -870,7 +870,7 @@ Based on the application structure:
 
 ---
 
-## 6. Key Takeaways for RentFlow
+## 6. Key Takeaways for CrateDesk
 
 ### 6.1 Core Data Model
 
@@ -937,7 +937,7 @@ The Rentman data model centers on:
 5. **Shortage management** -- Cross-referencing availability across projects, locations, and time periods
 6. **Document system** -- Quote/contract generation with digital signing, online portal, letterhead customization
 
-### 6.4 UX Opportunities for RentFlow
+### 6.4 UX Opportunities for CrateDesk
 
 1. **Simplify navigation** -- Rentman has ~35 sub-pages; consider progressive disclosure and smart defaults
 2. **Reduce tab overload** -- Project detail has 11 tabs; consider a more compact layout with collapsible sections
@@ -967,7 +967,7 @@ The Rentman data model centers on:
 
 ## Appendix: Snapshot Files
 
-All accessibility snapshots saved to: `C:\Users\jecke\rentflow\docs\analysis\snapshots\`
+All accessibility snapshots saved to: `C:\Users\jecke\cratedesk\docs\analysis\snapshots\`
 
 | File | Section |
 |---|---|

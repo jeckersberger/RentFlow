@@ -1,4 +1,4 @@
-# RentFlow — Frontend Design System & Component Library
+# CrateDesk — Frontend Design System & Component Library
 
 **Stand:** 21. März 2026
 **Version:** 1.0 (Implementierungsreif)
@@ -1445,7 +1445,7 @@ export const Header: React.FC = () => {
   return (
     <header className="header">
       <div className="header-left">
-        <a href="/" className="header-logo">RentFlow</a>
+        <a href="/" className="header-logo">CrateDesk</a>
         <span className="header-role">{role}</span>
       </div>
 
@@ -2252,8 +2252,8 @@ export default {
         ],
       },
       manifest: {
-        name: 'RentFlow',
-        short_name: 'RentFlow',
+        name: 'CrateDesk',
+        short_name: 'CrateDesk',
         description: 'Self-hosted Lagerverwaltung für Veranstaltungstechnik',
         theme_color: '#2563eb',
         background_color: '#ffffff',
@@ -2287,7 +2287,7 @@ export class OfflineDB extends Dexie {
   scans!: Table<OfflineScan>;
 
   constructor() {
-    super('rentflow-offline');
+    super('cratedesk-offline');
     this.version(1).stores({
       scans: '++id, synced, timestamp',
     });

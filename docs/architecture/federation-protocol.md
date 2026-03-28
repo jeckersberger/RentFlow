@@ -1,10 +1,10 @@
-# RentFlow Federation Protocol
+# CrateDesk Federation Protocol
 
 ## 1. Protokoll-Übersicht
 
 ### Architektur: Dezentrales Peer-to-Peer System
 
-RentFlow Federation ist ein **dezentrales, serverlos Protokoll** für die Vernetzung unabhängiger Lagerverwaltungs-Instanzen. Jede VT-Firma behält ihre komplette Kontrolle:
+CrateDesk Federation ist ein **dezentrales, serverlos Protokoll** für die Vernetzung unabhängiger Lagerverwaltungs-Instanzen. Jede VT-Firma behält ihre komplette Kontrolle:
 
 - **Eigener Server, eigene Daten:** Alle Equipment- und Geschäftsdaten bleiben lokal
 - **Keine zentrale Plattform:** Keine Abhängigkeit von Drittanbietern
@@ -51,10 +51,10 @@ RentFlow Federation ist ein **dezentrales, serverlos Protokoll** für die Vernet
 **Marco sendet HTTP POST an Stefans Discovery-Endpoint:**
 
 ```http
-POST https://stefan-soundpro.com/.well-known/rentflow-federation/pair
+POST https://stefan-soundpro.com/.well-known/cratedesk-federation/pair
 Content-Type: application/json
-X-RentFlow-Pairing-Token: ST-9f2e8d1c-4a7b-11ef-9e3a-0242ac130003
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Pairing-Token: ST-9f2e8d1c-4a7b-11ef-9e3a-0242ac130003
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
 
 {
   "instance_id": "marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b",
@@ -111,10 +111,10 @@ INSERT INTO federation_partners (
 ```http
 GET /api/v1/federation/health HTTP/1.1
 Host: stefan-soundpro.com
-X-RentFlow-Instance-Id: marco-veranstaltung
-X-RentFlow-Timestamp: 2026-03-20T14:31:00Z
-X-RentFlow-Signature: sha256=base64encodedsig
-X-RentFlow-Client-Cert-Fingerprint: sha256:a3f8e2c1d9...
+X-CrateDesk-Instance-Id: marco-veranstaltung
+X-CrateDesk-Timestamp: 2026-03-20T14:31:00Z
+X-CrateDesk-Signature: sha256=base64encodedsig
+X-CrateDesk-Client-Cert-Fingerprint: sha256:a3f8e2c1d9...
 ```
 
 **Stefan verifiziert:**
@@ -134,7 +134,7 @@ X-RentFlow-Client-Cert-Fingerprint: sha256:a3f8e2c1d9...
 
 1. **Self-Signed Root CA** (pro Instanz, einmalig):
    ```
-   Subject: CN=RentFlow CA (stefan-soundpro)
+   Subject: CN=CrateDesk CA (stefan-soundpro)
    Issuer: (self-signed)
    Validity: 10 years
    Key Size: 4096-bit RSA
@@ -144,7 +144,7 @@ X-RentFlow-Client-Cert-Fingerprint: sha256:a3f8e2c1d9...
 2. **Server-Zertifikat** (automatisch generiert):
    ```
    Subject: CN=stefan-soundpro.com
-   Issuer: RentFlow CA (stefan-soundpro)
+   Issuer: CrateDesk CA (stefan-soundpro)
    Validity: 1 year (auto-renewal 30 days vor Ablauf)
    Key Size: 4096-bit RSA
    SANs: stefan-soundpro.com, *.stefan-soundpro.com
@@ -153,7 +153,7 @@ X-RentFlow-Client-Cert-Fingerprint: sha256:a3f8e2c1d9...
 
 3. **Speicherung:**
    ```
-   /opt/rentflow/certs/
+   /opt/cratedesk/certs/
    ├── ca.crt              (Root CA certificate)
    ├── ca.key              (Root CA private key - protected)
    ├── server.crt          (Server certificate)
@@ -218,15 +218,15 @@ func ValidateMTLSPeer(ctx context.Context, cert *x509.Certificate, partnerID str
 
 Alle Federation-Endpunkte liegen unter `/api/v1/federation/` und erfordern:
 - mTLS mit gepinntem Zertifikat
-- Signed Request (`X-RentFlow-Signature` Header)
-- Gültigen `X-RentFlow-Instance-Id` Header
+- Signed Request (`X-CrateDesk-Signature` Header)
+- Gültigen `X-CrateDesk-Instance-Id` Header
 
-### 4.1 Discovery: `/.well-known/rentflow-federation`
+### 4.1 Discovery: `/.well-known/cratedesk-federation`
 
 **Öffentlicher Endpunkt – KEINE mTLS erforderlich.**
 
 ```http
-GET /.well-known/rentflow-federation HTTP/1.1
+GET /.well-known/cratedesk-federation HTTP/1.1
 Host: stefan-soundpro.com
 ```
 
@@ -260,9 +260,9 @@ Host: stefan-soundpro.com
 ```http
 GET /api/v1/federation/equipment/categories HTTP/1.1
 Host: stefan-soundpro.com
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-03-20T14:31:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-03-20T14:31:00Z
+X-CrateDesk-Signature: sha256=base64sig
 ```
 
 **Response:**
@@ -299,9 +299,9 @@ X-RentFlow-Signature: sha256=base64sig
 ```http
 GET /api/v1/federation/equipment/categories/cat-audio-001/items HTTP/1.1
 Host: stefan-soundpro.com
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-03-20T14:31:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-03-20T14:31:00Z
+X-CrateDesk-Signature: sha256=base64sig
 ```
 
 **Response:**
@@ -368,9 +368,9 @@ X-RentFlow-Signature: sha256=base64sig
 POST /api/v1/federation/availability/query HTTP/1.1
 Host: stefan-soundpro.com
 Content-Type: application/json
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-03-20T14:31:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-03-20T14:31:00Z
+X-CrateDesk-Signature: sha256=base64sig
 
 {
   "queries": [
@@ -448,9 +448,9 @@ X-RentFlow-Signature: sha256=base64sig
 POST /api/v1/federation/sub-rentals HTTP/1.1
 Host: stefan-soundpro.com
 Content-Type: application/json
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-03-20T14:35:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-03-20T14:35:00Z
+X-CrateDesk-Signature: sha256=base64sig
 
 {
   "sub_rental_id": "sr-marco-001-2026-04-01",
@@ -510,9 +510,9 @@ X-RentFlow-Signature: sha256=base64sig
 ```http
 GET /api/v1/federation/sub-rentals/sr-stefan-2026-03-20-001 HTTP/1.1
 Host: stefan-soundpro.com
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-03-20T14:40:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-03-20T14:40:00Z
+X-CrateDesk-Signature: sha256=base64sig
 ```
 
 **Response:**
@@ -551,9 +551,9 @@ X-RentFlow-Signature: sha256=base64sig
 POST /api/v1/federation/sub-rentals/sr-stefan-2026-03-20-001/confirm HTTP/1.1
 Host: marco-events.com
 Content-Type: application/json
-X-RentFlow-Instance-Id: stefan-soundpro:3b2d8f1a-7c4e-11ef-8b9d-0242ac110002
-X-RentFlow-Timestamp: 2026-03-20T15:00:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: stefan-soundpro:3b2d8f1a-7c4e-11ef-8b9d-0242ac110002
+X-CrateDesk-Timestamp: 2026-03-20T15:00:00Z
+X-CrateDesk-Signature: sha256=base64sig
 
 {
   "confirmed": true,
@@ -602,9 +602,9 @@ POST /api/v1/federation/sub-rentals/sr-stefan-2026-03-20-001/reject HTTP/1.1
 POST /api/v1/federation/sub-rentals/sr-stefan-2026-03-20-001/handover/start HTTP/1.1
 Host: stefan-soundpro.com
 Content-Type: application/json
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-04-01T07:45:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-04-01T07:45:00Z
+X-CrateDesk-Signature: sha256=base64sig
 
 {
   "handover_type": "pickup",
@@ -653,9 +653,9 @@ X-RentFlow-Signature: sha256=base64sig
 POST /api/v1/federation/handover/hnd-sr-stefan-2026-03-20-001-pickup/documents HTTP/1.1
 Host: stefan-soundpro.com
 Content-Type: multipart/form-data
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-04-01T08:15:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-04-01T08:15:00Z
+X-CrateDesk-Signature: sha256=base64sig
 
 --boundary
 Content-Disposition: form-data; name="documents"
@@ -722,9 +722,9 @@ Content-Type: application/json
 POST /api/v1/federation/sub-rentals/sr-stefan-2026-03-20-001/handover/return HTTP/1.1
 Host: marco-events.com
 Content-Type: multipart/form-data
-X-RentFlow-Instance-Id: stefan-soundpro:3b2d8f1a-7c4e-11ef-8b9d-0242ac110002
-X-RentFlow-Timestamp: 2026-04-03T18:00:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: stefan-soundpro:3b2d8f1a-7c4e-11ef-8b9d-0242ac110002
+X-CrateDesk-Timestamp: 2026-04-03T18:00:00Z
+X-CrateDesk-Signature: sha256=base64sig
 
 [... similar document upload structure ...]
 ```
@@ -750,9 +750,9 @@ X-RentFlow-Signature: sha256=base64sig
 ```http
 GET /api/v1/federation/invoices/inv-2026-03-20-001 HTTP/1.1
 Host: marco-events.com
-X-RentFlow-Instance-Id: stefan-soundpro:3b2d8f1a-7c4e-11ef-8b9d-0242ac110002
-X-RentFlow-Timestamp: 2026-03-20T18:30:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: stefan-soundpro:3b2d8f1a-7c4e-11ef-8b9d-0242ac110002
+X-CrateDesk-Timestamp: 2026-03-20T18:30:00Z
+X-CrateDesk-Signature: sha256=base64sig
 ```
 
 **Response:**
@@ -821,9 +821,9 @@ X-RentFlow-Signature: sha256=base64sig
 ```http
 GET /api/v1/federation/invoices/inv-2026-03-20-001/pdf HTTP/1.1
 Host: marco-events.com
-X-RentFlow-Instance-Id: stefan-soundpro:3b2d8f1a-7c4e-11ef-8b9d-0242ac110002
-X-RentFlow-Timestamp: 2026-03-20T18:35:00Z
-X-RentFlow-Signature: sha256=base64sig
+X-CrateDesk-Instance-Id: stefan-soundpro:3b2d8f1a-7c4e-11ef-8b9d-0242ac110002
+X-CrateDesk-Timestamp: 2026-03-20T18:35:00Z
+X-CrateDesk-Signature: sha256=base64sig
 ```
 
 **Response:** PDF binary mit Content-Type `application/pdf`
@@ -1089,9 +1089,9 @@ Zusätzlich zu mTLS: Alle Requests müssen signiert sein.
 
 **Signature Header Format:**
 ```
-X-RentFlow-Signature: sha256=base64encodedsignature
-X-RentFlow-Timestamp: 2026-03-20T14:31:00Z
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Signature: sha256=base64encodedsignature
+X-CrateDesk-Timestamp: 2026-03-20T14:31:00Z
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
 ```
 
 **Signatur-Berechnung (Marco unterschreibt für Stefan):**
@@ -1116,9 +1116,9 @@ func ValidateRequestSignature(r *http.Request, partner *Partner) error {
     body, _ := ioutil.ReadAll(r.Body)
     r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
-    timestamp := r.Header.Get("X-RentFlow-Timestamp")
-    instanceID := r.Header.Get("X-RentFlow-Instance-Id")
-    signature := r.Header.Get("X-RentFlow-Signature")
+    timestamp := r.Header.Get("X-CrateDesk-Timestamp")
+    instanceID := r.Header.Get("X-CrateDesk-Instance-Id")
+    signature := r.Header.Get("X-CrateDesk-Signature")
 
     // Signatur aus Request extrahieren
     sig := strings.TrimPrefix(signature, "sha256=")
@@ -1259,7 +1259,7 @@ INSERT INTO federation_audit_log VALUES (
     NULL,
     false,
     '192.0.2.42',
-    'RentFlow-Federation/1.0',
+    'CrateDesk-Federation/1.0',
     NOW()
 );
 ```
@@ -1422,7 +1422,7 @@ func (h *HealthChecker) CheckPartnerHealth(ctx context.Context, partner *Partner
     ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
     defer cancel()
 
-    resp, err := h.client.Get(ctx, partner.BaseURL + "/.well-known/rentflow-federation")
+    resp, err := h.client.Get(ctx, partner.BaseURL + "/.well-known/cratedesk-federation")
 
     if err != nil {
         partner.LastHealthStatus = "offline"
@@ -1528,7 +1528,7 @@ func (h *HealthChecker) CheckPartnerHealth(ctx context.Context, partner *Partner
 **Wenn Stefan API 2.0 hat, Marco aber nur 1.0:**
 
 ```
-Stefan macht Request mit: X-RentFlow-API-Version: 2.0
+Stefan macht Request mit: X-CrateDesk-API-Version: 2.0
 Marco antwortet:
 HTTP/1.1 505 HTTP Version Not Supported
 Content-Type: application/json
@@ -1848,7 +1848,7 @@ Marco Techniker      Marco System        Stefan System       Stefan Techniker
 
 ### 11.1 Rentman's proprietäres Modell (Probleme)
 
-| Aspekt | Rentman | RentFlow Federation |
+| Aspekt | Rentman | CrateDesk Federation |
 |--------|---------|-------------------|
 | **Zentraler Server** | ✅ Ja (rentman.io) | ❌ Nein – P2P |
 | **Datenkontrolle** | ⚠️ Rentman kontrolliert alles | ✅ Jeder Admin kontrolliert seine Daten |
@@ -1862,11 +1862,11 @@ Marco Techniker      Marco System        Stefan System       Stefan Techniker
 | **Customization** | ❌ Rentman bestimmt Features | ✅ Jeder kann erweitern |
 | **Switching Costs** | ✅ Sehr hoch (Export schwierig) | ❌ Niedrig (Standard REST API) |
 
-### 11.2 Warum RentFlow Federation besser ist
+### 11.2 Warum CrateDesk Federation besser ist
 
 #### 1. **Wahre Dezentralisierung**
 - Rentman = Zentraler Hub (alle Daten fließen durch Rentman)
-- RentFlow = Direkt Peer-to-Peer (Stefan ↔ Marco, kein Drittel-Server)
+- CrateDesk = Direkt Peer-to-Peer (Stefan ↔ Marco, kein Drittel-Server)
 
 #### 2. **Datensouveränität**
 ```
@@ -1877,7 +1877,7 @@ Rentman Model:
        ↑
   VT-Firma B [Server]
 
-RentFlow Model:
+CrateDesk Model:
   VT-Firma A [Server]
        ↕ (direkt, nur notwendige Daten)
   VT-Firma B [Server]
@@ -1888,23 +1888,23 @@ RentFlow Model:
 
 #### 3. **Offline-Resilienz**
 - **Rentman:** Wenn rentman.io down ist → keine Vernetzung möglich
-- **RentFlow:** Wenn Marcos Server down ist → Stefan arbeitet normal weiter, Marco ist nur nicht erreichbar
+- **CrateDesk:** Wenn Marcos Server down ist → Stefan arbeitet normal weiter, Marco ist nur nicht erreichbar
 
 #### 4. **Kosten**
 - **Rentman:** SaaS-Gebühren + API-Kosten + Setup-Gebühren
-- **RentFlow:** Kostenlos – nur API-Calls zwischen Servern
+- **CrateDesk:** Kostenlos – nur API-Calls zwischen Servern
 
 #### 5. **Transparenz & Security**
 - **Rentman:** Proprietär, Black Box (wie werden Daten verarbeitet? Wer hat Zugriff?)
-- **RentFlow:** Dokumentiertes Protokoll, Open Source, Jeder kann überprüfen (mTLS, Signatures, kein Backdoor)
+- **CrateDesk:** Dokumentiertes Protokoll, Open Source, Jeder kann überprüfen (mTLS, Signatures, kein Backdoor)
 
 #### 6. **Customization**
 - **Rentman:** Features kommen von Rentman, nicht konfigurierbar
-- **RentFlow:** Jede Firma konfiguriert selbst (Preise, Kategorien, Auto-Confirm, etc.)
+- **CrateDesk:** Jede Firma konfiguriert selbst (Preise, Kategorien, Auto-Confirm, etc.)
 
 #### 7. **Switching Costs**
 - **Rentman:** Hohe Abhängigkeit, Daten fest in Rentman
-- **RentFlow:** Standard REST JSON API – jederzeit aussteigen, Daten bleiben bei dir
+- **CrateDesk:** Standard REST JSON API – jederzeit aussteigen, Daten bleiben bei dir
 
 #### 8. **Compliance & Datenschutz**
 ```
@@ -1915,7 +1915,7 @@ Rentman-Problem:
   → Rentman könnte theoretisch deine Daten für ML-Training nutzen
   → GDPR-Risiko: Daten bei US-Firma (Rentman gegründet in USA/EU?)
 
-RentFlow-Lösung:
+CrateDesk-Lösung:
   "Equipment verfügbar in Partner B"
   → Daten fließen DIREKT von Marcos Server zu Stefans Server
   → Keine Zentralisierung
@@ -1925,14 +1925,14 @@ RentFlow-Lösung:
 
 #### 9. **Skalierbarkeit**
 - **Rentman:** Alle Abfragen gehen durch Rentman → Bottleneck
-- **RentFlow:** Jeder Partner handled seine eigenen Abfragen → N×N-Skalierung
+- **CrateDesk:** Jeder Partner handled seine eigenen Abfragen → N×N-Skalierung
 
 #### 10. **Ecosystem**
 ```
 Rentman:
   Rentman API ← nur proprietäre Features
 
-RentFlow:
+CrateDesk:
   ✓ Offenes Protokoll
   ✓ Jeder Entwickler kann Tools bauen
   ✓ Andere Software kann integrieren
@@ -1948,7 +1948,7 @@ RentFlow:
 
 ## Zusammenfassung
 
-**RentFlow Federation** ist ein **dezentrales, sicheres und kontrollierbares Netzwerk** für unabhängige VT-Firmen:
+**CrateDesk Federation** ist ein **dezentrales, sicheres und kontrollierbares Netzwerk** für unabhängige VT-Firmen:
 
 ✅ **Keine zentrale Plattform** – P2P direkt zwischen Servern
 ✅ **Volle Kontrolle** – Jeder Admin bestimmt, was geteilt wird

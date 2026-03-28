@@ -1,4 +1,4 @@
-# Deployment & Production Setup — RentFlow
+# Deployment & Production Setup — CrateDesk
 
 **Stand:** 20. März 2026
 **Zielgruppe:** DevOps, SREs, Infrastructure Engineers
@@ -62,7 +62,7 @@ ENTRYPOINT ["/app/inventory-service"]
 
 set -e
 
-REGISTRY="rentflow.azurecr.io"
+REGISTRY="cratedesk.azurecr.io"
 VERSION="${VERSION:-latest}"
 
 SERVICES=(
@@ -125,7 +125,7 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL:-admin@rentflow.local}"
+      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL:-admin@cratedesk.local}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--log.level=INFO"
     ports:
@@ -136,15 +136,15 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./letsencrypt:/letsencrypt
     networks:
-      - rentflow
+      - cratedesk
     restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: rentflow
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-rentflow_dev}
-      POSTGRES_DB: rentflow
+      POSTGRES_USER: cratedesk
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cratedesk_dev}
+      POSTGRES_DB: cratedesk
       POSTGRES_INITDB_ARGS: "-c shared_preload_libraries=pg_stat_statements"
     ports:
       - "5432:5432"
@@ -152,9 +152,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/01-init.sql
     networks:
-      - rentflow
+      - cratedesk
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rentflow"]
+      test: ["CMD-SHELL", "pg_isready -U cratedesk"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -172,7 +172,7 @@ services:
       - "2113:2113"
       - "1113:1113"
     networks:
-      - rentflow
+      - cratedesk
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:2113/health"]
       interval: 10s
@@ -187,7 +187,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - rentflow
+      - cratedesk
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -204,7 +204,7 @@ services:
     environment:
       AUTH_SERVER_PORT: 8001
       AUTH_DATABASE_HOST: postgres
-      AUTH_DATABASE_PASSWORD: ${DB_PASSWORD:-rentflow_dev}
+      AUTH_DATABASE_PASSWORD: ${DB_PASSWORD:-cratedesk_dev}
       AUTH_EVENTSTORE_URL: esdb://kurrentdb:2113
       AUTH_REDIS_ADDR: redis:6379
       AUTH_JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
@@ -219,10 +219,10 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - rentflow
+      - cratedesk
     labels:
       traefik.enable: "true"
-      traefik.http.routers.auth.rule: "Host(`api.rentflow.local`) && PathPrefix(`/auth`)"
+      traefik.http.routers.auth.rule: "Host(`api.cratedesk.local`) && PathPrefix(`/auth`)"
       traefik.http.services.auth.loadbalancer.server.port: "8001"
       traefik.http.services.auth.loadbalancer.healthcheck.path: "/health"
       traefik.http.services.auth.loadbalancer.healthcheck.interval: "10s"
@@ -235,7 +235,7 @@ services:
     environment:
       INVENTORY_SERVER_PORT: 8002
       INVENTORY_DATABASE_HOST: postgres
-      INVENTORY_DATABASE_PASSWORD: ${DB_PASSWORD:-rentflow_dev}
+      INVENTORY_DATABASE_PASSWORD: ${DB_PASSWORD:-cratedesk_dev}
       INVENTORY_EVENTSTORE_URL: esdb://kurrentdb:2113
       INVENTORY_REDIS_ADDR: redis:6379
       INVENTORY_ENVIRONMENT: development
@@ -247,10 +247,10 @@ services:
       kurrentdb:
         condition: service_healthy
     networks:
-      - rentflow
+      - cratedesk
     labels:
       traefik.enable: "true"
-      traefik.http.routers.inventory.rule: "Host(`api.rentflow.local`) && PathPrefix(`/inventory`)"
+      traefik.http.routers.inventory.rule: "Host(`api.cratedesk.local`) && PathPrefix(`/inventory`)"
       traefik.http.services.inventory.loadbalancer.server.port: "8002"
       traefik.http.services.inventory.loadbalancer.healthcheck.path: "/health"
     restart: unless-stopped
@@ -262,7 +262,7 @@ services:
     environment:
       PROJECT_SERVER_PORT: 8003
       PROJECT_DATABASE_HOST: postgres
-      PROJECT_DATABASE_PASSWORD: ${DB_PASSWORD:-rentflow_dev}
+      PROJECT_DATABASE_PASSWORD: ${DB_PASSWORD:-cratedesk_dev}
       PROJECT_EVENTSTORE_URL: esdb://kurrentdb:2113
       PROJECT_REDIS_ADDR: redis:6379
       PROJECT_ENVIRONMENT: development
@@ -272,10 +272,10 @@ services:
       - postgres
       - kurrentdb
     networks:
-      - rentflow
+      - cratedesk
     labels:
       traefik.enable: "true"
-      traefik.http.routers.project.rule: "Host(`api.rentflow.local`) && PathPrefix(`/projects`)"
+      traefik.http.routers.project.rule: "Host(`api.cratedesk.local`) && PathPrefix(`/projects`)"
       traefik.http.services.project.loadbalancer.server.port: "8003"
     restart: unless-stopped
 
@@ -288,15 +288,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     environment:
-      VITE_API_URL: "https://api.rentflow.local"
-      VITE_PUBLIC_URL: "https://rentflow.local"
+      VITE_API_URL: "https://api.cratedesk.local"
+      VITE_PUBLIC_URL: "https://cratedesk.local"
     ports:
       - "3000:3000"
     networks:
-      - rentflow
+      - cratedesk
     labels:
       traefik.enable: "true"
-      traefik.http.routers.frontend.rule: "Host(`rentflow.local`)"
+      traefik.http.routers.frontend.rule: "Host(`cratedesk.local`)"
       traefik.http.services.frontend.loadbalancer.server.port: "3000"
     depends_on:
       - auth-service
@@ -308,7 +308,7 @@ volumes:
   redis_data:
 
 networks:
-  rentflow:
+  cratedesk:
     driver: bridge
 ```
 
@@ -400,20 +400,20 @@ GRANT USAGE ON SCHEMA auth_schema, inventory_schema, project_schema,
   scanner_schema, warehouse_schema, invoice_schema, document_schema,
   crew_schema, federation_schema, maintenance_schema, transport_schema,
   insurance_schema, workflow_schema, ai_schema, notification_schema,
-  reporting_schema, audit_schema TO rentflow;
+  reporting_schema, audit_schema TO cratedesk;
 
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA auth_schema, inventory_schema,
   project_schema, scanner_schema, warehouse_schema, invoice_schema,
   document_schema, crew_schema, federation_schema, maintenance_schema,
   transport_schema, insurance_schema, workflow_schema, ai_schema,
-  notification_schema, reporting_schema, audit_schema TO rentflow;
+  notification_schema, reporting_schema, audit_schema TO cratedesk;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA auth_schema, inventory_schema,
   project_schema, scanner_schema, warehouse_schema, invoice_schema,
   document_schema, crew_schema, federation_schema, maintenance_schema,
   transport_schema, insurance_schema, workflow_schema, ai_schema,
   notification_schema, reporting_schema, audit_schema
-  GRANT ALL PRIVILEGES ON TABLES TO rentflow;
+  GRANT ALL PRIVILEGES ON TABLES TO cratedesk;
 ```
 
 ---
@@ -427,22 +427,22 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA auth_schema, inventory_schema,
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: rentflow
+  name: cratedesk
   labels:
-    name: rentflow
+    name: cratedesk
 
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: rentflow
-  namespace: rentflow
+  name: cratedesk
+  namespace: cratedesk
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: rentflow
+  name: cratedesk
 rules:
   - apiGroups: [""]
     resources: ["services", "endpoints"]
@@ -458,15 +458,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: rentflow
+  name: cratedesk
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: rentflow
+  name: cratedesk
 subjects:
   - kind: ServiceAccount
-    name: rentflow
-    namespace: rentflow
+    name: cratedesk
+    namespace: cratedesk
 ```
 
 ### 3.2 Postgres StatefulSet
@@ -477,7 +477,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-config
-  namespace: rentflow
+  namespace: cratedesk
 data:
   postgresql.conf: |
     max_connections = 200
@@ -492,7 +492,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: rentflow
+  namespace: cratedesk
 spec:
   serviceName: postgres
   replicas: 1
@@ -512,14 +512,14 @@ spec:
           name: postgres
         env:
         - name: POSTGRES_USER
-          value: rentflow
+          value: cratedesk
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
               name: postgres-secret
               key: password
         - name: POSTGRES_DB
-          value: rentflow
+          value: cratedesk
         resources:
           requests:
             memory: "256Mi"
@@ -532,7 +532,7 @@ spec:
             command:
             - /bin/sh
             - -c
-            - pg_isready -U rentflow
+            - pg_isready -U cratedesk
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
@@ -540,7 +540,7 @@ spec:
             command:
             - /bin/sh
             - -c
-            - pg_isready -U rentflow
+            - pg_isready -U cratedesk
           initialDelaySeconds: 5
           periodSeconds: 10
         volumeMounts:
@@ -574,7 +574,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: rentflow
+  namespace: cratedesk
 spec:
   clusterIP: None
   selector:
@@ -592,7 +592,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: inventory-service
-  namespace: rentflow
+  namespace: cratedesk
   labels:
     app: inventory-service
     version: v1
@@ -612,10 +612,10 @@ spec:
         app: inventory-service
         version: v1
     spec:
-      serviceAccountName: rentflow
+      serviceAccountName: cratedesk
       containers:
       - name: inventory-service
-        image: rentflow.azurecr.io/inventory-service:latest
+        image: cratedesk.azurecr.io/inventory-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8002
@@ -627,7 +627,7 @@ spec:
         - name: INVENTORY_DATABASE_HOST
           value: postgres
         - name: INVENTORY_DATABASE_USER
-          value: rentflow
+          value: cratedesk
         - name: INVENTORY_DATABASE_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -668,7 +668,7 @@ spec:
           failureThreshold: 2
         volumeMounts:
         - name: config
-          mountPath: /etc/rentflow
+          mountPath: /etc/cratedesk
           readOnly: true
       volumes:
       - name: config
@@ -680,7 +680,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: inventory-service
-  namespace: rentflow
+  namespace: cratedesk
   labels:
     app: inventory-service
 spec:
@@ -698,7 +698,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: inventory-service-hpa
-  namespace: rentflow
+  namespace: cratedesk
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -733,7 +733,7 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: rentflow-prod
+    cluster: cratedesk-prod
     environment: production
 
 scrape_configs:
@@ -746,7 +746,7 @@ scrape_configs:
       - role: pod
         namespaces:
           names:
-            - rentflow
+            - cratedesk
     relabel_configs:
       - source_labels: [__meta_kubernetes_pod_label_app]
         action: keep
@@ -776,7 +776,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: fluent-bit-config
-  namespace: rentflow
+  namespace: cratedesk
 data:
   fluent-bit.conf: |
     [SERVICE]
@@ -785,7 +785,7 @@ data:
 
     [INPUT]
         Name              tail
-        Path              /var/log/containers/*_rentflow_*.log
+        Path              /var/log/containers/*_cratedesk_*.log
         Parser            docker
         Tag               kube.*
         Refresh_Interval  5
@@ -816,7 +816,7 @@ data:
 
 ```yaml
 # .github/workflows/deploy.yml
-name: Deploy RentFlow
+name: Deploy CrateDesk
 
 on:
   push:
@@ -828,7 +828,7 @@ on:
       - main
 
 env:
-  REGISTRY: rentflow.azurecr.io
+  REGISTRY: cratedesk.azurecr.io
 
 jobs:
   build:
@@ -896,9 +896,9 @@ jobs:
 
       - name: Deploy to AKS
         run: |
-          az aks get-credentials -g rentflow-rg -n rentflow-aks
-          kubectl set image deployment/inventory-service inventory-service=${{ env.REGISTRY }}/inventory-service:${{ github.sha }} -n rentflow
-          kubectl rollout status deployment/inventory-service -n rentflow
+          az aks get-credentials -g cratedesk-rg -n cratedesk-aks
+          kubectl set image deployment/inventory-service inventory-service=${{ env.REGISTRY }}/inventory-service:${{ github.sha }} -n cratedesk
+          kubectl rollout status deployment/inventory-service -n cratedesk
 ```
 
 ---

@@ -1,4 +1,4 @@
-# Shared Libraries (pkg/common) — RentFlow
+# Shared Libraries (pkg/common) — CrateDesk
 
 **Stand:** 20. März 2026
 **Zielgruppe:** Alle 17 Go-Services
@@ -93,8 +93,8 @@ type AuthConfig struct {
 	JWTAlgorithm      string        // "HS256", "RS256"
 	JWTExpiration     time.Duration // 24h
 	RefreshTokenTTL   time.Duration // 7d
-	TokenIssuer       string        // "rentflow"
-	TokenAudience     string        // "rentflow-api"
+	TokenIssuer       string        // "cratedesk"
+	TokenAudience     string        // "cratedesk-api"
 	CookieSecure      bool          // true in prod
 	CookieHttpOnly    bool          // true
 	CookieSameSite    string        // "Strict", "Lax", "None"
@@ -170,9 +170,9 @@ server:
 database:
   host: localhost
   port: 5432
-  user: rentflow
+  user: cratedesk
   password: ${DB_PASSWORD}
-  database: rentflow
+  database: cratedesk
   ssl_mode: disable
   schema: inventory_schema
   max_connections: 20
@@ -198,7 +198,7 @@ auth:
   jwt_secret: ${JWT_SECRET}
   jwt_algorithm: HS256
   jwt_expiration: 24h
-  token_issuer: rentflow
+  token_issuer: cratedesk
   mfa_enabled: false
 
 logging:
@@ -397,7 +397,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
-	"rentflow/pkg/common/auth"
+	"cratedesk/pkg/common/auth"
 )
 
 // RequestID für Korrelation
@@ -886,7 +886,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"rentflow/pkg/common/config"
+	"cratedesk/pkg/common/config"
 )
 
 type PostgresConnection struct {
@@ -902,7 +902,7 @@ func NewPostgresConnection(cfg *config.DatabaseConfig) (*PostgresConnection, err
 		cfg.Port,
 		cfg.Database,
 		cfg.SSLMode,
-		"rentflow-service",
+		"cratedesk-service",
 	)
 
 	poolConfig, err := pgxpool.ParseConfig(connString)

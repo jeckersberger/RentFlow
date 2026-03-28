@@ -1,4 +1,4 @@
-# RentFlow — Implementation Plan V2
+# CrateDesk — Implementation Plan V2
 
 > Letzte Aktualisierung: 2026-03-23
 > Status: Aktiver Entwicklungsplan
@@ -184,12 +184,12 @@
 
 ## Phase 4: Federation & RFID
 
-**Ziel**: Zwei RentFlow-Instanzen können sich verbinden, Equipment des Partners durchsuchen, Sub-Rental-Anfragen stellen. RFID-Hardware funktioniert für Bulk-Scanning.
+**Ziel**: Zwei CrateDesk-Instanzen können sich verbinden, Equipment des Partners durchsuchen, Sub-Rental-Anfragen stellen. RFID-Hardware funktioniert für Bulk-Scanning.
 
 ### 4.1 Federation Connection Wizard
 **Was**: Frontend-Wizard:
 1. Partner-URL eingeben
-2. Auto-Discovery via `GET /.well-known/rentflow-federation`
+2. Auto-Discovery via `GET /.well-known/cratedesk-federation`
 3. Zertifikat-Austausch (mTLS)
 4. Verbindung bestätigen
 **Warum**: Federation ist Alleinstellungsmerkmal. Verbindung muss einfach sein.

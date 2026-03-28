@@ -1,4 +1,4 @@
-# RentFlow — Inventory & Warehouse Scanner Detailspezifikation
+# CrateDesk — Inventory & Warehouse Scanner Detailspezifikation
 
 **Stand:** 21. März 2026
 **Version:** 1.0
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Diese Spezifikation definiert die komplette Implementierung der Inventory-, Warehouse- und Scanner-Domain für RentFlow. Sie umfasst:
+Diese Spezifikation definiert die komplette Implementierung der Inventory-, Warehouse- und Scanner-Domain für CrateDesk. Sie umfasst:
 
 1. **Inventory Domain Model** — Equipment-Typen, Kategorien, Kombinationen, Status-Maschine, Verfügbarkeitsalgorithmus, Preisengine
 2. **Warehouse Domain Model** — Hierarchische Lagerstruktur, Warenbewegungen, Inventur-Workflows, Lagerplatz-Optimierung
@@ -1210,17 +1210,17 @@ type RelocationSuggestion struct {
 
 Zebra-Geräte verwenden **DataWedge** (proprietary Scanning-Engine). Konfiguration ist XML-basiert und kann per MDA (Mobile Device Management) deployed werden, oder lokal auf dem Gerät.
 
-**Profil: "RentFlow-Scanner"**
+**Profil: "CrateDesk-Scanner"**
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <Profile>
-  <Name>RentFlow-Scanner</Name>
+  <Name>CrateDesk-Scanner</Name>
   <ActivityList>
     <!-- Jede App, die DataWedge-Events empfangen soll -->
     <ActivityItem>
-      <AppName>com.rentflow.scanner</AppName>
-      <ActivityName>com.rentflow.scanner.ui.MainActivity</ActivityName>
+      <AppName>com.cratedesk.scanner</AppName>
+      <ActivityName>com.cratedesk.scanner.ui.MainActivity</ActivityName>
     </ActivityItem>
   </ActivityList>
 
@@ -1231,7 +1231,7 @@ Zebra-Geräte verwenden **DataWedge** (proprietary Scanning-Engine). Konfigurati
       <!-- Zwei Output-Modi: Intent und Keystroke -->
       <Type>Intent</Type>
       <IntentOutput>
-        <IntentAction>com.rentflow.scanner.SCAN_RESULT</IntentAction>
+        <IntentAction>com.cratedesk.scanner.SCAN_RESULT</IntentAction>
         <IntentDelivery>Broadcast</IntentDelivery>
       </IntentOutput>
     </OutputPlugin>
@@ -1473,7 +1473,7 @@ export function CameraQRScanner({ onScan, isActive }: CameraQRScannerProps) {
 - **html5-qrcode** — Größer (40KB), unterstützt auch Code128, UPC etc.
 - **ZXing.js** — Vollständig, aber sehr groß (500KB+)
 
-**Empfehlung für RentFlow:** jsQR für QR-Codes auf dem Handy, Zebra Hardware für Lagerverwaltung.
+**Empfehlung für CrateDesk:** jsQR für QR-Codes auf dem Handy, Zebra Hardware für Lagerverwaltung.
 
 ### 3.3 USB-Barcode-Scanner (PC)
 
@@ -2073,7 +2073,7 @@ Sofort-Info:
 // Offline Database Schema für PWA Scanner-App
 
 // IndexedDB:
-const DB_NAME = 'rentflow_scanner_cache';
+const DB_NAME = 'cratedesk_scanner_cache';
 const DB_VERSION = 1;
 
 const STORES = {
@@ -2290,7 +2290,7 @@ END FUNCTION
 // Service Worker für PWA
 
 const CACHE_VERSION = 'v1';
-const CACHE_NAME = `rentflow-scanner-${CACHE_VERSION}`;
+const CACHE_NAME = `cratedesk-scanner-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
   '/index.html',
@@ -2479,7 +2479,7 @@ export function OfflineIndicator() {
 QR-Code Zielformat: URL zur öffentlichen Info-Page
 
 Beispiel:
-  https://rentflow.example.com/public/equipment/550e8400-e29b-41d4-a716-446655440000
+  https://cratedesk.example.com/public/equipment/550e8400-e29b-41d4-a716-446655440000
 
 Content:
   - 36 Zeichen (UUID)
@@ -2517,7 +2517,7 @@ Content:
 ^FO50,200
 ^BY4,3,100
 ^BQN,0,6
-^FDHTTPS://rentflow.example.com/PUBLIC/$EQUIPMENT_ID^FS
+^FDHTTPS://cratedesk.example.com/PUBLIC/$EQUIPMENT_ID^FS
 
 ^FO50,350
 ^A0N,30,30
@@ -2588,7 +2588,7 @@ Antwort (HTML/JSON):
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Claypaky Sharpy - RentFlow</title>
+  <title>Claypaky Sharpy - CrateDesk</title>
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
     .header { background: #222; color: #fff; padding: 20px; border-radius: 8px; }
@@ -2629,7 +2629,7 @@ Antwort (HTML/JSON):
   </div>
 
   <p style="text-align: center; color: #999; font-size: 12px;">
-    Kontakt: info@mb-veranstaltungstechnik.de | RentFlow v1.0
+    Kontakt: info@mb-veranstaltungstechnik.de | CrateDesk v1.0
   </p>
 </body>
 </html>

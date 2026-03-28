@@ -57,8 +57,8 @@ func generateDevKeys() (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	})
 
 	// Save to /tmp for the JWTAuth middleware to read.
-	privPath := "/tmp/equipflow_private.pem"
-	pubPath := "/tmp/equipflow_public.pem"
+	privPath := "/tmp/cratedesk_private.pem"
+	pubPath := "/tmp/cratedesk_public.pem"
 
 	if err := os.WriteFile(privPath, privPEM, 0600); err != nil {
 		return nil, nil, err

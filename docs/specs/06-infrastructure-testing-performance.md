@@ -14,7 +14,7 @@
 version: '3.9'
 
 networks:
-  rentflow:
+  cratedesk:
     driver: bridge
 
 volumes:
@@ -32,7 +32,7 @@ x-common-environment: &common-env
   TRAEFIK_SCHEME: https
 
 x-postgres-conn: &postgres-conn
-  POSTGRES_USER: rentflow_user
+  POSTGRES_USER: cratedesk_user
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
   POSTGRES_HOST: postgres
   POSTGRES_PORT: 5432
@@ -54,11 +54,11 @@ services:
   # ============================================================
   traefik:
     image: traefik:v3.0
-    container_name: rentflow-traefik
+    container_name: cratedesk-traefik
     restart: always
     privileged: true
     networks:
-      - rentflow
+      - cratedesk
     ports:
       - "80:80"
       - "443:443"
@@ -75,7 +75,7 @@ services:
       TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/dynamic
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
       TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ":443"
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ${LETSENCRYPT_EMAIL:-admin@rentflow.local}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ${LETSENCRYPT_EMAIL:-admin@cratedesk.local}
       TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_STORAGE: /letsencrypt/acme.json
       TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_HTTPCHALLENGE: "true"
       TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_HTTPCHALLENGE_ENTRYPOINT: web
@@ -107,10 +107,10 @@ services:
   # ============================================================
   kurrentdb:
     image: kurrent/kurrentdb:26.0
-    container_name: rentflow-kurrentdb
+    container_name: cratedesk-kurrentdb
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     ports:
       - "127.0.0.1:2113:2113"
     environment:
@@ -147,16 +147,16 @@ services:
   # ============================================================
   postgres:
     image: postgres:16-alpine
-    container_name: rentflow-postgres
+    container_name: cratedesk-postgres
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     ports:
       - "127.0.0.1:5432:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-rentflow_user}
+      POSTGRES_USER: ${POSTGRES_USER:-cratedesk_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: rentflow
+      POSTGRES_DB: cratedesk
       POSTGRES_INITDB_ARGS: >
         -c shared_buffers=1GB
         -c effective_cache_size=3GB
@@ -181,7 +181,7 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rentflow_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cratedesk_user}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -192,10 +192,10 @@ services:
   # ============================================================
   redis:
     image: redis:7-alpine
-    container_name: rentflow-redis
+    container_name: cratedesk-redis
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     ports:
       - "127.0.0.1:6379:6379"
     command: >
@@ -233,10 +233,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-auth
+    container_name: cratedesk-auth
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -287,10 +287,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-inventory
+    container_name: cratedesk-inventory
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -336,10 +336,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-project
+    container_name: cratedesk-project
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -383,10 +383,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-scanner
+    container_name: cratedesk-scanner
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -432,10 +432,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-warehouse
+    container_name: cratedesk-warehouse
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -479,10 +479,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-invoice
+    container_name: cratedesk-invoice
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -528,10 +528,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-document
+    container_name: cratedesk-document
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -579,10 +579,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-crew
+    container_name: cratedesk-crew
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -627,10 +627,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-federation
+    container_name: cratedesk-federation
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -679,10 +679,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-maintenance
+    container_name: cratedesk-maintenance
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -723,10 +723,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-transport
+    container_name: cratedesk-transport
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -767,10 +767,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-insurance
+    container_name: cratedesk-insurance
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -811,10 +811,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-workflow
+    container_name: cratedesk-workflow
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -856,10 +856,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-ai
+    container_name: cratedesk-ai
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -904,10 +904,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-notification
+    container_name: cratedesk-notification
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -924,7 +924,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM: ${SMTP_FROM:-noreply@rentflow.local}
+      SMTP_FROM: ${SMTP_FROM:-noreply@cratedesk.local}
     deploy:
       resources:
         limits:
@@ -953,10 +953,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-reporting
+    container_name: cratedesk-reporting
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -998,10 +998,10 @@ services:
       args:
         GO_VERSION: "1.22"
         BUILD_VERSION: ${APP_VERSION:-dev}
-    container_name: rentflow-audit
+    container_name: cratedesk-audit
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -1047,10 +1047,10 @@ services:
       args:
         BUILD_VERSION: ${APP_VERSION:-dev}
         VITE_API_BASE_URL: https://${DOMAIN}/api
-    container_name: rentflow-frontend
+    container_name: cratedesk-frontend
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       - traefik
     deploy:
@@ -1077,10 +1077,10 @@ services:
   # ============================================================
   prometheus:
     image: prom/prometheus:latest
-    container_name: rentflow-prometheus
+    container_name: cratedesk-prometheus
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
@@ -1112,10 +1112,10 @@ services:
   # ============================================================
   grafana:
     image: grafana/grafana:latest
-    container_name: rentflow-grafana
+    container_name: cratedesk-grafana
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     ports:
       - "127.0.0.1:3000:3000"
     environment:
@@ -1157,10 +1157,10 @@ services:
       dockerfile: Dockerfile
       args:
         GO_VERSION: "1.22"
-    container_name: rentflow-backup
+    container_name: cratedesk-backup
     restart: always
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -1517,7 +1517,7 @@ services:
       context: ./scripts
       dockerfile: Dockerfile.init
     networks:
-      - rentflow
+      - cratedesk
     depends_on:
       postgres:
         condition: service_healthy
@@ -1545,8 +1545,8 @@ APP_VERSION=1.0.0
 BUILD_COMMIT=unknown
 
 # Domain and SSL
-DOMAIN=rentflow.example.com
-LETSENCRYPT_EMAIL=admin@rentflow.example.com
+DOMAIN=cratedesk.example.com
+LETSENCRYPT_EMAIL=admin@cratedesk.example.com
 
 # Log level: debug, info, warn, error
 LOG_LEVEL=info
@@ -1556,11 +1556,11 @@ LOG_LEVEL=info
 ################################################################################
 
 # PostgreSQL 16
-POSTGRES_USER=rentflow_user
+POSTGRES_USER=cratedesk_user
 POSTGRES_PASSWORD=change_me_very_secure_password_here
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
-POSTGRES_DB=rentflow
+POSTGRES_DB=cratedesk
 
 ################################################################################
 # KURRENTDB CONFIGURATION
@@ -1599,10 +1599,10 @@ JWT_REFRESH_EXPIRY_DAYS=7
 SESSION_SECRET=change_me_min_32_characters_base64_encoded
 
 # CORS allowed origins (comma-separated)
-ALLOWED_ORIGINS=https://rentflow.example.com,https://app.rentflow.example.com
+ALLOWED_ORIGINS=https://cratedesk.example.com,https://app.cratedesk.example.com
 
 # Admin user (created on first start)
-ADMIN_EMAIL=admin@rentflow.example.com
+ADMIN_EMAIL=admin@cratedesk.example.com
 ADMIN_PASSWORD=change_me_strong_password
 
 # Bcrypt cost factor (10-12 recommended)
@@ -1648,7 +1648,7 @@ BACKUP_RETENTION_DAYS=30
 
 # S3 backup destination (optional)
 BACKUP_S3_ENABLED=false
-BACKUP_S3_BUCKET=rentflow-backups
+BACKUP_S3_BUCKET=cratedesk-backups
 BACKUP_S3_REGION=eu-central-1
 BACKUP_S3_ACCESS_KEY=
 BACKUP_S3_SECRET_KEY=
@@ -1726,7 +1726,7 @@ SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=no-reply@example.com
 SMTP_PASSWORD=
-SMTP_FROM=noreply@rentflow.local
+SMTP_FROM=noreply@cratedesk.local
 SMTP_TLS_ENABLED=true
 
 # Reporting Service
@@ -1820,8 +1820,8 @@ ARG BUILD_COMMIT=unknown
 RUN CGO_ENABLED=0 GOOS=linux go build \
   -a -installsuffix cgo \
   -ldflags="-w -s \
-    -X github.com/rentflow/rentflow/internal/version.Version=${BUILD_VERSION} \
-    -X github.com/rentflow/rentflow/internal/version.Commit=${BUILD_COMMIT}" \
+    -X github.com/cratedesk/cratedesk/internal/version.Version=${BUILD_VERSION} \
+    -X github.com/cratedesk/cratedesk/internal/version.Commit=${BUILD_COMMIT}" \
   -o auth-service ./cmd/main.go
 
 # Stage 2: Runtime (minimal Alpine)
@@ -2230,7 +2230,7 @@ jobs:
         env:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: rentflow_test
+          POSTGRES_DB: cratedesk_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -2270,7 +2270,7 @@ jobs:
 
       - name: Run integration tests
         env:
-          POSTGRES_DSN: postgresql://test_user:test_password@localhost:5432/rentflow_test
+          POSTGRES_DSN: postgresql://test_user:test_password@localhost:5432/cratedesk_test
           KURRENTDB_URL: http://localhost:2113
         run: |
           cd services/${{ matrix.service }}
@@ -2558,11 +2558,11 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             set -e
-            cd /opt/rentflow
+            cd /opt/cratedesk
 
             # Backup current state
             docker compose config > docker-compose.backup.yml
-            docker exec rentflow-postgres pg_dump -U rentflow_user rentflow > backups/pre-deploy-$(date +%s).sql
+            docker exec cratedesk-postgres pg_dump -U cratedesk_user cratedesk > backups/pre-deploy-$(date +%s).sql
 
             # Pull new images
             export REGISTRY=ghcr.io
@@ -2610,7 +2610,7 @@ global:
   evaluation_interval: 15s
   external_labels:
     environment: production
-    cluster: rentflow
+    cluster: cratedesk
 
 alerting:
   alertmanagers:
@@ -2797,7 +2797,7 @@ npx playwright show-trace trace.zip
 
 ```bash
 k6 run tests/load/scanner-load.js \
-  -e BASE_URL=https://rentflow.local \
+  -e BASE_URL=https://cratedesk.local \
   -e AUTH_TOKEN=eyJ... \
   -o json=results.json
 ```

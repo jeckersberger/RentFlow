@@ -1,5 +1,5 @@
 # Retrofit
--keep class de.equipflow.scanner.data.api.dto.** { *; }
+-keep class de.cratedesk.scanner.data.api.dto.** { *; }
 -keepattributes Signature
 -keepattributes *Annotation*
 -dontwarn retrofit2.**

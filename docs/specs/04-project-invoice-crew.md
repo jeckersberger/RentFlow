@@ -2851,9 +2851,9 @@ func (svc *CrewService) ExportCalendarAsICAL(
     crew, _ := svc.repo.GetCrewMember(ctx, crewMemberID)
 
     cal := ics.NewCalendar()
-    cal.SetName(fmt.Sprintf("%s %s - RentFlow Einsätze",
+    cal.SetName(fmt.Sprintf("%s %s - CrateDesk Einsätze",
         crew.FirstName, crew.LastName))
-    cal.SetDescription("Automatisch generiert aus RentFlow")
+    cal.SetDescription("Automatisch generiert aus CrateDesk")
 
     // Alle Crew-Zuweisungen laden (nächste 3 Monate)
     assignments, _ := svc.repo.GetCrewAssignments(ctx, crewMemberID,
@@ -2921,7 +2921,7 @@ func (svc *CrewService) NotifyCrewAssignment(
             Ort: %s
             Bezahlung: %.2f €/Tag
 
-            Bitte bestätige deine Zusage in der RentFlow-App.
+            Bitte bestätige deine Zusage in der CrateDesk-App.
 
             Grüße,
             Marco

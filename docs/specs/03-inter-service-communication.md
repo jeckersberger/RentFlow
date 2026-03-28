@@ -1,4 +1,4 @@
-# Inter-Service Communication & API Gateway — RentFlow
+# Inter-Service Communication & API Gateway — CrateDesk
 
 **Stand:** 20. März 2026
 **Zielgruppe:** Go-Entwickler, DevOps, Architekten
@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"time"
 
-	"rentflow/pkg/common/errors"
+	"cratedesk/pkg/common/errors"
 )
 
 type ServiceClient struct {
@@ -596,7 +596,7 @@ package saga
 import (
 	"context"
 	"fmt"
-	"rentflow/pkg/common/client"
+	"cratedesk/pkg/common/client"
 )
 
 type ProjectSetupSaga struct {
@@ -793,7 +793,7 @@ metrics:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@rentflow.local
+      email: admin@cratedesk.local
       storage: acme.json
       httpChallenge:
         entryPoint: web
@@ -804,7 +804,7 @@ providers:
     endpoint: unix:///var/run/docker.sock
     exposedByDefault: false
     swarmMode: false
-    network: rentflow_default
+    network: cratedesk_default
 
 # Logging
 log:
@@ -835,11 +835,11 @@ services:
       - ./traefik.yml:/traefik.yml
       - ./acme.json:/acme.json
     networks:
-      - rentflow_network
+      - cratedesk_network
 
   # INVENTORY SERVICE
   inventory-service:
-    image: rentflow/inventory-service:latest
+    image: cratedesk/inventory-service:latest
     ports:
       - "8002:8002"
     environment:
@@ -849,11 +849,11 @@ services:
       - postgres
       - kurrentdb
     networks:
-      - rentflow_network
+      - cratedesk_network
     labels:
       traefik.enable: "true"
       # Router Definition
-      traefik.http.routers.inventory.rule: "Host(`api.rentflow.local`) && PathPrefix(`/inventory`)"
+      traefik.http.routers.inventory.rule: "Host(`api.cratedesk.local`) && PathPrefix(`/inventory`)"
       traefik.http.routers.inventory.entrypoints: "websecure"
       traefik.http.routers.inventory.tls: "true"
       # Service Definition
@@ -865,7 +865,7 @@ services:
 
   # PROJECT SERVICE
   project-service:
-    image: rentflow/project-service:latest
+    image: cratedesk/project-service:latest
     ports:
       - "8003:8003"
     environment:
@@ -874,10 +874,10 @@ services:
       - postgres
       - kurrentdb
     networks:
-      - rentflow_network
+      - cratedesk_network
     labels:
       traefik.enable: "true"
-      traefik.http.routers.project.rule: "Host(`api.rentflow.local`) && PathPrefix(`/projects`)"
+      traefik.http.routers.project.rule: "Host(`api.cratedesk.local`) && PathPrefix(`/projects`)"
       traefik.http.routers.project.entrypoints: "websecure"
       traefik.http.routers.project.tls: "true"
       traefik.http.services.project.loadbalancer.server.port: "8003"
@@ -888,13 +888,13 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: rentflow
+      POSTGRES_USER: cratedesk
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: rentflow
+      POSTGRES_DB: cratedesk
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - rentflow_network
+      - cratedesk_network
 
   # KURRENTDB (ehemals EventStoreDB)
   kurrentdb:
@@ -905,7 +905,7 @@ services:
     ports:
       - "2113:2113"
     networks:
-      - rentflow_network
+      - cratedesk_network
 
   # REDIS
   redis:
@@ -913,13 +913,13 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - rentflow_network
+      - cratedesk_network
 
 volumes:
   postgres_data:
 
 networks:
-  rentflow_network:
+  cratedesk_network:
     driver: bridge
 ```
 
@@ -959,8 +959,8 @@ metadata:
 spec:
   headers:
     accessControlAllowOriginList:
-      - https://rentflow.local
-      - https://app.rentflow.local
+      - https://cratedesk.local
+      - https://app.cratedesk.local
     accessControlAllowMethods:
       - GET
       - POST
@@ -992,7 +992,7 @@ spec:
 # Generate Self-Signed Cert
 openssl req -x509 -newkey rsa:4096 -nodes \
   -out cert.pem -keyout key.pem -days 365 \
-  -subj "/CN=rentflow.local"
+  -subj "/CN=cratedesk.local"
 
 # In traefik.yml
 entryPoints:
@@ -1012,7 +1012,7 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@rentflow.local
+      email: admin@cratedesk.local
       storage: /data/acme.json
       httpChallenge:
         entryPoint: web

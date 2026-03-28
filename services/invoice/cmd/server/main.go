@@ -137,7 +137,7 @@ func generateDevPublicKey() (string, error) {
 		Bytes: pubDER,
 	})
 
-	pubPath := "/tmp/equipflow_invoice_public.pem"
+	pubPath := "/tmp/cratedesk_invoice_public.pem"
 	if err := os.WriteFile(pubPath, pubPEM, 0644); err != nil {
 		return "", fmt.Errorf("write public key: %w", err)
 	}

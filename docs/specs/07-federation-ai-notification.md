@@ -1,4 +1,4 @@
-# RentFlow — Implementierungsreife Detailspezifikation
+# CrateDesk — Implementierungsreife Detailspezifikation
 ## Federation Protocol, AI Service, Notification System
 
 **Stand:** 21. März 2026
@@ -67,7 +67,7 @@ type PairingToken struct {
 ```
 Marco-Instanz                           Stefan-Instanz
      |                                        |
-     | 1. POST /.well-known/rentflow/pair    |
+     | 1. POST /.well-known/cratedesk/pair    |
      | (Token + Marco's Public Cert)         |
      |-------------------------------------->|
      |                                        | Validate Token
@@ -90,16 +90,16 @@ Marco-Instanz                           Stefan-Instanz
      ✅ PAIRING COMPLETE                      ✅ PAIRING COMPLETE
 ```
 
-**POST /.well-known/rentflow/federation/pair**
+**POST /.well-known/cratedesk/federation/pair**
 
 **Request (von Marco an Stefan):**
 ```http
-POST https://stefan-soundpro.com/.well-known/rentflow-federation/pair HTTP/1.1
+POST https://stefan-soundpro.com/.well-known/cratedesk-federation/pair HTTP/1.1
 Host: stefan-soundpro.com
 Content-Type: application/json
-X-RentFlow-Pairing-Token: ST-9f2e8d1c-4a7b-11ef-9e3a-0242ac130003:exp:2026-03-21T14:30:00Z:sig:base64sig
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-03-20T14:30:00Z
+X-CrateDesk-Pairing-Token: ST-9f2e8d1c-4a7b-11ef-9e3a-0242ac130003:exp:2026-03-21T14:30:00Z:sig:base64sig
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-03-20T14:30:00Z
 
 {
   "instance_id": "marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b",
@@ -124,8 +124,8 @@ X-RentFlow-Timestamp: 2026-03-20T14:30:00Z
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
-X-RentFlow-Timestamp: 2026-03-20T14:30:01Z
-X-RentFlow-Signature: sha256=base64encodedsig
+X-CrateDesk-Timestamp: 2026-03-20T14:30:01Z
+X-CrateDesk-Signature: sha256=base64encodedsig
 
 {
   "status": "paired",
@@ -297,10 +297,10 @@ func (s *FederationService) GetMtlsHttpClient(partnerID string) (*http.Client, e
 ```http
 GET /api/v1/federation/equipment/availability?category=PA-Tops&from_date=2026-03-22&to_date=2026-03-24&min_quantity=4 HTTP/1.1
 Host: stefan-soundpro.com
-X-RentFlow-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
-X-RentFlow-Timestamp: 2026-03-20T14:31:00Z
-X-RentFlow-Signature: sha256=base64encodedsig
-X-RentFlow-Request-Id: req-20260320-001
+X-CrateDesk-Instance-Id: marco-veranstaltung:5c9a8e2b-3f1d-4c9e-8a2b-7d6f4e1a3c9b
+X-CrateDesk-Timestamp: 2026-03-20T14:31:00Z
+X-CrateDesk-Signature: sha256=base64encodedsig
+X-CrateDesk-Request-Id: req-20260320-001
 ```
 
 **Response (200 OK):**
@@ -2284,9 +2284,9 @@ email:
   smtp_port: 587
   smtp_user: apikey
   smtp_password: "${SENDGRID_API_KEY}"
-  from_email: noreply@rentflow.local
-  from_name: RentFlow
-  reply_to: support@rentflow.local
+  from_email: noreply@cratedesk.local
+  from_name: CrateDesk
+  reply_to: support@cratedesk.local
 
   # TLS
   use_tls: true
@@ -2300,7 +2300,7 @@ email:
   retry_delay_minutes: 5
 
   # Bounce Handling
-  bounce_notification_url: https://rentflow.local/webhooks/ses-bounces
+  bounce_notification_url: https://cratedesk.local/webhooks/ses-bounces
 ```
 
 **Template System:**

@@ -1,4 +1,4 @@
-# RentFlow — Auth, Security & Compliance (Implementierungsreife Spezifikation)
+# CrateDesk — Auth, Security & Compliance (Implementierungsreife Spezifikation)
 
 **Stand:** 21. März 2026
 **Version:** 1.0
@@ -151,7 +151,7 @@ type AccessTokenClaims struct {
     NotBefore int64    `json:"nbf"`                // unix timestamp
     JWTID     string    `json:"jti"`                // unique token id
 
-    // RentFlow Custom Claims
+    // CrateDesk Custom Claims
     TenantID      uuid.UUID `json:"tenant_id"`
     Email         string    `json:"email"`
     EmailVerified bool      `json:"email_verified"`
@@ -1433,7 +1433,7 @@ ALTER TABLE project_schema.projects
 
 ### 4.1 A01:2021 – Broken Access Control
 
-**Angriffsvektor in RentFlow:** Admin erstellt URL `/api/users/admin-user-id`, andere User versuchen zu ändern
+**Angriffsvektor in CrateDesk:** Admin erstellt URL `/api/users/admin-user-id`, andere User versuchen zu ändern
 
 **Schutzmaßnahme:**
 
@@ -1747,7 +1747,7 @@ func (h *AuthHandler) SetupMFA(w http.ResponseWriter, r *http.Request) {
     case "totp":
         secret, err := totp.GenerateSecret(totp.GenerateSecretInput{
             Name:     claims.Email,
-            Issuer:   "RentFlow",
+            Issuer:   "CrateDesk",
             AccountName: claims.Email,
         })
         // Zurück: QR-Code + Secret
@@ -2062,7 +2062,7 @@ func ValidateInternalURL(urlStr string) error {
 
 ## 5. DSGVO-Compliance
 
-### 5.1 Personenbezogene Daten in RentFlow
+### 5.1 Personenbezogene Daten in CrateDesk
 
 | Datentyp | Tabelle | Zweck | Rechtsgrundlage | Löschfrist | Speicherort |
 |----------|---------|-------|-----------------|-----------|-------------|
@@ -2072,7 +2072,7 @@ func ValidateInternalURL(urlStr string) error {
 | **Crew-Daten** | crew (Name, Telefon, IBAN) | Zeiterfassung, Bezahlung | Vertrag + Arbeitsrecht | 3 Jahre (Steuern) | PostgreSQL |
 | **Kundeninfos** | project.customer_details | Rechnungsstellung | Vertrag | 10 Jahre (GoBD) | PostgreSQL |
 | **Zeitstempel Login** | audit_log.timestamp | Accountability | DSGVO Art. 5 | 90 Tage | PostgreSQL |
-| **Cookie/Tracking** | - | NICHT in RentFlow! | N/A | N/A | N/A |
+| **Cookie/Tracking** | - | NICHT in CrateDesk! | N/A | N/A | N/A |
 | **Sensitive Payment Data** | - | NICHT speichern! (PCI-DSS) | - | Keine lokale Speicherung | Stripe/PayPal |
 
 ### 5.2 Recht auf Löschung (Art. 17 DSGVO)

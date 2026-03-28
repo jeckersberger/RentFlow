@@ -1,4 +1,4 @@
-# Backend-Architektur — Implementierungsdetails RentFlow
+# Backend-Architektur — Implementierungsdetails CrateDesk
 
 **Zielgruppe:** Go-Entwickler, DB-Architekten, DevOps
 **Stand:** 20. März 2026
@@ -74,12 +74,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
-	"rentflow/internal/adapters"
-	"rentflow/internal/application"
-	"rentflow/internal/infrastructure"
-	"rentflow/pkg/common/config"
-	"rentflow/pkg/common/events"
-	"rentflow/pkg/common/health"
+	"cratedesk/internal/adapters"
+	"cratedesk/internal/application"
+	"cratedesk/internal/infrastructure"
+	"cratedesk/pkg/common/config"
+	"cratedesk/pkg/common/events"
+	"cratedesk/pkg/common/health"
 )
 
 // Wire Providers
@@ -148,7 +148,7 @@ import (
 	"syscall"
 	"time"
 
-	"rentflow/pkg/common/config"
+	"cratedesk/pkg/common/config"
 )
 
 type Server struct {
@@ -236,7 +236,7 @@ package ports
 
 import (
 	"context"
-	"rentflow/internal/domain"
+	"cratedesk/internal/domain"
 )
 
 // EventStore Port — alle Services schreiben Events
@@ -331,8 +331,8 @@ package application
 import (
 	"context"
 	"fmt"
-	"rentflow/internal/domain"
-	"rentflow/internal/ports"
+	"cratedesk/internal/domain"
+	"cratedesk/internal/ports"
 )
 
 type InventoryService struct {
@@ -449,10 +449,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"rentflow/internal/ports"
-	"rentflow/pkg/common/auth"
-	"rentflow/pkg/common/errors"
-	"rentflow/pkg/common/middleware"
+	"cratedesk/internal/ports"
+	"cratedesk/pkg/common/auth"
+	"cratedesk/pkg/common/errors"
+	"cratedesk/pkg/common/middleware"
 )
 
 type HTTPHandler struct {
@@ -557,8 +557,8 @@ package http
 import (
 	"context"
 	"net/http"
-	"rentflow/pkg/common/auth"
-	"rentflow/pkg/common/middleware"
+	"cratedesk/pkg/common/auth"
+	"cratedesk/pkg/common/middleware"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -630,7 +630,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"rentflow/pkg/common/events"
+	"cratedesk/pkg/common/events"
 )
 
 type Checker struct {
@@ -1256,8 +1256,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"rentflow/internal/domain"
-	"rentflow/pkg/common/events"
+	"cratedesk/internal/domain"
+	"cratedesk/pkg/common/events"
 )
 
 type ProjectionService struct {
@@ -1446,7 +1446,7 @@ sinks:
       stream_name: "$ce-equipment"
       from_version: 0
     target:
-      connection_string: "host=postgres user=rentflow password=pwd dbname=rentflow"
+      connection_string: "host=postgres user=cratedesk password=pwd dbname=cratedesk"
       schema: "inventory_schema"
       table: "equipment_events"
     mapping:
@@ -1474,7 +1474,7 @@ sinks:
       stream_name: "$ce-invoice"
       from_version: 0
     target:
-      connection_string: "host=postgres user=rentflow password=pwd dbname=rentflow"
+      connection_string: "host=postgres user=cratedesk password=pwd dbname=cratedesk"
       schema: "invoice_schema"
       table: "invoice_events"
     mapping:
