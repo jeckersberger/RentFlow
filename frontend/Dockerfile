@@ -1,41 +1,19 @@
-# Stage 1: Build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
-
-# Install dependencies
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy source code
 COPY . .
-
 RUN npm run build
 
-# Stage 2: Runtime
-FROM nginx:alpine
+# --- Runtime stage ---
+FROM nginx:1.27-alpine
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY proxy_params /etc/nginx/proxy_params
-
-# Remove default nginx config that conflicts with ours
-RUN rm -f /etc/nginx/conf.d/default.conf
-
-# Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Create directory for health check
-RUN mkdir -p /usr/share/nginx/html
-
-# Health check — use simple file check since nginx serves static files
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/index.html || exit 1
-
-# Expose port
 EXPOSE 80
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

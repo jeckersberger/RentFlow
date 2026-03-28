@@ -1,0 +1,186 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: $bg-primary;
+}
+
+// ── Sidebar ──
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: $sidebar-collapsed;
+  background: $bg-secondary;
+  border-right: 1px solid $border-subtle;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: width $transition-slow;
+  overflow: hidden;
+
+  &--expanded {
+    width: $sidebar-expanded;
+  }
+
+  &__logo {
+    @include flex-center;
+    gap: $space-3;
+    height: 64px;
+    padding: 0 $space-4;
+    border-bottom: 1px solid $border-subtle;
+    flex-shrink: 0;
+  }
+
+  &__logo-icon {
+    @include flex-center;
+    width: 36px;
+    height: 36px;
+    border-radius: $radius-sm;
+    background: $accent-gradient;
+    color: #fff;
+    font-weight: 800;
+    font-size: $font-size-sm;
+    flex-shrink: 0;
+  }
+
+  &__logo-text {
+    font-size: $font-size-lg;
+    font-weight: 700;
+    background: $accent-gradient;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+  }
+
+  &__nav {
+    flex: 1;
+    padding: $space-3 $space-2;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-2 $space-3;
+    border-radius: $radius-sm;
+    color: $text-secondary;
+    font-size: $font-size-sm;
+    transition: background $transition-fast, color $transition-fast;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      color: $text-primary;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &--active {
+      color: $accent-cyan;
+      background: rgba(0, 212, 255, 0.08);
+
+      &:hover {
+        background: rgba(0, 212, 255, 0.12);
+      }
+    }
+  }
+
+  &__link-icon {
+    @include flex-center;
+    width: 32px;
+    height: 32px;
+    font-size: $font-size-lg;
+    flex-shrink: 0;
+  }
+
+  &__link-label {
+    @include truncate;
+  }
+
+  &__footer {
+    padding: $space-3 $space-2;
+    border-top: 1px solid $border-subtle;
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    flex-shrink: 0;
+  }
+
+  &__pin-btn {
+    @include flex-center;
+    width: 36px;
+    height: 36px;
+    border-radius: $radius-sm;
+    font-size: $font-size-base;
+    transition: background $transition-fast;
+    flex-shrink: 0;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  &__logout-btn {
+    flex: 1;
+    padding: $space-2 $space-3;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    color: $text-secondary;
+    transition: background $transition-fast, color $transition-fast;
+    text-align: left;
+
+    &:hover {
+      color: $error;
+      background: rgba(239, 68, 68, 0.1);
+    }
+  }
+}
+
+// ── Main area ──
+.app-layout__main {
+  flex: 1;
+  margin-left: $sidebar-collapsed;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left $transition-slow;
+
+  .sidebar--pinned ~ & {
+    margin-left: $sidebar-expanded;
+  }
+}
+
+.sidebar--pinned + .app-layout__main {
+  margin-left: $sidebar-expanded;
+}
+
+// ── Header ──
+.app-header {
+  @include flex-between;
+  height: 56px;
+  padding: 0 $space-6;
+  border-bottom: 1px solid $border-subtle;
+  background: rgba($bg-secondary, 0.6);
+  backdrop-filter: blur(8px);
+  flex-shrink: 0;
+
+  &__title {
+    font-size: $font-size-base;
+    font-weight: 600;
+    color: $text-secondary;
+  }
+}
+
+// ── Content ──
+.app-layout__content {
+  flex: 1;
+  padding: $space-6;
+  overflow-y: auto;
+}

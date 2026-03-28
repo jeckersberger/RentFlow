@@ -1,886 +1,759 @@
-version: '3.8'
-
 services:
-  # ============================================================================
-  # INFRASTRUCTURE SERVICES
-  # ============================================================================
-
-  traefik:
-    image: traefik:v3.1
-    container_name: equipflow-traefik
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./infra/traefik/dynamic:/etc/traefik/dynamic:ro
-      - traefik_certs:/certs
-    environment:
-      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@rentflow.example.com}
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api/rawdata`)"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
-
-  kurrentdb:
-    image: eventstore/eventstore:latest
-    container_name: equipflow-kurrentdb
-    environment:
-      EVENTSTORE_CLUSTER_SIZE: 1
-      EVENTSTORE_RUN_PROJECTIONS: All
-      EVENTSTORE_START_STANDARD_PROJECTIONS: "true"
-      EVENTSTORE_INSECURE: "true"
-      EVENTSTORE_ALLOW_UNKNOWN_OPTIONS: "true"
-    ports:
-      - "1113:1113"
-      - "2113:2113"
-    volumes:
-      - kurrentdb_data:/var/lib/eventstore
-    networks:
-      - rentflow
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+  # =============================================================================
+  # PostgreSQL 16 — eine DB pro Service
+  # =============================================================================
   postgres:
     image: postgres:16-alpine
     container_name: equipflow-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-rentflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein}
+      POSTGRES_DB: rentflow
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-    networks:
-      - rentflow
-    restart: unless-stopped
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rentflow}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - equipflow
 
+  # =============================================================================
+  # Redis 7 — Sessions, Cache, Pub/Sub
+  # =============================================================================
   redis:
     image: redis:7-alpine
     container_name: equipflow-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD:-equipflow_dev}
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD muss gesetzt sein} --appendonly yes
     volumes:
       - redis_data:/data
-    networks:
-      - rentflow
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: equipflow-prometheus
-    volumes:
-      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}"
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
     networks:
-      - rentflow
+      - equipflow
+
+  # =============================================================================
+  # Traefik v3.1 — Reverse Proxy (Production-Routing)
+  # =============================================================================
+  traefik:
+    image: traefik:v3.1
+    container_name: equipflow-traefik
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.prometheus.rule=PathPrefix(`/prometheus`)"
-      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
-
-  # ============================================================================
-  # DATABASE MIGRATIONS (one-shot init container)
-  # ============================================================================
-
-  migrations:
-    image: postgres:16-alpine
-    container_name: equipflow-migrations
-    environment:
-      PGHOST: postgres
-      PGPORT: "5432"
-      PGUSER: ${POSTGRES_USER:-rentflow}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=equipflow"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=${TRAEFIK_LOG_LEVEL:-INFO}"
+    ports:
+      - "${TRAEFIK_HTTP_PORT:-80}:80"
+      - "${TRAEFIK_HTTPS_PORT:-443}:443"
+      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080"
     volumes:
-      - ./scripts:/scripts:ro
-      - ./services:/services:ro
-    entrypoint: ["bash", "/scripts/migrate-internal.sh"]
-    depends_on:
-      postgres: { condition: service_healthy }
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
-      - rentflow
-    restart: "no"
+      - equipflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  # ============================================================================
-  # MICROSERVICES (18 services)
-  # ============================================================================
-
-  auth-service:
+  # =============================================================================
+  # Auth Service (Port 8001)
+  # =============================================================================
+  auth:
     build:
       context: .
-      dockerfile: services/auth-service/Dockerfile
-    container_name: equipflow-auth-service
+      dockerfile: services/auth/Dockerfile
+    container_name: equipflow-auth
+    restart: unless-stopped
     environment:
-      SERVICE_NAME: auth-service
-      SERVICE_PORT: "8001"
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: auth_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      KURRENTDB_USER: admin
-      KURRENTDB_PASSWORD: ${KURRENTDB_PASSWORD:-equipflow_dev}
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      REDIS_DB: "0"
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
-      JWT_EXPIRY_HOURS: "24"
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: auth_service
+      DB_SSLMODE: disable
+      PORT: "8001"
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      SETUP_TOKEN: ${SETUP_TOKEN:-equipflow-setup-2026}
+    volumes:
+      - ./keys:/app/keys:ro
     ports:
       - "8001:8001"
-    volumes:
-      - update_trigger:/update-trigger
-      - backups_data:/backups
     depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-      kurrentdb: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
-      - rentflow
-    restart: unless-stopped
+      - equipflow
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/api/v1/tenants`) || PathPrefix(`/api/v1/setup`) || PathPrefix(`/api/v1/system`)"
+      - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/api/v1/setup`)"
       - "traefik.http.services.auth.loadbalancer.server.port=8001"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
 
-  inventory-service:
+  # =============================================================================
+  # Inventory Service (Port 8002)
+  # =============================================================================
+  inventory:
     build:
       context: .
-      dockerfile: services/inventory-service/Dockerfile
-    container_name: equipflow-inventory-service
+      dockerfile: services/inventory/Dockerfile
+    container_name: equipflow-inventory
+    restart: unless-stopped
     environment:
-      SERVICE_NAME: inventory-service
-      SERVICE_PORT: "8002"
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: inventory_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      REDIS_DB: "0"
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: inventory_service
+      DB_SSLMODE: disable
+      PORT: "8002"
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
     ports:
       - "8002:8002"
     depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
     networks:
-      - rentflow
-    restart: unless-stopped
+      - equipflow
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/equipment`) || PathPrefix(`/api/v1/categories`)"
+      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/equipment`) || PathPrefix(`/api/v1/categories`) || PathPrefix(`/api/v1/equipment-types`) || PathPrefix(`/api/v1/flightcases`)"
       - "traefik.http.services.inventory.loadbalancer.server.port=8002"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8002/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
 
-  project-service:
+  # =============================================================================
+  # Project Service (Port 8003)
+  # =============================================================================
+  project:
     build:
       context: .
-      dockerfile: services/project-service/Dockerfile
-    container_name: equipflow-project-service
+      dockerfile: services/project/Dockerfile
+    container_name: equipflow-project
+    restart: unless-stopped
     environment:
-      SERVICE_NAME: project-service
-      SERVICE_PORT: "8003"
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: project_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: project_service
+      DB_SSLMODE: disable
+      PORT: "8003"
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
     ports:
       - "8003:8003"
     depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
     networks:
-      - rentflow
-    restart: unless-stopped
+      - equipflow
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.project.rule=PathPrefix(`/api/v1/projects`) || PathPrefix(`/api/v1/packlists`)"
+      - "traefik.http.routers.project.rule=PathPrefix(`/api/v1/projects`) || PathPrefix(`/api/v1/packlists`) || PathPrefix(`/api/v1/reservations`)"
       - "traefik.http.services.project.loadbalancer.server.port=8003"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8003/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
 
-  scanner-service:
+  # =============================================================================
+  # Customer Service (Port 8019)
+  # =============================================================================
+  customer:
     build:
       context: .
-      dockerfile: services/scanner-service/Dockerfile
-    container_name: equipflow-scanner-service
+      dockerfile: services/customer/Dockerfile
+    container_name: equipflow-customer
+    restart: unless-stopped
     environment:
-      SERVICE_NAME: scanner-service
-      SERVICE_PORT: "8004"
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: scanner_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: customer_service
+      DB_SSLMODE: disable
+      PORT: "8019"
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      INVENTORY_SERVICE_URL: http://inventory-service:8002
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8019:8019"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.customer.rule=PathPrefix(`/api/v1/customers`) || PathPrefix(`/api/v1/contacts`)"
+      - "traefik.http.services.customer.loadbalancer.server.port=8019"
+
+  # =============================================================================
+  # Scanner Service (Port 8004)
+  # =============================================================================
+  scanner:
+    build:
+      context: .
+      dockerfile: services/scanner/Dockerfile
+    container_name: equipflow-scanner
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: scanner_service
+      DB_SSLMODE: disable
+      PORT: "8004"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
     ports:
       - "8004:8004"
     depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-      inventory-service: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
     networks:
-      - rentflow
-    restart: unless-stopped
+      - equipflow
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.scanner.rule=PathPrefix(`/api/v1/scan`) || PathPrefix(`/api/v1/scanner`)"
+      - "traefik.http.routers.scanner.rule=PathPrefix(`/api/v1/scanner`)"
       - "traefik.http.services.scanner.loadbalancer.server.port=8004"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8004/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
 
-  warehouse-service:
+  # =============================================================================
+  # Warehouse Service (Port 8005)
+  # =============================================================================
+  warehouse:
     build:
       context: .
-      dockerfile: services/warehouse-service/Dockerfile
-    container_name: equipflow-warehouse-service
+      dockerfile: services/warehouse/Dockerfile
+    container_name: equipflow-warehouse
+    restart: unless-stopped
     environment:
-      SERVICE_NAME: warehouse-service
-      SERVICE_PORT: "8005"
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: warehouse_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: warehouse_service
+      DB_SSLMODE: disable
+      PORT: "8005"
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
     ports:
       - "8005:8005"
     depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
     networks:
-      - rentflow
-    restart: unless-stopped
+      - equipflow
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.warehouse.rule=PathPrefix(`/api/v1/locations`) || PathPrefix(`/api/v1/movements`) || PathPrefix(`/api/v1/inventory`)"
+      - "traefik.http.routers.warehouse.rule=PathPrefix(`/api/v1/warehouses`) || PathPrefix(`/api/v1/zones`) || PathPrefix(`/api/v1/racks`) || PathPrefix(`/api/v1/locations`) || PathPrefix(`/api/v1/movements`) || PathPrefix(`/api/v1/inventory-checks`)"
       - "traefik.http.services.warehouse.loadbalancer.server.port=8005"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8005/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
 
-  invoice-service:
+  # =============================================================================
+  # Document Service (Port 8007)
+  # =============================================================================
+  document:
     build:
       context: .
-      dockerfile: services/invoice-service/Dockerfile
-    container_name: equipflow-invoice-service
+      dockerfile: services/document/Dockerfile
+    container_name: equipflow-document
+    restart: unless-stopped
     environment:
-      SERVICE_NAME: invoice-service
-      SERVICE_PORT: "8006"
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: invoice_service
       DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: document_service
+      DB_SSLMODE: disable
+      PORT: "8007"
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8007:8007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.document.rule=PathPrefix(`/api/v1/document-templates`) || PathPrefix(`/api/v1/documents`) || PathPrefix(`/api/v1/attachments`)"
+      - "traefik.http.services.document.loadbalancer.server.port=8007"
+
+  # =============================================================================
+  # Crew Service (Port 8008)
+  # =============================================================================
+  crew:
+    build:
+      context: .
+      dockerfile: services/crew/Dockerfile
+    container_name: equipflow-crew
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: crew_service
+      DB_SSLMODE: disable
+      PORT: "8008"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8008:8008"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crew.rule=PathPrefix(`/api/v1/crew`)"
+      - "traefik.http.services.crew.loadbalancer.server.port=8008"
+
+  # =============================================================================
+  # Reporting Service (Port 8016)
+  # =============================================================================
+  reporting:
+    build:
+      context: .
+      dockerfile: services/reporting/Dockerfile
+    container_name: equipflow-reporting
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: reporting_service
+      DB_SSLMODE: disable
+      PORT: "8016"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8016:8016"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.reporting.rule=PathPrefix(`/api/v1/report-definitions`) || PathPrefix(`/api/v1/report-snapshots`) || PathPrefix(`/api/v1/dashboard-widgets`)"
+      - "traefik.http.services.reporting.loadbalancer.server.port=8016"
+
+  # =============================================================================
+  # Federation Service (Port 8009)
+  # =============================================================================
+  federation:
+    build:
+      context: .
+      dockerfile: services/federation/Dockerfile
+    container_name: equipflow-federation
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: federation_service
+      DB_SSLMODE: disable
+      PORT: "8009"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8009:8009"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.federation.rule=PathPrefix(`/api/v1/federation-partners`) || PathPrefix(`/api/v1/shared-listings`) || PathPrefix(`/api/v1/federation-requests`)"
+      - "traefik.http.services.federation.loadbalancer.server.port=8009"
+
+  # =============================================================================
+  # Maintenance Service (Port 8010)
+  # =============================================================================
+  maintenance:
+    build:
+      context: .
+      dockerfile: services/maintenance/Dockerfile
+    container_name: equipflow-maintenance
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: maintenance_service
+      DB_SSLMODE: disable
+      PORT: "8010"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8010:8010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.maintenance.rule=PathPrefix(`/api/v1/maintenance-schedules`) || PathPrefix(`/api/v1/maintenance-tasks`)"
+      - "traefik.http.services.maintenance.loadbalancer.server.port=8010"
+
+  # =============================================================================
+  # Transport Service (Port 8011)
+  # =============================================================================
+  transport:
+    build:
+      context: .
+      dockerfile: services/transport/Dockerfile
+    container_name: equipflow-transport
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: transport_service
+      DB_SSLMODE: disable
+      PORT: "8011"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8011:8011"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.transport.rule=PathPrefix(`/api/v1/vehicles`) || PathPrefix(`/api/v1/transport-orders`)"
+      - "traefik.http.services.transport.loadbalancer.server.port=8011"
+
+  # =============================================================================
+  # Insurance Service (Port 8012)
+  # =============================================================================
+  insurance:
+    build:
+      context: .
+      dockerfile: services/insurance/Dockerfile
+    container_name: equipflow-insurance
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: insurance_service
+      DB_SSLMODE: disable
+      PORT: "8012"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8012:8012"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.insurance.rule=PathPrefix(`/api/v1/insurance-policies`) || PathPrefix(`/api/v1/insurance-claims`)"
+      - "traefik.http.services.insurance.loadbalancer.server.port=8012"
+
+  # =============================================================================
+  # Workflow Service (Port 8013)
+  # =============================================================================
+  workflow:
+    build:
+      context: .
+      dockerfile: services/workflow/Dockerfile
+    container_name: equipflow-workflow
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: workflow_service
+      DB_SSLMODE: disable
+      PORT: "8013"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8013:8013"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.workflow.rule=PathPrefix(`/api/v1/workflow-definitions`) || PathPrefix(`/api/v1/workflow-instances`)"
+      - "traefik.http.services.workflow.loadbalancer.server.port=8013"
+
+  # =============================================================================
+  # AI Service (Port 8014)
+  # =============================================================================
+  ai:
+    build:
+      context: .
+      dockerfile: services/ai/Dockerfile
+    container_name: equipflow-ai
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ai_service
+      DB_SSLMODE: disable
+      PORT: "8014"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8014:8014"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai.rule=PathPrefix(`/api/v1/ai-predictions`) || PathPrefix(`/api/v1/ai-suggestions`) || PathPrefix(`/api/v1/ai-training-data`)"
+      - "traefik.http.services.ai.loadbalancer.server.port=8014"
+
+  # =============================================================================
+  # Notification Service (Port 8015)
+  # =============================================================================
+  notification:
+    build:
+      context: .
+      dockerfile: services/notification/Dockerfile
+    container_name: equipflow-notification
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: notification_service
+      DB_SSLMODE: disable
+      PORT: "8015"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8015:8015"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notification.rule=PathPrefix(`/api/v1/notifications`) || PathPrefix(`/api/v1/notification-preferences`)"
+      - "traefik.http.services.notification.loadbalancer.server.port=8015"
+
+  # =============================================================================
+  # Audit Service (Port 8017)
+  # =============================================================================
+  audit:
+    build:
+      context: .
+      dockerfile: services/audit/Dockerfile
+    container_name: equipflow-audit
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: audit_service
+      DB_SSLMODE: disable
+      PORT: "8017"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8017:8017"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.audit.rule=PathPrefix(`/api/v1/audit-logs`) || PathPrefix(`/api/v1/audit-policies`)"
+      - "traefik.http.services.audit.loadbalancer.server.port=8017"
+
+  # =============================================================================
+  # Expense Service (Port 8018)
+  # =============================================================================
+  expense:
+    build:
+      context: .
+      dockerfile: services/expense/Dockerfile
+    container_name: equipflow-expense
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: expense_service
+      DB_SSLMODE: disable
+      PORT: "8018"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
+    ports:
+      - "8018:8018"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - equipflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.expense.rule=PathPrefix(`/api/v1/expense-categories`) || PathPrefix(`/api/v1/expenses`)"
+      - "traefik.http.services.expense.loadbalancer.server.port=8018"
+
+  # =============================================================================
+  # Invoice Service (Port 8006)
+  # =============================================================================
+  invoice:
+    build:
+      context: .
+      dockerfile: services/invoice/Dockerfile
+    container_name: equipflow-invoice
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-rentflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: invoice_service
+      DB_SSLMODE: disable
+      PORT: "8006"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./keys:/app/keys:ro
     ports:
       - "8006:8006"
     depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
     networks:
-      - rentflow
-    restart: unless-stopped
+      - equipflow
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.invoice.rule=PathPrefix(`/api/v1/invoices`)"
       - "traefik.http.services.invoice.loadbalancer.server.port=8006"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8006/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
 
-  document-service:
-    build:
-      context: .
-      dockerfile: services/document-service/Dockerfile
-    container_name: equipflow-document-service
-    environment:
-      SERVICE_NAME: document-service
-      SERVICE_PORT: "8007"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: document_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8007:8007"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.document.rule=PathPrefix(`/api/v1/documents`) || PathPrefix(`/api/v1/templates`) || PathPrefix(`/api/v1/ocr`)"
-      - "traefik.http.services.document.loadbalancer.server.port=8007"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8007/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  crew-service:
-    build:
-      context: .
-      dockerfile: services/crew-service/Dockerfile
-    container_name: equipflow-crew-service
-    environment:
-      SERVICE_NAME: crew-service
-      SERVICE_PORT: "8008"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: crew_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8008:8008"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.crew.rule=PathPrefix(`/api/v1/crew`) || PathPrefix(`/api/v1/time-entries`)"
-      - "traefik.http.services.crew.loadbalancer.server.port=8008"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8008/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  federation-service:
-    build:
-      context: .
-      dockerfile: services/federation-service/Dockerfile
-    container_name: equipflow-federation-service
-    environment:
-      SERVICE_NAME: federation-service
-      SERVICE_PORT: "8009"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: federation_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8009:8009"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.federation.rule=PathPrefix(`/api/v1/federation`)"
-      - "traefik.http.services.federation.loadbalancer.server.port=8009"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8009/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  maintenance-service:
-    build:
-      context: .
-      dockerfile: services/maintenance-service/Dockerfile
-    container_name: equipflow-maintenance-service
-    environment:
-      SERVICE_NAME: maintenance-service
-      SERVICE_PORT: "8010"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: maintenance_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8010:8010"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.maintenance.rule=PathPrefix(`/api/v1/maintenance`) || PathPrefix(`/api/v1/dguv`)"
-      - "traefik.http.services.maintenance.loadbalancer.server.port=8010"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8010/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  transport-service:
-    build:
-      context: .
-      dockerfile: services/transport-service/Dockerfile
-    container_name: equipflow-transport-service
-    environment:
-      SERVICE_NAME: transport-service
-      SERVICE_PORT: "8011"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: transport_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8011:8011"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.transport.rule=PathPrefix(`/api/v1/vehicles`) || PathPrefix(`/api/v1/tours`)"
-      - "traefik.http.services.transport.loadbalancer.server.port=8011"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8011/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  insurance-service:
-    build:
-      context: .
-      dockerfile: services/insurance-service/Dockerfile
-    container_name: equipflow-insurance-service
-    environment:
-      SERVICE_NAME: insurance-service
-      SERVICE_PORT: "8012"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: insurance_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8012:8012"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.insurance.rule=PathPrefix(`/api/v1/policies`) || PathPrefix(`/api/v1/claims`)"
-      - "traefik.http.services.insurance.loadbalancer.server.port=8012"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8012/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  workflow-service:
-    build:
-      context: .
-      dockerfile: services/workflow-service/Dockerfile
-    container_name: equipflow-workflow-service
-    environment:
-      SERVICE_NAME: workflow-service
-      SERVICE_PORT: "8013"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: workflow_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8013:8013"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.workflow.rule=PathPrefix(`/api/v1/workflows`)"
-      - "traefik.http.services.workflow.loadbalancer.server.port=8013"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8013/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  ai-service:
-    build:
-      context: .
-      dockerfile: services/ai-service/Dockerfile
-    container_name: equipflow-ai-service
-    environment:
-      SERVICE_NAME: ai-service
-      SERVICE_PORT: "8014"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: ai_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      AI_PROVIDERS: ${AI_PROVIDERS:-claude}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OLLAMA_ENDPOINT: ${OLLAMA_ENDPOINT:-http://localhost:11434}
-    ports:
-      - "8014:8014"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ai.rule=PathPrefix(`/api/v1/ai`)"
-      - "traefik.http.services.ai.loadbalancer.server.port=8014"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8014/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  notification-service:
-    build:
-      context: .
-      dockerfile: services/notification-service/Dockerfile
-    container_name: equipflow-notification-service
-    environment:
-      SERVICE_NAME: notification-service
-      SERVICE_PORT: "8015"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: notification_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-no-reply@example.com}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_PASS: ${SMTP_PASSWORD:-}
-      SMTP_FROM: ${SMTP_FROM:-noreply@rentflow.local}
-      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-RentFlow}
-      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-${SMTP_FROM:-noreply@rentflow.local}}
-      SMTP_TLS: ${SMTP_TLS:-true}
-    ports:
-      - "8015:8015"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.notification.rule=PathPrefix(`/api/v1/notifications`)"
-      - "traefik.http.services.notification.loadbalancer.server.port=8015"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8015/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  reporting-service:
-    build:
-      context: .
-      dockerfile: services/reporting-service/Dockerfile
-    container_name: equipflow-reporting-service
-    environment:
-      SERVICE_NAME: reporting-service
-      SERVICE_PORT: "8016"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: reporting_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8016:8016"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.reporting.rule=PathPrefix(`/api/v1/reports`)"
-      - "traefik.http.services.reporting.loadbalancer.server.port=8016"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8016/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  audit-service:
-    build:
-      context: .
-      dockerfile: services/audit-service/Dockerfile
-    container_name: equipflow-audit-service
-    environment:
-      SERVICE_NAME: audit-service
-      SERVICE_PORT: "8017"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: audit_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8017:8017"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.audit.rule=PathPrefix(`/api/v1/audit`)"
-      - "traefik.http.services.audit.loadbalancer.server.port=8017"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8017/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  expense-service:
-    build:
-      context: .
-      dockerfile: services/expense-service/Dockerfile
-    container_name: equipflow-expense-service
-    environment:
-      SERVICE_NAME: expense-service
-      SERVICE_PORT: "8018"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: expense_service
-      DB_USER: ${POSTGRES_USER:-rentflow}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-equipflow_dev}
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: "2113"
-      KURRENTDB_SCHEME: "http"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-equipflow_dev}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8018:8018"
-    depends_on:
-      migrations: { condition: service_completed_successfully }
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks:
-      - rentflow
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.expense.rule=PathPrefix(`/api/v1/expenses`)"
-      - "traefik.http.services.expense.loadbalancer.server.port=8018"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8018/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  # ============================================================================
-  # FRONTEND
-  # ============================================================================
-
+  # =============================================================================
+  # Frontend (React + Vite, served by nginx)
+  # =============================================================================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: rentflow-frontend
-    ports:
-      - "3000:80"
-    networks:
-      - rentflow
+    container_name: equipflow-frontend
     restart: unless-stopped
+    networks:
+      - equipflow
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
       - "traefik.http.routers.frontend.priority=1"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
-    depends_on:
-      - auth-service
 
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
   postgres_data:
-  kurrentdb_data:
+    driver: local
   redis_data:
-  traefik_certs:
-  prometheus_data:
-  update_trigger:
-  backups_data:
+    driver: local
 
+# =============================================================================
+# Netzwerk
+# =============================================================================
 networks:
-  rentflow:
+  equipflow:
+    name: equipflow
     driver: bridge
