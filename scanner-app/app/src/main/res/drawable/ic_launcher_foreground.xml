@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background circle -->
+    <path
+        android:fillColor="#1E293B"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+    <!-- "CD" text approximation -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,44 C38,38 42,35 47,35 C50,35 52,36 53,38 L51,40 C50,39 49,38 47,38 C44,38 41,40 41,44 C41,48 44,50 47,50 C49,50 50,49 51,48 L53,50 C52,52 50,53 47,53 C42,53 38,50 38,44Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M56,35 L61,35 C67,35 70,39 70,44 C70,49 67,53 61,53 L56,53Z M59,38 L59,50 L61,50 C65,50 67,48 67,44 C67,40 65,38 61,38Z" />
+</vector>
