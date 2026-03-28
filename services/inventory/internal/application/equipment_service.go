@@ -484,6 +484,7 @@ func (s *EquipmentService) GetByRFID(
 // GetHistory returns paginated audit history for a piece of equipment.
 func (s *EquipmentService) GetHistory(
 	ctx context.Context,
+	tenantID uuid.UUID,
 	equipmentID uuid.UUID,
 	page int,
 	perPage int,
@@ -495,7 +496,7 @@ func (s *EquipmentService) GetHistory(
 		perPage = 20
 	}
 
-	entries, total, err := s.historyRepo.ListByEquipment(ctx, equipmentID, page, perPage)
+	entries, total, err := s.historyRepo.ListByEquipment(ctx, equipmentID, tenantID, page, perPage)
 	if err != nil {
 		s.logger.Error().Err(err).
 			Str("equipment_id", equipmentID.String()).

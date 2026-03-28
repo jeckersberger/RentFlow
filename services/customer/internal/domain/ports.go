@@ -20,7 +20,7 @@ type CustomerRepository interface {
 type ContactRepository interface {
 	Create(ctx context.Context, contact *Contact) error
 	GetByID(ctx context.Context, id, tenantID uuid.UUID) (*Contact, error)
-	ListByCustomer(ctx context.Context, customerID uuid.UUID) ([]*Contact, error)
+	ListByCustomer(ctx context.Context, customerID uuid.UUID, tenantID uuid.UUID) ([]*Contact, error)
 	Update(ctx context.Context, contact *Contact) error
 	Delete(ctx context.Context, id, tenantID uuid.UUID) error
 }
@@ -28,5 +28,5 @@ type ContactRepository interface {
 // ContactNoteRepository defines persistence operations for contact notes.
 type ContactNoteRepository interface {
 	Create(ctx context.Context, note *ContactNote) error
-	ListByContact(ctx context.Context, contactID uuid.UUID) ([]*ContactNote, error)
+	ListByContact(ctx context.Context, contactID uuid.UUID, tenantID uuid.UUID) ([]*ContactNote, error)
 }

@@ -183,11 +183,11 @@ func (r *FlightcaseRepo) AddItem(ctx context.Context, item *domain.FlightcaseIte
 	return nil
 }
 
-// RemoveItem deletes a flightcase item by its ID.
-func (r *FlightcaseRepo) RemoveItem(ctx context.Context, id uuid.UUID) error {
+// RemoveItem deletes a flightcase item by its ID, scoped to a tenant via the flightcases table.
+func (r *FlightcaseRepo) RemoveItem(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error {
 	tag, err := r.pool.Exec(ctx,
-		`DELETE FROM flightcase_items WHERE id = $1`,
-		id,
+		`DELETE FROM flightcase_items WHERE id = $1 AND flightcase_id IN (SELECT id FROM flightcases WHERE tenant_id = $2)`,
+		id, tenantID,
 	)
 	if err != nil {
 		return fmt.Errorf("flightcase_repo: remove_item: %w", err)
@@ -198,15 +198,16 @@ func (r *FlightcaseRepo) RemoveItem(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// GetItems returns all items in a flightcase with equipment data joined.
-func (r *FlightcaseRepo) GetItems(ctx context.Context, flightcaseID uuid.UUID) ([]*domain.FlightcaseItem, error) {
+// GetItems returns all items in a flightcase with equipment data joined, scoped to a tenant.
+func (r *FlightcaseRepo) GetItems(ctx context.Context, flightcaseID uuid.UUID, tenantID uuid.UUID) ([]*domain.FlightcaseItem, error) {
 	query := `
 		SELECT fi.id, fi.flightcase_id, fi.equipment_id, fi.quantity, fi.sort_order, fi.created_at
 		FROM flightcase_items fi
-		WHERE fi.flightcase_id = $1
+		JOIN flightcases f ON f.id = fi.flightcase_id
+		WHERE fi.flightcase_id = $1 AND f.tenant_id = $2
 		ORDER BY fi.sort_order ASC`
 
-	rows, err := r.pool.Query(ctx, query, flightcaseID)
+	rows, err := r.pool.Query(ctx, query, flightcaseID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("flightcase_repo: get_items query: %w", err)
 	}

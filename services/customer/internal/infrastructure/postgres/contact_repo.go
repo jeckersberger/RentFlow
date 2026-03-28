@@ -91,9 +91,9 @@ func (r *ContactRepo) GetByID(ctx context.Context, id, tenantID uuid.UUID) (*dom
 	return c, nil
 }
 
-func (r *ContactRepo) ListByCustomer(ctx context.Context, customerID uuid.UUID) ([]*domain.Contact, error) {
-	query := fmt.Sprintf(`SELECT %s FROM contacts WHERE customer_id = $1 ORDER BY is_primary DESC, last_name ASC`, contactColumns)
-	rows, err := r.pool.Query(ctx, query, customerID)
+func (r *ContactRepo) ListByCustomer(ctx context.Context, customerID uuid.UUID, tenantID uuid.UUID) ([]*domain.Contact, error) {
+	query := fmt.Sprintf(`SELECT %s FROM contacts WHERE customer_id = $1 AND tenant_id = $2 ORDER BY is_primary DESC, last_name ASC`, contactColumns)
+	rows, err := r.pool.Query(ctx, query, customerID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("contact_repo: list_by_customer query: %w", err)
 	}

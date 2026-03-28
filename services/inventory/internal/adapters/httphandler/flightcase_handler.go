@@ -200,7 +200,7 @@ func (h *FlightcaseHandler) RemoveItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.flightcaseService.RemoveItem(r.Context(), itemID); err != nil {
+	if err := h.flightcaseService.RemoveItem(r.Context(), claims.TenantID, itemID); err != nil {
 		errors.HandleError(w, err)
 		return
 	}
@@ -222,7 +222,7 @@ func (h *FlightcaseHandler) GetItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, err := h.flightcaseService.GetItems(r.Context(), id)
+	items, err := h.flightcaseService.GetItems(r.Context(), claims.TenantID, id)
 	if err != nil {
 		errors.HandleError(w, err)
 		return

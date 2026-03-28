@@ -260,9 +260,10 @@ func (s *FlightcaseService) AddItem(
 // RemoveItem removes an equipment item from a flightcase by item ID.
 func (s *FlightcaseService) RemoveItem(
 	ctx context.Context,
+	tenantID uuid.UUID,
 	itemID uuid.UUID,
 ) error {
-	if err := s.flightcaseRepo.RemoveItem(ctx, itemID); err != nil {
+	if err := s.flightcaseRepo.RemoveItem(ctx, itemID, tenantID); err != nil {
 		s.logger.Error().Err(err).
 			Str("item_id", itemID.String()).
 			Msg("failed to remove item from flightcase")
@@ -279,9 +280,10 @@ func (s *FlightcaseService) RemoveItem(
 // GetItems returns all equipment items in a flightcase.
 func (s *FlightcaseService) GetItems(
 	ctx context.Context,
+	tenantID uuid.UUID,
 	flightcaseID uuid.UUID,
 ) ([]*domain.FlightcaseItem, error) {
-	items, err := s.flightcaseRepo.GetItems(ctx, flightcaseID)
+	items, err := s.flightcaseRepo.GetItems(ctx, flightcaseID, tenantID)
 	if err != nil {
 		s.logger.Error().Err(err).
 			Str("flightcase_id", flightcaseID.String()).

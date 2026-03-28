@@ -99,8 +99,8 @@ func (s *ContactService) GetByID(ctx context.Context, id, tenantID uuid.UUID) (*
 	return contact, nil
 }
 
-func (s *ContactService) ListByCustomer(ctx context.Context, customerID uuid.UUID) ([]*domain.Contact, error) {
-	items, err := s.contactRepo.ListByCustomer(ctx, customerID)
+func (s *ContactService) ListByCustomer(ctx context.Context, tenantID uuid.UUID, customerID uuid.UUID) ([]*domain.Contact, error) {
+	items, err := s.contactRepo.ListByCustomer(ctx, customerID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("list contacts: %w", err)
 	}
@@ -181,8 +181,8 @@ func (s *ContactService) AddNote(ctx context.Context, tenantID uuid.UUID, contac
 	return note, nil
 }
 
-func (s *ContactService) ListNotes(ctx context.Context, contactID uuid.UUID) ([]*domain.ContactNote, error) {
-	items, err := s.noteRepo.ListByContact(ctx, contactID)
+func (s *ContactService) ListNotes(ctx context.Context, tenantID uuid.UUID, contactID uuid.UUID) ([]*domain.ContactNote, error) {
+	items, err := s.noteRepo.ListByContact(ctx, contactID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("list contact notes: %w", err)
 	}

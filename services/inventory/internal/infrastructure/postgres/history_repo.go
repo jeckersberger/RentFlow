@@ -45,23 +45,23 @@ func (r *HistoryRepo) Record(ctx context.Context, entry *domain.EquipmentHistory
 }
 
 // ListByEquipment returns a paginated list of history entries for a specific equipment item.
-func (r *HistoryRepo) ListByEquipment(ctx context.Context, equipmentID uuid.UUID, page int, perPage int) ([]*domain.EquipmentHistory, int64, error) {
+func (r *HistoryRepo) ListByEquipment(ctx context.Context, equipmentID uuid.UUID, tenantID uuid.UUID, page int, perPage int) ([]*domain.EquipmentHistory, int64, error) {
 	offset := (page - 1) * perPage
 
 	var total int64
 	err := r.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM equipment_history WHERE equipment_id = $1`, equipmentID,
+		`SELECT COUNT(*) FROM equipment_history WHERE equipment_id = $1 AND tenant_id = $2`, equipmentID, tenantID,
 	).Scan(&total)
 	if err != nil {
 		return nil, 0, fmt.Errorf("history_repo: list_by_equipment count: %w", err)
 	}
 
 	query := fmt.Sprintf(
-		`SELECT %s FROM equipment_history WHERE equipment_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+		`SELECT %s FROM equipment_history WHERE equipment_id = $1 AND tenant_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4`,
 		historyColumns,
 	)
 
-	rows, err := r.pool.Query(ctx, query, equipmentID, perPage, offset)
+	rows, err := r.pool.Query(ctx, query, equipmentID, tenantID, perPage, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("history_repo: list_by_equipment query: %w", err)
 	}

@@ -67,12 +67,12 @@ type FlightcaseRepository interface {
 	Update(ctx context.Context, flightcase *Flightcase) error
 	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
 	AddItem(ctx context.Context, item *FlightcaseItem) error
-	RemoveItem(ctx context.Context, id uuid.UUID) error
-	GetItems(ctx context.Context, flightcaseID uuid.UUID) ([]*FlightcaseItem, error)
+	RemoveItem(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
+	GetItems(ctx context.Context, flightcaseID uuid.UUID, tenantID uuid.UUID) ([]*FlightcaseItem, error)
 }
 
 // EquipmentHistoryRepository defines persistence operations for equipment audit history.
 type EquipmentHistoryRepository interface {
 	Record(ctx context.Context, entry *EquipmentHistory) error
-	ListByEquipment(ctx context.Context, equipmentID uuid.UUID, page int, perPage int) ([]*EquipmentHistory, int64, error)
+	ListByEquipment(ctx context.Context, equipmentID uuid.UUID, tenantID uuid.UUID, page int, perPage int) ([]*EquipmentHistory, int64, error)
 }

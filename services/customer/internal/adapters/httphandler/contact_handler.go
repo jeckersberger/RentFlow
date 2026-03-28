@@ -82,7 +82,7 @@ func (h *ContactHandler) ListByCustomer(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	items, err := h.contactService.ListByCustomer(r.Context(), customerID)
+	items, err := h.contactService.ListByCustomer(r.Context(), claims.TenantID, customerID)
 	if err != nil {
 		errors.HandleError(w, err)
 		return
@@ -184,9 +184,7 @@ func (h *ContactHandler) ListNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = claims // Auth check done above
-
-	items, err := h.contactService.ListNotes(r.Context(), contactID)
+	items, err := h.contactService.ListNotes(r.Context(), claims.TenantID, contactID)
 	if err != nil {
 		errors.HandleError(w, err)
 		return

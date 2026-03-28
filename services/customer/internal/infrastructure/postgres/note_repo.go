@@ -47,11 +47,11 @@ func (r *NoteRepo) Create(ctx context.Context, note *domain.ContactNote) error {
 	return nil
 }
 
-func (r *NoteRepo) ListByContact(ctx context.Context, contactID uuid.UUID) ([]*domain.ContactNote, error) {
+func (r *NoteRepo) ListByContact(ctx context.Context, contactID uuid.UUID, tenantID uuid.UUID) ([]*domain.ContactNote, error) {
 	query := `SELECT id, tenant_id, contact_id, content, created_by, created_at
-		FROM contact_notes WHERE contact_id = $1 ORDER BY created_at DESC`
+		FROM contact_notes WHERE contact_id = $1 AND tenant_id = $2 ORDER BY created_at DESC`
 
-	rows, err := r.pool.Query(ctx, query, contactID)
+	rows, err := r.pool.Query(ctx, query, contactID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("note_repo: list_by_contact query: %w", err)
 	}

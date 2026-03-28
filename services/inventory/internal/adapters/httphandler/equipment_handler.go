@@ -371,7 +371,7 @@ func (h *EquipmentHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 
 	p := pagination.Parse(r)
 
-	history, total, err := h.equipmentService.GetHistory(r.Context(), id, p.Page, p.PerPage)
+	history, total, err := h.equipmentService.GetHistory(r.Context(), claims.TenantID, id, p.Page, p.PerPage)
 	if err != nil {
 		errors.HandleError(w, err)
 		return
