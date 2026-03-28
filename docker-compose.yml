@@ -49,9 +49,11 @@ services:
   # Traefik v3.1 — Reverse Proxy (Production-Routing)
   # =============================================================================
   traefik:
-    image: traefik:v3.1
+    image: traefik:v3.3
     container_name: cratedesk-traefik
     restart: unless-stopped
+    environment:
+      DOCKER_API_VERSION: "1.43"
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"

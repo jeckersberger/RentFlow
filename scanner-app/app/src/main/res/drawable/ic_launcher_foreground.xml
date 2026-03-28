@@ -4,15 +4,60 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Background circle -->
+
+    <!-- Crate / Box shape — 3D isometric look -->
+    <!-- Front face -->
     <path
-        android:fillColor="#1E293B"
-        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
-    <!-- "CD" text approximation -->
+        android:fillColor="#3B82F6"
+        android:pathData="M34,40 L54,30 L74,40 L74,62 L54,72 L34,62Z" />
+    <!-- Top face (lighter) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M38,44 C38,38 42,35 47,35 C50,35 52,36 53,38 L51,40 C50,39 49,38 47,38 C44,38 41,40 41,44 C41,48 44,50 47,50 C49,50 50,49 51,48 L53,50 C52,52 50,53 47,53 C42,53 38,50 38,44Z" />
+        android:fillColor="#60A5FA"
+        android:pathData="M34,40 L54,30 L74,40 L54,50Z" />
+    <!-- Right face (darker) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M56,35 L61,35 C67,35 70,39 70,44 C70,49 67,53 61,53 L56,53Z M59,38 L59,50 L61,50 C65,50 67,48 67,44 C67,40 65,38 61,38Z" />
+        android:fillColor="#2563EB"
+        android:pathData="M54,50 L74,40 L74,62 L54,72Z" />
+    <!-- Left face (medium) -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M34,40 L54,50 L54,72 L34,62Z" />
+
+    <!-- Crate horizontal slats on front-left face -->
+    <path
+        android:fillColor="#1D4ED8"
+        android:strokeColor="#1D4ED8"
+        android:strokeWidth="0.5"
+        android:pathData="M34,47 L54,57 M34,54 L54,64" />
+
+    <!-- Crate horizontal slats on front-right face -->
+    <path
+        android:fillColor="#1E40AF"
+        android:strokeColor="#1E40AF"
+        android:strokeWidth="0.5"
+        android:pathData="M54,57 L74,47 M54,64 L74,54" />
+
+    <!-- Top face cross / handle detail -->
+    <path
+        android:strokeColor="#DBEAFE"
+        android:strokeWidth="1.2"
+        android:fillColor="#00000000"
+        android:pathData="M44,38 L54,43 L64,38" />
+
+    <!-- Scan beam / barcode line effect -->
+    <path
+        android:strokeColor="#FBBF24"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M30,54 L42,48" />
+    <path
+        android:strokeColor="#FBBF24"
+        android:strokeWidth="1.0"
+        android:fillColor="#00000000"
+        android:pathData="M30,57 L40,52" />
+    <path
+        android:strokeColor="#F59E0B"
+        android:strokeWidth="0.7"
+        android:fillColor="#00000000"
+        android:pathData="M30,51 L40,46" />
 </vector>
