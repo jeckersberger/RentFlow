@@ -5,8 +5,14 @@ export interface User {
   tenant_id: string;
 }
 
-export interface LoginResponse {
+export interface LoginTokens {
   access_token: string;
+  refresh_token: string;
+  expires_at: number;
+}
+
+export interface LoginResponse {
+  tokens: LoginTokens;
   user: User;
 }
 

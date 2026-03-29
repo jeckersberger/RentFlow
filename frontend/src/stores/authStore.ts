@@ -18,13 +18,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   login: async (email: string, password: string, tenantSlug: string) => {
     const response = await loginApi(email, password, tenantSlug);
-    const { access_token, user } = response;
+    const { tokens, user } = response;
 
-    localStorage.setItem(STORAGE_KEY_TOKEN, access_token);
+    localStorage.setItem(STORAGE_KEY_TOKEN, tokens.access_token);
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
 
     set({
-      accessToken: access_token,
+      accessToken: tokens.access_token,
       user,
       isAuthenticated: true,
     });
