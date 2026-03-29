@@ -88,7 +88,7 @@ class SettingsDataStore @Inject constructor(
     }
 
     companion object {
-        const val DEFAULT_SERVER_URL = ""
+        const val DEFAULT_SERVER_URL = "https://cratedesk.je-soundulight.de"
         const val SCAN_MODE_BARCODE = "barcode"
         const val SCAN_MODE_RFID = "rfid"
         const val DEFAULT_LOCK_TIMEOUT_MINUTES = 30

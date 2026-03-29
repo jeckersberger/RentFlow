@@ -3,7 +3,7 @@
     <string name="adhoc_add_anyway">Trotzdem hinzufügen</string>
     <string name="adhoc_confirm_title">Gerät nicht eingeplant</string>
     <string name="adhoc_not_on_job">\"%1$s\" ist nicht für den Job \"%2$s\" vorgesehen. Trotzdem hinzufügen?</string>
-    <string name="app_name">EquipFlow Scanner</string>
+    <string name="app_name">CrateDesk Scanner</string>
     <string name="camera_permission_required">Kamera-Berechtigung erforderlich</string>
     <string name="cancel">Abbrechen</string>
     <string name="card_cleaning_confirm">Reinigung</string>

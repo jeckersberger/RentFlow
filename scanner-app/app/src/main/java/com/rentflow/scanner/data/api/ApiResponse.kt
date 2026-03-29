@@ -8,12 +8,20 @@ data class ApiResponse<T>(
 )
 
 data class LoginResponse(
-    val access_token: String,
-    val refresh_token: String,
-    val expires_in: Int = 3600,
-    val token_type: String = "Bearer",
+    val tokens: LoginTokens? = null,
+    val access_token: String? = null,
+    val refresh_token: String? = null,
     val tenant_id: String? = null,
     val user: LoginUser? = null,
+) {
+    fun getAccessToken(): String = tokens?.access_token ?: access_token ?: ""
+    fun getRefreshToken(): String = tokens?.refresh_token ?: refresh_token ?: ""
+}
+
+data class LoginTokens(
+    val access_token: String,
+    val refresh_token: String,
+    val expires_at: Long = 0,
 )
 
 data class LoginUser(
@@ -28,6 +36,7 @@ data class LoginUser(
 data class LoginRequest(
     val email: String,
     val password: String,
+    val tenant_slug: String = "je-soundulight",
 )
 
 data class RefreshRequest(

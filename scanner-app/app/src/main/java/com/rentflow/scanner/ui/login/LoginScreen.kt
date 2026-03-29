@@ -82,7 +82,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "EquipFlow",
+                text = "CrateDesk",
                 style = MaterialTheme.typography.headlineLarge,
                 color = Cyan,
             )

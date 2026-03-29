@@ -27,7 +27,7 @@ class AuthRepository @Inject constructor(
             if (response.isSuccessful && response.body()?.data != null) {
                 val data = response.body()!!.data!!
                 val tenantId = data.user?.tenant_id ?: data.tenant_id ?: ""
-                tokenManager.saveTokens(data.access_token, data.refresh_token, tenantId)
+                tokenManager.saveTokens(data.getAccessToken(), data.getRefreshToken(), tenantId)
                 Result.success(Unit)
             } else {
                 val errorMsg = parseError(response.errorBody()?.string())
@@ -47,7 +47,7 @@ class AuthRepository @Inject constructor(
             if (response.isSuccessful && response.body()?.data != null) {
                 val data = response.body()!!.data!!
                 val tenantId = data.user?.tenant_id ?: data.tenant_id ?: ""
-                tokenManager.saveTokens(data.access_token, data.refresh_token, tenantId)
+                tokenManager.saveTokens(data.getAccessToken(), data.getRefreshToken(), tenantId)
                 Result.success(Unit)
             } else {
                 val errorMsg = parseError(response.errorBody()?.string())

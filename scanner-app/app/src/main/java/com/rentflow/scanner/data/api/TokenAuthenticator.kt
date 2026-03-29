@@ -65,14 +65,14 @@ class TokenAuthenticator(
                 val loginResponse = gson.fromJson(dataJson, LoginResponse::class.java)
 
                 tokenManager.saveTokens(
-                    loginResponse.access_token,
-                    loginResponse.refresh_token,
+                    loginResponse.getAccessToken(),
+                    loginResponse.getRefreshToken(),
                     tokenManager.getTenantId() ?: "",
                 )
                 Log.d(TAG, "Token refreshed successfully")
 
                 response.request.newBuilder()
-                    .header("Authorization", "Bearer ${loginResponse.access_token}")
+                    .header("Authorization", "Bearer ${loginResponse.getAccessToken()}")
                     .build()
             } catch (e: Exception) {
                 Log.e(TAG, "Token refresh error", e)

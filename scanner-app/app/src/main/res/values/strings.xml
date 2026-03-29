@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">EquipFlow Scanner</string>
+    <string name="app_name">CrateDesk Scanner</string>
     <string name="login_title">Anmelden</string>
     <string name="login_email">E-Mail</string>
     <string name="login_username_or_email">Benutzername oder E-Mail</string>
