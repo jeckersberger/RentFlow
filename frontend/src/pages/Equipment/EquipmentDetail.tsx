@@ -79,11 +79,11 @@ export default function EquipmentDetail() {
           </div>
           <div className="detail-field">
             <span className="detail-field__label">Zustand</span>
-            <StatusBadge status={item.condition_state} />
+            <StatusBadge status={item.condition} />
           </div>
-          <DetailField label="Tagessatz" value={formatEur(item.rental_price_daily)} />
+          <DetailField label="Tagessatz" value={formatEur(item.rental_price_day)} />
           <DetailField label="Kaufpreis" value={formatEur(item.purchase_price)} />
-          <DetailField label="Gewicht" value={item.weight_kg ? `${item.weight_kg} kg` : '-'} />
+          <DetailField label="Gewicht" value={item.weight_grams ? `${(item.weight_grams / 1000).toFixed(1)} kg` : '-'} />
         </div>
       </motion.div>
     </PageWrapper>

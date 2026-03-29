@@ -22,9 +22,9 @@ const columns: Column<Equipment>[] = [
   },
   { key: 'barcode', label: 'Barcode', render: (row) => row.barcode || '-' },
   {
-    key: 'condition_state',
+    key: 'condition',
     label: 'Zustand',
-    render: (row) => <StatusBadge status={row.condition_state} />,
+    render: (row) => <StatusBadge status={row.condition} />,
   },
 ];
 
