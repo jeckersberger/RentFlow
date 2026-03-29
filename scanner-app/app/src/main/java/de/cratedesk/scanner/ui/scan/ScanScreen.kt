@@ -1,5 +1,10 @@
 package de.cratedesk.scanner.ui.scan
 
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.media.ToneGenerator
+import android.media.AudioManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,7 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import de.cratedesk.scanner.data.hardware.DataWedgeReceiver
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,9 +29,32 @@ fun ScanScreen(
     viewModel: ScanViewModel,
     onSettingsClick: () -> Unit,
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var barcodeInput by remember { mutableStateOf("") }
-    var useCameraMode by remember { mutableStateOf(true) }
+    var useCameraMode by remember { mutableStateOf(false) } // Default to hardware scanner
+
+    // Register DataWedge BroadcastReceiver for hardware scan button
+    DisposableEffect(Unit) {
+        val receiver = DataWedgeReceiver { barcode, symbology ->
+            // Vibrate + beep on scan
+            try {
+                val vibrator = context.getSystemService(Vibrator::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator?.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+                }
+                val toneGen = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
+                toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 150)
+                toneGen.release()
+            } catch (_: Exception) {}
+
+            viewModel.scan(barcode)
+        }
+        context.registerReceiver(receiver, DataWedgeReceiver.getIntentFilter(), android.content.Context.RECEIVER_EXPORTED)
+        onDispose {
+            try { context.unregisterReceiver(receiver) } catch (_: Exception) {}
+        }
+    }
 
     Scaffold(
         topBar = {
