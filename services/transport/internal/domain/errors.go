@@ -12,4 +12,6 @@ var (
 	ErrMissingVehicleName    = errors.New("vehicle name is required")
 	ErrMissingEquipmentID    = errors.New("equipment_id is required")
 	ErrOrderAlreadyCompleted = errors.New("order is already completed")
+	ErrNoVehicleAssigned     = errors.New("no vehicle assigned to this order")
+	ErrCostTypeRequired      = errors.New("cost_type is required")
 )

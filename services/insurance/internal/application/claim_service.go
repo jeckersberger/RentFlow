@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -35,6 +36,12 @@ type UpdateClaimRequest struct {
 	Notes        *string `json:"notes"`
 }
 
+// UpdateClaimStatusRequest holds the data for a claim status transition.
+type UpdateClaimStatusRequest struct {
+	Status string `json:"status"`
+	Notes  string `json:"notes,omitempty"`
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -49,6 +56,49 @@ func NewClaimService(repo domain.InsuranceClaimRepository, logger zerolog.Logger
 		repo:   repo,
 		logger: logger.With().Str("service", "claim").Logger(),
 	}
+}
+
+// UpdateClaimStatus validates and applies a status transition on a claim.
+func (s *ClaimService) UpdateClaimStatus(ctx context.Context, id, tenantID uuid.UUID, req UpdateClaimStatusRequest) (*domain.InsuranceClaim, error) {
+	if req.Status == "" {
+		return nil, domain.ErrStatusRequired
+	}
+
+	if !domain.ValidClaimStatuses[req.Status] {
+		return nil, fmt.Errorf("unknown claim status: %s", req.Status)
+	}
+
+	existing, err := s.repo.GetByID(ctx, id, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !domain.ValidateClaimTransition(existing.Status, req.Status) {
+		return nil, fmt.Errorf("%w: cannot transition from %q to %q",
+			domain.ErrInvalidStatusTransition, existing.Status, req.Status)
+	}
+
+	existing.Status = req.Status
+	if req.Notes != "" {
+		existing.Notes = req.Notes
+	}
+
+	// If status is closed, mark as resolved.
+	if req.Status == "closed" {
+		now := time.Now()
+		existing.ResolvedAt = &now
+	}
+
+	if err := s.repo.Update(ctx, existing); err != nil {
+		return nil, err
+	}
+
+	s.logger.Info().
+		Str("claim_id", id.String()).
+		Str("new_status", req.Status).
+		Msg("insurance claim status updated")
+
+	return existing, nil
 }
 
 func (s *ClaimService) Create(ctx context.Context, tenantID uuid.UUID, userID uuid.UUID, req CreateClaimRequest) (*domain.InsuranceClaim, error) {
@@ -72,7 +122,7 @@ func (s *ClaimService) Create(ctx context.Context, tenantID uuid.UUID, userID uu
 		Description:  req.Description,
 		DamageAmount: req.DamageAmount,
 		ClaimAmount:  req.ClaimAmount,
-		Status:       "submitted",
+		Status:       "reported",
 		Notes:        req.Notes,
 		CreatedBy:    &userID,
 	}

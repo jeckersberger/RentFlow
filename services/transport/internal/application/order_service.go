@@ -44,7 +44,16 @@ type UpdateOrderRequest struct {
 type AddItemRequest struct {
 	EquipmentID uuid.UUID `json:"equipment_id"`
 	Quantity    int       `json:"quantity,omitempty"`
+	WeightKg    int       `json:"weight_kg,omitempty"`
+	VolumeM3    int       `json:"volume_m3,omitempty"`
 	Notes       string    `json:"notes,omitempty"`
+}
+
+// AddCostRequest holds the data needed to add a cost entry to a transport order.
+type AddCostRequest struct {
+	CostType    string `json:"cost_type"`
+	AmountCents int64  `json:"amount_cents"`
+	Notes       string `json:"notes,omitempty"`
 }
 
 // ---------------------------------------------------------------------------
@@ -53,21 +62,27 @@ type AddItemRequest struct {
 
 // OrderService implements the application-level use cases for transport orders.
 type OrderService struct {
-	orderRepo domain.TransportOrderRepository
-	itemRepo  domain.TransportItemRepository
-	logger    zerolog.Logger
+	orderRepo   domain.TransportOrderRepository
+	itemRepo    domain.TransportItemRepository
+	costRepo    domain.TransportCostRepository
+	vehicleRepo domain.VehicleRepository
+	logger      zerolog.Logger
 }
 
 // NewOrderService constructs a new OrderService.
 func NewOrderService(
 	orderRepo domain.TransportOrderRepository,
 	itemRepo domain.TransportItemRepository,
+	costRepo domain.TransportCostRepository,
+	vehicleRepo domain.VehicleRepository,
 	logger zerolog.Logger,
 ) *OrderService {
 	return &OrderService{
-		orderRepo: orderRepo,
-		itemRepo:  itemRepo,
-		logger:    logger.With().Str("service", "order").Logger(),
+		orderRepo:   orderRepo,
+		itemRepo:    itemRepo,
+		costRepo:    costRepo,
+		vehicleRepo: vehicleRepo,
+		logger:      logger.With().Str("service", "order").Logger(),
 	}
 }
 
@@ -280,6 +295,8 @@ func (s *OrderService) AddItem(
 		OrderID:     orderID,
 		EquipmentID: req.EquipmentID,
 		Quantity:    quantity,
+		WeightKg:    req.WeightKg,
+		VolumeM3:    req.VolumeM3,
 		Notes:       req.Notes,
 	}
 
@@ -297,6 +314,120 @@ func (s *OrderService) AddItem(
 		Msg("transport item added")
 
 	return item, nil
+}
+
+// CapacityCheck checks if all items in a transport order fit into the assigned vehicle.
+func (s *OrderService) CapacityCheck(
+	ctx context.Context,
+	orderID uuid.UUID,
+	tenantID uuid.UUID,
+) (*domain.CapacityCheckResult, error) {
+	order, err := s.orderRepo.GetByID(ctx, orderID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("capacity check: %w", err)
+	}
+
+	if order.VehicleID == nil {
+		return nil, domain.ErrNoVehicleAssigned
+	}
+
+	vehicle, err := s.vehicleRepo.GetByID(ctx, *order.VehicleID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("capacity check: vehicle: %w", err)
+	}
+
+	items, err := s.itemRepo.ListByOrder(ctx, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("capacity check: items: %w", err)
+	}
+
+	var usedKg, usedM3 int
+	for _, item := range items {
+		usedKg += item.WeightKg * item.Quantity
+		usedM3 += item.VolumeM3 * item.Quantity
+	}
+
+	result := &domain.CapacityCheckResult{
+		VehicleID:   vehicle.ID,
+		VehicleName: vehicle.Name,
+		PayloadKg:   vehicle.PayloadKg,
+		VolumeM3:    vehicle.VolumeM3,
+		UsedKg:      usedKg,
+		UsedM3:      usedM3,
+		FitsWeight:  vehicle.PayloadKg == 0 || usedKg <= vehicle.PayloadKg,
+		FitsVolume:  vehicle.VolumeM3 == 0 || usedM3 <= vehicle.VolumeM3,
+	}
+
+	s.logger.Info().
+		Str("order_id", orderID.String()).
+		Bool("fits_weight", result.FitsWeight).
+		Bool("fits_volume", result.FitsVolume).
+		Msg("capacity check performed")
+
+	return result, nil
+}
+
+// AddCost adds a cost entry to a transport order.
+func (s *OrderService) AddCost(
+	ctx context.Context,
+	orderID uuid.UUID,
+	tenantID uuid.UUID,
+	req AddCostRequest,
+) (*domain.TransportCost, error) {
+	if req.CostType == "" {
+		return nil, domain.ErrCostTypeRequired
+	}
+
+	// Verify order exists and belongs to tenant.
+	_, err := s.orderRepo.GetByID(ctx, orderID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("add cost: %w", err)
+	}
+
+	cost := &domain.TransportCost{
+		ID:          uuid.New(),
+		TenantID:    tenantID,
+		OrderID:     orderID,
+		CostType:    req.CostType,
+		AmountCents: req.AmountCents,
+		Notes:       req.Notes,
+	}
+
+	if err := s.costRepo.Create(ctx, cost); err != nil {
+		s.logger.Error().Err(err).
+			Str("order_id", orderID.String()).
+			Msg("failed to add transport cost")
+		return nil, fmt.Errorf("add cost: %w", err)
+	}
+
+	s.logger.Info().
+		Str("cost_id", cost.ID.String()).
+		Str("order_id", orderID.String()).
+		Msg("transport cost added")
+
+	return cost, nil
+}
+
+// ListCosts returns all cost entries for a transport order.
+func (s *OrderService) ListCosts(
+	ctx context.Context,
+	orderID uuid.UUID,
+	tenantID uuid.UUID,
+) ([]*domain.TransportCost, error) {
+	// Verify order exists and belongs to tenant.
+	_, err := s.orderRepo.GetByID(ctx, orderID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("list costs: %w", err)
+	}
+
+	costs, err := s.costRepo.ListByOrder(ctx, orderID)
+	if err != nil {
+		s.logger.Error().Err(err).
+			Str("order_id", orderID.String()).
+			Msg("failed to list transport costs")
+		return nil, fmt.Errorf("list costs: %w", err)
+	}
+	return costs, nil
 }
 
 // ListItems returns all items for a transport order.

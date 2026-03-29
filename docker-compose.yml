@@ -452,7 +452,7 @@ services:
       - cratedesk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.maintenance.rule=PathPrefix(`/api/v1/maintenance-schedules`) || PathPrefix(`/api/v1/maintenance-tasks`)"
+      - "traefik.http.routers.maintenance.rule=PathPrefix(`/api/v1/maintenance-schedules`) || PathPrefix(`/api/v1/maintenance-tasks`) || PathPrefix(`/api/v1/maintenance/echeck`)"
       - "traefik.http.services.maintenance.loadbalancer.server.port=8010"
 
   # =============================================================================

@@ -70,6 +70,10 @@ type Vehicle struct {
 	Type                string     `json:"type"`
 	CapacityKg          *int       `json:"capacity_kg,omitempty"`
 	CapacityDescription string     `json:"capacity_description,omitempty"`
+	PayloadKg           int        `json:"payload_kg"`
+	VolumeM3            int        `json:"volume_m3"`
+	FuelType            string     `json:"fuel_type,omitempty"`
+	FuelConsumption     int        `json:"fuel_consumption"`
 	IsActive            bool       `json:"is_active"`
 	Notes               string     `json:"notes,omitempty"`
 	CreatedAt           time.Time  `json:"created_at"`
@@ -100,5 +104,30 @@ type TransportItem struct {
 	OrderID     uuid.UUID `json:"order_id"`
 	EquipmentID uuid.UUID `json:"equipment_id"`
 	Quantity    int       `json:"quantity"`
+	WeightKg    int       `json:"weight_kg"`
+	VolumeM3    int       `json:"volume_m3"`
 	Notes       string    `json:"notes,omitempty"`
+}
+
+// TransportCost represents a cost entry associated with a transport order.
+type TransportCost struct {
+	ID         uuid.UUID `json:"id"`
+	TenantID   uuid.UUID `json:"tenant_id"`
+	OrderID    uuid.UUID `json:"order_id"`
+	CostType   string    `json:"cost_type"`
+	AmountCents int64    `json:"amount_cents"`
+	Notes      string    `json:"notes,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+// CapacityCheckResult holds the result of a vehicle capacity check for a transport order.
+type CapacityCheckResult struct {
+	VehicleID   uuid.UUID `json:"vehicle_id"`
+	VehicleName string    `json:"vehicle_name"`
+	PayloadKg   int       `json:"payload_kg"`
+	VolumeM3    int       `json:"volume_m3"`
+	UsedKg      int       `json:"used_kg"`
+	UsedM3      int       `json:"used_m3"`
+	FitsWeight  bool      `json:"fits_weight"`
+	FitsVolume  bool      `json:"fits_volume"`
 }

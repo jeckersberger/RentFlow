@@ -17,7 +17,8 @@ import (
 // vehicleColumns lists all columns of the vehicles table for consistent scanning.
 const vehicleColumns = `
 	id, tenant_id, name, license_plate, type, capacity_kg,
-	capacity_description, is_active, notes, created_at`
+	capacity_description, payload_kg, volume_m3, fuel_type, fuel_consumption,
+	is_active, notes, created_at`
 
 // VehicleRepo implements domain.VehicleRepository using PostgreSQL.
 type VehicleRepo struct {
@@ -36,12 +37,14 @@ func scanVehicle(row pgx.Row) (*domain.Vehicle, error) {
 		licensePlate        *string
 		vType               *string
 		capacityDescription *string
+		fuelType            *string
 		notes               *string
 	)
 
 	err := row.Scan(
 		&v.ID, &v.TenantID, &v.Name, &licensePlate, &vType, &v.CapacityKg,
-		&capacityDescription, &v.IsActive, &notes, &v.CreatedAt,
+		&capacityDescription, &v.PayloadKg, &v.VolumeM3, &fuelType, &v.FuelConsumption,
+		&v.IsActive, &notes, &v.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -56,6 +59,9 @@ func scanVehicle(row pgx.Row) (*domain.Vehicle, error) {
 	if capacityDescription != nil {
 		v.CapacityDescription = *capacityDescription
 	}
+	if fuelType != nil {
+		v.FuelType = *fuelType
+	}
 	if notes != nil {
 		v.Notes = *notes
 	}
@@ -68,14 +74,17 @@ func (r *VehicleRepo) Create(ctx context.Context, vehicle *domain.Vehicle) error
 	query := `
 		INSERT INTO vehicles (
 			id, tenant_id, name, license_plate, type, capacity_kg,
-			capacity_description, is_active, notes
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			capacity_description, payload_kg, volume_m3, fuel_type, fuel_consumption,
+			is_active, notes
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		RETURNING created_at`
 
 	err := r.pool.QueryRow(ctx, query,
 		vehicle.ID, vehicle.TenantID, vehicle.Name,
 		nilIfEmpty(vehicle.LicensePlate), nilIfEmpty(vehicle.Type),
 		vehicle.CapacityKg, nilIfEmpty(vehicle.CapacityDescription),
+		vehicle.PayloadKg, vehicle.VolumeM3,
+		nilIfEmpty(vehicle.FuelType), vehicle.FuelConsumption,
 		vehicle.IsActive, nilIfEmpty(vehicle.Notes),
 	).Scan(&vehicle.CreatedAt)
 	if err != nil {
@@ -130,14 +139,20 @@ func (r *VehicleRepo) Update(ctx context.Context, vehicle *domain.Vehicle) error
 			type = $5,
 			capacity_kg = $6,
 			capacity_description = $7,
-			is_active = $8,
-			notes = $9
+			payload_kg = $8,
+			volume_m3 = $9,
+			fuel_type = $10,
+			fuel_consumption = $11,
+			is_active = $12,
+			notes = $13
 		WHERE id = $1 AND tenant_id = $2`
 
 	tag, err := r.pool.Exec(ctx, query,
 		vehicle.ID, vehicle.TenantID, vehicle.Name,
 		nilIfEmpty(vehicle.LicensePlate), nilIfEmpty(vehicle.Type),
 		vehicle.CapacityKg, nilIfEmpty(vehicle.CapacityDescription),
+		vehicle.PayloadKg, vehicle.VolumeM3,
+		nilIfEmpty(vehicle.FuelType), vehicle.FuelConsumption,
 		vehicle.IsActive, nilIfEmpty(vehicle.Notes),
 	)
 	if err != nil {

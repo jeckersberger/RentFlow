@@ -63,10 +63,11 @@ func main() {
 	vehicleRepo := postgres.NewVehicleRepo(pool)
 	orderRepo := postgres.NewOrderRepo(pool)
 	itemRepo := postgres.NewItemRepo(pool)
+	costRepo := postgres.NewCostRepo(pool)
 
 	// 7. Create application services.
 	vehicleSvc := application.NewVehicleService(vehicleRepo, log)
-	orderSvc := application.NewOrderService(orderRepo, itemRepo, log)
+	orderSvc := application.NewOrderService(orderRepo, itemRepo, costRepo, vehicleRepo, log)
 
 	// 8. Create HTTP handlers.
 	vehicleH := httphandler.NewVehicleHandler(vehicleSvc, log)

@@ -9,4 +9,6 @@ var (
 	ErrTitleRequired    = errors.New("title is required")
 	ErrEquipmentRequired = errors.New("equipment_id is required")
 	ErrTaskAlreadyCompleted = errors.New("task is already completed")
+	ErrCheckDateRequired    = errors.New("check_date is required")
+	ErrECheckNotFound       = errors.New("echeck record not found")
 )

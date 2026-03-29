@@ -205,6 +205,81 @@ func (h *OrderHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 	response.Created(w, item)
 }
 
+// CapacityCheck handles POST /api/v1/transport-orders/{id}/capacity-check — Kapazitaetspruefung.
+func (h *OrderHandler) CapacityCheck(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	orderID, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	result, err := h.orderService.CapacityCheck(r.Context(), orderID, claims.TenantID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, result)
+}
+
+// AddCost handles POST /api/v1/transport-orders/{id}/costs — Kosten hinzufuegen.
+func (h *OrderHandler) AddCost(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	orderID, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	var req application.AddCostRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	cost, err := h.orderService.AddCost(r.Context(), orderID, claims.TenantID, req)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Created(w, cost)
+}
+
+// ListCosts handles GET /api/v1/transport-orders/{id}/costs — Kosten auflisten.
+func (h *OrderHandler) ListCosts(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	orderID, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	costs, err := h.orderService.ListCosts(r.Context(), orderID, claims.TenantID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, costs)
+}
+
 // ListItems handles GET /api/v1/transport-orders/{id}/items — Items auflisten.
 func (h *OrderHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.GetClaims(r.Context())

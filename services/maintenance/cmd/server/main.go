@@ -63,14 +63,17 @@ func main() {
 	scheduleRepo := postgres.NewScheduleRepo(pool)
 	taskRepo := postgres.NewTaskRepo(pool)
 	logRepo := postgres.NewLogRepo(pool)
+	echeckRepo := postgres.NewECheckRepo(pool)
 
 	// 7. Create application services.
 	scheduleSvc := application.NewScheduleService(scheduleRepo, log)
 	taskSvc := application.NewTaskService(taskRepo, logRepo, log)
+	echeckSvc := application.NewECheckService(echeckRepo, log)
 
 	// 8. Create HTTP handlers.
 	scheduleH := httphandler.NewScheduleHandler(scheduleSvc, log)
 	taskH := httphandler.NewTaskHandler(taskSvc, log)
+	echeckH := httphandler.NewECheckHandler(echeckSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -87,7 +90,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		scheduleH, taskH,
+		scheduleH, taskH, echeckH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

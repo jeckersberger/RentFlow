@@ -24,3 +24,11 @@ type LogRepository interface {
 	Create(ctx context.Context, log *MaintenanceLog) error
 	ListByTask(ctx context.Context, taskID uuid.UUID, tenantID uuid.UUID, filter LogFilter) ([]*MaintenanceLog, int64, error)
 }
+
+// ECheckRepository defines persistence operations for ECheckRecord aggregates.
+type ECheckRepository interface {
+	Create(ctx context.Context, record *ECheckRecord) error
+	List(ctx context.Context, tenantID uuid.UUID, filter ECheckFilter) ([]*ECheckRecord, int64, error)
+	ListOverdue(ctx context.Context, tenantID uuid.UUID) ([]*ECheckRecord, error)
+	ListByEquipment(ctx context.Context, equipmentID uuid.UUID, tenantID uuid.UUID) ([]*ECheckRecord, error)
+}

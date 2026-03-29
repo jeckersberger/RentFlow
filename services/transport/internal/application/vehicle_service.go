@@ -21,6 +21,10 @@ type CreateVehicleRequest struct {
 	Type                string `json:"type,omitempty"`
 	CapacityKg          *int   `json:"capacity_kg,omitempty"`
 	CapacityDescription string `json:"capacity_description,omitempty"`
+	PayloadKg           *int   `json:"payload_kg,omitempty"`
+	VolumeM3            *int   `json:"volume_m3,omitempty"`
+	FuelType            string `json:"fuel_type,omitempty"`
+	FuelConsumption     *int   `json:"fuel_consumption,omitempty"`
 	Notes               string `json:"notes,omitempty"`
 }
 
@@ -31,6 +35,10 @@ type UpdateVehicleRequest struct {
 	Type                string `json:"type,omitempty"`
 	CapacityKg          *int   `json:"capacity_kg,omitempty"`
 	CapacityDescription string `json:"capacity_description,omitempty"`
+	PayloadKg           *int   `json:"payload_kg,omitempty"`
+	VolumeM3            *int   `json:"volume_m3,omitempty"`
+	FuelType            string `json:"fuel_type,omitempty"`
+	FuelConsumption     *int   `json:"fuel_consumption,omitempty"`
 	IsActive            *bool  `json:"is_active,omitempty"`
 	Notes               string `json:"notes,omitempty"`
 }
@@ -71,6 +79,23 @@ func (s *VehicleService) Create(
 		vType = domain.VehicleTypeVan
 	}
 
+	var payloadKg int
+	if req.PayloadKg != nil {
+		payloadKg = *req.PayloadKg
+	}
+	var volumeM3 int
+	if req.VolumeM3 != nil {
+		volumeM3 = *req.VolumeM3
+	}
+	fuelType := req.FuelType
+	if fuelType == "" {
+		fuelType = "diesel"
+	}
+	var fuelConsumption int
+	if req.FuelConsumption != nil {
+		fuelConsumption = *req.FuelConsumption
+	}
+
 	vehicle := &domain.Vehicle{
 		ID:                  uuid.New(),
 		TenantID:            tenantID,
@@ -79,6 +104,10 @@ func (s *VehicleService) Create(
 		Type:                vType,
 		CapacityKg:          req.CapacityKg,
 		CapacityDescription: req.CapacityDescription,
+		PayloadKg:           payloadKg,
+		VolumeM3:            volumeM3,
+		FuelType:            fuelType,
+		FuelConsumption:     fuelConsumption,
 		IsActive:            true,
 		Notes:               req.Notes,
 	}
@@ -153,6 +182,18 @@ func (s *VehicleService) Update(
 	}
 	vehicle.CapacityKg = req.CapacityKg
 	vehicle.CapacityDescription = req.CapacityDescription
+	if req.PayloadKg != nil {
+		vehicle.PayloadKg = *req.PayloadKg
+	}
+	if req.VolumeM3 != nil {
+		vehicle.VolumeM3 = *req.VolumeM3
+	}
+	if req.FuelType != "" {
+		vehicle.FuelType = req.FuelType
+	}
+	if req.FuelConsumption != nil {
+		vehicle.FuelConsumption = *req.FuelConsumption
+	}
 	if req.IsActive != nil {
 		vehicle.IsActive = *req.IsActive
 	}

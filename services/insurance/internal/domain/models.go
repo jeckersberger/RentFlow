@@ -50,6 +50,53 @@ type InsuranceClaim struct {
 	CreatedAt    time.Time  `json:"created_at"`
 }
 
+// ---------------------------------------------------------------------------
+// Claim status workflow
+// ---------------------------------------------------------------------------
+
+// Valid claim statuses and their allowed transitions.
+// reported -> assessed -> documented -> repair_approved -> claim_submitted -> claim_approved -> closed
+var validClaimTransitions = map[string][]string{
+	"reported":        {"assessed"},
+	"assessed":        {"documented"},
+	"documented":      {"repair_approved"},
+	"repair_approved": {"claim_submitted"},
+	"claim_submitted": {"claim_approved"},
+	"claim_approved":  {"closed"},
+}
+
+// ValidClaimStatuses lists all valid claim statuses.
+var ValidClaimStatuses = map[string]bool{
+	"reported":        true,
+	"assessed":        true,
+	"documented":      true,
+	"repair_approved": true,
+	"claim_submitted": true,
+	"claim_approved":  true,
+	"closed":          true,
+	// Legacy status from initial implementation.
+	"submitted":       true,
+}
+
+// ValidateClaimTransition checks if a status transition is allowed.
+func ValidateClaimTransition(from, to string) bool {
+	// Allow transition from legacy "submitted" status to "reported" or "assessed".
+	if from == "submitted" {
+		return to == "reported" || to == "assessed"
+	}
+
+	allowed, ok := validClaimTransitions[from]
+	if !ok {
+		return false
+	}
+	for _, s := range allowed {
+		if s == to {
+			return true
+		}
+	}
+	return false
+}
+
 type PolicyFilter struct {
 	Page    int
 	PerPage int

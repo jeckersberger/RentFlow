@@ -9,6 +9,7 @@ import (
 func NewRouter(
 	scheduleHandler *ScheduleHandler,
 	taskHandler *TaskHandler,
+	echeckHandler *ECheckHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -42,6 +43,13 @@ func NewRouter(
 			r.Put("/{id}", taskHandler.Update)
 			r.Patch("/{id}/complete", taskHandler.Complete)
 			r.Get("/{id}/logs", taskHandler.ListLogs)
+		})
+
+		r.Route("/api/v1/maintenance/echeck", func(r chi.Router) {
+			r.Post("/", echeckHandler.Create)
+			r.Get("/", echeckHandler.List)
+			r.Get("/overdue", echeckHandler.ListOverdue)
+			r.Get("/{equipmentId}", echeckHandler.ListByEquipment)
 		})
 	})
 

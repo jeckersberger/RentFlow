@@ -48,6 +48,30 @@ type MaintenanceLog struct {
 	CreatedAt   time.Time  `json:"created_at"`
 }
 
+// ECheckRecord represents an electrical safety check (E-Check / DGUV V3).
+type ECheckRecord struct {
+	ID                              uuid.UUID  `json:"id"`
+	TenantID                        uuid.UUID  `json:"tenant_id"`
+	EquipmentID                     uuid.UUID  `json:"equipment_id"`
+	CheckDate                       string     `json:"check_date"`
+	NextCheckDate                   *string    `json:"next_check_date,omitempty"`
+	Result                          string     `json:"result"`
+	PerformedBy                     string     `json:"performed_by,omitempty"`
+	MeasuringDevice                 string     `json:"measuring_device,omitempty"`
+	ProtectionConductorResistance   *float64   `json:"protection_conductor_resistance,omitempty"`
+	InsulationResistance            *float64   `json:"insulation_resistance,omitempty"`
+	LeakageCurrent                  *float64   `json:"leakage_current,omitempty"`
+	Notes                           string     `json:"notes,omitempty"`
+	CreatedAt                       time.Time  `json:"created_at"`
+}
+
+// ECheckFilter holds optional filter criteria for listing E-Check records.
+type ECheckFilter struct {
+	Page        int
+	PerPage     int
+	EquipmentID *uuid.UUID
+}
+
 type ScheduleFilter struct {
 	Page        int
 	PerPage     int

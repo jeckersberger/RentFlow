@@ -43,6 +43,7 @@ func NewRouter(
 			r.Post("/", claimHandler.Create)
 			r.Get("/{id}", claimHandler.Get)
 			r.Put("/{id}", claimHandler.Update)
+			r.Patch("/{id}/status", claimHandler.UpdateStatus)
 		})
 	})
 

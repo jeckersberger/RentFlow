@@ -43,3 +43,9 @@ type TransportItemRepository interface {
 	Create(ctx context.Context, item *TransportItem) error
 	ListByOrder(ctx context.Context, orderID uuid.UUID) ([]*TransportItem, error)
 }
+
+// TransportCostRepository defines persistence operations for TransportCost aggregates.
+type TransportCostRepository interface {
+	Create(ctx context.Context, cost *TransportCost) error
+	ListByOrder(ctx context.Context, orderID uuid.UUID) ([]*TransportCost, error)
+}

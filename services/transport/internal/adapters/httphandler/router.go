@@ -49,6 +49,9 @@ func NewRouter(
 			r.Patch("/{id}/complete", orderHandler.Complete)
 			r.Post("/{id}/items", orderHandler.AddItem)
 			r.Get("/{id}/items", orderHandler.ListItems)
+			r.Post("/{id}/capacity-check", orderHandler.CapacityCheck)
+			r.Post("/{id}/costs", orderHandler.AddCost)
+			r.Get("/{id}/costs", orderHandler.ListCosts)
 		})
 	})
 

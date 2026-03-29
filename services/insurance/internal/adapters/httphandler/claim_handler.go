@@ -110,6 +110,35 @@ func (h *ClaimHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.Created(w, created)
 }
 
+// UpdateStatus handles PATCH /api/v1/insurance-claims/{id}/status — Claim-Status aktualisieren.
+func (h *ClaimHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	id, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	var req application.UpdateClaimStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	updated, err := h.service.UpdateClaimStatus(r.Context(), id, claims.TenantID, req)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, updated)
+}
+
 func (h *ClaimHandler) Update(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
