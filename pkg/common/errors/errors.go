@@ -108,6 +108,11 @@ var domainErrorMappings = []struct {
 	{"barcode or rfid_tag is required", Wrap(ErrBadRequest, "Barcode oder RFID-Tag erforderlich")},
 	{"equipment_id is required for checkout", Wrap(ErrBadRequest, "Equipment-ID fuer Check-Out erforderlich")},
 	{"project_id is required for checkout", Wrap(ErrBadRequest, "Projekt-ID fuer Check-Out erforderlich")},
+	{"scan session not found", ErrNotFound},
+	{"scan session already completed", Wrap(ErrConflict, "Scan-Session bereits abgeschlossen")},
+	{"invalid session type", Wrap(ErrBadRequest, "Ungueltiger Session-Typ")},
+	{"signature_data is required", Wrap(ErrBadRequest, "Signatur-Daten erforderlich")},
+	{"identifier is required", Wrap(ErrBadRequest, "Identifier ist erforderlich")},
 	// Warehouse domain errors
 	{"warehouse not found", ErrNotFound},
 	{"zone not found", ErrNotFound},

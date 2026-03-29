@@ -45,6 +45,7 @@ type ScanEvent struct {
 	Barcode         string     `json:"barcode,omitempty"`
 	RFIDTag         string     `json:"rfid_tag,omitempty"`
 	EquipmentID     *uuid.UUID `json:"equipment_id,omitempty"`
+	SessionID       *uuid.UUID `json:"session_id,omitempty"`
 	Action          string     `json:"action"`
 	ProjectID       *uuid.UUID `json:"project_id,omitempty"`
 	LocationID      *uuid.UUID `json:"location_id,omitempty"`
@@ -55,6 +56,52 @@ type ScanEvent struct {
 	Timestamp       time.Time  `json:"timestamp"`
 	SyncedAt        time.Time  `json:"synced_at"`
 	CreatedAt       time.Time  `json:"created_at"`
+}
+
+// ---------------------------------------------------------------------------
+// Session Type constants
+// ---------------------------------------------------------------------------
+
+const (
+	SessionTypeCheckout  = "checkout"
+	SessionTypeCheckin   = "checkin"
+	SessionTypeInventory = "inventory"
+)
+
+// validSessionTypes is the set of all allowed session types.
+var validSessionTypes = map[string]bool{
+	SessionTypeCheckout:  true,
+	SessionTypeCheckin:   true,
+	SessionTypeInventory: true,
+}
+
+// ValidSessionType checks whether the given string is a valid session type.
+func ValidSessionType(t string) bool {
+	return validSessionTypes[t]
+}
+
+// ---------------------------------------------------------------------------
+// Session Status constants
+// ---------------------------------------------------------------------------
+
+const (
+	SessionStatusActive    = "active"
+	SessionStatusCompleted = "completed"
+)
+
+// ScanSession represents a scan session grouping multiple scans.
+type ScanSession struct {
+	ID           uuid.UUID  `json:"id"`
+	TenantID     uuid.UUID  `json:"tenant_id"`
+	SessionType  string     `json:"session_type"`
+	ProjectID    *uuid.UUID `json:"project_id,omitempty"`
+	StartedBy    uuid.UUID  `json:"started_by"`
+	StartedAt    time.Time  `json:"started_at"`
+	EndedAt      *time.Time `json:"ended_at,omitempty"`
+	ItemsCount   int        `json:"items_count"`
+	SignatureData string    `json:"signature_data,omitempty"`
+	Status       string     `json:"status"`
+	CreatedAt    time.Time  `json:"created_at"`
 }
 
 // ScannerDevice represents a registered scanner device.

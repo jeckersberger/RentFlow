@@ -193,6 +193,19 @@ func (r *EquipmentRepo) GetByRFID(ctx context.Context, tenantID uuid.UUID, rfidT
 	return e, nil
 }
 
+// GetBySerialNumber retrieves equipment by its serial number within a tenant.
+func (r *EquipmentRepo) GetBySerialNumber(ctx context.Context, tenantID uuid.UUID, serialNumber string) (*domain.Equipment, error) {
+	query := fmt.Sprintf(`SELECT %s FROM equipment WHERE tenant_id = $1 AND serial_number = $2`, equipmentColumns)
+	e, err := scanEquipment(r.pool.QueryRow(ctx, query, tenantID, serialNumber))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("equipment_repo: get_by_serial_number: %w", err)
+	}
+	return e, nil
+}
+
 // List returns a filtered, paginated list of equipment for a tenant plus total count.
 func (r *EquipmentRepo) List(ctx context.Context, tenantID uuid.UUID, filter domain.EquipmentFilter) ([]*domain.Equipment, int64, error) {
 	// Build dynamic WHERE clause.

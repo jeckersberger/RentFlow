@@ -5,6 +5,7 @@ import './AppLayout.scss';
 
 const navItems = [
   { to: '/', icon: '⊞', label: 'Dashboard' },
+  { to: '/calendar', icon: '📅', label: 'Kalender' },
   { to: '/equipment', icon: '⚙', label: 'Equipment' },
   { to: '/projects', icon: '📋', label: 'Projekte' },
   { to: '/customers', icon: '👤', label: 'Kunden' },

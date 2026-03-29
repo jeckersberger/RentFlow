@@ -30,6 +30,7 @@ type EquipmentRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*Equipment, error)
 	GetByBarcode(ctx context.Context, tenantID uuid.UUID, barcode string) (*Equipment, error)
 	GetByRFID(ctx context.Context, tenantID uuid.UUID, rfidTag string) (*Equipment, error)
+	GetBySerialNumber(ctx context.Context, tenantID uuid.UUID, serialNumber string) (*Equipment, error)
 	List(ctx context.Context, tenantID uuid.UUID, filter EquipmentFilter) ([]*Equipment, int64, error)
 	Update(ctx context.Context, equipment *Equipment) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, status string) error

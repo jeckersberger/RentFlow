@@ -32,6 +32,16 @@ type ScanEventRepository interface {
 	ExistsByDedup(ctx context.Context, tenantID uuid.UUID, deviceID string, timestamp time.Time) (bool, error)
 }
 
+// ScanSessionRepository defines persistence operations for ScanSession aggregates.
+type ScanSessionRepository interface {
+	Create(ctx context.Context, session *ScanSession) error
+	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*ScanSession, error)
+	End(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
+	UpdateSignature(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, signatureData string) error
+	IncrementItems(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
+	GetSessionEvents(ctx context.Context, sessionID uuid.UUID, tenantID uuid.UUID) ([]*ScanEvent, error)
+}
+
 // ScannerDeviceRepository defines persistence operations for ScannerDevice aggregates.
 type ScannerDeviceRepository interface {
 	Upsert(ctx context.Context, device *ScannerDevice) error

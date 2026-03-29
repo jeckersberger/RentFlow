@@ -62,14 +62,21 @@ func main() {
 	// 6. Create repositories.
 	eventRepo := postgres.NewScanEventRepo(pool)
 	deviceRepo := postgres.NewDeviceRepo(pool)
+	sessionRepo := postgres.NewSessionRepo(pool)
 
 	// 7. Create application services.
+	inventoryBaseURL := os.Getenv("INVENTORY_BASE_URL")
+	if inventoryBaseURL == "" {
+		inventoryBaseURL = "http://cratedesk-inventory:8002"
+	}
 	scanSvc := application.NewScanService(eventRepo, deviceRepo, log)
 	deviceSvc := application.NewDeviceService(deviceRepo, log)
+	sessionSvc := application.NewSessionService(sessionRepo, log, inventoryBaseURL)
 
 	// 8. Create HTTP handlers.
 	scanH := httphandler.NewScanHandler(scanSvc, log)
 	deviceH := httphandler.NewDeviceHandler(deviceSvc, log)
+	sessionH := httphandler.NewSessionHandler(sessionSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -86,7 +93,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		scanH, deviceH,
+		scanH, deviceH, sessionH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

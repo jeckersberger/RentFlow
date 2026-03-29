@@ -73,6 +73,7 @@ func main() {
 	typeSvc := application.NewEquipmentTypeService(typeRepo, equipmentRepo, log)
 	flightcaseSvc := application.NewFlightcaseService(flightcaseRepo, log)
 	pricingSvc := application.NewPricingService(priceRuleRepo, equipmentRepo, log)
+	availabilitySvc := application.NewAvailabilityService(equipmentRepo, log)
 
 	// 8. Create HTTP handlers.
 	equipmentH := httphandler.NewEquipmentHandler(equipmentSvc, log)
@@ -80,6 +81,8 @@ func main() {
 	typeH := httphandler.NewEquipmentTypeHandler(typeSvc, log)
 	flightcaseH := httphandler.NewFlightcaseHandler(flightcaseSvc, log)
 	pricingH := httphandler.NewPricingHandler(pricingSvc, log)
+	availabilityH := httphandler.NewAvailabilityHandler(availabilitySvc, log)
+	scanResolveH := httphandler.NewScanResolveHandler(equipmentSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -97,6 +100,7 @@ func main() {
 	// 10. Create router.
 	router := httphandler.NewRouter(
 		equipmentH, categoryH, typeH, flightcaseH, pricingH,
+		availabilityH, scanResolveH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

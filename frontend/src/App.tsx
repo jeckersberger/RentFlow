@@ -45,6 +45,7 @@ const QuoteForm = React.lazy(() => import('@/pages/Quotes/QuoteForm'));
 const AccountPage = React.lazy(() => import('@/pages/Account/AccountPage'));
 const DunningOverview = React.lazy(() => import('@/pages/Invoices/DunningOverview'));
 const BankImport = React.lazy(() => import('@/pages/Banking/BankImport'));
+const CalendarPage = React.lazy(() => import('@/pages/Calendar/CalendarPage'));
 const SettingsPage = React.lazy(() => import('@/pages/Settings/SettingsPage'));
 
 // Layout (already exists with Sidebar + Header)
@@ -83,6 +84,7 @@ export default function App() {
               }
             >
               <Route index element={<DashboardPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
               <Route path="equipment" element={<EquipmentList />} />
               <Route path="equipment/new" element={<EquipmentForm />} />
               <Route path="equipment/:id" element={<EquipmentDetail />} />

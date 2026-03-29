@@ -13,6 +13,8 @@ func NewRouter(
 	typeHandler *EquipmentTypeHandler,
 	flightcaseHandler *FlightcaseHandler,
 	pricingHandler *PricingHandler,
+	availabilityHandler *AvailabilityHandler,
+	scanResolveHandler *ScanResolveHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -40,6 +42,8 @@ func NewRouter(
 			r.Get("/", equipmentHandler.List)
 			r.Post("/", equipmentHandler.Create)
 			r.Get("/search", equipmentHandler.Search)
+			r.Post("/availability-check", availabilityHandler.CheckSingle)
+			r.Post("/batch-availability", availabilityHandler.CheckBatch)
 			r.Get("/lookup/barcode/{barcode}", equipmentHandler.LookupBarcode)
 			r.Get("/lookup/rfid/{tag}", equipmentHandler.LookupRFID)
 			r.Get("/{id}", equipmentHandler.Get)
@@ -76,6 +80,11 @@ func NewRouter(
 			r.Get("/", pricingHandler.ListPriceRules)
 			r.Post("/", pricingHandler.CreatePriceRule)
 			r.Put("/{id}", pricingHandler.UpdatePriceRule)
+		})
+
+		// Scan resolve endpoint (used by scanner-service).
+		r.Route("/api/v1/scan", func(r chi.Router) {
+			r.Get("/resolve/{identifier}", scanResolveHandler.Resolve)
 		})
 
 		// Flightcase endpoints.

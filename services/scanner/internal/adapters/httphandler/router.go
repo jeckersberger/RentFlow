@@ -10,6 +10,7 @@ import (
 func NewRouter(
 	scanHandler *ScanHandler,
 	deviceHandler *DeviceHandler,
+	sessionHandler *SessionHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -41,6 +42,15 @@ func NewRouter(
 			r.Post("/bulk", scanHandler.BulkSync)
 			r.Post("/adhoc-booking", scanHandler.AdhocBooking)
 			r.Get("/events", scanHandler.ListEvents)
+
+			// Equipment resolve (lookup by barcode/QR/RFID).
+			r.Get("/resolve/{identifier}", sessionHandler.Resolve)
+
+			// Scan sessions.
+			r.Post("/sessions", sessionHandler.CreateSession)
+			r.Put("/sessions/{id}/end", sessionHandler.EndSession)
+			r.Get("/sessions/{id}/protocol", sessionHandler.GetProtocol)
+			r.Post("/sessions/{id}/signature", sessionHandler.SaveSignature)
 
 			// Device management.
 			r.Post("/devices/register", deviceHandler.Register)

@@ -146,7 +146,7 @@ services:
       - cratedesk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/equipment`) || PathPrefix(`/api/v1/categories`) || PathPrefix(`/api/v1/equipment-types`) || PathPrefix(`/api/v1/flightcases`) || PathPrefix(`/api/v1/price-rules`)"
+      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/equipment`) || PathPrefix(`/api/v1/categories`) || PathPrefix(`/api/v1/equipment-types`) || PathPrefix(`/api/v1/flightcases`) || PathPrefix(`/api/v1/price-rules`) || PathPrefix(`/api/v1/scan`)"
       - "traefik.http.services.inventory.loadbalancer.server.port=8002"
 
   # =============================================================================

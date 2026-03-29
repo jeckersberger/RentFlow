@@ -13,4 +13,7 @@ var (
 	ErrMissingAction     = errors.New("action is required")
 	ErrMissingDeviceID   = errors.New("device_id is required")
 	ErrMissingTimestamp  = errors.New("timestamp is required")
+	ErrSessionNotFound   = errors.New("scan session not found")
+	ErrSessionAlreadyEnd = errors.New("scan session already completed")
+	ErrInvalidSessionType = errors.New("invalid session type")
 )

@@ -20,7 +20,7 @@ import (
 const scanEventColumns = `
 	id, tenant_id, user_id, device_id, barcode, rfid_tag, equipment_id,
 	action, project_id, location_id, condition_rating, condition_notes,
-	gps_lat, gps_lng, timestamp, synced_at, created_at`
+	gps_lat, gps_lng, timestamp, synced_at, created_at, session_id`
 
 // ScanEventRepo implements domain.ScanEventRepository using PostgreSQL.
 type ScanEventRepo struct {
@@ -45,7 +45,7 @@ func scanScanEvent(row pgx.Row) (*domain.ScanEvent, error) {
 	err := row.Scan(
 		&e.ID, &e.TenantID, &e.UserID, &deviceID, &barcode, &rfidTag, &e.EquipmentID,
 		&e.Action, &e.ProjectID, &e.LocationID, &e.ConditionRating, &conditionNotes,
-		&e.GPSLat, &e.GPSLng, &e.Timestamp, &e.SyncedAt, &e.CreatedAt,
+		&e.GPSLat, &e.GPSLng, &e.Timestamp, &e.SyncedAt, &e.CreatedAt, &e.SessionID,
 	)
 	if err != nil {
 		return nil, err
@@ -73,11 +73,11 @@ func (r *ScanEventRepo) Create(ctx context.Context, event *domain.ScanEvent) err
 		INSERT INTO scan_events (
 			id, tenant_id, user_id, device_id, barcode, rfid_tag, equipment_id,
 			action, project_id, location_id, condition_rating, condition_notes,
-			gps_lat, gps_lng, timestamp, synced_at
+			gps_lat, gps_lng, timestamp, synced_at, session_id
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
 			$8, $9, $10, $11, $12,
-			$13, $14, $15, $16
+			$13, $14, $15, $16, $17
 		) RETURNING id, synced_at, created_at`
 
 	err := r.pool.QueryRow(ctx, query,
@@ -87,6 +87,7 @@ func (r *ScanEventRepo) Create(ctx context.Context, event *domain.ScanEvent) err
 		event.Action, event.ProjectID, event.LocationID,
 		event.ConditionRating, nilIfEmpty(event.ConditionNotes),
 		event.GPSLat, event.GPSLng, event.Timestamp, event.SyncedAt,
+		event.SessionID,
 	).Scan(&event.ID, &event.SyncedAt, &event.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("scan_event_repo: create: %w", err)

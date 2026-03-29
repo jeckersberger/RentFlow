@@ -506,6 +506,43 @@ func (s *EquipmentService) GetHistory(
 	return entries, total, nil
 }
 
+// ResolveByIdentifier looks up equipment by barcode, serial_number, or rfid_tag.
+// It tries each field in order and returns the first match.
+func (s *EquipmentService) ResolveByIdentifier(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	identifier string,
+) (*domain.Equipment, error) {
+	if identifier == "" {
+		return nil, fmt.Errorf("identifier is required")
+	}
+
+	// Try barcode first.
+	equipment, err := s.equipmentRepo.GetByBarcode(ctx, tenantID, identifier)
+	if err == nil {
+		return equipment, nil
+	}
+
+	// Try RFID tag.
+	equipment, err = s.equipmentRepo.GetByRFID(ctx, tenantID, identifier)
+	if err == nil {
+		return equipment, nil
+	}
+
+	// Try serial number via the Search repo method (exact match via custom query).
+	equipment, err = s.equipmentRepo.GetBySerialNumber(ctx, tenantID, identifier)
+	if err == nil {
+		return equipment, nil
+	}
+
+	s.logger.Warn().
+		Str("tenant_id", tenantID.String()).
+		Str("identifier", identifier).
+		Msg("equipment not found by any identifier")
+
+	return nil, fmt.Errorf("equipment not found")
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
