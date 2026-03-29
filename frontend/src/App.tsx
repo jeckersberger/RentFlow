@@ -39,6 +39,9 @@ const ExpenseList = React.lazy(() => import('@/pages/Expenses/ExpenseList'));
 const ReportingList = React.lazy(() => import('@/pages/Reporting/ReportingList'));
 const MaintenanceList = React.lazy(() => import('@/pages/Maintenance/MaintenanceList'));
 const TransportList = React.lazy(() => import('@/pages/Transport/TransportList'));
+const QuoteList = React.lazy(() => import('@/pages/Quotes/QuoteList'));
+const QuoteDetail = React.lazy(() => import('@/pages/Quotes/QuoteDetail'));
+const QuoteForm = React.lazy(() => import('@/pages/Quotes/QuoteForm'));
 const AccountPage = React.lazy(() => import('@/pages/Account/AccountPage'));
 
 // Layout (already exists with Sidebar + Header)
@@ -89,6 +92,10 @@ export default function App() {
               <Route path="customers/new" element={<CustomerForm />} />
               <Route path="customers/:id" element={<CustomerDetail />} />
               <Route path="customers/:id/edit" element={<CustomerForm />} />
+              <Route path="quotes" element={<QuoteList />} />
+              <Route path="quotes/new" element={<QuoteForm />} />
+              <Route path="quotes/:id" element={<QuoteDetail />} />
+              <Route path="quotes/:id/edit" element={<QuoteForm />} />
               <Route path="invoices" element={<InvoiceList />} />
               <Route path="invoices/new" element={<InvoiceForm />} />
               <Route path="invoices/:id" element={<InvoiceDetail />} />

@@ -1,0 +1,279 @@
+@use '../../styles/variables' as *;
+
+.form-card {
+  background: $bg-card;
+  border-radius: $radius-md;
+  padding: $space-6;
+  border: 1px solid $border-subtle;
+  backdrop-filter: blur(24px);
+  margin-top: $space-4;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    color: $text-secondary;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='number'],
+  input[type='date'],
+  select,
+  textarea {
+    background: $bg-input;
+    border: 1px solid $border-subtle;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: $text-primary;
+    font-size: 0.9rem;
+    font-family: $font-family;
+    transition: border-color $transition-base;
+
+    &::placeholder {
+      color: $text-muted;
+    }
+
+    &:focus {
+      border-color: $accent-cyan;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($accent-cyan, 0.12);
+    }
+  }
+
+  textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  cursor: pointer;
+  text-transform: none !important;
+  font-size: $font-size-sm !important;
+
+  input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    accent-color: $accent-cyan;
+    cursor: pointer;
+  }
+
+  span {
+    color: $text-primary;
+  }
+}
+
+.form-error {
+  font-size: $font-size-xs;
+  color: #fca5a5;
+}
+
+.form-actions {
+  display: flex;
+  gap: $space-3;
+  justify-content: flex-end;
+  margin-top: $space-6;
+}
+
+// --- Quote items section ---
+
+.quote-items-section {
+  margin-top: $space-6;
+  padding-top: $space-6;
+  border-top: 1px solid $border-subtle;
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 $space-4;
+  }
+
+  &__add {
+    margin-top: $space-3;
+  }
+}
+
+.quote-items-header {
+  display: grid;
+  grid-template-columns: 2fr 80px 100px 120px 40px;
+  gap: $space-2;
+  padding: $space-2 0;
+  border-bottom: 1px solid $border-subtle;
+  margin-bottom: $space-2;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+
+  &__col {
+    font-size: $font-size-xs;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $text-muted;
+  }
+}
+
+.quote-item-row {
+  display: grid;
+  grid-template-columns: 2fr 80px 100px 120px 40px;
+  gap: $space-2;
+  padding: $space-2 0;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: $space-3;
+    padding: $space-3 0;
+    border-bottom: 1px solid $border-subtle;
+  }
+
+  input {
+    background: $bg-input;
+    border: 1px solid $border-subtle;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: $text-primary;
+    font-size: 0.85rem;
+    font-family: $font-family;
+    width: 100%;
+    transition: border-color $transition-base;
+
+    &::placeholder {
+      color: $text-muted;
+    }
+
+    &:focus {
+      border-color: $accent-cyan;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($accent-cyan, 0.12);
+    }
+  }
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: rgba($error, 0.12);
+    color: $error;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+.quote-total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: $space-4;
+  margin-top: $space-4;
+  padding-top: $space-4;
+  border-top: 1px solid $border-subtle;
+
+  &__label {
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: $text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__value {
+    font-size: $font-size-xl;
+    font-weight: 700;
+    color: $text-primary;
+  }
+}
+
+// --- Shared button styles ---
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-4;
+  border: none;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  font-family: $font-family;
+  cursor: pointer;
+  transition: opacity $transition-base, transform $transition-fast;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    color: #fff;
+    background: $accent-gradient;
+  }
+
+  &--secondary {
+    color: $text-secondary;
+    background: $bg-input;
+    border: 1px solid $border-subtle;
+
+    &:hover:not(:disabled) {
+      border-color: $border-hover;
+      color: $text-primary;
+    }
+  }
+
+  &--ghost {
+    color: $text-secondary;
+    background: transparent;
+    padding: $space-1 $space-2;
+
+    &:hover {
+      color: $text-primary;
+    }
+  }
+}

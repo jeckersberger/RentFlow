@@ -33,3 +33,17 @@ type PaymentRepository interface {
 	Create(ctx context.Context, payment *Payment) error
 	ListByInvoice(ctx context.Context, invoiceID uuid.UUID, tenantID uuid.UUID) ([]*Payment, error)
 }
+
+type QuoteRepository interface {
+	Create(ctx context.Context, q *Quote) error
+	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*Quote, error)
+	List(ctx context.Context, tenantID uuid.UUID, filter QuoteFilter) ([]*Quote, int64, error)
+	Update(ctx context.Context, q *Quote) error
+	UpdateStatus(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, status string) error
+}
+
+type QuoteItemRepository interface {
+	Create(ctx context.Context, item *QuoteItem) error
+	ListByQuote(ctx context.Context, quoteID uuid.UUID, tenantID uuid.UUID) ([]*QuoteItem, error)
+	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
+}

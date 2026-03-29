@@ -8,6 +8,7 @@ import (
 
 func NewRouter(
 	invoiceHandler *InvoiceHandler,
+	quoteHandler *QuoteHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -41,6 +42,18 @@ func NewRouter(
 			r.Get("/{id}/payments", invoiceHandler.ListPayments)
 			r.Get("/{id}/pdf", invoiceHandler.GeneratePDF)
 			r.Post("/{id}/send", invoiceHandler.SendEmail)
+		})
+
+		r.Route("/api/v1/quotes", func(r chi.Router) {
+			r.Get("/", quoteHandler.List)
+			r.Post("/", quoteHandler.Create)
+			r.Get("/{id}", quoteHandler.Get)
+			r.Put("/{id}", quoteHandler.Update)
+			r.Post("/{id}/items", quoteHandler.AddItem)
+			r.Get("/{id}/items", quoteHandler.ListItems)
+			r.Delete("/{id}/items/{itemId}", quoteHandler.RemoveItem)
+			r.Post("/{id}/convert-to-invoice", quoteHandler.ConvertToInvoice)
+			r.Patch("/{id}/status", quoteHandler.UpdateStatus)
 		})
 	})
 

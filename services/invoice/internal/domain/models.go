@@ -89,3 +89,63 @@ type InvoiceFilter struct {
 	PerPage int    `json:"per_page"`
 	Status  string `json:"status,omitempty"`
 }
+
+// ---------------------------------------------------------------------------
+// Quote (Angebot) domain
+// ---------------------------------------------------------------------------
+
+const (
+	QuoteStatusDraft     = "draft"
+	QuoteStatusSent      = "sent"
+	QuoteStatusAccepted  = "accepted"
+	QuoteStatusDeclined  = "declined"
+	QuoteStatusExpired   = "expired"
+	QuoteStatusCancelled = "cancelled"
+)
+
+type Quote struct {
+	ID                 uuid.UUID  `json:"id"`
+	TenantID           uuid.UUID  `json:"tenant_id"`
+	QuoteNumber        string     `json:"quote_number"`
+	Status             string     `json:"status"`
+	CustomerName       string     `json:"customer_name"`
+	CustomerEmail      string     `json:"customer_email"`
+	CustomerAddress    string     `json:"customer_address"`
+	ProjectID          *uuid.UUID `json:"project_id,omitempty"`
+	Subject            string     `json:"subject"`
+	IntroText          string     `json:"intro_text"`
+	OutroText          string     `json:"outro_text"`
+	QuoteDate          string     `json:"quote_date"`
+	ValidUntil         string     `json:"valid_until"`
+	VatRate            int64      `json:"vat_rate"`
+	Kleinunternehmer   bool       `json:"kleinunternehmer"`
+	TotalNet           int64      `json:"total_net"`
+	TotalVat           int64      `json:"total_vat"`
+	TotalGross         int64      `json:"total_gross"`
+	PaymentTermsDays   int        `json:"payment_terms_days"`
+	DiscountPct        int64      `json:"discount_pct"`
+	Notes              string     `json:"notes"`
+	ConvertedInvoiceID *uuid.UUID `json:"converted_invoice_id,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
+}
+
+type QuoteItem struct {
+	ID          uuid.UUID `json:"id"`
+	TenantID    uuid.UUID `json:"tenant_id"`
+	QuoteID     uuid.UUID `json:"quote_id"`
+	Description string    `json:"description"`
+	Quantity    int64     `json:"quantity"`
+	Unit        string    `json:"unit"`
+	UnitPrice   int64     `json:"unit_price"`
+	DiscountPct int64     `json:"discount_pct"`
+	Position    int       `json:"position"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type QuoteFilter struct {
+	Page    int
+	PerPage int
+	Status  string
+}
