@@ -27,6 +27,13 @@ frontend/.vite/
 *.key
 keys/
 
+# Scanner App (Android build artifacts)
+scanner-app/.gradle/
+scanner-app/app/build/
+scanner-app/build/
+scanner-app/local.properties
+*.apk
+
 # IDE
 .idea/
 .vscode/
