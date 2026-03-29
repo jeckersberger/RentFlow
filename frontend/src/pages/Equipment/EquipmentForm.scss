@@ -1,0 +1,139 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.form-page {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.form-card {
+  background: $bg-card;
+  backdrop-filter: blur(12px);
+  border-radius: $radius-md;
+  padding: $space-6;
+  border: 1px solid $border-subtle;
+}
+
+.form-title {
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: $space-5;
+  padding-bottom: $space-4;
+  border-bottom: 1px solid $border-subtle;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-4;
+
+  @include md {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    color: $text-secondary;
+    font-size: $font-size-sm;
+    font-weight: 500;
+  }
+
+  input,
+  select,
+  textarea {
+    background: $bg-input;
+    border: 1px solid $border-subtle;
+    border-radius: $radius-sm;
+    padding: 10px 14px;
+    color: $text-primary;
+    font-size: $font-size-sm;
+    transition: border-color $transition-base;
+
+    &:focus {
+      border-color: $accent-cyan;
+      outline: none;
+    }
+
+    &::placeholder {
+      color: $text-muted;
+    }
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+}
+
+.form-error {
+  color: $error;
+  font-size: $font-size-xs;
+  margin-top: 2px;
+}
+
+.form-hint {
+  color: $text-muted;
+  font-size: $font-size-xs;
+  margin-top: 2px;
+}
+
+.form-actions {
+  display: flex;
+  gap: $space-3;
+  justify-content: flex-end;
+  margin-top: $space-6;
+  padding-top: $space-4;
+  border-top: 1px solid $border-subtle;
+}
+
+.form-skeleton {
+  padding: $space-6;
+
+  .skeleton {
+    border-radius: $radius-sm;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 25%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.04) 75%
+    );
+    background-size: 200% 100%;
+    animation: form-skeleton-shimmer 1.5s ease-in-out infinite;
+
+    &--heading {
+      height: 22px;
+      width: 220px;
+      margin-bottom: $space-4;
+    }
+
+    &--block {
+      height: 300px;
+      width: 100%;
+    }
+  }
+}
+
+@keyframes form-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

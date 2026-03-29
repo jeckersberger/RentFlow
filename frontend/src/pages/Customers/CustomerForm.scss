@@ -1,0 +1,86 @@
+@use '../../styles/variables' as *;
+
+.customer-form-page {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+}
+
+.form-card {
+  background: $bg-card;
+  border-radius: $radius-md;
+  padding: $space-6;
+  border: 1px solid $border-subtle;
+  backdrop-filter: blur(24px);
+}
+
+.form-section-title {
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: $space-4;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    color: $text-secondary;
+    font-size: 0.875rem;
+  }
+
+  input,
+  select,
+  textarea {
+    background: $bg-input;
+    border: 1px solid $border-subtle;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: $text-primary;
+    font-size: 0.9rem;
+    transition: border-color 150ms ease;
+
+    &:focus {
+      border-color: $accent-cyan;
+      outline: none;
+    }
+
+    &::placeholder {
+      color: $text-muted;
+    }
+  }
+
+  textarea {
+    min-height: 100px;
+    resize: vertical;
+    font-family: $font-family;
+  }
+}
+
+.form-group--full {
+  grid-column: 1 / -1;
+}
+
+.form-error {
+  font-size: $font-size-xs;
+  color: #fca5a5;
+}
+
+.form-actions {
+  display: flex;
+  gap: $space-3;
+  justify-content: flex-end;
+  margin-top: $space-6;
+}

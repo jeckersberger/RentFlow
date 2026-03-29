@@ -19,12 +19,16 @@ const LoginPage = React.lazy(() => import('@/pages/Login/LoginPage'));
 const DashboardPage = React.lazy(() => import('@/pages/Dashboard/DashboardPage'));
 const EquipmentList = React.lazy(() => import('@/pages/Equipment/EquipmentList'));
 const EquipmentDetail = React.lazy(() => import('@/pages/Equipment/EquipmentDetail'));
+const EquipmentForm = React.lazy(() => import('@/pages/Equipment/EquipmentForm'));
 const ProjectList = React.lazy(() => import('@/pages/Projects/ProjectList'));
 const ProjectDetail = React.lazy(() => import('@/pages/Projects/ProjectDetail'));
+const ProjectForm = React.lazy(() => import('@/pages/Projects/ProjectForm'));
 const CustomerList = React.lazy(() => import('@/pages/Customers/CustomerList'));
 const CustomerDetail = React.lazy(() => import('@/pages/Customers/CustomerDetail'));
+const CustomerForm = React.lazy(() => import('@/pages/Customers/CustomerForm'));
 const InvoiceList = React.lazy(() => import('@/pages/Invoices/InvoiceList'));
 const InvoiceDetail = React.lazy(() => import('@/pages/Invoices/InvoiceDetail'));
+const InvoiceForm = React.lazy(() => import('@/pages/Invoices/InvoiceForm'));
 const ScannerPage = React.lazy(() => import('@/pages/Scanner/ScannerPage'));
 const WarehouseList = React.lazy(() => import('@/pages/Warehouse/WarehouseList'));
 const WarehouseMovements = React.lazy(() => import('@/pages/Warehouse/WarehouseMovements'));
@@ -35,6 +39,7 @@ const ExpenseList = React.lazy(() => import('@/pages/Expenses/ExpenseList'));
 const ReportingList = React.lazy(() => import('@/pages/Reporting/ReportingList'));
 const MaintenanceList = React.lazy(() => import('@/pages/Maintenance/MaintenanceList'));
 const TransportList = React.lazy(() => import('@/pages/Transport/TransportList'));
+const AccountPage = React.lazy(() => import('@/pages/Account/AccountPage'));
 
 // Layout (already exists with Sidebar + Header)
 const AppLayout = React.lazy(() => import('@/components/Layout/AppLayout'));
@@ -73,13 +78,21 @@ export default function App() {
             >
               <Route index element={<DashboardPage />} />
               <Route path="equipment" element={<EquipmentList />} />
+              <Route path="equipment/new" element={<EquipmentForm />} />
               <Route path="equipment/:id" element={<EquipmentDetail />} />
+              <Route path="equipment/:id/edit" element={<EquipmentForm />} />
               <Route path="projects" element={<ProjectList />} />
+              <Route path="projects/new" element={<ProjectForm />} />
               <Route path="projects/:id" element={<ProjectDetail />} />
+              <Route path="projects/:id/edit" element={<ProjectForm />} />
               <Route path="customers" element={<CustomerList />} />
+              <Route path="customers/new" element={<CustomerForm />} />
               <Route path="customers/:id" element={<CustomerDetail />} />
+              <Route path="customers/:id/edit" element={<CustomerForm />} />
               <Route path="invoices" element={<InvoiceList />} />
+              <Route path="invoices/new" element={<InvoiceForm />} />
               <Route path="invoices/:id" element={<InvoiceDetail />} />
+              <Route path="invoices/:id/edit" element={<InvoiceForm />} />
               <Route path="scanner" element={<ScannerPage />} />
               <Route path="warehouse" element={<WarehouseList />} />
               <Route path="warehouse/movements" element={<WarehouseMovements />} />
@@ -90,6 +103,7 @@ export default function App() {
               <Route path="reporting" element={<ReportingList />} />
               <Route path="maintenance" element={<MaintenanceList />} />
               <Route path="transport" element={<TransportList />} />
+              <Route path="account" element={<AccountPage />} />
             </Route>
           </Routes>
         </Suspense>
