@@ -10,6 +10,7 @@ func NewRouter(
 	notificationHandler *NotificationHandler,
 	preferenceHandler *PreferenceHandler,
 	emailHandler *EmailHandler,
+	wsHandler *WSHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -33,6 +34,7 @@ func NewRouter(
 			r.Get("/", notificationHandler.List)
 			r.Post("/", notificationHandler.Create)
 			r.Get("/unread-count", notificationHandler.UnreadCount)
+			r.Get("/ws", wsHandler.ServeWS)
 			r.Patch("/{id}/read", notificationHandler.MarkAsRead)
 			r.Post("/mark-all-read", notificationHandler.MarkAllRead)
 		})

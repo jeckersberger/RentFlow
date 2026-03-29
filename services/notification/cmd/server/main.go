@@ -75,14 +75,20 @@ func main() {
 		log.Warn().Msg("SMTP not configured — email sending disabled")
 	}
 
-	// 8. Create HTTP handlers.
+	// 8. Create WebSocket hub.
+	wsHub := httphandler.NewWSHub(log)
+	go wsHub.Run()
+	log.Info().Msg("WebSocket hub started")
+
+	// 9. Create HTTP handlers.
 	notifH := httphandler.NewNotificationHandler(notifSvc, log)
 	prefH := httphandler.NewPreferenceHandler(prefSvc, log)
 	emailH := httphandler.NewEmailHandler(emailSvc, log)
+	wsH := httphandler.NewWSHandler(wsHub, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
-	// 9. Create middleware.
+	// 10. Create middleware.
 	jwtMW := middleware.JWTAuth(cfg.JWTPublicKeyPath)
 	corsMW := middleware.CORS(middleware.CORSConfig{
 		AllowedOrigins: cfg.CORSOrigins,
@@ -93,14 +99,14 @@ func main() {
 	recoveryMW := middleware.Recovery(log)
 	requestIDMW := middleware.RequestID
 
-	// 10. Create router.
+	// 11. Create router.
 	router := httphandler.NewRouter(
-		notifH, prefH, emailH,
+		notifH, prefH, emailH, wsH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)
 
-	// 11. Start HTTP server.
+	// 12. Start HTTP server.
 	addr := ":" + cfg.Port
 	log.Info().Str("addr", addr).Msg("notification-service starting")
 
@@ -118,7 +124,7 @@ func main() {
 		}
 	}()
 
-	// 12. Graceful shutdown.
+	// 13. Graceful shutdown.
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

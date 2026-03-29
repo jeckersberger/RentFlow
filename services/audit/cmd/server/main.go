@@ -66,9 +66,10 @@ func main() {
 	// 7. Create application services.
 	logSvc := application.NewAuditLogService(logRepo, log)
 	policySvc := application.NewAuditPolicyService(policyRepo, log)
+	hashChainSvc := application.NewHashChainService(logRepo, log)
 
 	// 8. Create HTTP handlers.
-	logH := httphandler.NewAuditLogHandler(logSvc, log)
+	logH := httphandler.NewAuditLogHandler(logSvc, hashChainSvc, log)
 	policyH := httphandler.NewAuditPolicyHandler(policySvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()

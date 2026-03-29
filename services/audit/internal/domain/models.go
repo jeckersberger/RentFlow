@@ -8,17 +8,25 @@ import (
 )
 
 type AuditLog struct {
-	ID         uuid.UUID        `json:"id"`
-	TenantID   uuid.UUID        `json:"tenant_id"`
-	UserID     *uuid.UUID       `json:"user_id,omitempty"`
-	Action     string           `json:"action"`
-	EntityType string           `json:"entity_type"`
-	EntityID   *uuid.UUID       `json:"entity_id,omitempty"`
-	OldData    json.RawMessage  `json:"old_data,omitempty"`
-	NewData    json.RawMessage  `json:"new_data,omitempty"`
-	IPAddress  string           `json:"ip_address,omitempty"`
-	UserAgent  string           `json:"user_agent,omitempty"`
-	CreatedAt  time.Time        `json:"created_at"`
+	ID             uuid.UUID        `json:"id"`
+	TenantID       uuid.UUID        `json:"tenant_id"`
+	UserID         *uuid.UUID       `json:"user_id,omitempty"`
+	Action         string           `json:"action"`
+	EntityType     string           `json:"entity_type"`
+	EntityID       *uuid.UUID       `json:"entity_id,omitempty"`
+	OldData        json.RawMessage  `json:"old_data,omitempty"`
+	NewData        json.RawMessage  `json:"new_data,omitempty"`
+	IPAddress      string           `json:"ip_address,omitempty"`
+	UserAgent      string           `json:"user_agent,omitempty"`
+	CreatedAt      time.Time        `json:"created_at"`
+	SequenceNumber int64            `json:"sequence_number,omitempty"`
+	Checksum       string           `json:"checksum,omitempty"`
+	PrevChecksum   string           `json:"prev_checksum,omitempty"`
+	AggregateType  string           `json:"aggregate_type,omitempty"`
+	AggregateID    *uuid.UUID       `json:"aggregate_id,omitempty"`
+	EventType      string           `json:"event_type,omitempty"`
+	EventPayload   json.RawMessage  `json:"event_payload,omitempty"`
+	ServiceName    string           `json:"service_name,omitempty"`
 }
 
 type AuditPolicy struct {

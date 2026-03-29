@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -175,4 +176,162 @@ func nullableJSON(raw json.RawMessage) interface{} {
 		return nil
 	}
 	return []byte(raw)
+}
+
+// CreateWithHash inserts a hash-chained audit log entry including all new columns.
+func (r *AuditLogRepo) CreateWithHash(ctx context.Context, entry *domain.AuditLog) error {
+	query := `
+		INSERT INTO audit_logs (
+			id, tenant_id, user_id, action, entity_type, entity_id,
+			old_data, new_data, ip_address, user_agent,
+			checksum, prev_checksum, aggregate_type, aggregate_id,
+			event_type, event_payload, service_name
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		RETURNING created_at, sequence_number`
+
+	err := r.pool.QueryRow(ctx, query,
+		entry.ID, entry.TenantID, entry.UserID, entry.Action,
+		entry.EntityType, entry.EntityID,
+		nullableJSON(entry.OldData), nullableJSON(entry.NewData),
+		nilIfEmpty(entry.IPAddress), nilIfEmpty(entry.UserAgent),
+		nilIfEmpty(entry.Checksum), nilIfEmpty(entry.PrevChecksum),
+		nilIfEmpty(entry.AggregateType), entry.AggregateID,
+		nilIfEmpty(entry.EventType), nullableJSON(entry.EventPayload),
+		nilIfEmpty(entry.ServiceName),
+	).Scan(&entry.CreatedAt, &entry.SequenceNumber)
+	if err != nil {
+		return fmt.Errorf("audit_log_repo: create_with_hash: %w", err)
+	}
+	return nil
+}
+
+// GetLastChecksum returns the checksum of the most recent audit log entry
+// for the given tenant. Returns empty string if no entries exist.
+func (r *AuditLogRepo) GetLastChecksum(ctx context.Context, tenantID uuid.UUID) (string, error) {
+	query := `SELECT COALESCE(checksum, '') FROM audit_logs WHERE tenant_id = $1 ORDER BY sequence_number DESC LIMIT 1`
+	var checksum string
+	err := r.pool.QueryRow(ctx, query, tenantID).Scan(&checksum)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", nil
+		}
+		return "", fmt.Errorf("audit_log_repo: get_last_checksum: %w", err)
+	}
+	return checksum, nil
+}
+
+// ListBySequenceRange returns all audit log entries for a tenant within the
+// given sequence number range (inclusive), ordered by sequence_number ASC.
+func (r *AuditLogRepo) ListBySequenceRange(ctx context.Context, tenantID uuid.UUID, fromSeq, toSeq int64) ([]*domain.AuditLog, error) {
+	query := `
+		SELECT id, tenant_id, user_id, action, entity_type, entity_id,
+			old_data, new_data, ip_address, user_agent, created_at,
+			sequence_number, checksum, prev_checksum,
+			aggregate_type, aggregate_id, event_type, event_payload, service_name
+		FROM audit_logs
+		WHERE tenant_id = $1 AND sequence_number >= $2 AND sequence_number <= $3
+		ORDER BY sequence_number ASC`
+
+	rows, err := r.pool.Query(ctx, query, tenantID, fromSeq, toSeq)
+	if err != nil {
+		return nil, fmt.Errorf("audit_log_repo: list_by_sequence_range: %w", err)
+	}
+	defer rows.Close()
+
+	return scanExtendedRows(rows)
+}
+
+// ListByDateRange returns all audit log entries for a tenant within the given
+// date range (inclusive), ordered by sequence_number ASC.
+func (r *AuditLogRepo) ListByDateRange(ctx context.Context, tenantID uuid.UUID, fromDate, toDate time.Time) ([]*domain.AuditLog, error) {
+	query := `
+		SELECT id, tenant_id, user_id, action, entity_type, entity_id,
+			old_data, new_data, ip_address, user_agent, created_at,
+			sequence_number, checksum, prev_checksum,
+			aggregate_type, aggregate_id, event_type, event_payload, service_name
+		FROM audit_logs
+		WHERE tenant_id = $1 AND created_at >= $2 AND created_at <= $3
+		ORDER BY sequence_number ASC`
+
+	rows, err := r.pool.Query(ctx, query, tenantID, fromDate, toDate)
+	if err != nil {
+		return nil, fmt.Errorf("audit_log_repo: list_by_date_range: %w", err)
+	}
+	defer rows.Close()
+
+	return scanExtendedRows(rows)
+}
+
+// scanExtendedRows scans rows that include all hash chain columns.
+func scanExtendedRows(rows pgx.Rows) ([]*domain.AuditLog, error) {
+	var items []*domain.AuditLog
+	for rows.Next() {
+		entry := &domain.AuditLog{}
+		var (
+			userID        *uuid.UUID
+			entityID      *uuid.UUID
+			oldData       []byte
+			newData       []byte
+			ipAddress     *string
+			userAgent     *string
+			checksum      *string
+			prevChecksum  *string
+			aggregateType *string
+			aggregateID   *uuid.UUID
+			eventType     *string
+			eventPayload  []byte
+			serviceName   *string
+		)
+
+		err := rows.Scan(
+			&entry.ID, &entry.TenantID, &userID, &entry.Action,
+			&entry.EntityType, &entityID,
+			&oldData, &newData, &ipAddress, &userAgent, &entry.CreatedAt,
+			&entry.SequenceNumber, &checksum, &prevChecksum,
+			&aggregateType, &aggregateID, &eventType, &eventPayload, &serviceName,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan extended row: %w", err)
+		}
+
+		entry.UserID = userID
+		entry.EntityID = entityID
+		if oldData != nil {
+			entry.OldData = json.RawMessage(oldData)
+		}
+		if newData != nil {
+			entry.NewData = json.RawMessage(newData)
+		}
+		if ipAddress != nil {
+			entry.IPAddress = *ipAddress
+		}
+		if userAgent != nil {
+			entry.UserAgent = *userAgent
+		}
+		if checksum != nil {
+			entry.Checksum = *checksum
+		}
+		if prevChecksum != nil {
+			entry.PrevChecksum = *prevChecksum
+		}
+		if aggregateType != nil {
+			entry.AggregateType = *aggregateType
+		}
+		entry.AggregateID = aggregateID
+		if eventType != nil {
+			entry.EventType = *eventType
+		}
+		if eventPayload != nil {
+			entry.EventPayload = json.RawMessage(eventPayload)
+		}
+		if serviceName != nil {
+			entry.ServiceName = *serviceName
+		}
+
+		items = append(items, entry)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scan extended rows: %w", err)
+	}
+	return items, nil
 }

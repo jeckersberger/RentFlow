@@ -31,6 +31,9 @@ func NewRouter(
 		r.Route("/api/v1/audit-logs", func(r chi.Router) {
 			r.Post("/", auditLogHandler.Create)
 			r.Get("/", auditLogHandler.List)
+			r.Post("/append", auditLogHandler.Append)
+			r.Get("/verify", auditLogHandler.Verify)
+			r.Get("/export", auditLogHandler.Export)
 			r.Get("/{id}", auditLogHandler.Get)
 		})
 
