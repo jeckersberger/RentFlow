@@ -63,3 +63,8 @@ export async function addPayment(
 export async function listPayments(invoiceId: string): Promise<Payment[]> {
   return api.get(`/api/v1/invoices/${invoiceId}/payments`) as unknown as Payment[];
 }
+
+// Send invoice as PDF via email
+export async function sendEmail(invoiceId: string): Promise<{ status: string; to: string }> {
+  return api.post(`/api/v1/invoices/${invoiceId}/send`) as unknown as { status: string; to: string };
+}

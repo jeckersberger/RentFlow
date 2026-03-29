@@ -1,6 +1,7 @@
 package httphandler
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -303,6 +304,89 @@ func (h *InvoiceHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Success(w, payments)
+}
+
+func (h *InvoiceHandler) SendEmail(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	id, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	invoice, err := h.invoiceService.GetByID(r.Context(), id, claims.TenantID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	if invoice.CustomerEmail == "" {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Kunde hat keine E-Mail-Adresse"))
+		return
+	}
+
+	items, err := h.invoiceService.ListItems(r.Context(), id, claims.TenantID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	// Generate PDF into buffer
+	company := h.getCompanyInfo()
+	data := application.InvoicePDFData{Invoice: invoice, Items: items, Company: company}
+
+	var pdfBuf bytes.Buffer
+	if err := application.GenerateInvoicePDF(&pdfBuf, data); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrInternal, "PDF-Generierung fehlgeschlagen"))
+		return
+	}
+
+	// Send via notification-service email endpoint
+	emailBody, err := application.RenderInvoiceEmailHTML(invoice, company.Name)
+	if err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrInternal, "E-Mail-Template fehlgeschlagen"))
+		return
+	}
+
+	subject := "Rechnung " + invoice.InvoiceNumber + " — " + company.Name
+	if invoice.InvoiceType == "credit_note" {
+		subject = "Gutschrift " + invoice.InvoiceNumber + " — " + company.Name
+	}
+
+	sendErr := h.invoiceService.SendInvoiceEmail(r.Context(), application.InvoiceEmailRequest{
+		To:             invoice.CustomerEmail,
+		Subject:        subject,
+		HTMLBody:       emailBody,
+		PDFData:        pdfBuf.Bytes(),
+		PDFFilename:    invoice.InvoiceNumber + ".pdf",
+		InvoiceID:      id,
+		TenantID:       claims.TenantID,
+	})
+	if sendErr != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrInternal, sendErr.Error()))
+		return
+	}
+
+	// Update status to "sent" if currently draft/finalized
+	if invoice.Status == "draft" || invoice.Status == "finalized" {
+		_ = h.invoiceService.UpdateStatus(r.Context(), id, claims.TenantID, "sent")
+	}
+
+	response.Success(w, map[string]string{"status": "sent", "to": invoice.CustomerEmail})
+}
+
+func (h *InvoiceHandler) getCompanyInfo() application.CompanyInfo {
+	return application.CompanyInfo{
+		Name:   "JE-Sound&Light",
+		Street: "Feucht",
+		City:   "90537 Feucht",
+		Email:  "j.eckersberger@je-soundulight.de",
+	}
 }
 
 func (h *InvoiceHandler) GeneratePDF(w http.ResponseWriter, r *http.Request) {

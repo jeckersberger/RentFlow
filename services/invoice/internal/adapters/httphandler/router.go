@@ -40,6 +40,7 @@ func NewRouter(
 			r.Post("/{id}/payments", invoiceHandler.AddPayment)
 			r.Get("/{id}/payments", invoiceHandler.ListPayments)
 			r.Get("/{id}/pdf", invoiceHandler.GeneratePDF)
+			r.Post("/{id}/send", invoiceHandler.SendEmail)
 		})
 	})
 

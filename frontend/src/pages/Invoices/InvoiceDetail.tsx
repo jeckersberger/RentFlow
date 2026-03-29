@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { ArrowLeft, Pencil, FileDown, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageWrapper } from '@/components/PageWrapper/PageWrapper';
@@ -81,13 +82,28 @@ export default function InvoiceDetail() {
     URL.revokeObjectURL(url);
   };
 
+  const sendMutation = useMutation({
+    mutationFn: () => invoiceApi.sendEmail(id!),
+    onSuccess: (data) => toast.success(`Rechnung an ${data.to} gesendet`),
+    onError: () => toast.error('E-Mail-Versand fehlgeschlagen'),
+  });
+
   const actionButtons = (
     <div style={{ display: 'flex', gap: '8px' }}>
-      <button className="btn btn--primary" onClick={handleDownloadPDF}>
+      <button
+        className="btn btn--primary"
+        onClick={() => sendMutation.mutate()}
+        disabled={sendMutation.isPending || !item.customer_email}
+        title={!item.customer_email ? 'Kunde hat keine E-Mail' : 'Per E-Mail senden'}
+      >
+        <Mail size={16} />
+        <span>{sendMutation.isPending ? 'Sende...' : 'Senden'}</span>
+      </button>
+      <button className="btn btn--secondary" onClick={handleDownloadPDF}>
         <FileDown size={16} />
         <span>PDF</span>
       </button>
-      <button className="btn btn--secondary" onClick={() => navigate(`/invoices/${id}/edit`)}>
+      <button className="btn btn--ghost" onClick={() => navigate(`/invoices/${id}/edit`)}>
         <Pencil size={16} />
         <span>Bearbeiten</span>
       </button>
