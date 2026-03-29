@@ -39,6 +39,7 @@ func NewRouter(
 			r.Delete("/{id}/items/{itemId}", invoiceHandler.RemoveItem)
 			r.Post("/{id}/payments", invoiceHandler.AddPayment)
 			r.Get("/{id}/payments", invoiceHandler.ListPayments)
+			r.Get("/{id}/pdf", invoiceHandler.GeneratePDF)
 		})
 	})
 

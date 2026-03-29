@@ -304,3 +304,56 @@ func (h *InvoiceHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
 
 	response.Success(w, payments)
 }
+
+func (h *InvoiceHandler) GeneratePDF(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	id, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	invoice, err := h.invoiceService.GetByID(r.Context(), id, claims.TenantID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	items, err := h.invoiceService.ListItems(r.Context(), id, claims.TenantID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	// TODO: Load company info from tenant config
+	company := application.CompanyInfo{
+		Name:       "JE-Sound&Light",
+		Street:     "Feucht",
+		City:       "90537 Feucht",
+		Phone:      "",
+		Email:      "j.eckersberger@je-soundulight.de",
+		TaxNumber:  "",
+		IBAN:       "",
+		BIC:        "",
+		BankName:   "",
+	}
+
+	data := application.InvoicePDFData{
+		Invoice: invoice,
+		Items:   items,
+		Company: company,
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "inline; filename=\""+invoice.InvoiceNumber+".pdf\"")
+
+	if err := application.GenerateInvoicePDF(w, data); err != nil {
+		h.logger.Error().Err(err).Str("invoice_id", id.String()).Msg("PDF generation failed")
+		errors.HandleError(w, errors.Wrap(errors.ErrInternal, "PDF-Generierung fehlgeschlagen"))
+	}
+}
