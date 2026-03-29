@@ -58,16 +58,22 @@ func main() {
 	categoryRepo := postgres.NewCategoryRepo(pool)
 	expenseRepo := postgres.NewExpenseRepo(pool)
 	receiptRepo := postgres.NewReceiptRepo(pool)
+	recurringRepo := postgres.NewRecurringRepo(pool)
+	budgetRepo := postgres.NewBudgetRepo(pool)
 
 	// Create application services.
 	categorySvc := application.NewCategoryService(categoryRepo, log)
 	expenseSvc := application.NewExpenseService(expenseRepo, log)
 	receiptSvc := application.NewReceiptService(receiptRepo, expenseRepo, log)
+	recurringSvc := application.NewRecurringService(recurringRepo, log)
+	budgetSvc := application.NewBudgetService(budgetRepo, log)
 
 	// Create HTTP handlers.
 	categoryH := httphandler.NewCategoryHandler(categorySvc, log)
 	expenseH := httphandler.NewExpenseHandler(expenseSvc, log)
 	receiptH := httphandler.NewReceiptHandler(receiptSvc, log)
+	recurringH := httphandler.NewRecurringHandler(recurringSvc, log)
+	budgetH := httphandler.NewBudgetHandler(budgetSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -84,7 +90,7 @@ func main() {
 
 	// Create router.
 	router := httphandler.NewRouter(
-		categoryH, expenseH, receiptH,
+		categoryH, expenseH, receiptH, recurringH, budgetH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

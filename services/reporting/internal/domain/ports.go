@@ -26,3 +26,10 @@ type DashboardWidgetRepository interface {
 	Update(ctx context.Context, widget *DashboardWidget) error
 	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
 }
+
+// KPISnapshotRepository defines persistence operations for KPISnapshot aggregates.
+type KPISnapshotRepository interface {
+	Upsert(ctx context.Context, snap *KPISnapshot) error
+	GetLatest(ctx context.Context, tenantID uuid.UUID) (*KPISnapshot, error)
+	GetHistory(ctx context.Context, tenantID uuid.UUID, from, to string) ([]*KPISnapshot, error)
+}

@@ -140,6 +140,56 @@ func (s *DefinitionService) List(
 	return items, total, nil
 }
 
+// ListTemplates returns all available pre-built workflow templates.
+func (s *DefinitionService) ListTemplates() []WorkflowTemplate {
+	return GetDefaultTemplates()
+}
+
+// CreateFromTemplate creates a new workflow definition from a pre-built template by name.
+func (s *DefinitionService) CreateFromTemplate(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	userID uuid.UUID,
+	templateName string,
+) (*domain.WorkflowDefinition, error) {
+	templates := GetDefaultTemplates()
+	var found *WorkflowTemplate
+	for i := range templates {
+		if templates[i].Name == templateName {
+			found = &templates[i]
+			break
+		}
+	}
+	if found == nil {
+		return nil, fmt.Errorf("template not found: %s", templateName)
+	}
+
+	def := &domain.WorkflowDefinition{
+		ID:        uuid.New(),
+		TenantID:  tenantID,
+		Name:      found.Name,
+		Type:      found.Type,
+		Steps:     found.Steps,
+		IsActive:  true,
+		CreatedBy: &userID,
+	}
+
+	if err := s.defRepo.Create(ctx, def); err != nil {
+		s.logger.Error().Err(err).
+			Str("tenant_id", tenantID.String()).
+			Str("template", templateName).
+			Msg("failed to create definition from template")
+		return nil, fmt.Errorf("create from template: %w", err)
+	}
+
+	s.logger.Info().
+		Str("definition_id", def.ID.String()).
+		Str("template", templateName).
+		Msg("workflow definition created from template")
+
+	return def, nil
+}
+
 // Update updates an existing workflow definition.
 func (s *DefinitionService) Update(
 	ctx context.Context,

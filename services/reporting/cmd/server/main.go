@@ -63,16 +63,19 @@ func main() {
 	defRepo := postgres.NewDefinitionRepo(pool)
 	snapRepo := postgres.NewSnapshotRepo(pool)
 	widgetRepo := postgres.NewWidgetRepo(pool)
+	kpiRepo := postgres.NewKPIRepo(pool)
 
 	// 7. Create application services.
 	defSvc := application.NewDefinitionService(defRepo, log)
 	snapSvc := application.NewSnapshotService(snapRepo, defRepo, log)
 	widgetSvc := application.NewWidgetService(widgetRepo, log)
+	kpiSvc := application.NewKPIService(kpiRepo, log)
 
 	// 8. Create HTTP handlers.
 	defH := httphandler.NewDefinitionHandler(defSvc, log)
 	snapH := httphandler.NewSnapshotHandler(snapSvc, log)
 	widgetH := httphandler.NewWidgetHandler(widgetSvc, log)
+	kpiH := httphandler.NewKPIHandler(kpiSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -89,7 +92,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		defH, snapH, widgetH,
+		defH, snapH, widgetH, kpiH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

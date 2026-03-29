@@ -65,3 +65,25 @@ type WidgetFilter struct {
 	Page    int
 	PerPage int
 }
+
+// KPISnapshot holds a daily snapshot of key performance indicators for a tenant.
+type KPISnapshot struct {
+	ID                    uuid.UUID `json:"id"`
+	TenantID              uuid.UUID `json:"tenant_id"`
+	SnapshotDate          string    `json:"snapshot_date"`
+	ActiveProjects        int       `json:"active_projects"`
+	EquipmentOutCount     int       `json:"equipment_out_count"`
+	TotalEquipment        int       `json:"total_equipment"`
+	OpenInvoicesAmount    int64     `json:"open_invoices_amount"`
+	OverdueInvoicesAmount int64     `json:"overdue_invoices_amount"`
+	MonthlyRevenue        int64     `json:"monthly_revenue"`
+	CustomerCount         int       `json:"customer_count"`
+	UtilizationPct        int       `json:"utilization_pct"`
+	CreatedAt             time.Time `json:"created_at"`
+}
+
+// KPIHistoryFilter holds optional criteria for querying KPI history.
+type KPIHistoryFilter struct {
+	From string
+	To   string
+}

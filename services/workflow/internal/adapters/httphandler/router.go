@@ -10,6 +10,7 @@ import (
 func NewRouter(
 	definitionHandler *DefinitionHandler,
 	instanceHandler *InstanceHandler,
+	templateHandler *TemplateHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -32,10 +33,14 @@ func NewRouter(
 	r.Group(func(r chi.Router) {
 		r.Use(jwtMiddleware)
 
+		// Workflow template endpoints.
+		r.Get("/api/v1/workflow-templates", templateHandler.ListTemplates)
+
 		// Workflow definition endpoints.
 		r.Route("/api/v1/workflow-definitions", func(r chi.Router) {
 			r.Post("/", definitionHandler.Create)
 			r.Get("/", definitionHandler.List)
+			r.Post("/from-template", templateHandler.CreateFromTemplate)
 			r.Get("/{id}", definitionHandler.GetByID)
 			r.Put("/{id}", definitionHandler.Update)
 		})

@@ -10,6 +10,7 @@ func NewRouter(
 	definitionHandler *DefinitionHandler,
 	snapshotHandler *SnapshotHandler,
 	widgetHandler *WidgetHandler,
+	kpiHandler *KPIHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -47,6 +48,12 @@ func NewRouter(
 			r.Post("/", widgetHandler.Create)
 			r.Put("/{id}", widgetHandler.Update)
 			r.Delete("/{id}", widgetHandler.Delete)
+		})
+
+		r.Route("/api/v1/reporting/kpis", func(r chi.Router) {
+			r.Get("/", kpiHandler.GetLatest)
+			r.Get("/history", kpiHandler.GetHistory)
+			r.Post("/snapshot", kpiHandler.CreateSnapshot)
 		})
 	})
 

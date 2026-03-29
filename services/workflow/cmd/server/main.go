@@ -71,6 +71,7 @@ func main() {
 	// 8. Create HTTP handlers.
 	defH := httphandler.NewDefinitionHandler(defSvc, log)
 	instH := httphandler.NewInstanceHandler(instSvc, log)
+	tmplH := httphandler.NewTemplateHandler(defSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -87,7 +88,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		defH, instH,
+		defH, instH, tmplH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)
