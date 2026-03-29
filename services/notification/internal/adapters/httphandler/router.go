@@ -9,6 +9,7 @@ import (
 func NewRouter(
 	notificationHandler *NotificationHandler,
 	preferenceHandler *PreferenceHandler,
+	emailHandler *EmailHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -39,6 +40,11 @@ func NewRouter(
 		r.Route("/api/v1/notification-preferences", func(r chi.Router) {
 			r.Get("/", preferenceHandler.List)
 			r.Put("/", preferenceHandler.Update)
+		})
+
+		r.Route("/api/v1/email", func(r chi.Router) {
+			r.Post("/send", emailHandler.Send)
+			r.Get("/status", emailHandler.Status)
 		})
 	})
 

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, FileDown, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageWrapper } from '@/components/PageWrapper/PageWrapper';
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge';
@@ -66,6 +66,34 @@ export default function InvoiceDetail() {
   const lines: InvoiceItem[] = Array.isArray(invoiceItems) ? invoiceItems : [];
   const pmts: Payment[] = Array.isArray(payments) ? payments : [];
 
+  const handleDownloadPDF = async () => {
+    const token = localStorage.getItem('cd_access_token') || '';
+    const res = await fetch(`/api/v1/invoices/${id}/pdf`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${item?.invoice_number || 'rechnung'}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const actionButtons = (
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <button className="btn btn--primary" onClick={handleDownloadPDF}>
+        <FileDown size={16} />
+        <span>PDF</span>
+      </button>
+      <button className="btn btn--secondary" onClick={() => navigate(`/invoices/${id}/edit`)}>
+        <Pencil size={16} />
+        <span>Bearbeiten</span>
+      </button>
+    </div>
+  );
+
   const editButton = (
     <button className="btn btn--secondary">
       <Pencil size={16} />
@@ -74,7 +102,7 @@ export default function InvoiceDetail() {
   );
 
   return (
-    <PageWrapper title={`Rechnung ${item.invoice_number}`} actions={editButton}>
+    <PageWrapper title={`Rechnung ${item.invoice_number}`} actions={actionButtons}>
       <button className="btn btn--ghost" onClick={() => navigate(-1)}>
         <ArrowLeft size={18} />
         <span>Zurueck</span>

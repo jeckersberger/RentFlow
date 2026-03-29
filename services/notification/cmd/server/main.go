@@ -66,10 +66,19 @@ func main() {
 	// 7. Create application services.
 	notifSvc := application.NewNotificationService(notifRepo, log)
 	prefSvc := application.NewPreferenceService(prefRepo, log)
+	emailCfg := application.LoadEmailConfig()
+	emailSvc := application.NewEmailService(emailCfg, log)
+
+	if emailSvc.IsConfigured() {
+		log.Info().Str("host", emailCfg.Host).Msg("SMTP configured")
+	} else {
+		log.Warn().Msg("SMTP not configured — email sending disabled")
+	}
 
 	// 8. Create HTTP handlers.
 	notifH := httphandler.NewNotificationHandler(notifSvc, log)
 	prefH := httphandler.NewPreferenceHandler(prefSvc, log)
+	emailH := httphandler.NewEmailHandler(emailSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -86,7 +95,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		notifH, prefH,
+		notifH, prefH, emailH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

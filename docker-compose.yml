@@ -610,7 +610,13 @@ services:
       PORT: "8015"
       LOG_LEVEL: ${LOG_LEVEL:-info}
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-CrateDesk}
     volumes:
       - ./keys:/app/keys:ro
     ports:
@@ -622,7 +628,7 @@ services:
       - cratedesk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.notification.rule=PathPrefix(`/api/v1/notifications`) || PathPrefix(`/api/v1/notification-preferences`)"
+      - "traefik.http.routers.notification.rule=PathPrefix(`/api/v1/notifications`) || PathPrefix(`/api/v1/notification-preferences`) || PathPrefix(`/api/v1/email`)"
       - "traefik.http.services.notification.loadbalancer.server.port=8015"
 
   # =============================================================================
