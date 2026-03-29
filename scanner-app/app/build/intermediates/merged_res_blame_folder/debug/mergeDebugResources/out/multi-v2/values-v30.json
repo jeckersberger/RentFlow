@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "de.cratedesk.scanner.app-mergeDebugResources-73:/values-v30/values-v30.xml",
+            "outputFile": "com.rentflow.scanner.app-mergeDebugResources-80:/values-v30/values-v30.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.9\\transforms\\a527809fbbe1d88cca759bbc847db68d\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
+                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.13\\transforms\\ad7c9b173ae68cf6729ee42b88c89836\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

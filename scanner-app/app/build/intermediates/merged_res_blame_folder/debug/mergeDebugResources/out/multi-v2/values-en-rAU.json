@@ -1,27 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "de.cratedesk.scanner.app-mergeDebugResources-73:/values-en-rAU/values-en-rAU.xml",
+            "outputFile": "com.rentflow.scanner.app-mergeDebugResources-80:/values-en-rAU/values-en-rAU.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.9\\transforms\\1cf05b50fca2863b1558e58285876803\\transformed\\core-1.15.0\\res\\values-en-rAU\\values-en-rAU.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,151,253,352,451,555,658,774",
-                        "endColumns": "95,101,98,98,103,102,115,100",
-                        "endOffsets": "146,248,347,446,550,653,769,870"
-                    },
-                    "to": {
-                        "startLines": "29,30,31,32,33,34,35,109",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "2762,2858,2960,3059,3158,3262,3365,10927",
-                        "endColumns": "95,101,98,98,103,102,115,100",
-                        "endOffsets": "2853,2955,3054,3153,3257,3360,3476,11023"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.9\\transforms\\a527809fbbe1d88cca759bbc847db68d\\transformed\\material3-release\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.13\\transforms\\ad7c9b173ae68cf6729ee42b88c89836\\transformed\\material3-release\\res\\values-en-rAU\\values-en-rAU.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,24 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.9\\transforms\\027ccf268827b5520eef3127cd747473\\transformed\\foundation-release\\res\\values-en-rAU\\values-en-rAU.xml",
-                    "from": {
-                        "startLines": "2,3",
-                        "startColumns": "4,4",
-                        "startOffsets": "55,141",
-                        "endColumns": "85,84",
-                        "endOffsets": "136,221"
-                    },
-                    "to": {
-                        "startLines": "113,114",
-                        "startColumns": "4,4",
-                        "startOffsets": "11292,11378",
-                        "endColumns": "85,84",
-                        "endOffsets": "11373,11458"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.9\\transforms\\c62221a9833f10c37b6538cb93905ce4\\transformed\\ui-release\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.13\\transforms\\49c37cf63c37d79c23c9fe52d551e117\\transformed\\ui-release\\res\\values-en-rAU\\values-en-rAU.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -72,7 +38,41 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.9\\transforms\\970b794bbc0c9e26a38474dc8d096772\\transformed\\appcompat-1.6.1\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.13\\transforms\\de1a5246d07e70a7d3d36124888479cd\\transformed\\foundation-release\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,141",
+                        "endColumns": "85,84",
+                        "endOffsets": "136,221"
+                    },
+                    "to": {
+                        "startLines": "113,114",
+                        "startColumns": "4,4",
+                        "startOffsets": "11292,11378",
+                        "endColumns": "85,84",
+                        "endOffsets": "11373,11458"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.13\\transforms\\daa8b3601fd7c0c4b511609314935ea4\\transformed\\core-1.15.0\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,151,253,352,451,555,658,774",
+                        "endColumns": "95,101,98,98,103,102,115,100",
+                        "endOffsets": "146,248,347,446,550,653,769,870"
+                    },
+                    "to": {
+                        "startLines": "29,30,31,32,33,34,35,109",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "2762,2858,2960,3059,3158,3262,3365,10927",
+                        "endColumns": "95,101,98,98,103,102,115,100",
+                        "endOffsets": "2853,2955,3054,3153,3257,3360,3476,11023"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.13\\transforms\\9ca9b0c7a93eeb1bddd4c5d4b4ee1c02\\transformed\\appcompat-1.7.0\\res\\values-en-rAU\\values-en-rAU.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",

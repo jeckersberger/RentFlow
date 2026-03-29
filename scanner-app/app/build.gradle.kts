@@ -1,44 +1,58 @@
+import java.util.Properties
+
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("com.google.dagger.hilt.android")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
-    namespace = "de.cratedesk.scanner"
+    namespace = "com.rentflow.scanner"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "de.cratedesk.scanner"
+        applicationId = "com.rentflow.scanner"
         minSdk = 28
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 20304
+        versionName = "2.3.4"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
 
-        buildConfigField("String", "API_BASE_URL", "\"https://cratedesk.je-soundulight.de\"")
+    signingConfigs {
+        create("release") {
+            val props = Properties()
+            val localPropsFile = rootProject.file("local.properties")
+            if (localPropsFile.exists()) {
+                props.load(localPropsFile.inputStream())
+            }
+            storeFile = file(props.getProperty("RELEASE_STORE_FILE", "../rentflow-scanner.jks"))
+            storePassword = props.getProperty("RELEASE_STORE_PASSWORD", System.getenv("RELEASE_STORE_PASSWORD") ?: "")
+            keyAlias = props.getProperty("RELEASE_KEY_ALIAS", System.getenv("RELEASE_KEY_ALIAS") ?: "rentflow-scanner")
+            keyPassword = props.getProperty("RELEASE_KEY_PASSWORD", System.getenv("RELEASE_KEY_PASSWORD") ?: "")
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-        debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://cratedesk.je-soundulight.de\"")
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
     kotlinOptions {
         jvmTarget = "17"
     }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -46,45 +60,66 @@ android {
 }
 
 dependencies {
-    // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
-    implementation(composeBom)
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.navigation:navigation-compose:2.8.5")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-
-    // Lifecycle
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-
-    // Hilt
-    implementation("com.google.dagger:hilt-android:2.53.1")
-    ksp("com.google.dagger:hilt-compiler:2.53.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-
-    // Network
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    // Room (offline cache)
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
-
-    // DataStore (preferences)
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
-
-    // CameraX (barcode scanning)
-    implementation("androidx.camera:camera-camera2:1.4.1")
-    implementation("androidx.camera:camera-lifecycle:1.4.1")
-    implementation("androidx.camera:camera-view:1.4.1")
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    // CF-H906 Hardware SDK (barcode scanner + UHF RFID)
+    // rfiddrive AAR already bundles platform_sdk, so only include the AAR
+    implementation(files("libs/rfiddrive-release.aar"))
 
     // Core
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.activity.compose)
+
+    // Compose
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons)
+    implementation(libs.androidx.navigation.compose)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Network
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+
+    // Database
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
+    // Preferences
+    implementation(libs.datastore.preferences)
+    implementation(libs.security.crypto)
+
+    // Background
+    implementation(libs.workmanager)
+
+    // Camera
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
+    implementation(libs.mlkit.barcode)
+
+    // Image Loading
+    implementation(libs.coil.compose)
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }

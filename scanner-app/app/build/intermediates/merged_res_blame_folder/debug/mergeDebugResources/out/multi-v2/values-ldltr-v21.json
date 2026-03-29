@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "de.cratedesk.scanner.app-mergeDebugResources-73:/values-ldltr-v21/values-ldltr-v21.xml",
+            "outputFile": "com.rentflow.scanner.app-mergeDebugResources-80:/values-ldltr-v21/values-ldltr-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.9\\transforms\\970b794bbc0c9e26a38474dc8d096772\\transformed\\appcompat-1.6.1\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
+                    "source": "C:\\Users\\jecke\\.gradle\\caches\\8.13\\transforms\\9ca9b0c7a93eeb1bddd4c5d4b4ee1c02\\transformed\\appcompat-1.7.0\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

@@ -4,60 +4,12 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- Crate / Box shape — 3D isometric look -->
-    <!-- Front face -->
+    <!-- Letter E -->
     <path
-        android:fillColor="#3B82F6"
-        android:pathData="M34,40 L54,30 L74,40 L74,62 L54,72 L34,62Z" />
-    <!-- Top face (lighter) -->
+        android:fillColor="#00E5FF"
+        android:pathData="M28,36 L28,72 L50,72 L50,66 L34,66 L34,57 L48,57 L48,51 L34,51 L34,42 L50,42 L50,36 Z" />
+    <!-- Letter F -->
     <path
-        android:fillColor="#60A5FA"
-        android:pathData="M34,40 L54,30 L74,40 L54,50Z" />
-    <!-- Right face (darker) -->
-    <path
-        android:fillColor="#2563EB"
-        android:pathData="M54,50 L74,40 L74,62 L54,72Z" />
-    <!-- Left face (medium) -->
-    <path
-        android:fillColor="#3B82F6"
-        android:pathData="M34,40 L54,50 L54,72 L34,62Z" />
-
-    <!-- Crate horizontal slats on front-left face -->
-    <path
-        android:fillColor="#1D4ED8"
-        android:strokeColor="#1D4ED8"
-        android:strokeWidth="0.5"
-        android:pathData="M34,47 L54,57 M34,54 L54,64" />
-
-    <!-- Crate horizontal slats on front-right face -->
-    <path
-        android:fillColor="#1E40AF"
-        android:strokeColor="#1E40AF"
-        android:strokeWidth="0.5"
-        android:pathData="M54,57 L74,47 M54,64 L74,54" />
-
-    <!-- Top face cross / handle detail -->
-    <path
-        android:strokeColor="#DBEAFE"
-        android:strokeWidth="1.2"
-        android:fillColor="#00000000"
-        android:pathData="M44,38 L54,43 L64,38" />
-
-    <!-- Scan beam / barcode line effect -->
-    <path
-        android:strokeColor="#FBBF24"
-        android:strokeWidth="1.5"
-        android:fillColor="#00000000"
-        android:pathData="M30,54 L42,48" />
-    <path
-        android:strokeColor="#FBBF24"
-        android:strokeWidth="1.0"
-        android:fillColor="#00000000"
-        android:pathData="M30,57 L40,52" />
-    <path
-        android:strokeColor="#F59E0B"
-        android:strokeWidth="0.7"
-        android:fillColor="#00000000"
-        android:pathData="M30,51 L40,46" />
+        android:fillColor="#00E5FF"
+        android:pathData="M56,36 L56,72 L62,72 L62,57 L76,57 L76,51 L62,51 L62,42 L78,42 L78,36 Z" />
 </vector>
