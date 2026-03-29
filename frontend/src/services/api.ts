@@ -32,4 +32,16 @@ api.interceptors.response.use(
   }
 );
 
+// Fetch only the total count for a list endpoint (useful for KPIs).
+export async function fetchCount(path: string, params?: Record<string, unknown>): Promise<number> {
+  const response = await axios.get(path, {
+    params: { ...params, page: 1, per_page: 1 },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${localStorage.getItem('cd_access_token') || ''}`,
+    },
+  });
+  return response.data?.meta?.total ?? 0;
+}
+
 export default api;

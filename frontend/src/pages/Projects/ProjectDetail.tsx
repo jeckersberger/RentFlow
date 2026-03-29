@@ -84,7 +84,7 @@ export default function ProjectDetail() {
           <div className="detail-field">
             <span className="detail-field__label">Ansprechpartner</span>
             <span className="detail-field__value">
-              {item.contact_person || '-'}
+              {item.contact_name || '-'}
             </span>
           </div>
           <div className="detail-field">
@@ -102,7 +102,7 @@ export default function ProjectDetail() {
           <div className="detail-field">
             <span className="detail-field__label">Veranstaltungsort</span>
             <span className="detail-field__value">
-              {item.venue || '-'}
+              {item.venue_name || '-'}
             </span>
           </div>
           <div className="detail-field">
@@ -114,7 +114,7 @@ export default function ProjectDetail() {
           <div className="detail-field">
             <span className="detail-field__label">Gesamtbetrag</span>
             <span className="detail-field__value">
-              {formatEur(item.total_amount)}
+              {formatEur(item.budget)}
             </span>
           </div>
           <div className="detail-field detail-field--full">
