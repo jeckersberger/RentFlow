@@ -11,6 +11,7 @@ const navItems = [
   { to: '/quotes', icon: '📝', label: 'Angebote' },
   { to: '/invoices', icon: '💰', label: 'Rechnungen' },
   { to: '/dunning', icon: '⚠', label: 'Mahnwesen' },
+  { to: '/banking', icon: '🏦', label: 'Bank' },
   { to: '/scanner', icon: '📷', label: 'Scanner' },
   { to: '/warehouse', icon: '🏭', label: 'Lager' },
   { to: '/crew', icon: '👥', label: 'Crew' },

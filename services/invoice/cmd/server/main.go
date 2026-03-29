@@ -61,14 +61,19 @@ func main() {
 	quoteRepo := postgres.NewQuoteRepo(pool)
 	quoteItemRepo := postgres.NewQuoteItemRepo(pool)
 	dunningRepo := postgres.NewDunningRepo(pool)
+	bankRepo := postgres.NewBankRepo(pool)
 
 	invoiceSvc := application.NewInvoiceService(invoiceRepo, itemRepo, seqRepo, paymentRepo, log)
 	quoteSvc := application.NewQuoteService(quoteRepo, quoteItemRepo, seqRepo, invoiceRepo, itemRepo, log)
 	dunningSvc := application.NewDunningService(dunningRepo, invoiceRepo, log)
+	bankingSvc := application.NewBankingService(bankRepo, invoiceRepo, paymentRepo, log)
+	datevSvc := application.NewDatevService(invoiceRepo, log)
 
 	invoiceH := httphandler.NewInvoiceHandler(invoiceSvc, log)
 	quoteH := httphandler.NewQuoteHandler(quoteSvc, log)
 	dunningH := httphandler.NewDunningHandler(dunningSvc, log)
+	bankingH := httphandler.NewBankingHandler(bankingSvc, log)
+	datevH := httphandler.NewDatevHandler(datevSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -86,6 +91,8 @@ func main() {
 		invoiceH,
 		quoteH,
 		dunningH,
+		bankingH,
+		datevH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

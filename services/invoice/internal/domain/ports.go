@@ -56,3 +56,13 @@ type DunningRepository interface {
 	GetConfig(ctx context.Context, tenantID uuid.UUID) (*DunningConfig, error)
 	UpsertConfig(ctx context.Context, config *DunningConfig) error
 }
+
+// BankRepository defines persistence operations for bank transactions.
+type BankRepository interface {
+	Create(ctx context.Context, tx *BankTransaction) error
+	List(ctx context.Context, tenantID uuid.UUID, matched *bool, limit int) ([]*BankTransaction, error)
+	UpdateMatch(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, invoiceID uuid.UUID, confidence string) error
+}
+
+// InvoiceListOpen returns open (unpaid) invoices for matching.
+// This is satisfied by InvoiceRepository via the List method with status filters.

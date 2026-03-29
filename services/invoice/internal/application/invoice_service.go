@@ -381,3 +381,104 @@ func (s *InvoiceService) AddPayment(ctx context.Context, invoiceID, tenantID uui
 func (s *InvoiceService) ListPayments(ctx context.Context, invoiceID, tenantID uuid.UUID) ([]*domain.Payment, error) {
 	return s.paymentRepo.ListByInvoice(ctx, invoiceID, tenantID)
 }
+
+// --- Partial Invoices (Teilrechnungen) ---
+
+// CreatePartialInvoiceRequest holds the data for creating a partial invoice.
+type CreatePartialInvoiceRequest struct {
+	Percentage int `json:"percentage"`
+}
+
+// CreatePartialInvoice creates a new partial invoice (Teilrechnung) based on an existing invoice.
+// The partial invoice takes a percentage of the original total.
+func (s *InvoiceService) CreatePartialInvoice(ctx context.Context, originalInvoiceID, tenantID uuid.UUID, percentage int) (*domain.Invoice, error) {
+	if percentage < 1 || percentage > 100 {
+		return nil, domain.ErrInvalidPercentage
+	}
+
+	// Load the original invoice
+	original, err := s.invoiceRepo.GetByID(ctx, originalInvoiceID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("Teilrechnung: Original-Rechnung nicht gefunden: %w", err)
+	}
+
+	// Generate partial invoice number
+	now := time.Now()
+	year := now.Year()
+
+	seqNum, err := s.seqRepo.NextNumber(ctx, tenantID, "TR", year)
+	if err != nil {
+		return nil, fmt.Errorf("Teilrechnung: Rechnungsnummer generieren: %w", err)
+	}
+	invoiceNumber := fmt.Sprintf("TR-%d-%05d", year, seqNum)
+
+	// Calculate amounts as percentage of original
+	totalNet := original.TotalNet * int64(percentage) / 100
+	var totalVat int64
+	if !original.Kleinunternehmer && original.VatRate > 0 {
+		totalVat = totalNet * original.VatRate / 10000
+	}
+	totalGross := totalNet + totalVat
+
+	invoiceDate := now.Format("2006-01-02")
+	dueDate := now.AddDate(0, 0, 30).Format("2006-01-02")
+
+	notes := fmt.Sprintf("Teilrechnung (%d%%) zu %s", percentage, original.InvoiceNumber)
+	if original.Notes != "" {
+		notes = notes + "\n" + original.Notes
+	}
+
+	partial := &domain.Invoice{
+		ID:               uuid.New(),
+		TenantID:         tenantID,
+		InvoiceNumber:    invoiceNumber,
+		InvoiceType:      domain.InvoiceTypePartial,
+		Status:           domain.StatusDraft,
+		CustomerName:     original.CustomerName,
+		CustomerEmail:    original.CustomerEmail,
+		CustomerAddress:  original.CustomerAddress,
+		InvoiceDate:      invoiceDate,
+		DueDate:          dueDate,
+		VatRate:          original.VatRate,
+		Kleinunternehmer: original.Kleinunternehmer,
+		TotalNet:         totalNet,
+		TotalVat:         totalVat,
+		TotalGross:       totalGross,
+		Notes:            notes,
+	}
+
+	if err := s.invoiceRepo.Create(ctx, partial); err != nil {
+		return nil, fmt.Errorf("Teilrechnung erstellen: %w", err)
+	}
+
+	// Copy items from original, scaled by percentage
+	items, err := s.itemRepo.ListByInvoice(ctx, originalInvoiceID, tenantID)
+	if err != nil {
+		s.logger.Warn().Err(err).Msg("Teilrechnung: Positionen konnten nicht kopiert werden")
+	} else {
+		for _, item := range items {
+			partialItem := &domain.InvoiceItem{
+				ID:          uuid.New(),
+				TenantID:    tenantID,
+				InvoiceID:   partial.ID,
+				Description: fmt.Sprintf("%s (%d%%)", item.Description, percentage),
+				Quantity:    item.Quantity,
+				Unit:        item.Unit,
+				UnitPrice:   item.UnitPrice * int64(percentage) / 100,
+				Position:    item.Position,
+			}
+			if err := s.itemRepo.Create(ctx, partialItem); err != nil {
+				s.logger.Warn().Err(err).Msg("Teilrechnung: Position konnte nicht kopiert werden")
+			}
+		}
+	}
+
+	s.logger.Info().
+		Str("original_id", originalInvoiceID.String()).
+		Str("partial_id", partial.ID.String()).
+		Str("number", invoiceNumber).
+		Int("percentage", percentage).
+		Msg("partial invoice created")
+
+	return partial, nil
+}

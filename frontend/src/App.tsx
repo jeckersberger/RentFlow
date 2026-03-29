@@ -44,6 +44,7 @@ const QuoteDetail = React.lazy(() => import('@/pages/Quotes/QuoteDetail'));
 const QuoteForm = React.lazy(() => import('@/pages/Quotes/QuoteForm'));
 const AccountPage = React.lazy(() => import('@/pages/Account/AccountPage'));
 const DunningOverview = React.lazy(() => import('@/pages/Invoices/DunningOverview'));
+const BankImport = React.lazy(() => import('@/pages/Banking/BankImport'));
 
 // Layout (already exists with Sidebar + Header)
 const AppLayout = React.lazy(() => import('@/components/Layout/AppLayout'));
@@ -102,6 +103,7 @@ export default function App() {
               <Route path="invoices/:id" element={<InvoiceDetail />} />
               <Route path="invoices/:id/edit" element={<InvoiceForm />} />
               <Route path="dunning" element={<DunningOverview />} />
+              <Route path="banking" element={<BankImport />} />
               <Route path="scanner" element={<ScannerPage />} />
               <Route path="warehouse" element={<WarehouseList />} />
               <Route path="warehouse/movements" element={<WarehouseMovements />} />

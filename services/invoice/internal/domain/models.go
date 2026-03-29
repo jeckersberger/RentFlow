@@ -195,8 +195,29 @@ type DunningConfig struct {
 
 // OverdueInvoice wraps an invoice with its suggested dunning level and fee.
 type OverdueInvoice struct {
-	Invoice       *Invoice `json:"invoice"`
-	DaysOverdue   int      `json:"days_overdue"`
-	SuggestedLevel string  `json:"suggested_level"`
-	SuggestedFee  int64    `json:"suggested_fee"`
+	Invoice        *Invoice `json:"invoice"`
+	DaysOverdue    int      `json:"days_overdue"`
+	SuggestedLevel string   `json:"suggested_level"`
+	SuggestedFee   int64    `json:"suggested_fee"`
+}
+
+// ---------------------------------------------------------------------------
+// Bank Transaction domain
+// ---------------------------------------------------------------------------
+
+type BankTransaction struct {
+	ID               uuid.UUID  `json:"id"`
+	TenantID         uuid.UUID  `json:"tenant_id"`
+	BookingDate      string     `json:"booking_date"`
+	ValueDate        string     `json:"value_date"`
+	Amount           int64      `json:"amount"`
+	Currency         string     `json:"currency"`
+	Reference        string     `json:"reference"`
+	CounterpartyName string     `json:"counterparty_name"`
+	CounterpartyIBAN string     `json:"counterparty_iban"`
+	MatchedInvoiceID *uuid.UUID `json:"matched_invoice_id,omitempty"`
+	MatchConfidence  string     `json:"match_confidence"`
+	ImportSource     string     `json:"import_source"`
+	ImportBatchID    *uuid.UUID `json:"import_batch_id,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
 }

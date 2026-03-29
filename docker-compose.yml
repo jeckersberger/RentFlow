@@ -730,7 +730,7 @@ services:
       - cratedesk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.invoice.rule=PathPrefix(`/api/v1/invoices`) || PathPrefix(`/api/v1/quotes`) || PathPrefix(`/api/v1/dunning`)"
+      - "traefik.http.routers.invoice.rule=PathPrefix(`/api/v1/invoices`) || PathPrefix(`/api/v1/quotes`) || PathPrefix(`/api/v1/dunning`) || PathPrefix(`/api/v1/banking`) || PathPrefix(`/api/v1/export`)"
       - "traefik.http.services.invoice.loadbalancer.server.port=8006"
 
   # =============================================================================

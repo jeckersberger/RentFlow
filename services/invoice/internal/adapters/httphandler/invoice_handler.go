@@ -380,6 +380,35 @@ func (h *InvoiceHandler) SendEmail(w http.ResponseWriter, r *http.Request) {
 	response.Success(w, map[string]string{"status": "sent", "to": invoice.CustomerEmail})
 }
 
+// CreatePartialInvoice creates a partial invoice from an existing invoice.
+func (h *InvoiceHandler) CreatePartialInvoice(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	invoiceID, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	var req application.CreatePartialInvoiceRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	partial, err := h.invoiceService.CreatePartialInvoice(r.Context(), invoiceID, claims.TenantID, req.Percentage)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Created(w, partial)
+}
+
 func (h *InvoiceHandler) getCompanyInfo() application.CompanyInfo {
 	return application.CompanyInfo{
 		Name:   "JE-Sound&Light",

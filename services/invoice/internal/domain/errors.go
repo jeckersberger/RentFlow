@@ -16,4 +16,9 @@ var (
 
 	ErrDunningConfigNotFound = errors.New("dunning config not found")
 	ErrInvoiceNotOverdue     = errors.New("invoice is not overdue")
+
+	ErrBankTxNotFound       = errors.New("bank transaction not found")
+	ErrBankTxAlreadyMatched = errors.New("bank transaction is already matched")
+	ErrCSVParseError        = errors.New("CSV-Datei konnte nicht gelesen werden")
+	ErrInvalidPercentage    = errors.New("Prozentsatz muss zwischen 1 und 100 liegen")
 )

@@ -1,0 +1,36 @@
+@use '../../styles/variables' as *;
+
+.bank-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: $space-4;
+  background: $bg-card;
+  border-radius: $radius-md;
+  padding: 4px;
+  border: 1px solid $border-subtle;
+  width: fit-content;
+}
+
+.bank-tab {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  font-size: $font-size-sm;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &--active {
+    background: $accent-cyan;
+    color: #000;
+    font-weight: 600;
+  }
+
+  &:hover:not(&--active) {
+    color: $text-primary;
+  }
+}
+
+.text-success { color: $success; }
+.text-error { color: $error; }

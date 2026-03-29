@@ -10,6 +10,8 @@ func NewRouter(
 	invoiceHandler *InvoiceHandler,
 	quoteHandler *QuoteHandler,
 	dunningHandler *DunningHandler,
+	bankingHandler *BankingHandler,
+	datevHandler *DatevHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -43,6 +45,7 @@ func NewRouter(
 			r.Get("/{id}/payments", invoiceHandler.ListPayments)
 			r.Get("/{id}/pdf", invoiceHandler.GeneratePDF)
 			r.Post("/{id}/send", invoiceHandler.SendEmail)
+			r.Post("/{id}/partial", invoiceHandler.CreatePartialInvoice)
 		})
 
 		r.Route("/api/v1/quotes", func(r chi.Router) {
@@ -65,6 +68,19 @@ func NewRouter(
 			r.Get("/config", dunningHandler.GetConfig)
 			r.Put("/config", dunningHandler.UpdateConfig)
 			r.Post("/check", dunningHandler.RunCheck)
+		})
+
+		// Banking (Bank-Import & Auto-Matching) endpoints.
+		r.Route("/api/v1/banking", func(r chi.Router) {
+			r.Post("/import", bankingHandler.ImportCSV)
+			r.Post("/auto-match", bankingHandler.AutoMatch)
+			r.Post("/confirm-match", bankingHandler.ConfirmMatch)
+			r.Get("/transactions", bankingHandler.ListTransactions)
+		})
+
+		// DATEV Export endpoint.
+		r.Route("/api/v1/export", func(r chi.Router) {
+			r.Get("/datev", datevHandler.ExportCSV)
 		})
 	})
 
