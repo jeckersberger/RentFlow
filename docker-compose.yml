@@ -98,6 +98,7 @@ services:
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SETUP_TOKEN: ${SETUP_TOKEN:-cratedesk-setup-2026}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
     volumes:
       - ./keys:/app/keys:ro
     ports:

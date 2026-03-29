@@ -21,4 +21,5 @@ type AISuggestionRepository interface {
 
 type AITrainingDataRepository interface {
 	Create(ctx context.Context, td *AITrainingData) error
+	List(ctx context.Context, tenantID uuid.UUID, filter TrainingDataFilter) ([]*AITrainingData, int64, error)
 }

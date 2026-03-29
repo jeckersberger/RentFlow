@@ -54,3 +54,9 @@ type SuggestionFilter struct {
 	Type    string
 	Status  string
 }
+
+type TrainingDataFilter struct {
+	Page    int
+	PerPage int
+	Type    string
+}

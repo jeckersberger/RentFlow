@@ -39,7 +39,7 @@ func Load() *Config {
 		JWTRefreshExpiry:  getEnvDuration("JWT_REFRESH_EXPIRY", 7*24*time.Hour),
 		Port:              getEnv("PORT", "8080"),
 		LogLevel:          getEnv("LOG_LEVEL", "info"),
-		CORSOrigins:       getEnvSlice("CORS_ORIGINS", []string{"http://localhost:5173"}),
+		CORSOrigins:       getEnvSlice("CORS_ORIGINS", []string{"*"}),
 	}
 }
 

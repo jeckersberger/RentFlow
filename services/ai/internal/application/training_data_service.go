@@ -38,6 +38,14 @@ func NewTrainingDataService(repo domain.AITrainingDataRepository, logger zerolog
 	}
 }
 
+func (s *TrainingDataService) List(ctx context.Context, tenantID uuid.UUID, filter domain.TrainingDataFilter) ([]*domain.AITrainingData, int64, error) {
+	items, total, err := s.repo.List(ctx, tenantID, filter)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list training data: %w", err)
+	}
+	return items, total, nil
+}
+
 func (s *TrainingDataService) Create(ctx context.Context, tenantID uuid.UUID, req CreateTrainingDataRequest) (*domain.AITrainingData, error) {
 	if req.Type == "" {
 		return nil, fmt.Errorf("type is required")

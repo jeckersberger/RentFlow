@@ -43,6 +43,7 @@ func NewRouter(
 		})
 
 		r.Route("/api/v1/ai-training-data", func(r chi.Router) {
+			r.Get("/", trainingDataHandler.List)
 			r.Post("/", trainingDataHandler.Create)
 		})
 	})
