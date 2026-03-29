@@ -1,20 +1,23 @@
 export interface Invoice {
   id: string;
   tenant_id: string;
-  project_id: string;
-  customer_id: string;
   invoice_number: string;
+  invoice_type: string;
   status: string;
-  issue_date: string;
+  customer_name: string;
+  customer_email: string;
+  customer_address: string;
+  invoice_date: string;
   due_date: string;
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
-  total_amount: number;
-  paid_amount: number;
-  currency: string;
+  vat_rate: number;
+  kleinunternehmer: boolean;
+  total_net: number;
+  total_vat: number;
+  total_gross: number;
+  amount_paid: number;
   notes: string;
-  payment_terms: string;
+  hash: string;
+  previous_hash: string;
   finalized_at: string | null;
   created_at: string;
   updated_at: string;
@@ -22,25 +25,24 @@ export interface Invoice {
 
 export interface InvoiceItem {
   id: string;
+  tenant_id: string;
   invoice_id: string;
-  equipment_id: string | null;
   description: string;
   quantity: number;
+  unit: string;
   unit_price: number;
-  total_price: number;
-  rental_days: number;
+  position: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface Payment {
   id: string;
+  tenant_id: string;
   invoice_id: string;
   amount: number;
-  payment_method: string;
   payment_date: string;
+  payment_method: string;
   reference: string;
-  notes: string;
   created_at: string;
-  updated_at: string;
 }

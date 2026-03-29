@@ -23,9 +23,9 @@ function formatDate(dateStr?: string): string {
 const columns: Column<Invoice>[] = [
   { key: 'invoice_number', label: 'Nummer' },
   {
-    key: 'customer_id',
+    key: 'customer_name',
     label: 'Kunde',
-    render: (row) => row.customer_id || '-',
+    render: (row) => row.customer_name || '-',
   },
   {
     key: 'status',
@@ -33,19 +33,19 @@ const columns: Column<Invoice>[] = [
     render: (row) => <StatusBadge status={row.status} />,
   },
   {
-    key: 'subtotal',
+    key: 'total_net',
     label: 'Netto',
-    render: (row) => formatEur(row.subtotal),
+    render: (row) => formatEur(row.total_net),
   },
   {
-    key: 'total_amount',
+    key: 'total_gross',
     label: 'Brutto',
-    render: (row) => formatEur(row.total_amount),
+    render: (row) => formatEur(row.total_gross),
   },
   {
-    key: 'issue_date',
+    key: 'invoice_date',
     label: 'Datum',
-    render: (row) => formatDate(row.issue_date),
+    render: (row) => formatDate(row.invoice_date),
   },
 ];
 

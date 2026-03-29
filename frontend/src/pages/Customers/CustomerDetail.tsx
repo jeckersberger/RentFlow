@@ -87,11 +87,11 @@ export default function CustomerDetail() {
           <div className="detail-field detail-field--full">
             <span className="detail-field__label">Rechnungsadresse</span>
             <span className="detail-field__value">
-              {item.address_street ? (
+              {item.billing_address_street ? (
                 <>
-                  {item.address_street}<br />
-                  {item.address_zip} {item.address_city}
-                  {item.address_country && <><br />{item.address_country}</>}
+                  {item.billing_address_street}<br />
+                  {item.billing_address_zip} {item.billing_address_city}
+                  {item.billing_address_country && <><br />{item.billing_address_country}</>}
                 </>
               ) : '-'}
             </span>

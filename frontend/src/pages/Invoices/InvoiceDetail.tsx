@@ -101,7 +101,7 @@ export default function InvoiceDetail() {
           <div className="detail-field">
             <span className="detail-field__label">Rechnungsdatum</span>
             <span className="detail-field__value">
-              {formatDate(item.issue_date)}
+              {formatDate(item.invoice_date)}
             </span>
           </div>
           <div className="detail-field">
@@ -111,9 +111,9 @@ export default function InvoiceDetail() {
             </span>
           </div>
           <div className="detail-field">
-            <span className="detail-field__label">Zahlungsbedingungen</span>
+            <span className="detail-field__label">Kunde</span>
             <span className="detail-field__value">
-              {item.payment_terms || '-'}
+              {item.customer_name || '-'}
             </span>
           </div>
           <div className="detail-field">
@@ -139,7 +139,7 @@ export default function InvoiceDetail() {
               <tr>
                 <th>Beschreibung</th>
                 <th className="data-table__th--right">Menge</th>
-                <th className="data-table__th--right">Tage</th>
+                <th className="data-table__th--right">Einheit</th>
                 <th className="data-table__th--right">Einzelpreis</th>
                 <th className="data-table__th--right">Gesamt</th>
               </tr>
@@ -156,12 +156,12 @@ export default function InvoiceDetail() {
                   <tr key={line.id}>
                     <td>{line.description}</td>
                     <td className="data-table__cell--right">{line.quantity}</td>
-                    <td className="data-table__cell--right">{line.rental_days}</td>
+                    <td className="data-table__cell--right">{line.unit}</td>
                     <td className="data-table__cell--right">
                       {formatEur(line.unit_price)}
                     </td>
                     <td className="data-table__cell--right">
-                      {formatEur(line.total_price)}
+                      {formatEur(line.quantity * line.unit_price)}
                     </td>
                   </tr>
                 ))
@@ -173,20 +173,28 @@ export default function InvoiceDetail() {
         <div className="invoice-totals">
           <div className="invoice-totals__row">
             <span>Netto</span>
-            <span>{formatEur(item.subtotal)}</span>
+            <span>{formatEur(item.total_net)}</span>
           </div>
-          <div className="invoice-totals__row">
-            <span>MwSt. ({item.tax_rate}%)</span>
-            <span>{formatEur(item.tax_amount)}</span>
-          </div>
+          {!item.kleinunternehmer && (
+            <div className="invoice-totals__row">
+              <span>MwSt. ({(item.vat_rate / 100).toFixed(0)}%)</span>
+              <span>{formatEur(item.total_vat)}</span>
+            </div>
+          )}
+          {item.kleinunternehmer && (
+            <div className="invoice-totals__row">
+              <span>Kleinunternehmer gem. §19 UStG</span>
+              <span>0,00 EUR</span>
+            </div>
+          )}
           <div className="invoice-totals__row invoice-totals__row--total">
             <span>Brutto</span>
-            <span>{formatEur(item.total_amount)}</span>
+            <span>{formatEur(item.total_gross)}</span>
           </div>
-          {item.paid_amount > 0 && (
+          {item.amount_paid > 0 && (
             <div className="invoice-totals__row">
               <span>Bereits bezahlt</span>
-              <span>{formatEur(item.paid_amount)}</span>
+              <span>{formatEur(item.amount_paid)}</span>
             </div>
           )}
         </div>
