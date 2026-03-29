@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -292,6 +293,21 @@ func (s *ProjectService) UpdateStatus(ctx context.Context, id, tenantID uuid.UUI
 		return domain.ErrInvalidProjectStatus
 	}
 
+	// Fetch current project to validate state transition.
+	existing, err := s.projectRepo.GetByID(ctx, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("update project status – fetch: %w", err)
+	}
+
+	if !existing.ValidateTransition(req.Status) {
+		s.logger.Warn().
+			Str("project_id", id.String()).
+			Str("current_status", existing.Status).
+			Str("requested_status", req.Status).
+			Msg("invalid status transition")
+		return domain.ErrInvalidStatusTransition
+	}
+
 	if err := s.projectRepo.UpdateStatus(ctx, id, tenantID, req.Status); err != nil {
 		return fmt.Errorf("update project status: %w", err)
 	}
@@ -403,4 +419,136 @@ func (s *ProjectService) ListEquipment(ctx context.Context, tenantID, projectID 
 		return nil, fmt.Errorf("list project equipment: %w", err)
 	}
 	return items, nil
+}
+
+// ---------------------------------------------------------------------------
+// Calendar
+// ---------------------------------------------------------------------------
+
+// CalendarEvent is a lightweight projection of a project for calendar display.
+type CalendarEvent struct {
+	ID        uuid.UUID `json:"id"`
+	Title     string    `json:"title"`
+	StartDate string    `json:"start_date"`
+	EndDate   string    `json:"end_date"`
+	Status    string    `json:"status"`
+	Color     string    `json:"color"`
+	Customer  string    `json:"customer"`
+	VenueName string    `json:"venue_name"`
+}
+
+// GetCalendar returns projects within a date range as calendar events.
+func (s *ProjectService) GetCalendar(ctx context.Context, tenantID uuid.UUID, from, to string) ([]CalendarEvent, error) {
+	fromTime, err := time.Parse("2006-01-02", from)
+	if err != nil {
+		return nil, fmt.Errorf("invalid from date (YYYY-MM-DD): %w", err)
+	}
+	toTime, err := time.Parse("2006-01-02", to)
+	if err != nil {
+		return nil, fmt.Errorf("invalid to date (YYYY-MM-DD): %w", err)
+	}
+
+	projects, err := s.projectRepo.GetByDateRange(ctx, tenantID, fromTime, toTime)
+	if err != nil {
+		return nil, fmt.Errorf("get calendar: %w", err)
+	}
+
+	events := make([]CalendarEvent, 0, len(projects))
+	for _, p := range projects {
+		color := p.Color
+		if color == "" {
+			color = domain.StatusColor(p.Status)
+		}
+
+		ev := CalendarEvent{
+			ID:        p.ID,
+			Title:     p.Name,
+			Status:    p.Status,
+			Color:     color,
+			Customer:  p.ContactName,
+			VenueName: p.VenueName,
+		}
+		if p.StartDate != nil {
+			ev.StartDate = p.StartDate.Format("2006-01-02")
+		}
+		if p.EndDate != nil {
+			ev.EndDate = p.EndDate.Format("2006-01-02")
+		}
+		events = append(events, ev)
+	}
+
+	return events, nil
+}
+
+// icsStatus maps project statuses to iCalendar STATUS values.
+func icsStatus(status string) string {
+	switch status {
+	case domain.ProjectStatusConfirmed, domain.ProjectStatusActive:
+		return "CONFIRMED"
+	case domain.ProjectStatusDraft:
+		return "TENTATIVE"
+	case domain.ProjectStatusCancelled:
+		return "CANCELLED"
+	default:
+		return "CONFIRMED"
+	}
+}
+
+// ExportICS returns an iCalendar (RFC 5545) representation of projects in a date range.
+func (s *ProjectService) ExportICS(ctx context.Context, tenantID uuid.UUID, from, to string) (string, error) {
+	fromTime, err := time.Parse("2006-01-02", from)
+	if err != nil {
+		return "", fmt.Errorf("invalid from date (YYYY-MM-DD): %w", err)
+	}
+	toTime, err := time.Parse("2006-01-02", to)
+	if err != nil {
+		return "", fmt.Errorf("invalid to date (YYYY-MM-DD): %w", err)
+	}
+
+	projects, err := s.projectRepo.GetByDateRange(ctx, tenantID, fromTime, toTime)
+	if err != nil {
+		return "", fmt.Errorf("export ics: %w", err)
+	}
+
+	var b strings.Builder
+	b.WriteString("BEGIN:VCALENDAR\r\n")
+	b.WriteString("VERSION:2.0\r\n")
+	b.WriteString("PRODID:-//CrateDesk//Events//DE\r\n")
+	b.WriteString("CALSCALE:GREGORIAN\r\n")
+	b.WriteString("METHOD:PUBLISH\r\n")
+
+	for _, p := range projects {
+		b.WriteString("BEGIN:VEVENT\r\n")
+		b.WriteString(fmt.Sprintf("UID:%s@cratedesk\r\n", p.ID.String()))
+		if p.StartDate != nil {
+			b.WriteString(fmt.Sprintf("DTSTART;VALUE=DATE:%s\r\n", p.StartDate.Format("20060102")))
+		}
+		if p.EndDate != nil {
+			// iCal DATE end is exclusive, so add one day.
+			endExclusive := p.EndDate.AddDate(0, 0, 1)
+			b.WriteString(fmt.Sprintf("DTEND;VALUE=DATE:%s\r\n", endExclusive.Format("20060102")))
+		}
+		b.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeICS(p.Name)))
+		if p.VenueName != "" {
+			b.WriteString(fmt.Sprintf("LOCATION:%s\r\n", escapeICS(p.VenueName)))
+		}
+		if p.Description != "" {
+			b.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICS(p.Description)))
+		}
+		b.WriteString(fmt.Sprintf("STATUS:%s\r\n", icsStatus(p.Status)))
+		b.WriteString(fmt.Sprintf("DTSTAMP:%s\r\n", p.CreatedAt.UTC().Format("20060102T150405Z")))
+		b.WriteString("END:VEVENT\r\n")
+	}
+
+	b.WriteString("END:VCALENDAR\r\n")
+	return b.String(), nil
+}
+
+// escapeICS escapes special characters in iCalendar text values.
+func escapeICS(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, ";", "\\;")
+	s = strings.ReplaceAll(s, ",", "\\,")
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	return s
 }

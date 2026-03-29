@@ -34,6 +34,8 @@ func NewRouter(
 			r.Get("/", projectHandler.List)
 			r.Post("/", projectHandler.Create)
 			r.Get("/search", projectHandler.Search)
+			r.Get("/calendar", projectHandler.GetCalendar)
+			r.Get("/calendar.ics", projectHandler.ExportICS)
 			r.Get("/{id}", projectHandler.Get)
 			r.Put("/{id}", projectHandler.Update)
 			r.Delete("/{id}", projectHandler.Delete)

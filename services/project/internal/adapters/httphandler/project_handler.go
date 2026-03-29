@@ -209,6 +209,57 @@ func (h *ProjectHandler) Search(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// --- Calendar endpoints ---
+
+func (h *ProjectHandler) GetCalendar(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+	if from == "" || to == "" {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "from und to Parameter sind erforderlich (YYYY-MM-DD)"))
+		return
+	}
+
+	events, err := h.projectService.GetCalendar(r.Context(), claims.TenantID, from, to)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, events)
+}
+
+func (h *ProjectHandler) ExportICS(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+	if from == "" || to == "" {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "from und to Parameter sind erforderlich (YYYY-MM-DD)"))
+		return
+	}
+
+	icsData, err := h.projectService.ExportICS(r.Context(), claims.TenantID, from, to)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"cratedesk-calendar.ics\"")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(icsData))
+}
+
 // --- Project Equipment endpoints ---
 
 func (h *ProjectHandler) AddEquipment(w http.ResponseWriter, r *http.Request) {

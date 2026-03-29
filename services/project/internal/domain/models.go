@@ -88,6 +88,57 @@ func (p *Project) ValidateStatus(s string) bool {
 	return validProjectStatuses[s]
 }
 
+// validTransitions defines allowed status transitions.
+// "any -> cancelled" is handled separately (all except archived).
+var validTransitions = map[string][]string{
+	ProjectStatusDraft:     {ProjectStatusConfirmed},
+	ProjectStatusConfirmed: {ProjectStatusActive},
+	ProjectStatusActive:    {ProjectStatusCompleted},
+	ProjectStatusCompleted: {ProjectStatusArchived},
+}
+
+// ValidateTransition checks whether transitioning from the current status to
+// newStatus is allowed by the state machine.
+func (p *Project) ValidateTransition(newStatus string) bool {
+	if !validProjectStatuses[newStatus] {
+		return false
+	}
+	// Any status except archived can transition to cancelled.
+	if newStatus == ProjectStatusCancelled {
+		return p.Status != ProjectStatusArchived
+	}
+	allowed, ok := validTransitions[p.Status]
+	if !ok {
+		return false
+	}
+	for _, s := range allowed {
+		if s == newStatus {
+			return true
+		}
+	}
+	return false
+}
+
+// StatusColor returns a hex color for calendar rendering based on project status.
+func StatusColor(status string) string {
+	switch status {
+	case ProjectStatusDraft:
+		return "#64748b"
+	case ProjectStatusConfirmed:
+		return "#3b82f6"
+	case ProjectStatusActive:
+		return "#22c55e"
+	case ProjectStatusCompleted:
+		return "#8b5cf6"
+	case ProjectStatusCancelled:
+		return "#ef4444"
+	case ProjectStatusArchived:
+		return "#94a3b8"
+	default:
+		return "#3b82f6"
+	}
+}
+
 // ProjectEquipment represents an equipment assignment to a project.
 type ProjectEquipment struct {
 	ID             uuid.UUID  `json:"id"`

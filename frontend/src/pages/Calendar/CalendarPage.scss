@@ -1,0 +1,139 @@
+@use '../../styles/variables' as *;
+
+.calendar-actions {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+
+  &__today {
+    font-size: $font-size-sm;
+    min-width: 60px;
+  }
+
+  &__month {
+    font-size: $font-size-base;
+    font-weight: 600;
+    color: $text-primary;
+    margin-left: $space-3;
+    min-width: 180px;
+    text-align: center;
+  }
+}
+
+.calendar-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: $text-muted;
+  font-size: $font-size-sm;
+}
+
+.calendar-grid-wrapper {
+  overflow-x: auto;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+  overflow: hidden;
+  min-width: 700px;
+
+  &__header {
+    padding: $space-2 $space-3;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    color: $text-muted;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid $border-subtle;
+  }
+
+  &__cell {
+    min-height: 100px;
+    padding: $space-1 $space-2;
+    border-right: 1px solid $border-subtle;
+    border-bottom: 1px solid $border-subtle;
+    background: $bg-card;
+    transition: background $transition-fast;
+
+    &:nth-child(7n) {
+      border-right: none;
+    }
+
+    &:hover {
+      background: $bg-card-hover;
+    }
+
+    &--outside {
+      opacity: 0.35;
+    }
+
+    &--today {
+      background: rgba(0, 212, 255, 0.06);
+
+      .calendar-grid__day {
+        background: $accent-cyan;
+        color: $bg-primary;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+    }
+  }
+
+  &__day {
+    display: block;
+    font-size: $font-size-xs;
+    font-weight: 500;
+    color: $text-secondary;
+    margin-bottom: $space-1;
+  }
+
+  &__events {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__more {
+    font-size: 10px;
+    color: $text-muted;
+    padding: 0 $space-1;
+  }
+}
+
+.calendar-event {
+  display: block;
+  width: 100%;
+  padding: 2px $space-1;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: opacity $transition-fast, transform $transition-fast;
+
+  &:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+
+  &__title {
+    font-size: 10px;
+    font-weight: 500;
+    color: #fff;
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+}
