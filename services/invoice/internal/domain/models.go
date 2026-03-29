@@ -149,3 +149,54 @@ type QuoteFilter struct {
 	PerPage int
 	Status  string
 }
+
+// ---------------------------------------------------------------------------
+// Dunning (Mahnwesen) domain
+// ---------------------------------------------------------------------------
+
+const (
+	DunningLevelReminder  = "reminder"
+	DunningLevelDunning1  = "dunning_1"
+	DunningLevelDunning2  = "dunning_2"
+	DunningLevelDunning3  = "dunning_3"
+)
+
+const (
+	DunningStatusPending   = "pending"
+	DunningStatusSent      = "sent"
+	DunningStatusCancelled = "cancelled"
+)
+
+type DunningEntry struct {
+	ID        uuid.UUID  `json:"id"`
+	TenantID  uuid.UUID  `json:"tenant_id"`
+	InvoiceID uuid.UUID  `json:"invoice_id"`
+	Level     string     `json:"level"`
+	FeeCents  int64      `json:"fee_cents"`
+	SentAt    *time.Time `json:"sent_at,omitempty"`
+	Status    string     `json:"status"`
+	Notes     string     `json:"notes"`
+	CreatedAt time.Time  `json:"created_at"`
+}
+
+type DunningConfig struct {
+	ID           uuid.UUID `json:"id"`
+	TenantID     uuid.UUID `json:"tenant_id"`
+	ReminderDays int       `json:"reminder_days"`
+	Dunning1Days int       `json:"dunning1_days"`
+	Dunning2Days int       `json:"dunning2_days"`
+	ReminderFee  int64     `json:"reminder_fee"`
+	Dunning1Fee  int64     `json:"dunning1_fee"`
+	Dunning2Fee  int64     `json:"dunning2_fee"`
+	AutoSend     bool      `json:"auto_send"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// OverdueInvoice wraps an invoice with its suggested dunning level and fee.
+type OverdueInvoice struct {
+	Invoice       *Invoice `json:"invoice"`
+	DaysOverdue   int      `json:"days_overdue"`
+	SuggestedLevel string  `json:"suggested_level"`
+	SuggestedFee  int64    `json:"suggested_fee"`
+}

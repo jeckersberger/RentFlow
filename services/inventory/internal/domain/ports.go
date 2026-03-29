@@ -76,3 +76,14 @@ type EquipmentHistoryRepository interface {
 	Record(ctx context.Context, entry *EquipmentHistory) error
 	ListByEquipment(ctx context.Context, equipmentID uuid.UUID, tenantID uuid.UUID, page int, perPage int) ([]*EquipmentHistory, int64, error)
 }
+
+// PriceRuleRepository defines persistence operations for PriceRule aggregates.
+type PriceRuleRepository interface {
+	Create(ctx context.Context, rule *PriceRule) error
+	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*PriceRule, error)
+	List(ctx context.Context, tenantID uuid.UUID, page int, perPage int) ([]*PriceRule, int64, error)
+	Update(ctx context.Context, rule *PriceRule) error
+	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
+	FindByEquipment(ctx context.Context, equipmentID uuid.UUID, tenantID uuid.UUID) (*PriceRule, error)
+	FindByCategory(ctx context.Context, categoryID uuid.UUID, tenantID uuid.UUID) (*PriceRule, error)
+}

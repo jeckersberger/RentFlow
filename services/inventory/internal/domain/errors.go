@@ -15,4 +15,6 @@ var (
 	ErrCategoryHasChildren   = errors.New("category has child categories")
 	ErrCategoryHasEquipment  = errors.New("category has associated equipment")
 	ErrEquipmentNotAvailable = errors.New("equipment is not available")
+	ErrPriceRuleNotFound     = errors.New("price rule not found")
+	ErrNoPricingAvailable    = errors.New("no pricing available for this equipment")
 )

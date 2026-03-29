@@ -10,7 +10,10 @@ var (
 	ErrPaymentExceedsTotal = errors.New("payment exceeds remaining balance")
 	ErrItemNotFound        = errors.New("invoice item not found")
 
-	ErrQuoteNotFound       = errors.New("quote not found")
-	ErrQuoteNotDraft       = errors.New("quote is not in draft status")
+	ErrQuoteNotFound         = errors.New("quote not found")
+	ErrQuoteNotDraft         = errors.New("quote is not in draft status")
 	ErrQuoteAlreadyConverted = errors.New("quote has already been converted to an invoice")
+
+	ErrDunningConfigNotFound = errors.New("dunning config not found")
+	ErrInvoiceNotOverdue     = errors.New("invoice is not overdue")
 )

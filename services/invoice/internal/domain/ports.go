@@ -47,3 +47,12 @@ type QuoteItemRepository interface {
 	ListByQuote(ctx context.Context, quoteID uuid.UUID, tenantID uuid.UUID) ([]*QuoteItem, error)
 	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
 }
+
+// DunningRepository defines persistence operations for Dunning (Mahnwesen).
+type DunningRepository interface {
+	Create(ctx context.Context, entry *DunningEntry) error
+	ListByInvoice(ctx context.Context, invoiceID uuid.UUID, tenantID uuid.UUID) ([]*DunningEntry, error)
+	ListOverdue(ctx context.Context, tenantID uuid.UUID) ([]*Invoice, error)
+	GetConfig(ctx context.Context, tenantID uuid.UUID) (*DunningConfig, error)
+	UpsertConfig(ctx context.Context, config *DunningConfig) error
+}

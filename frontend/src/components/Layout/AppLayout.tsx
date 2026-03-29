@@ -10,6 +10,7 @@ const navItems = [
   { to: '/customers', icon: '👤', label: 'Kunden' },
   { to: '/quotes', icon: '📝', label: 'Angebote' },
   { to: '/invoices', icon: '💰', label: 'Rechnungen' },
+  { to: '/dunning', icon: '⚠', label: 'Mahnwesen' },
   { to: '/scanner', icon: '📷', label: 'Scanner' },
   { to: '/warehouse', icon: '🏭', label: 'Lager' },
   { to: '/crew', icon: '👥', label: 'Crew' },

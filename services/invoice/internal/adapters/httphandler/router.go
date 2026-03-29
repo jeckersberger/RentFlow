@@ -9,6 +9,7 @@ import (
 func NewRouter(
 	invoiceHandler *InvoiceHandler,
 	quoteHandler *QuoteHandler,
+	dunningHandler *DunningHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -54,6 +55,16 @@ func NewRouter(
 			r.Delete("/{id}/items/{itemId}", quoteHandler.RemoveItem)
 			r.Post("/{id}/convert-to-invoice", quoteHandler.ConvertToInvoice)
 			r.Patch("/{id}/status", quoteHandler.UpdateStatus)
+		})
+
+		// Dunning (Mahnwesen) endpoints.
+		r.Route("/api/v1/dunning", func(r chi.Router) {
+			r.Get("/overdue", dunningHandler.ListOverdue)
+			r.Post("/send-reminder", dunningHandler.SendReminder)
+			r.Get("/entries/{invoiceId}", dunningHandler.ListEntries)
+			r.Get("/config", dunningHandler.GetConfig)
+			r.Put("/config", dunningHandler.UpdateConfig)
+			r.Post("/check", dunningHandler.RunCheck)
 		})
 	})
 

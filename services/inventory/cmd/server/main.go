@@ -65,18 +65,21 @@ func main() {
 	typeRepo := postgres.NewEquipmentTypeRepo(pool)
 	flightcaseRepo := postgres.NewFlightcaseRepo(pool)
 	historyRepo := postgres.NewHistoryRepo(pool)
+	priceRuleRepo := postgres.NewPriceRuleRepo(pool)
 
 	// 7. Create application services.
 	equipmentSvc := application.NewEquipmentService(equipmentRepo, historyRepo, log)
 	categorySvc := application.NewCategoryService(categoryRepo, log)
 	typeSvc := application.NewEquipmentTypeService(typeRepo, equipmentRepo, log)
 	flightcaseSvc := application.NewFlightcaseService(flightcaseRepo, log)
+	pricingSvc := application.NewPricingService(priceRuleRepo, equipmentRepo, log)
 
 	// 8. Create HTTP handlers.
 	equipmentH := httphandler.NewEquipmentHandler(equipmentSvc, log)
 	categoryH := httphandler.NewCategoryHandler(categorySvc, log)
 	typeH := httphandler.NewEquipmentTypeHandler(typeSvc, log)
 	flightcaseH := httphandler.NewFlightcaseHandler(flightcaseSvc, log)
+	pricingH := httphandler.NewPricingHandler(pricingSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -93,7 +96,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		equipmentH, categoryH, typeH, flightcaseH,
+		equipmentH, categoryH, typeH, flightcaseH, pricingH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

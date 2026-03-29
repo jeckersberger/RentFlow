@@ -12,6 +12,7 @@ func NewRouter(
 	categoryHandler *CategoryHandler,
 	typeHandler *EquipmentTypeHandler,
 	flightcaseHandler *FlightcaseHandler,
+	pricingHandler *PricingHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -48,6 +49,7 @@ func NewRouter(
 			r.Patch("/{id}/condition", equipmentHandler.UpdateCondition)
 			r.Patch("/{id}/rfid", equipmentHandler.AssignRFID)
 			r.Get("/{id}/history", equipmentHandler.GetHistory)
+			r.Post("/{id}/calculate-price", pricingHandler.CalculatePrice)
 		})
 
 		// Category endpoints.
@@ -67,6 +69,13 @@ func NewRouter(
 			r.Put("/{id}", typeHandler.Update)
 			r.Delete("/{id}", typeHandler.Delete)
 			r.Post("/{id}/create-items", typeHandler.BulkCreate)
+		})
+
+		// Price rule endpoints.
+		r.Route("/api/v1/price-rules", func(r chi.Router) {
+			r.Get("/", pricingHandler.ListPriceRules)
+			r.Post("/", pricingHandler.CreatePriceRule)
+			r.Put("/{id}", pricingHandler.UpdatePriceRule)
 		})
 
 		// Flightcase endpoints.

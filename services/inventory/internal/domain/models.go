@@ -198,3 +198,30 @@ type EquipmentHistory struct {
 	Details     json.RawMessage `json:"details,omitempty"`
 	CreatedAt   time.Time       `json:"created_at"`
 }
+
+// ---------------------------------------------------------------------------
+// Price Rule domain
+// ---------------------------------------------------------------------------
+
+// PriceRule defines pricing tiers, quantity discounts, and seasonal surcharges
+// for a piece of equipment or a category.
+type PriceRule struct {
+	ID                  uuid.UUID  `json:"id"`
+	TenantID            uuid.UUID  `json:"tenant_id"`
+	EquipmentID         *uuid.UUID `json:"equipment_id,omitempty"`
+	CategoryID          *uuid.UUID `json:"category_id,omitempty"`
+	BasePriceDay        int64      `json:"base_price_day"`
+	BasePriceWeek       *int64     `json:"base_price_week,omitempty"`
+	Tier2FromDays       *int       `json:"tier2_from_days,omitempty"`
+	Tier2PriceDay       *int64     `json:"tier2_price_day,omitempty"`
+	Tier3FromDays       *int       `json:"tier3_from_days,omitempty"`
+	Tier3PriceDay       *int64     `json:"tier3_price_day,omitempty"`
+	QtyDiscountThreshold *int      `json:"qty_discount_threshold,omitempty"`
+	QtyDiscountPct      int        `json:"qty_discount_pct"`
+	SeasonStart         *time.Time `json:"season_start,omitempty"`
+	SeasonEnd           *time.Time `json:"season_end,omitempty"`
+	SeasonSurchargePct  int        `json:"season_surcharge_pct"`
+	IsActive            bool       `json:"is_active"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
+}

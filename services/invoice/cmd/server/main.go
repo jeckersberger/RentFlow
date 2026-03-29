@@ -60,12 +60,15 @@ func main() {
 	paymentRepo := postgres.NewPaymentRepo(pool)
 	quoteRepo := postgres.NewQuoteRepo(pool)
 	quoteItemRepo := postgres.NewQuoteItemRepo(pool)
+	dunningRepo := postgres.NewDunningRepo(pool)
 
 	invoiceSvc := application.NewInvoiceService(invoiceRepo, itemRepo, seqRepo, paymentRepo, log)
 	quoteSvc := application.NewQuoteService(quoteRepo, quoteItemRepo, seqRepo, invoiceRepo, itemRepo, log)
+	dunningSvc := application.NewDunningService(dunningRepo, invoiceRepo, log)
 
 	invoiceH := httphandler.NewInvoiceHandler(invoiceSvc, log)
 	quoteH := httphandler.NewQuoteHandler(quoteSvc, log)
+	dunningH := httphandler.NewDunningHandler(dunningSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -82,6 +85,7 @@ func main() {
 	router := httphandler.NewRouter(
 		invoiceH,
 		quoteH,
+		dunningH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)
