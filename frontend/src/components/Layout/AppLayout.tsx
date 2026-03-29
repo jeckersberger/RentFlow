@@ -20,6 +20,8 @@ const navItems = [
   { to: '/maintenance', icon: '🔧', label: 'Wartung' },
   { to: '/transport', icon: '🚛', label: 'Transport' },
   { to: '/reporting', icon: '📊', label: 'Reports' },
+  { to: '/settings', icon: '⚙️', label: 'Einstellungen' },
+  { to: '/account', icon: '👤', label: 'Konto' },
 ];
 
 export default function AppLayout() {

@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -30,4 +31,21 @@ type AssignmentRepository interface {
 type QualificationRepository interface {
 	Create(ctx context.Context, qualification *CrewQualification) error
 	ListByMember(ctx context.Context, crewMemberID uuid.UUID, tenantID uuid.UUID) ([]*CrewQualification, error)
+}
+
+// TimeEntryRepository defines persistence operations for TimeEntry aggregates.
+type TimeEntryRepository interface {
+	Create(ctx context.Context, entry *TimeEntry) error
+	Update(ctx context.Context, entry *TimeEntry) error
+	GetActiveByMember(ctx context.Context, crewMemberID uuid.UUID, tenantID uuid.UUID) (*TimeEntry, error)
+	ListByMember(ctx context.Context, crewMemberID uuid.UUID, tenantID uuid.UUID, from time.Time, to time.Time) ([]*TimeEntry, error)
+	ListByProject(ctx context.Context, projectID uuid.UUID, tenantID uuid.UUID) ([]*TimeEntry, error)
+	ListByTenant(ctx context.Context, tenantID uuid.UUID, from time.Time, to time.Time) ([]*TimeEntry, error)
+}
+
+// AvailabilityRepository defines persistence operations for CrewAvailability aggregates.
+type AvailabilityRepository interface {
+	Upsert(ctx context.Context, availability *CrewAvailability) error
+	ListByMember(ctx context.Context, crewMemberID uuid.UUID, tenantID uuid.UUID, from string, to string) ([]*CrewAvailability, error)
+	ListAll(ctx context.Context, tenantID uuid.UUID, from string, to string) ([]*CrewAvailability, error)
 }

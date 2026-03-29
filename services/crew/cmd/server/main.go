@@ -63,16 +63,22 @@ func main() {
 	memberRepo := postgres.NewCrewMemberRepo(pool)
 	assignmentRepo := postgres.NewAssignmentRepo(pool)
 	qualificationRepo := postgres.NewQualificationRepo(pool)
+	timeEntryRepo := postgres.NewTimeEntryRepo(pool)
+	availabilityRepo := postgres.NewAvailabilityRepo(pool)
 
 	// 7. Create application services.
 	crewSvc := application.NewCrewService(memberRepo, log)
 	assignmentSvc := application.NewAssignmentService(assignmentRepo, memberRepo, log)
 	qualificationSvc := application.NewQualificationService(qualificationRepo, memberRepo, log)
+	timeTrackingSvc := application.NewTimeTrackingService(timeEntryRepo, memberRepo, log)
+	availabilitySvc := application.NewAvailabilityService(availabilityRepo, memberRepo, log)
 
 	// 8. Create HTTP handlers.
 	crewH := httphandler.NewCrewHandler(crewSvc, log)
 	assignmentH := httphandler.NewAssignmentHandler(assignmentSvc, log)
 	qualificationH := httphandler.NewQualificationHandler(qualificationSvc, log)
+	timeTrackingH := httphandler.NewTimeTrackingHandler(timeTrackingSvc, log)
+	availabilityH := httphandler.NewAvailabilityHandler(availabilitySvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -89,7 +95,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		crewH, assignmentH, qualificationH,
+		crewH, assignmentH, qualificationH, timeTrackingH, availabilityH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

@@ -1,0 +1,90 @@
+@use '../../styles/variables' as *;
+
+.settings-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: $space-6;
+  background: $bg-card;
+  border-radius: $radius-md;
+  padding: 4px;
+  border: 1px solid $border-subtle;
+  width: fit-content;
+}
+
+.settings-tab {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  font-size: $font-size-sm;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &--active {
+    background: $accent-cyan;
+    color: #000;
+    font-weight: 600;
+  }
+}
+
+.settings-card {
+  background: $bg-card;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+  padding: $space-6;
+
+  h3 {
+    font-size: $font-size-lg;
+    color: $text-primary;
+    margin: 0 0 $space-4;
+  }
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    color: $text-secondary;
+    font-size: $font-size-sm;
+  }
+}
+
+.settings-value {
+  color: $text-primary;
+  font-weight: 500;
+}
+
+.settings-hint {
+  color: $text-muted;
+  font-size: $font-size-sm;
+  line-height: 1.5;
+}
+
+.settings-status {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-bottom: $space-3;
+}
+
+.settings-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+
+  &--ok { background: $success; }
+  &--error { background: $error; }
+}
