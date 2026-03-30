@@ -588,7 +588,7 @@ services:
       - cratedesk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ai.rule=PathPrefix(`/api/v1/ai-predictions`) || PathPrefix(`/api/v1/ai-suggestions`) || PathPrefix(`/api/v1/ai-training-data`)"
+      - "traefik.http.routers.ai.rule=PathPrefix(`/api/v1/ai-predictions`) || PathPrefix(`/api/v1/ai-suggestions`) || PathPrefix(`/api/v1/ai-training-data`) || PathPrefix(`/api/v1/ai`)"
       - "traefik.http.services.ai.loadbalancer.server.port=8014"
 
   # =============================================================================
