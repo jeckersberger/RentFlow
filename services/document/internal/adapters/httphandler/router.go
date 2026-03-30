@@ -11,6 +11,7 @@ func NewRouter(
 	templateHandler *TemplateHandler,
 	documentHandler *DocumentHandler,
 	attachmentHandler *AttachmentHandler,
+	renderHandler *RenderHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -33,7 +34,7 @@ func NewRouter(
 	r.Group(func(r chi.Router) {
 		r.Use(jwtMiddleware)
 
-		// Document template endpoints.
+		// Document template endpoints (CRUD).
 		r.Route("/api/v1/document-templates", func(r chi.Router) {
 			r.Post("/", templateHandler.Create)
 			r.Get("/", templateHandler.List)
@@ -46,6 +47,13 @@ func NewRouter(
 			r.Post("/", documentHandler.Create)
 			r.Get("/", documentHandler.List)
 			r.Get("/{id}", documentHandler.GetByID)
+
+			// Template rendering endpoints.
+			r.Post("/render", renderHandler.Render)
+			r.Route("/templates/defaults", func(r chi.Router) {
+				r.Get("/", renderHandler.ListDefaults)
+				r.Get("/{type}/preview", renderHandler.PreviewDefault)
+			})
 		})
 
 		// Attachment endpoints.

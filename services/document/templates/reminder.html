@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Reminder.Title}}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10pt;
+    color: #1a1a1a;
+    line-height: 1.5;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 15mm 20mm;
+    background: #fff;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10mm;
+    padding-bottom: 5mm;
+    border-bottom: 2px solid #c0392b;
+  }
+  .company-info { max-width: 60%; }
+  .company-name {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #c0392b;
+    margin-bottom: 2mm;
+  }
+  .company-details {
+    font-size: 8pt;
+    color: #555;
+    line-height: 1.6;
+  }
+  .logo-placeholder {
+    width: 40mm;
+    height: 20mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 8pt;
+  }
+  .logo-placeholder img {
+    max-width: 40mm;
+    max-height: 20mm;
+  }
+  .addresses {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10mm;
+  }
+  .sender-line {
+    font-size: 7pt;
+    color: #888;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 1mm;
+    margin-bottom: 2mm;
+  }
+  .customer-address {
+    max-width: 85mm;
+    line-height: 1.6;
+  }
+  .reminder-meta {
+    text-align: right;
+    min-width: 60mm;
+  }
+  .reminder-title {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #c0392b;
+    margin-bottom: 5mm;
+  }
+  .meta-table {
+    font-size: 9pt;
+    border-collapse: collapse;
+    margin-left: auto;
+  }
+  .meta-table td {
+    padding: 1mm 0;
+  }
+  .meta-table td:first-child {
+    color: #666;
+    padding-right: 5mm;
+    white-space: nowrap;
+  }
+  .meta-table td:last-child {
+    font-weight: 600;
+    text-align: right;
+  }
+  .dunning-level {
+    display: inline-block;
+    padding: 1.5mm 4mm;
+    border-radius: 2mm;
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3mm;
+  }
+  .level-0 { background: #fef9e7; color: #d4ac0d; border: 1px solid #f1c40f; }
+  .level-1 { background: #fdf2e9; color: #e67e22; border: 1px solid #e67e22; }
+  .level-2 { background: #fdedec; color: #c0392b; border: 1px solid #c0392b; }
+  .body-text {
+    margin-bottom: 8mm;
+    font-size: 9.5pt;
+    color: #333;
+    line-height: 1.7;
+  }
+  .invoice-reference {
+    background: #fdedec;
+    border-left: 3px solid #c0392b;
+    padding: 4mm 5mm;
+    margin-bottom: 8mm;
+  }
+  .invoice-reference strong {
+    display: block;
+    margin-bottom: 2mm;
+    color: #c0392b;
+    font-size: 9.5pt;
+  }
+  .invoice-reference table {
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+  .invoice-reference table td {
+    padding: 0.5mm 0;
+  }
+  .invoice-reference table td:first-child {
+    color: #666;
+    padding-right: 5mm;
+    white-space: nowrap;
+  }
+  .outstanding-amount {
+    text-align: center;
+    margin: 8mm 0;
+    padding: 5mm;
+    background: #c0392b;
+    color: #fff;
+    font-size: 14pt;
+    font-weight: 700;
+  }
+  .outstanding-amount .label {
+    font-size: 9pt;
+    font-weight: 400;
+    margin-bottom: 1mm;
+    display: block;
+    opacity: 0.9;
+  }
+  .fee-note {
+    font-size: 9pt;
+    color: #666;
+    margin-bottom: 5mm;
+  }
+  .fee-note table {
+    border-collapse: collapse;
+    margin-top: 2mm;
+  }
+  .fee-note table td {
+    padding: 1mm 0;
+    font-size: 9pt;
+  }
+  .fee-note table td:first-child {
+    padding-right: 8mm;
+  }
+  .fee-note table td:last-child {
+    text-align: right;
+    font-weight: 500;
+  }
+  .fee-note table tr.fee-total {
+    border-top: 1px solid #ccc;
+    font-weight: 700;
+    color: #c0392b;
+  }
+  .deadline-note {
+    background: #fef9e7;
+    border-left: 3px solid #f1c40f;
+    padding: 3mm 5mm;
+    margin-bottom: 8mm;
+    font-size: 9pt;
+    color: #7d6608;
+  }
+  .deadline-note strong {
+    color: #c0392b;
+  }
+  .payment-info {
+    background: #f4f6f7;
+    border-left: 3px solid #2c3e50;
+    padding: 4mm 5mm;
+    margin-bottom: 8mm;
+    font-size: 9pt;
+  }
+  .payment-info strong {
+    display: block;
+    margin-bottom: 2mm;
+    color: #2c3e50;
+    font-size: 9.5pt;
+  }
+  .payment-info table {
+    border-collapse: collapse;
+  }
+  .payment-info table td {
+    padding: 0.5mm 0;
+  }
+  .payment-info table td:first-child {
+    color: #666;
+    padding-right: 5mm;
+    white-space: nowrap;
+  }
+  .closing-text {
+    margin-bottom: 8mm;
+    font-size: 9pt;
+    color: #444;
+    line-height: 1.6;
+  }
+  .footer {
+    margin-top: 10mm;
+    padding-top: 4mm;
+    border-top: 1px solid #ddd;
+    font-size: 7.5pt;
+    color: #999;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="company-info">
+    <div class="company-name">{{.Company.Name}}</div>
+    <div class="company-details">
+      {{.Company.Street}}<br>
+      {{.Company.Zip}} {{.Company.City}}<br>
+      {{if .Company.Phone}}Tel: {{.Company.Phone}}<br>{{end}}
+      {{if .Company.Email}}E-Mail: {{.Company.Email}}<br>{{end}}
+      {{if .Company.TaxID}}Steuernr.: {{.Company.TaxID}}{{end}}
+    </div>
+  </div>
+  <div class="logo-placeholder">
+    {{if .Company.LogoURL}}<img src="{{.Company.LogoURL}}" alt="Logo">{{else}}<!-- Logo -->{{end}}
+  </div>
+</div>
+
+<div class="addresses">
+  <div>
+    <div class="sender-line">{{.Company.Name}} &middot; {{.Company.Street}} &middot; {{.Company.Zip}} {{.Company.City}}</div>
+    <div class="customer-address">
+      {{if .Customer.Company}}<strong>{{.Customer.Company}}</strong><br>{{end}}
+      {{if .Customer.Name}}{{.Customer.Name}}<br>{{end}}
+      {{.Customer.Street}}<br>
+      {{.Customer.Zip}} {{.Customer.City}}<br>
+      {{if .Customer.Country}}{{.Customer.Country}}{{end}}
+    </div>
+  </div>
+  <div class="reminder-meta">
+    <div class="reminder-title">{{.Reminder.Title}}</div>
+    <span class="dunning-level level-{{.Reminder.Level}}">Mahnstufe {{.Reminder.Level}}</span>
+    <table class="meta-table">
+      <tr><td>Datum:</td><td>{{.Reminder.Date}}</td></tr>
+      <tr><td>Neue Frist:</td><td>{{.Reminder.NewDueDate}}</td></tr>
+      {{if .Reminder.CustomerNumber}}<tr><td>Kundennr.:</td><td>{{.Reminder.CustomerNumber}}</td></tr>{{end}}
+    </table>
+  </div>
+</div>
+
+<div class="body-text">
+  {{if eq .Reminder.Level 0}}
+  Sehr geehrte Damen und Herren,<br><br>
+  bei der Pruefung unserer Konten haben wir festgestellt, dass die nachfolgend aufgefuehrte Rechnung noch nicht beglichen wurde. Sicherlich handelt es sich um ein Versehen. Wir bitten Sie, die Zahlung zeitnah nachzuholen.
+  {{else if eq .Reminder.Level 1}}
+  Sehr geehrte Damen und Herren,<br><br>
+  trotz unserer Zahlungserinnerung vom {{.Reminder.PreviousReminderDate}} konnten wir bisher keinen Zahlungseingang feststellen. Wir bitten Sie nochmals dringend, den offenen Betrag bis zum angegebenen Datum zu ueberweisen.
+  {{else}}
+  Sehr geehrte Damen und Herren,<br><br>
+  trotz unserer bisherigen Mahnungen ist die unten aufgefuehrte Rechnung weiterhin nicht beglichen. Wir muessen Sie darauf hinweisen, dass wir bei ausbleibender Zahlung rechtliche Schritte einleiten werden.
+  {{end}}
+</div>
+
+<div class="invoice-reference">
+  <strong>Betroffene Rechnung</strong>
+  <table>
+    <tr><td>Rechnungsnr.:</td><td>{{.Reminder.InvoiceNumber}}</td></tr>
+    <tr><td>Rechnungsdatum:</td><td>{{.Reminder.InvoiceDate}}</td></tr>
+    <tr><td>Urspr. faellig am:</td><td>{{.Reminder.OriginalDueDate}}</td></tr>
+    <tr><td>Rechnungsbetrag:</td><td>{{.Reminder.InvoiceAmount}}</td></tr>
+  </table>
+</div>
+
+{{if .Reminder.Fee}}
+<div class="fee-note">
+  <table>
+    <tr><td>Offener Rechnungsbetrag</td><td>{{.Reminder.OutstandingAmount}}</td></tr>
+    <tr><td>Mahngebuehr</td><td>{{.Reminder.Fee}}</td></tr>
+    {{if .Reminder.Interest}}<tr><td>Verzugszinsen</td><td>{{.Reminder.Interest}}</td></tr>{{end}}
+    <tr class="fee-total"><td>Gesamtforderung</td><td>{{.Reminder.TotalDue}}</td></tr>
+  </table>
+</div>
+{{end}}
+
+<div class="outstanding-amount">
+  <span class="label">Offener Gesamtbetrag</span>
+  {{.Reminder.TotalDue}}
+</div>
+
+<div class="deadline-note">
+  Bitte ueberweisen Sie den Gesamtbetrag bis spaetestens <strong>{{.Reminder.NewDueDate}}</strong>
+  unter Angabe der Rechnungsnummer <strong>{{.Reminder.InvoiceNumber}}</strong> auf unser Konto.
+</div>
+
+<div class="payment-info">
+  <strong>Bankverbindung</strong>
+  <table>
+    <tr><td>Kontoinhaber:</td><td>{{.Bank.AccountHolder}}</td></tr>
+    <tr><td>IBAN:</td><td>{{.Bank.IBAN}}</td></tr>
+    <tr><td>BIC:</td><td>{{.Bank.BIC}}</td></tr>
+    <tr><td>Bank:</td><td>{{.Bank.BankName}}</td></tr>
+    <tr><td>Verwendungszweck:</td><td>{{.Reminder.InvoiceNumber}}</td></tr>
+  </table>
+</div>
+
+<div class="closing-text">
+  {{if eq .Reminder.Level 0}}
+  Sollte sich Ihre Zahlung mit diesem Schreiben gekreuzt haben, betrachten Sie es bitte als gegenstandslos.
+  {{else if eq .Reminder.Level 1}}
+  Sollte die Zahlung bereits erfolgt sein, bitten wir um kurze Rueckmeldung mit dem Zahlungsbeleg.
+  {{else}}
+  Wir behalten uns vor, bei ausbleibender Zahlung die Forderung an ein Inkassounternehmen zu uebergeben und rechtliche Schritte einzuleiten. Die dadurch entstehenden Kosten gehen zu Ihren Lasten.
+  {{end}}
+  <br><br>
+  Mit freundlichen Gruessen<br>
+  {{.Company.Name}}
+</div>
+
+<div class="footer">
+  {{.Company.Name}} &middot; {{.Company.Street}} &middot; {{.Company.Zip}} {{.Company.City}}
+  {{if .Company.Phone}} &middot; Tel: {{.Company.Phone}}{{end}}
+  {{if .Company.Email}} &middot; {{.Company.Email}}{{end}}
+  {{if .Company.TaxID}}<br>Steuernr.: {{.Company.TaxID}}{{end}}
+</div>
+
+</body>
+</html>

@@ -74,6 +74,22 @@ func (r *TemplateRepo) GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.
 	return t, nil
 }
 
+// GetByType retrieves the first active custom template for a given tenant and type.
+func (r *TemplateRepo) GetByType(ctx context.Context, tenantID uuid.UUID, templateType string) (*domain.DocumentTemplate, error) {
+	query := fmt.Sprintf(
+		`SELECT %s FROM document_templates WHERE tenant_id = $1 AND type = $2 AND is_active = true ORDER BY updated_at DESC LIMIT 1`,
+		templateColumns,
+	)
+	t, err := scanTemplate(r.pool.QueryRow(ctx, query, tenantID, templateType))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil // No custom template found; not an error.
+		}
+		return nil, fmt.Errorf("template_repo: get_by_type: %w", err)
+	}
+	return t, nil
+}
+
 // List returns all document templates for a tenant.
 func (r *TemplateRepo) List(ctx context.Context, tenantID uuid.UUID) ([]*domain.DocumentTemplate, error) {
 	query := fmt.Sprintf(`SELECT %s FROM document_templates WHERE tenant_id = $1 ORDER BY created_at DESC`, templateColumns)

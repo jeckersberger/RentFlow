@@ -10,6 +10,7 @@ import (
 type DocumentTemplateRepository interface {
 	Create(ctx context.Context, tpl *DocumentTemplate) error
 	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*DocumentTemplate, error)
+	GetByType(ctx context.Context, tenantID uuid.UUID, templateType string) (*DocumentTemplate, error)
 	List(ctx context.Context, tenantID uuid.UUID) ([]*DocumentTemplate, error)
 	Update(ctx context.Context, tpl *DocumentTemplate) error
 }

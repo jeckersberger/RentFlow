@@ -61,10 +61,12 @@ func main() {
 	templateSvc := application.NewTemplateService(templateRepo, log)
 	documentSvc := application.NewDocumentService(documentRepo, log)
 	attachmentSvc := application.NewAttachmentService(attachmentRepo, log)
+	templateRenderer := application.NewTemplateRenderer(templateRepo, log)
 
 	templateH := httphandler.NewTemplateHandler(templateSvc, log)
 	documentH := httphandler.NewDocumentHandler(documentSvc, log)
 	attachmentH := httphandler.NewAttachmentHandler(attachmentSvc, log)
+	renderH := httphandler.NewRenderHandler(templateRenderer, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -82,6 +84,7 @@ func main() {
 		templateH,
 		documentH,
 		attachmentH,
+		renderH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

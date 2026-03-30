@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rechnung {{.Invoice.Number}}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10pt;
+    color: #1a1a1a;
+    line-height: 1.5;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 15mm 20mm;
+    background: #fff;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10mm;
+    padding-bottom: 5mm;
+    border-bottom: 2px solid #2c3e50;
+  }
+  .company-info { max-width: 60%; }
+  .company-name {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 2mm;
+  }
+  .company-details {
+    font-size: 8pt;
+    color: #555;
+    line-height: 1.6;
+  }
+  .logo-placeholder {
+    width: 40mm;
+    height: 20mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 8pt;
+  }
+  .logo-placeholder img {
+    max-width: 40mm;
+    max-height: 20mm;
+  }
+  .addresses {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10mm;
+  }
+  .sender-line {
+    font-size: 7pt;
+    color: #888;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 1mm;
+    margin-bottom: 2mm;
+  }
+  .customer-address {
+    max-width: 85mm;
+    line-height: 1.6;
+  }
+  .invoice-meta {
+    text-align: right;
+    min-width: 60mm;
+  }
+  .invoice-title {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5mm;
+  }
+  .meta-table {
+    font-size: 9pt;
+    border-collapse: collapse;
+    margin-left: auto;
+  }
+  .meta-table td {
+    padding: 1mm 0;
+  }
+  .meta-table td:first-child {
+    color: #666;
+    padding-right: 5mm;
+    white-space: nowrap;
+  }
+  .meta-table td:last-child {
+    font-weight: 600;
+    text-align: right;
+  }
+  .intro-text {
+    margin-bottom: 5mm;
+    font-size: 9.5pt;
+  }
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 5mm;
+  }
+  .items-table thead th {
+    background: #2c3e50;
+    color: #fff;
+    font-weight: 600;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 2.5mm 3mm;
+    text-align: left;
+  }
+  .items-table thead th:nth-child(n+3) {
+    text-align: right;
+  }
+  .items-table thead th:first-child {
+    width: 8mm;
+    text-align: center;
+  }
+  .items-table tbody td {
+    padding: 2mm 3mm;
+    border-bottom: 1px solid #e8e8e8;
+    font-size: 9pt;
+    vertical-align: top;
+  }
+  .items-table tbody tr:nth-child(even) {
+    background: #f8f9fa;
+  }
+  .items-table tbody td:first-child {
+    text-align: center;
+    color: #888;
+  }
+  .items-table tbody td:nth-child(n+3) {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .item-description-sub {
+    font-size: 8pt;
+    color: #777;
+    margin-top: 1mm;
+  }
+  .totals {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10mm;
+  }
+  .totals-table {
+    border-collapse: collapse;
+    min-width: 70mm;
+  }
+  .totals-table td {
+    padding: 1.5mm 3mm;
+    font-size: 9.5pt;
+  }
+  .totals-table td:first-child {
+    color: #555;
+    text-align: left;
+    padding-right: 10mm;
+  }
+  .totals-table td:last-child {
+    text-align: right;
+    font-weight: 500;
+  }
+  .totals-table tr.total-gross {
+    border-top: 2px solid #2c3e50;
+    font-size: 11pt;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+  .totals-table tr.total-gross td {
+    padding-top: 2.5mm;
+  }
+  .totals-table tr.total-paid td,
+  .totals-table tr.total-remaining td {
+    font-size: 9pt;
+  }
+  .totals-table tr.total-remaining {
+    border-top: 1px solid #ccc;
+  }
+  .totals-table tr.total-remaining td {
+    font-weight: 700;
+    color: #c0392b;
+  }
+  .kleinunternehmer-note {
+    font-size: 8pt;
+    color: #777;
+    font-style: italic;
+    margin-bottom: 5mm;
+    text-align: right;
+  }
+  .notes {
+    margin-bottom: 8mm;
+    font-size: 9pt;
+    color: #444;
+  }
+  .payment-info {
+    background: #f4f6f7;
+    border-left: 3px solid #2c3e50;
+    padding: 4mm 5mm;
+    margin-bottom: 8mm;
+    font-size: 9pt;
+  }
+  .payment-info strong {
+    display: block;
+    margin-bottom: 2mm;
+    color: #2c3e50;
+    font-size: 9.5pt;
+  }
+  .payment-info table {
+    border-collapse: collapse;
+  }
+  .payment-info table td {
+    padding: 0.5mm 0;
+  }
+  .payment-info table td:first-child {
+    color: #666;
+    padding-right: 5mm;
+    white-space: nowrap;
+  }
+  .footer {
+    margin-top: 10mm;
+    padding-top: 4mm;
+    border-top: 1px solid #ddd;
+    font-size: 7.5pt;
+    color: #999;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="company-info">
+    <div class="company-name">{{.Company.Name}}</div>
+    <div class="company-details">
+      {{.Company.Street}}<br>
+      {{.Company.Zip}} {{.Company.City}}<br>
+      {{if .Company.Phone}}Tel: {{.Company.Phone}}<br>{{end}}
+      {{if .Company.Email}}E-Mail: {{.Company.Email}}<br>{{end}}
+      {{if .Company.Website}}Web: {{.Company.Website}}<br>{{end}}
+      {{if .Company.TaxID}}Steuernr.: {{.Company.TaxID}}{{end}}
+      {{if .Company.VatID}}<br>USt-IdNr.: {{.Company.VatID}}{{end}}
+    </div>
+  </div>
+  <div class="logo-placeholder">
+    {{if .Company.LogoURL}}<img src="{{.Company.LogoURL}}" alt="Logo">{{else}}<!-- Logo -->{{end}}
+  </div>
+</div>
+
+<div class="addresses">
+  <div>
+    <div class="sender-line">{{.Company.Name}} &middot; {{.Company.Street}} &middot; {{.Company.Zip}} {{.Company.City}}</div>
+    <div class="customer-address">
+      {{if .Customer.Company}}<strong>{{.Customer.Company}}</strong><br>{{end}}
+      {{if .Customer.Name}}{{.Customer.Name}}<br>{{end}}
+      {{.Customer.Street}}<br>
+      {{.Customer.Zip}} {{.Customer.City}}<br>
+      {{if .Customer.Country}}{{.Customer.Country}}{{end}}
+    </div>
+  </div>
+  <div class="invoice-meta">
+    <div class="invoice-title">Rechnung</div>
+    <table class="meta-table">
+      <tr><td>Rechnungsnr.:</td><td>{{.Invoice.Number}}</td></tr>
+      <tr><td>Rechnungsdatum:</td><td>{{.Invoice.Date}}</td></tr>
+      <tr><td>Faellig am:</td><td>{{.Invoice.DueDate}}</td></tr>
+      {{if .Invoice.CustomerNumber}}<tr><td>Kundennr.:</td><td>{{.Invoice.CustomerNumber}}</td></tr>{{end}}
+      {{if .Invoice.ProjectName}}<tr><td>Projekt:</td><td>{{.Invoice.ProjectName}}</td></tr>{{end}}
+    </table>
+  </div>
+</div>
+
+{{if .Invoice.IntroText}}
+<div class="intro-text">{{.Invoice.IntroText}}</div>
+{{end}}
+
+<table class="items-table">
+  <thead>
+    <tr>
+      <th>Pos</th>
+      <th>Beschreibung</th>
+      <th>Menge</th>
+      <th>Einheit</th>
+      <th>Einzelpreis</th>
+      <th>Gesamt</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Items}}
+    <tr>
+      <td>{{.Position}}</td>
+      <td>
+        {{.Description}}
+        {{if .SubText}}<div class="item-description-sub">{{.SubText}}</div>{{end}}
+      </td>
+      <td>{{.Quantity}}</td>
+      <td>{{.Unit}}</td>
+      <td>{{.UnitPrice}}</td>
+      <td>{{.Total}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+
+<div class="totals">
+  <table class="totals-table">
+    <tr><td>Nettobetrag</td><td>{{.Totals.Net}}</td></tr>
+    {{if .Totals.IsSmallBusiness}}
+    <tr><td>MwSt.</td><td>0,00 EUR</td></tr>
+    {{else}}
+    <tr><td>MwSt. ({{.Totals.VatRate}})</td><td>{{.Totals.Vat}}</td></tr>
+    {{end}}
+    <tr class="total-gross"><td>Bruttobetrag</td><td>{{.Totals.Gross}}</td></tr>
+    {{if .Totals.Paid}}
+    <tr class="total-paid"><td>Bereits bezahlt</td><td>- {{.Totals.Paid}}</td></tr>
+    <tr class="total-remaining"><td>Offener Betrag</td><td>{{.Totals.Remaining}}</td></tr>
+    {{end}}
+  </table>
+</div>
+
+{{if .Totals.IsSmallBusiness}}
+<div class="kleinunternehmer-note">
+  Gemaess &sect;19 UStG wird keine Umsatzsteuer berechnet.
+</div>
+{{end}}
+
+{{if .Invoice.OutroText}}
+<div class="notes">{{.Invoice.OutroText}}</div>
+{{end}}
+
+<div class="payment-info">
+  <strong>Bankverbindung</strong>
+  <table>
+    <tr><td>Kontoinhaber:</td><td>{{.Bank.AccountHolder}}</td></tr>
+    <tr><td>IBAN:</td><td>{{.Bank.IBAN}}</td></tr>
+    <tr><td>BIC:</td><td>{{.Bank.BIC}}</td></tr>
+    <tr><td>Bank:</td><td>{{.Bank.BankName}}</td></tr>
+  </table>
+</div>
+
+<div class="footer">
+  {{.Company.Name}} &middot; {{.Company.Street}} &middot; {{.Company.Zip}} {{.Company.City}}
+  {{if .Company.Phone}} &middot; Tel: {{.Company.Phone}}{{end}}
+  {{if .Company.Email}} &middot; {{.Company.Email}}{{end}}
+  {{if .Company.TaxID}}<br>Steuernr.: {{.Company.TaxID}}{{end}}
+  {{if .Company.VatID}} &middot; USt-IdNr.: {{.Company.VatID}}{{end}}
+</div>
+
+</body>
+</html>

@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS attachments (
 );
 
 CREATE INDEX IF NOT EXISTS idx_document_templates_tenant ON document_templates(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_document_templates_tenant_type ON document_templates(tenant_id, type);
 CREATE INDEX IF NOT EXISTS idx_documents_tenant ON documents(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_documents_reference ON documents(reference_id, reference_type);
 CREATE INDEX IF NOT EXISTS idx_attachments_tenant ON attachments(tenant_id);

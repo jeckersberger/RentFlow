@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lieferschein {{.DeliveryNote.Number}}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10pt;
+    color: #1a1a1a;
+    line-height: 1.5;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 15mm 20mm;
+    background: #fff;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10mm;
+    padding-bottom: 5mm;
+    border-bottom: 2px solid #27ae60;
+  }
+  .company-info { max-width: 60%; }
+  .company-name {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #27ae60;
+    margin-bottom: 2mm;
+  }
+  .company-details {
+    font-size: 8pt;
+    color: #555;
+    line-height: 1.6;
+  }
+  .logo-placeholder {
+    width: 40mm;
+    height: 20mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 8pt;
+  }
+  .logo-placeholder img {
+    max-width: 40mm;
+    max-height: 20mm;
+  }
+  .addresses {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10mm;
+  }
+  .sender-line {
+    font-size: 7pt;
+    color: #888;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 1mm;
+    margin-bottom: 2mm;
+  }
+  .customer-address {
+    max-width: 85mm;
+    line-height: 1.6;
+  }
+  .note-meta {
+    text-align: right;
+    min-width: 60mm;
+  }
+  .note-title {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #27ae60;
+    margin-bottom: 5mm;
+  }
+  .meta-table {
+    font-size: 9pt;
+    border-collapse: collapse;
+    margin-left: auto;
+  }
+  .meta-table td {
+    padding: 1mm 0;
+  }
+  .meta-table td:first-child {
+    color: #666;
+    padding-right: 5mm;
+    white-space: nowrap;
+  }
+  .meta-table td:last-child {
+    font-weight: 600;
+    text-align: right;
+  }
+  .project-info {
+    background: #eafaf1;
+    border-left: 3px solid #27ae60;
+    padding: 3mm 5mm;
+    margin-bottom: 8mm;
+    font-size: 9pt;
+  }
+  .project-info strong {
+    color: #27ae60;
+  }
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8mm;
+  }
+  .items-table thead th {
+    background: #27ae60;
+    color: #fff;
+    font-weight: 600;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 2.5mm 3mm;
+    text-align: left;
+  }
+  .items-table thead th:first-child {
+    width: 8mm;
+    text-align: center;
+  }
+  .items-table thead th:nth-child(3) {
+    text-align: right;
+  }
+  .items-table tbody td {
+    padding: 2mm 3mm;
+    border-bottom: 1px solid #e8e8e8;
+    font-size: 9pt;
+    vertical-align: top;
+  }
+  .items-table tbody tr:nth-child(even) {
+    background: #f0faf4;
+  }
+  .items-table tbody td:first-child {
+    text-align: center;
+    color: #888;
+  }
+  .items-table tbody td:nth-child(3) {
+    text-align: right;
+  }
+  .barcode {
+    font-family: 'Courier New', monospace;
+    font-size: 8pt;
+    color: #666;
+    letter-spacing: 0.5px;
+  }
+  .item-count {
+    background: #eafaf1;
+    padding: 2mm 5mm;
+    margin-bottom: 10mm;
+    font-size: 9pt;
+    color: #2c3e50;
+    text-align: right;
+  }
+  .item-count strong {
+    color: #27ae60;
+  }
+  .notes {
+    margin-bottom: 8mm;
+    font-size: 9pt;
+    color: #444;
+  }
+  .signature-section {
+    margin-top: 15mm;
+    display: flex;
+    justify-content: space-between;
+    gap: 20mm;
+  }
+  .signature-block {
+    flex: 1;
+    border-top: 1px solid #333;
+    padding-top: 3mm;
+  }
+  .signature-label {
+    font-size: 8pt;
+    color: #666;
+    margin-bottom: 1mm;
+  }
+  .signature-line {
+    height: 15mm;
+    border-bottom: 1px solid #999;
+    margin-bottom: 2mm;
+  }
+  .signature-name {
+    font-size: 8.5pt;
+    color: #333;
+  }
+  .signature-date {
+    font-size: 8pt;
+    color: #666;
+    margin-top: 2mm;
+  }
+  .footer {
+    margin-top: 10mm;
+    padding-top: 4mm;
+    border-top: 1px solid #ddd;
+    font-size: 7.5pt;
+    color: #999;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="company-info">
+    <div class="company-name">{{.Company.Name}}</div>
+    <div class="company-details">
+      {{.Company.Street}}<br>
+      {{.Company.Zip}} {{.Company.City}}<br>
+      {{if .Company.Phone}}Tel: {{.Company.Phone}}<br>{{end}}
+      {{if .Company.Email}}E-Mail: {{.Company.Email}}{{end}}
+    </div>
+  </div>
+  <div class="logo-placeholder">
+    {{if .Company.LogoURL}}<img src="{{.Company.LogoURL}}" alt="Logo">{{else}}<!-- Logo -->{{end}}
+  </div>
+</div>
+
+<div class="addresses">
+  <div>
+    <div class="sender-line">{{.Company.Name}} &middot; {{.Company.Street}} &middot; {{.Company.Zip}} {{.Company.City}}</div>
+    <div class="customer-address">
+      {{if .Customer.Company}}<strong>{{.Customer.Company}}</strong><br>{{end}}
+      {{if .Customer.Name}}{{.Customer.Name}}<br>{{end}}
+      {{.Customer.Street}}<br>
+      {{.Customer.Zip}} {{.Customer.City}}<br>
+      {{if .Customer.Country}}{{.Customer.Country}}{{end}}
+    </div>
+  </div>
+  <div class="note-meta">
+    <div class="note-title">Lieferschein</div>
+    <table class="meta-table">
+      <tr><td>Lieferscheinnr.:</td><td>{{.DeliveryNote.Number}}</td></tr>
+      <tr><td>Lieferdatum:</td><td>{{.DeliveryNote.Date}}</td></tr>
+      <tr><td>Lieferzeit:</td><td>{{.DeliveryNote.Time}}</td></tr>
+      {{if .DeliveryNote.OrderNumber}}<tr><td>Auftragsnr.:</td><td>{{.DeliveryNote.OrderNumber}}</td></tr>{{end}}
+    </table>
+  </div>
+</div>
+
+{{if .DeliveryNote.ProjectName}}
+<div class="project-info">
+  <strong>Projekt:</strong> {{.DeliveryNote.ProjectName}}<br>
+  {{if .DeliveryNote.ProjectStart}}Zeitraum: {{.DeliveryNote.ProjectStart}}{{if .DeliveryNote.ProjectEnd}} &ndash; {{.DeliveryNote.ProjectEnd}}{{end}}{{end}}
+  {{if .DeliveryNote.Venue}}<br>Veranstaltungsort: {{.DeliveryNote.Venue}}{{end}}
+</div>
+{{end}}
+
+<table class="items-table">
+  <thead>
+    <tr>
+      <th>Nr</th>
+      <th>Bezeichnung</th>
+      <th>Menge</th>
+      <th>Barcode</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range $i, $item := .Items}}
+    <tr>
+      <td>{{$item.Position}}</td>
+      <td>{{$item.Name}}</td>
+      <td>{{$item.Quantity}}</td>
+      <td><span class="barcode">{{$item.Barcode}}</span></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+
+<div class="item-count">
+  Gesamt: <strong>{{.DeliveryNote.TotalItems}} Positionen</strong>
+</div>
+
+{{if .DeliveryNote.Notes}}
+<div class="notes">
+  <strong>Bemerkungen:</strong><br>
+  {{.DeliveryNote.Notes}}
+</div>
+{{end}}
+
+<div class="signature-section">
+  <div class="signature-block">
+    <div class="signature-label">Uebergeben von (Verleiher)</div>
+    <div class="signature-line"></div>
+    <div class="signature-name">Name: ___________________________</div>
+    <div class="signature-date">Datum / Uhrzeit: ___________________________</div>
+  </div>
+  <div class="signature-block">
+    <div class="signature-label">Empfangen von (Kunde)</div>
+    <div class="signature-line"></div>
+    <div class="signature-name">Name: ___________________________</div>
+    <div class="signature-date">Datum / Uhrzeit: ___________________________</div>
+  </div>
+</div>
+
+<div class="footer">
+  {{.Company.Name}} &middot; {{.Company.Street}} &middot; {{.Company.Zip}} {{.Company.City}}
+  {{if .Company.Phone}} &middot; Tel: {{.Company.Phone}}{{end}}
+  {{if .Company.Email}} &middot; {{.Company.Email}}{{end}}
+</div>
+
+</body>
+</html>
