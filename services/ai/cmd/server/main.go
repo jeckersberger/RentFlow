@@ -69,10 +69,26 @@ func main() {
 	sugSvc := application.NewSuggestionService(sugRepo, log)
 	tdSvc := application.NewTrainingDataService(tdRepo, log)
 
+	// 7b. Create Claude AI provider + smart-asset service.
+	aiAPIKey := os.Getenv("AI_API_KEY")
+	if aiAPIKey == "" {
+		aiAPIKey = os.Getenv("ANTHROPIC_API_KEY")
+	}
+	aiModel := os.Getenv("AI_MODEL")
+	claudeProvider := application.NewClaudeProvider(aiAPIKey, aiModel, log)
+	smartAssetSvc := application.NewSmartAssetService(claudeProvider, log)
+
+	if claudeProvider.IsConfigured() {
+		log.Info().Str("model", claudeProvider.ModelName()).Msg("Claude AI provider configured")
+	} else {
+		log.Warn().Msg("Claude AI provider NOT configured — set AI_API_KEY or ANTHROPIC_API_KEY")
+	}
+
 	// 8. Create HTTP handlers.
 	predH := httphandler.NewPredictionHandler(predSvc, log)
 	sugH := httphandler.NewSuggestionHandler(sugSvc, log)
 	tdH := httphandler.NewTrainingDataHandler(tdSvc, log)
+	aiProvH := httphandler.NewAIProviderHandler(claudeProvider, smartAssetSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -89,7 +105,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		predH, sugH, tdH,
+		predH, sugH, tdH, aiProvH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

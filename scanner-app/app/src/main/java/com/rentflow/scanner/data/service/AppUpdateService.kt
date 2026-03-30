@@ -121,7 +121,7 @@ class AppUpdateService @Inject constructor(
             downloadDir?.listFiles()?.filter { it.name.endsWith(".apk") }?.forEach { it.delete() }
 
             val request = DownloadManager.Request(Uri.parse(updateInfo.downloadUrl))
-                .setTitle("EquipFlow Scanner v${updateInfo.versionName}")
+                .setTitle("CrateDesk Scanner v${updateInfo.versionName}")
                 .setDescription("Update wird heruntergeladen...")
                 .setDestinationInExternalFilesDir(
                     context,

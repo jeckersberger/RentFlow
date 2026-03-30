@@ -10,6 +10,7 @@ func NewRouter(
 	predictionHandler *PredictionHandler,
 	suggestionHandler *SuggestionHandler,
 	trainingDataHandler *TrainingDataHandler,
+	aiProviderHandler *AIProviderHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -45,6 +46,12 @@ func NewRouter(
 		r.Route("/api/v1/ai-training-data", func(r chi.Router) {
 			r.Get("/", trainingDataHandler.List)
 			r.Post("/", trainingDataHandler.Create)
+		})
+
+		r.Route("/api/v1/ai", func(r chi.Router) {
+			r.Post("/complete", aiProviderHandler.Complete)
+			r.Post("/smart-asset", aiProviderHandler.SmartAsset)
+			r.Get("/status", aiProviderHandler.Status)
 		})
 	})
 
