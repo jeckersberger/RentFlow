@@ -23,3 +23,21 @@ export async function update(id: string, data: Partial<Project>): Promise<Projec
 export async function remove(id: string): Promise<void> {
   await api.delete(`/api/v1/projects/${id}`);
 }
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  color: string;
+  customer: string;
+  venue_name: string;
+}
+
+export async function getCalendar(from: string, to: string): Promise<CalendarEvent[]> {
+  const data = await api.get('/api/v1/projects/calendar', {
+    params: { from, to },
+  });
+  return (data as unknown as CalendarEvent[]) ?? [];
+}
