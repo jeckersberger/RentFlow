@@ -1,0 +1,2385 @@
+openapi: 3.0.3
+info:
+  title: CrateDesk API
+  description: |
+    REST-API fuer CrateDesk - die selbstgehostete Equipment-Rental-Software
+    fuer die Veranstaltungstechnik-Branche.
+
+    ## Architektur
+
+    CrateDesk besteht aus 19 Go-Microservices. Jeder Service laeuft auf einem
+    eigenen Port und wird ueber Traefik als Reverse Proxy geroutet.
+
+    ## Authentifizierung
+
+    Alle geschuetzten Endpoints erfordern einen JWT Bearer Token im
+    `Authorization`-Header. Tokens werden ueber den Auth-Service (Port 8001)
+    ausgestellt. Login erfordert zusaetzlich den `X-Tenant-Slug`-Header oder
+    das Feld `tenant_slug` im Request-Body.
+
+    ## Response-Envelope
+
+    Alle Antworten folgen einem einheitlichen Envelope-Format:
+
+    ```json
+    {
+      "data": { ... },
+      "meta": { "page": 1, "per_page": 20, "total": 42 },
+      "error": null
+    }
+    ```
+
+    Bei Fehlern ist `data` null und `error` enthaelt `code` und `message`.
+
+    ## Geldbetraege
+
+    Alle Geldbetraege werden als `integer` in **Cent** uebertragen (z.B. 1500 = 15,00 EUR).
+  version: 1.0.0
+  contact:
+    name: Janis Eckersberger
+    email: j.eckersberger@je-soundulight.de
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://cratedesk.example.com
+    description: Production (via Traefik Reverse Proxy)
+  - url: http://localhost:{port}
+    description: Lokale Entwicklung (direkt auf Service-Port)
+    variables:
+      port:
+        default: "8001"
+        enum:
+          - "8001"
+          - "8002"
+          - "8003"
+          - "8004"
+          - "8006"
+          - "8014"
+
+tags:
+  - name: Auth
+    description: Authentifizierung und Session-Management (Port 8001)
+  - name: Users
+    description: Benutzerverwaltung (Port 8001)
+  - name: Equipment
+    description: Equipment-Verwaltung, Suche und Verfuegbarkeitspruefung (Port 8002)
+  - name: Projects
+    description: Projekt-/Auftragsplanung und Kalender (Port 8003)
+  - name: Invoices
+    description: Rechnungserstellung, PDF-Generierung und Versand (Port 8006)
+  - name: Quotes
+    description: Angebotserstellung und Konvertierung zu Rechnungen (Port 8006)
+  - name: Dunning
+    description: Mahnwesen - ueberfaellige Rechnungen und Mahnungen (Port 8006)
+  - name: Banking
+    description: Bank-Import, Auto-Matching und DATEV-Export (Port 8006)
+  - name: AI
+    description: KI-Completion, Smart-Asset-Erkennung und Status (Port 8014)
+  - name: Scanner
+    description: Scanner-Sessions, Equipment-Aufloesung und Scan-Aktionen (Port 8004)
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT RS256 Access Token, ausgestellt vom Auth-Service.
+        Claims enthalten `user_id`, `tenant_id`, `email` und `role`.
+
+  # -------------------------------------------------------------------------
+  # Reusable Parameters
+  # -------------------------------------------------------------------------
+  parameters:
+    PathId:
+      name: id
+      in: path
+      required: true
+      description: UUID der Ressource
+      schema:
+        type: string
+        format: uuid
+    QueryPage:
+      name: page
+      in: query
+      required: false
+      description: Seitennummer (Standard 1)
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+    QueryPerPage:
+      name: per_page
+      in: query
+      required: false
+      description: Eintraege pro Seite (Standard 20, max 100)
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+  # -------------------------------------------------------------------------
+  # Reusable Schemas
+  # -------------------------------------------------------------------------
+  schemas:
+
+    # -- Envelope & Meta --
+    Meta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          format: int64
+          example: 42
+
+    ErrorDetail:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: BAD_REQUEST
+        message:
+          type: string
+          example: "Email und Passwort sind erforderlich"
+
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          nullable: true
+          example: null
+        error:
+          $ref: "#/components/schemas/ErrorDetail"
+
+    # -- Auth --
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: j.eckersberger@je-soundulight.de
+        password:
+          type: string
+          format: password
+          example: RentFlow2026!
+        tenant_slug:
+          type: string
+          description: Alternativ zum X-Tenant-Slug Header
+          example: je-soundulight
+
+    TokenPair:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT RS256 Access Token
+        refresh_token:
+          type: string
+          description: Opaker Refresh Token (base64url)
+        expires_at:
+          type: integer
+          format: int64
+          description: Unix-Timestamp wann der Access Token ablaeuft
+
+    LoginResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            tokens:
+              $ref: "#/components/schemas/TokenPair"
+            user:
+              $ref: "#/components/schemas/User"
+        error:
+          nullable: true
+          example: null
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+          description: Der aktuelle Refresh Token
+
+    RefreshResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/TokenPair"
+        error:
+          nullable: true
+          example: null
+
+    # -- User --
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, user, viewer]
+        phone:
+          type: string
+        avatar_url:
+          type: string
+        is_active:
+          type: boolean
+        last_login:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        meta:
+          $ref: "#/components/schemas/Meta"
+        error:
+          nullable: true
+          example: null
+
+    # -- Equipment --
+    Equipment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+        equipment_type_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+          example: Shure SM58
+        description:
+          type: string
+        sku:
+          type: string
+          example: MIC-SM58-001
+        barcode:
+          type: string
+        qr_code:
+          type: string
+        serial_number:
+          type: string
+        rfid_tag:
+          type: string
+        status:
+          type: string
+          enum: [available, reserved, checked_out, in_maintenance, damaged, retired]
+        condition:
+          type: string
+          enum: [operational, good, fair, damaged, decommissioned]
+        quantity_total:
+          type: integer
+        quantity_available:
+          type: integer
+        rental_price_day:
+          type: integer
+          format: int64
+          description: Tagespreis in Cent
+          example: 1500
+        rental_price_week:
+          type: integer
+          format: int64
+          description: Wochenpreis in Cent
+          example: 7500
+        replacement_value:
+          type: integer
+          format: int64
+          description: Wiederbeschaffungswert in Cent
+        weight_grams:
+          type: integer
+          nullable: true
+        manufacturer:
+          type: string
+          example: Shure
+        model:
+          type: string
+          example: SM58
+        image_url:
+          type: string
+        notes:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EquipmentCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Shure SM58
+        description:
+          type: string
+        sku:
+          type: string
+        barcode:
+          type: string
+        serial_number:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+        equipment_type_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [available, reserved, checked_out, in_maintenance, damaged, retired]
+          default: available
+        condition:
+          type: string
+          enum: [operational, good, fair, damaged, decommissioned]
+          default: operational
+        quantity_total:
+          type: integer
+          default: 1
+        rental_price_day:
+          type: integer
+          format: int64
+          description: Tagespreis in Cent
+        rental_price_week:
+          type: integer
+          format: int64
+          description: Wochenpreis in Cent
+        replacement_value:
+          type: integer
+          format: int64
+        manufacturer:
+          type: string
+        model:
+          type: string
+
+    AvailabilityCheckRequest:
+      type: object
+      required: [equipment_id, start_date, end_date, quantity]
+      properties:
+        equipment_id:
+          type: string
+          format: uuid
+        start_date:
+          type: string
+          format: date
+          example: "2026-04-15"
+        end_date:
+          type: string
+          format: date
+          example: "2026-04-18"
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    AvailabilityResult:
+      type: object
+      properties:
+        equipment_id:
+          type: string
+          format: uuid
+        equipment_name:
+          type: string
+        total_qty:
+          type: integer
+        available:
+          type: integer
+        reserved:
+          type: integer
+        in_maintenance:
+          type: integer
+        requested:
+          type: integer
+        feasible:
+          type: boolean
+          description: Ob die angefragte Menge im Zeitraum verfuegbar ist
+
+    PriceCalculationRequest:
+      type: object
+      required: [days, quantity]
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        days:
+          type: integer
+          minimum: 1
+          example: 3
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        date:
+          type: string
+          format: date
+          description: Datum fuer Saison-Zuschlag-Pruefung (ISO YYYY-MM-DD)
+          example: "2026-06-15"
+
+    PriceCalculationResult:
+      type: object
+      properties:
+        base_price_per_day:
+          type: integer
+          format: int64
+          description: Basispreis pro Tag in Cent
+        days:
+          type: integer
+        quantity:
+          type: integer
+        subtotal_base:
+          type: integer
+          format: int64
+          description: Zwischensumme vor Rabatten in Cent
+        tier_discount:
+          type: integer
+          format: int64
+          description: Staffelrabatt in Cent (negativ)
+        qty_discount:
+          type: integer
+          format: int64
+          description: Mengenrabatt in Cent (negativ)
+        season_surcharge:
+          type: integer
+          format: int64
+          description: Saisonzuschlag in Cent
+        total_net:
+          type: integer
+          format: int64
+          description: Netto-Gesamtpreis in Cent
+        applied_rule:
+          type: string
+          description: ID oder Name der angewendeten Preisregel
+
+    # -- Project --
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Stadtfest Linz 2026
+        project_number:
+          type: string
+          example: PRJ-2026-0042
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, confirmed, active, completed, cancelled, archived]
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+        contact_name:
+          type: string
+        contact_email:
+          type: string
+          format: email
+        contact_phone:
+          type: string
+        venue_name:
+          type: string
+          example: Hauptplatz Linz
+        venue_address:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        setup_date:
+          type: string
+          format: date-time
+          nullable: true
+        teardown_date:
+          type: string
+          format: date-time
+          nullable: true
+        color:
+          type: string
+          description: Hex-Farbe fuer Kalenderanzeige
+          example: "#3b82f6"
+        budget:
+          type: integer
+          format: int64
+          description: Budget in Cent
+        currency:
+          type: string
+          default: EUR
+        manager_id:
+          type: string
+          format: uuid
+          nullable: true
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProjectCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Firmenfeier Muster GmbH
+        description:
+          type: string
+        customer_id:
+          type: string
+          format: uuid
+        contact_name:
+          type: string
+        contact_email:
+          type: string
+          format: email
+        contact_phone:
+          type: string
+        venue_name:
+          type: string
+        venue_address:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        setup_date:
+          type: string
+          format: date-time
+        teardown_date:
+          type: string
+          format: date-time
+        color:
+          type: string
+        budget:
+          type: integer
+          format: int64
+        currency:
+          type: string
+          default: EUR
+        manager_id:
+          type: string
+          format: uuid
+
+    ProjectStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [draft, confirmed, active, completed, cancelled, archived]
+          description: |
+            Erlaubte Uebergaenge:
+            draft -> confirmed -> active -> completed -> archived.
+            Jeder Status ausser archived kann zu cancelled wechseln.
+
+    CalendarEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        setup_date:
+          type: string
+          format: date-time
+          nullable: true
+        teardown_date:
+          type: string
+          format: date-time
+          nullable: true
+        color:
+          type: string
+        venue_name:
+          type: string
+
+    # -- Invoice --
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        invoice_number:
+          type: string
+          example: RE-2026-0001
+        invoice_type:
+          type: string
+          enum: [invoice, partial, advance, credit_note, reversal, proforma]
+        status:
+          type: string
+          enum: [draft, finalized, sent, partial_paid, paid, overdue, cancelled]
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
+        customer_address:
+          type: string
+        invoice_date:
+          type: string
+          format: date
+          example: "2026-03-30"
+        due_date:
+          type: string
+          format: date
+          example: "2026-04-14"
+        vat_rate:
+          type: integer
+          format: int64
+          description: MwSt-Satz in Basispunkten (z.B. 1900 = 19%)
+        kleinunternehmer:
+          type: boolean
+          description: Kleinunternehmerregelung nach Paragraph 19 UStG (keine MwSt)
+        total_net:
+          type: integer
+          format: int64
+          description: Nettobetrag in Cent
+        total_vat:
+          type: integer
+          format: int64
+          description: MwSt-Betrag in Cent
+        total_gross:
+          type: integer
+          format: int64
+          description: Bruttobetrag in Cent
+        amount_paid:
+          type: integer
+          format: int64
+          description: Bereits bezahlter Betrag in Cent
+        notes:
+          type: string
+        finalized_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    InvoiceCreate:
+      type: object
+      required: [customer_name, invoice_date, due_date]
+      properties:
+        invoice_type:
+          type: string
+          enum: [invoice, partial, advance, credit_note, reversal, proforma]
+          default: invoice
+        customer_name:
+          type: string
+          example: Muster GmbH
+        customer_email:
+          type: string
+          format: email
+        customer_address:
+          type: string
+        invoice_date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        vat_rate:
+          type: integer
+          format: int64
+          description: MwSt-Satz in Basispunkten (0 fuer Kleinunternehmer)
+          example: 0
+        kleinunternehmer:
+          type: boolean
+          default: true
+        notes:
+          type: string
+
+    InvoiceItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoice_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          example: "Shure SM58 - 3 Tage Miete"
+        quantity:
+          type: integer
+          format: int64
+          example: 2
+        unit:
+          type: string
+          example: Stueck
+        unit_price:
+          type: integer
+          format: int64
+          description: Einzelpreis in Cent
+          example: 1500
+        position:
+          type: integer
+          description: Sortierreihenfolge
+        created_at:
+          type: string
+          format: date-time
+
+    # -- Quote --
+    Quote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        quote_number:
+          type: string
+          example: AN-2026-0001
+        status:
+          type: string
+          enum: [draft, sent, accepted, declined, expired, cancelled]
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
+        customer_address:
+          type: string
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+        subject:
+          type: string
+          example: "Angebot Stadtfest Linz"
+        intro_text:
+          type: string
+        outro_text:
+          type: string
+        quote_date:
+          type: string
+          format: date
+        valid_until:
+          type: string
+          format: date
+        vat_rate:
+          type: integer
+          format: int64
+        kleinunternehmer:
+          type: boolean
+        total_net:
+          type: integer
+          format: int64
+          description: Nettobetrag in Cent
+        total_vat:
+          type: integer
+          format: int64
+        total_gross:
+          type: integer
+          format: int64
+          description: Bruttobetrag in Cent
+        payment_terms_days:
+          type: integer
+          example: 14
+        discount_pct:
+          type: integer
+          format: int64
+          description: Rabatt in Basispunkten
+        notes:
+          type: string
+        converted_invoice_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID der erzeugten Rechnung nach Konvertierung
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    QuoteCreate:
+      type: object
+      required: [customer_name, quote_date, valid_until]
+      properties:
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
+        customer_address:
+          type: string
+        project_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+        intro_text:
+          type: string
+        outro_text:
+          type: string
+        quote_date:
+          type: string
+          format: date
+        valid_until:
+          type: string
+          format: date
+        vat_rate:
+          type: integer
+          format: int64
+          example: 0
+        kleinunternehmer:
+          type: boolean
+          default: true
+        payment_terms_days:
+          type: integer
+          default: 14
+        discount_pct:
+          type: integer
+          format: int64
+          default: 0
+
+    # -- Dunning --
+    OverdueInvoice:
+      type: object
+      properties:
+        invoice:
+          $ref: "#/components/schemas/Invoice"
+        days_overdue:
+          type: integer
+          description: Anzahl Tage ueberfaellig
+          example: 14
+        suggested_level:
+          type: string
+          enum: [reminder, dunning_1, dunning_2, dunning_3]
+          description: Empfohlene Mahnstufe
+        suggested_fee:
+          type: integer
+          format: int64
+          description: Empfohlene Mahngebuehr in Cent
+
+    DunningReminderRequest:
+      type: object
+      required: [invoice_id]
+      properties:
+        invoice_id:
+          type: string
+          format: uuid
+        level:
+          type: string
+          enum: [reminder, dunning_1, dunning_2, dunning_3]
+          description: Mahnstufe (wenn leer, wird die empfohlene Stufe verwendet)
+
+    DunningEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoice_id:
+          type: string
+          format: uuid
+        level:
+          type: string
+          enum: [reminder, dunning_1, dunning_2, dunning_3]
+        fee_cents:
+          type: integer
+          format: int64
+          description: Mahngebuehr in Cent
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [pending, sent, cancelled]
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # -- Banking --
+    BankTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        booking_date:
+          type: string
+          format: date
+        value_date:
+          type: string
+          format: date
+        amount:
+          type: integer
+          format: int64
+          description: Betrag in Cent (positiv = Eingang, negativ = Ausgang)
+        currency:
+          type: string
+          example: EUR
+        reference:
+          type: string
+          description: Verwendungszweck
+        counterparty_name:
+          type: string
+        counterparty_iban:
+          type: string
+        matched_invoice_id:
+          type: string
+          format: uuid
+          nullable: true
+        match_confidence:
+          type: string
+          description: Zuordnungs-Konfidenz (z.B. high, medium, low)
+        import_source:
+          type: string
+
+    AutoMatchResult:
+      type: object
+      properties:
+        matched:
+          type: integer
+          description: Anzahl erfolgreich zugeordneter Transaktionen
+        unmatched:
+          type: integer
+          description: Anzahl nicht zugeordneter Transaktionen
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/BankTransaction"
+
+    # -- AI --
+    AICompleteRequest:
+      type: object
+      required: [user_message]
+      properties:
+        system_prompt:
+          type: string
+          description: Optionaler System-Prompt fuer Kontext
+        user_message:
+          type: string
+          description: Die Benutzer-Nachricht an das KI-Modell
+        max_tokens:
+          type: integer
+          description: Maximale Anzahl Antwort-Tokens
+          default: 1024
+
+    AICompleteResponse:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Die generierte Antwort
+        tokens_used:
+          type: integer
+          description: Anzahl verbrauchter Tokens
+        model:
+          type: string
+          description: Verwendetes KI-Modell
+          example: claude-sonnet-4-20250514
+
+    SmartAssetRequest:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+          description: Freitext-Beschreibung des Equipments
+          example: "schwarzes Shure Funkmikrofon"
+
+    SmartAssetResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Shure SM58
+        category:
+          type: string
+          example: Mikrofone
+        manufacturer:
+          type: string
+          example: Shure
+        model:
+          type: string
+          example: SM58
+        description:
+          type: string
+
+    AIStatusResponse:
+      type: object
+      properties:
+        configured:
+          type: boolean
+          description: Ob ein KI-Provider konfiguriert ist (API-Key vorhanden)
+        model:
+          type: string
+          description: Name des konfigurierten Modells (nur wenn configured=true)
+
+    # -- Scanner --
+    ScanSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        session_type:
+          type: string
+          enum: [checkout, checkin, inventory]
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+        started_by:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        items_count:
+          type: integer
+        status:
+          type: string
+          enum: [active, completed]
+        created_at:
+          type: string
+          format: date-time
+
+    ScanSessionCreate:
+      type: object
+      required: [session_type]
+      properties:
+        session_type:
+          type: string
+          enum: [checkout, checkin, inventory]
+          description: |
+            checkout = Ausgabe, checkin = Rueckgabe, inventory = Inventur
+        project_id:
+          type: string
+          format: uuid
+          description: Optionale Projekt-Zuordnung
+
+    ScanResolveResult:
+      type: object
+      description: Das aufgeloeste Equipment-Objekt (identisch mit Equipment-Schema)
+      allOf:
+        - $ref: "#/components/schemas/Equipment"
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+
+paths:
+
+  # =========================================================================
+  # AUTH (Port 8001)
+  # =========================================================================
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Benutzer-Login
+      description: |
+        Authentifiziert einen Benutzer mit E-Mail und Passwort.
+        Gibt ein JWT-Token-Paar (Access + Refresh) und die Benutzerdaten zurueck.
+        Der Tenant wird ueber `tenant_slug` im Body oder den `X-Tenant-Slug` Header aufgeloest.
+      operationId: login
+      security: []
+      parameters:
+        - name: X-Tenant-Slug
+          in: header
+          required: false
+          description: Tenant-Slug (alternativ zu tenant_slug im Body)
+          schema:
+            type: string
+            example: je-soundulight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login erfolgreich
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Fehlende Pflichtfelder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Ungueltige Anmeldedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "423":
+          description: Konto gesperrt (Brute-Force-Schutz)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Token erneuern
+      description: |
+        Tauscht einen gueltigen Refresh Token gegen ein neues Token-Paar.
+        Der alte Refresh Token wird dabei rotiert (Single-Use).
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Neues Token-Paar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshResponse"
+        "401":
+          description: Ungueltiger oder abgelaufener Refresh Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # =========================================================================
+  # USERS (Port 8001)
+  # =========================================================================
+
+  /api/v1/users:
+    get:
+      tags: [Users]
+      summary: Benutzerliste abrufen
+      description: |
+        Gibt eine paginierte Liste aller Benutzer des aktuellen Tenants zurueck.
+        Erfordert die Rolle admin oder manager.
+      operationId: listUsers
+      parameters:
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPerPage"
+      responses:
+        "200":
+          description: Liste der Benutzer mit Paginierung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+        "401":
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Unzureichende Berechtigung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # =========================================================================
+  # EQUIPMENT (Port 8002)
+  # =========================================================================
+
+  /api/v1/equipment:
+    get:
+      tags: [Equipment]
+      summary: Equipment-Liste abrufen
+      description: Gibt eine paginierte Liste aller Equipment-Eintraege des Tenants zurueck.
+      operationId: listEquipment
+      parameters:
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPerPage"
+      responses:
+        "200":
+          description: Equipment-Liste mit Paginierung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Equipment"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+                  error:
+                    nullable: true
+                    example: null
+        "401":
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags: [Equipment]
+      summary: Neues Equipment anlegen
+      description: Erstellt einen neuen Equipment-Eintrag im aktuellen Tenant.
+      operationId: createEquipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipmentCreate"
+      responses:
+        "201":
+          description: Equipment erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltige Eingabedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/equipment/{id}:
+    get:
+      tags: [Equipment]
+      summary: Einzelnes Equipment abrufen
+      description: Gibt die vollstaendigen Details eines Equipment-Eintrags zurueck.
+      operationId: getEquipment
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      responses:
+        "200":
+          description: Equipment-Details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+                  error:
+                    nullable: true
+                    example: null
+        "404":
+          description: Equipment nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags: [Equipment]
+      summary: Equipment aktualisieren
+      description: Aktualisiert alle Felder eines Equipment-Eintrags.
+      operationId: updateEquipment
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipmentCreate"
+      responses:
+        "200":
+          description: Equipment erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltige Eingabedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Equipment nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/equipment/search:
+    get:
+      tags: [Equipment]
+      summary: Equipment durchsuchen
+      description: |
+        Volltextsuche ueber Equipment-Name, Beschreibung, SKU, Barcode
+        und Seriennummer.
+      operationId: searchEquipment
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Suchbegriff
+          schema:
+            type: string
+            example: SM58
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPerPage"
+      responses:
+        "200":
+          description: Suchergebnisse mit Paginierung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Equipment"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+                  error:
+                    nullable: true
+                    example: null
+
+  /api/v1/equipment/availability-check:
+    post:
+      tags: [Equipment]
+      summary: Verfuegbarkeit pruefen
+      description: |
+        Prueft ob ein Equipment in der angefragten Menge fuer den
+        angegebenen Zeitraum verfuegbar ist.
+      operationId: checkAvailability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilityCheckRequest"
+      responses:
+        "200":
+          description: Verfuegbarkeitsergebnis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AvailabilityResult"
+                  error:
+                    nullable: true
+                    example: null
+
+  /api/v1/equipment/{id}/calculate-price:
+    post:
+      tags: [Equipment]
+      summary: Mietpreis berechnen
+      description: |
+        Berechnet den Mietpreis fuer ein Equipment unter Beruecksichtigung
+        von Staffelpreisen, Mengenrabatt und Saisonzuschlaegen.
+      operationId: calculatePrice
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PriceCalculationRequest"
+      responses:
+        "200":
+          description: Detaillierte Preisberechnung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/PriceCalculationResult"
+                  error:
+                    nullable: true
+                    example: null
+        "404":
+          description: Equipment nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/scan/resolve/{identifier}:
+    get:
+      tags: [Equipment]
+      summary: Equipment per Barcode/QR/RFID aufloesen
+      description: |
+        Sucht ein Equipment anhand von Barcode, QR-Code, Seriennummer
+        oder RFID-Tag. Wird vom Scanner-Service und der Scanner-App verwendet.
+      operationId: resolveEquipmentByIdentifier
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          description: Barcode, QR-Code, Seriennummer oder RFID-Tag
+          schema:
+            type: string
+            example: MIC-SM58-001
+      responses:
+        "200":
+          description: Aufgeloestes Equipment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+                  error:
+                    nullable: true
+                    example: null
+        "404":
+          description: Kein Equipment mit diesem Identifier gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # =========================================================================
+  # PROJECTS (Port 8003)
+  # =========================================================================
+
+  /api/v1/projects:
+    get:
+      tags: [Projects]
+      summary: Projektliste abrufen
+      description: Gibt eine paginierte und filterbare Liste aller Projekte zurueck.
+      operationId: listProjects
+      parameters:
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPerPage"
+        - name: status
+          in: query
+          required: false
+          description: Nach Projektstatus filtern
+          schema:
+            type: string
+            enum: [draft, confirmed, active, completed, cancelled, archived]
+        - name: search
+          in: query
+          required: false
+          description: Freitextsuche (Name, Nummer, Kunde)
+          schema:
+            type: string
+        - name: customer_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Projektliste mit Paginierung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+                  error:
+                    nullable: true
+                    example: null
+
+    post:
+      tags: [Projects]
+      summary: Neues Projekt anlegen
+      description: Erstellt ein neues Projekt im Status "draft".
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectCreate"
+      responses:
+        "201":
+          description: Projekt erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Project"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltige Eingabedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/projects/{id}:
+    get:
+      tags: [Projects]
+      summary: Einzelnes Projekt abrufen
+      description: Gibt die vollstaendigen Details eines Projekts zurueck.
+      operationId: getProject
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      responses:
+        "200":
+          description: Projekt-Details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Project"
+                  error:
+                    nullable: true
+                    example: null
+        "404":
+          description: Projekt nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/projects/{id}/status:
+    patch:
+      tags: [Projects]
+      summary: Projektstatus aendern
+      description: |
+        Aendert den Status eines Projekts gemaess der erlaubten Uebergaenge:
+        draft -> confirmed -> active -> completed -> archived.
+        Jeder Status (ausser archived) kann auch zu cancelled wechseln.
+      operationId: updateProjectStatus
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectStatusUpdate"
+      responses:
+        "200":
+          description: Status erfolgreich geaendert
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Project"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltiger Status-Uebergang
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Projekt nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/projects/calendar:
+    get:
+      tags: [Projects]
+      summary: Projekt-Kalender abrufen
+      description: |
+        Gibt alle Projekte als Kalender-Events zurueck, gefiltert nach
+        optionalem Zeitraum. Fuer die Kalenderansicht im Frontend.
+      operationId: getProjectCalendar
+      parameters:
+        - name: start
+          in: query
+          required: false
+          description: Beginn des Zeitraums (ISO 8601)
+          schema:
+            type: string
+            format: date
+        - name: end
+          in: query
+          required: false
+          description: Ende des Zeitraums (ISO 8601)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Liste der Kalender-Events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CalendarEvent"
+                  error:
+                    nullable: true
+                    example: null
+
+  # =========================================================================
+  # INVOICES (Port 8006)
+  # =========================================================================
+
+  /api/v1/invoices:
+    get:
+      tags: [Invoices]
+      summary: Rechnungsliste abrufen
+      description: Gibt eine paginierte und nach Status filterbare Liste aller Rechnungen zurueck.
+      operationId: listInvoices
+      parameters:
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPerPage"
+        - name: status
+          in: query
+          required: false
+          description: Nach Rechnungsstatus filtern
+          schema:
+            type: string
+            enum: [draft, finalized, sent, partial_paid, paid, overdue, cancelled]
+      responses:
+        "200":
+          description: Rechnungsliste mit Paginierung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Invoice"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+                  error:
+                    nullable: true
+                    example: null
+
+    post:
+      tags: [Invoices]
+      summary: Neue Rechnung erstellen
+      description: |
+        Erstellt eine neue Rechnung im Status "draft".
+        Die Rechnungsnummer wird automatisch vergeben.
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceCreate"
+      responses:
+        "201":
+          description: Rechnung erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Invoice"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltige Eingabedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/invoices/{id}:
+    get:
+      tags: [Invoices]
+      summary: Einzelne Rechnung abrufen
+      description: Gibt die vollstaendigen Details einer Rechnung zurueck.
+      operationId: getInvoice
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      responses:
+        "200":
+          description: Rechnungs-Details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Invoice"
+                  error:
+                    nullable: true
+                    example: null
+        "404":
+          description: Rechnung nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/invoices/{id}/pdf:
+    get:
+      tags: [Invoices]
+      summary: Rechnungs-PDF generieren
+      description: |
+        Generiert ein PDF fuer die Rechnung und gibt es als Download zurueck.
+        Noch nicht vollstaendig implementiert - gibt aktuell einen Platzhalter zurueck.
+      operationId: getInvoicePDF
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      responses:
+        "200":
+          description: PDF-Datei
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Rechnung nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "501":
+          description: PDF-Generierung noch nicht implementiert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/invoices/{id}/send:
+    post:
+      tags: [Invoices]
+      summary: Rechnung per E-Mail versenden
+      description: |
+        Versendet die Rechnung per E-Mail an den Kunden.
+        Noch nicht vollstaendig implementiert - E-Mail-Provider fehlt.
+      operationId: sendInvoice
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      responses:
+        "200":
+          description: Rechnung erfolgreich versendet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Rechnung versendet
+                  error:
+                    nullable: true
+                    example: null
+        "404":
+          description: Rechnung nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "501":
+          description: E-Mail-Versand noch nicht implementiert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # =========================================================================
+  # QUOTES (Port 8006)
+  # =========================================================================
+
+  /api/v1/quotes:
+    get:
+      tags: [Quotes]
+      summary: Angebotsliste abrufen
+      description: Gibt eine paginierte Liste aller Angebote zurueck.
+      operationId: listQuotes
+      parameters:
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPerPage"
+        - name: status
+          in: query
+          required: false
+          description: Nach Angebotsstatus filtern
+          schema:
+            type: string
+            enum: [draft, sent, accepted, declined, expired, cancelled]
+      responses:
+        "200":
+          description: Angebotsliste mit Paginierung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Quote"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+                  error:
+                    nullable: true
+                    example: null
+
+    post:
+      tags: [Quotes]
+      summary: Neues Angebot erstellen
+      description: Erstellt ein neues Angebot im Status "draft".
+      operationId: createQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteCreate"
+      responses:
+        "201":
+          description: Angebot erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Quote"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltige Eingabedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/quotes/{id}/convert-to-invoice:
+    post:
+      tags: [Quotes]
+      summary: Angebot in Rechnung umwandeln
+      description: |
+        Konvertiert ein akzeptiertes Angebot in eine neue Rechnung.
+        Alle Positionen werden uebernommen. Das Angebot wird mit der
+        neuen Rechnungs-ID verknuepft (converted_invoice_id).
+      operationId: convertQuoteToInvoice
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      responses:
+        "201":
+          description: Rechnung aus Angebot erstellt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Invoice"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Angebot kann nicht konvertiert werden (z.B. falscher Status)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Angebot nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # =========================================================================
+  # DUNNING (Port 8006)
+  # =========================================================================
+
+  /api/v1/dunning/overdue:
+    get:
+      tags: [Dunning]
+      summary: Ueberfaellige Rechnungen abrufen
+      description: |
+        Gibt alle ueberfaelligen Rechnungen mit der empfohlenen Mahnstufe
+        und Mahngebuehr zurueck.
+      operationId: listOverdueInvoices
+      responses:
+        "200":
+          description: Liste ueberfaelliger Rechnungen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OverdueInvoice"
+                  error:
+                    nullable: true
+                    example: null
+
+  /api/v1/dunning/send-reminder:
+    post:
+      tags: [Dunning]
+      summary: Zahlungserinnerung/Mahnung versenden
+      description: |
+        Erstellt einen Mahnungseintrag und versendet die Erinnerung
+        (sofern E-Mail konfiguriert ist). Erhoet automatisch die Mahnstufe.
+      operationId: sendDunningReminder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DunningReminderRequest"
+      responses:
+        "200":
+          description: Mahnung erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DunningEntry"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltige Anfrage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Rechnung nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # =========================================================================
+  # BANKING (Port 8006)
+  # =========================================================================
+
+  /api/v1/banking/import:
+    post:
+      tags: [Banking]
+      summary: Bank-CSV importieren
+      description: |
+        Importiert Bank-Transaktionen aus einer CSV-Datei.
+        Unterstuetzt gaengige Formate deutscher Banken.
+      operationId: importBankCSV
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV-Datei mit Bank-Transaktionen
+      responses:
+        "200":
+          description: Import erfolgreich
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      imported:
+                        type: integer
+                        description: Anzahl importierter Transaktionen
+                      skipped:
+                        type: integer
+                        description: Anzahl uebersprungener Duplikate
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltiges Dateiformat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/banking/auto-match:
+    post:
+      tags: [Banking]
+      summary: Automatische Zuordnung starten
+      description: |
+        Ordnet offene Bank-Transaktionen automatisch zu Rechnungen zu.
+        Matching erfolgt ueber Verwendungszweck, Betrag und Kundename.
+      operationId: autoMatchTransactions
+      responses:
+        "200":
+          description: Zuordnungsergebnis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AutoMatchResult"
+                  error:
+                    nullable: true
+                    example: null
+
+  /api/v1/export/datev:
+    get:
+      tags: [Banking]
+      summary: DATEV-Export
+      description: |
+        Exportiert Buchungsdaten im DATEV-kompatiblen CSV-Format
+        fuer den Steuerberater.
+      operationId: exportDatev
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: Startdatum (ISO YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: Enddatum (ISO YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: DATEV-CSV-Datei
+          content:
+            text/csv:
+              schema:
+                type: string
+                description: CSV im DATEV-Format
+        "501":
+          description: DATEV-Export noch nicht implementiert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # =========================================================================
+  # AI (Port 8014)
+  # =========================================================================
+
+  /api/v1/ai/complete:
+    post:
+      tags: [AI]
+      summary: KI-Completion ausfuehren
+      description: |
+        Sendet eine Nachricht an das konfigurierte KI-Modell (Claude) und
+        gibt die generierte Antwort zurueck. Erfordert einen konfigurierten
+        API-Key auf dem Server.
+      operationId: aiComplete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AICompleteRequest"
+      responses:
+        "200":
+          description: KI-Antwort
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AICompleteResponse"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: user_message fehlt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: KI-Provider nicht verfuegbar oder nicht konfiguriert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/ai/smart-asset:
+    post:
+      tags: [AI]
+      summary: Smart-Asset-Erkennung
+      description: |
+        Erkennt automatisch Equipment-Metadaten aus einer Freitext-Beschreibung.
+        Gibt Name, Kategorie, Hersteller, Modell und Beschreibung zurueck.
+        Nuetzlich fuer schnelles Anlegen von neuem Equipment.
+      operationId: aiSmartAsset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmartAssetRequest"
+      responses:
+        "200":
+          description: Erkannte Equipment-Metadaten
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SmartAssetResponse"
+                  error:
+                    nullable: true
+                    example: null
+        "503":
+          description: KI-Provider nicht verfuegbar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/ai/status:
+    get:
+      tags: [AI]
+      summary: KI-Status abfragen
+      description: |
+        Prueft ob ein KI-Provider konfiguriert ist und gibt
+        das verwendete Modell zurueck.
+      operationId: aiStatus
+      responses:
+        "200":
+          description: KI-Provider-Status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AIStatusResponse"
+                  error:
+                    nullable: true
+                    example: null
+
+  # =========================================================================
+  # SCANNER (Port 8004)
+  # =========================================================================
+
+  /api/v1/scanner/resolve/{identifier}:
+    get:
+      tags: [Scanner]
+      summary: Equipment per Scan aufloesen
+      description: |
+        Loest einen gescannten Barcode, QR-Code oder RFID-Tag zu einem
+        Equipment-Eintrag auf. Wird von der Scanner-App verwendet.
+        Ruft intern den Inventory-Service auf.
+      operationId: scannerResolve
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          description: Gescannter Barcode, QR-Code oder RFID-Tag
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Aufgeloestes Equipment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+                  error:
+                    nullable: true
+                    example: null
+        "404":
+          description: Kein Equipment fuer diesen Identifier gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/scanner/sessions:
+    post:
+      tags: [Scanner]
+      summary: Neue Scan-Session starten
+      description: |
+        Startet eine neue Scan-Session. Sessions gruppieren mehrere Scans
+        und koennen einem Projekt zugeordnet werden.
+        Typen: checkout (Ausgabe), checkin (Rueckgabe), inventory (Inventur).
+      operationId: createScanSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanSessionCreate"
+      responses:
+        "201":
+          description: Session erfolgreich gestartet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ScanSession"
+                  error:
+                    nullable: true
+                    example: null
+        "400":
+          description: Ungueltiger Session-Typ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
