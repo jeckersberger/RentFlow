@@ -98,6 +98,40 @@
     height: 32px;
     font-size: $font-size-lg;
     flex-shrink: 0;
+    position: relative;
+  }
+
+  &__badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    background: $accent-cyan;
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  &__badge-expanded {
+    margin-left: auto;
+    background: $accent-cyan;
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
   }
 
   &__link-label {
