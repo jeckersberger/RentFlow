@@ -27,3 +27,132 @@
     color: #06b6d4;
   }
 }
+
+// KPI Dashboard
+.kpi-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.kpi-dashboard__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.kpi-card {
+  background: $bg-card;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+  padding: 1.25rem;
+  text-align: center;
+  transition: border-color $transition-base;
+
+  &:hover {
+    border-color: $border-hover;
+  }
+}
+
+.kpi-card__value {
+  font-size: $font-size-2xl;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.kpi-card__label {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+}
+
+// Bar Chart
+.kpi-bar-chart {
+  background: $bg-card;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+  padding: 1.25rem;
+}
+
+.kpi-bar-chart__title {
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0 0 1rem;
+}
+
+.kpi-bar-chart__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.kpi-bar-chart__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.kpi-bar-chart__label {
+  flex: 0 0 100px;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  text-align: right;
+}
+
+.kpi-bar-chart__track {
+  flex: 1;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.kpi-bar-chart__fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+  min-width: 2%;
+}
+
+.kpi-bar-chart__value {
+  flex: 0 0 48px;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $text-primary;
+  text-align: right;
+}
+
+// Empty / Loading states
+.kpi-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: $text-secondary;
+  font-size: $font-size-sm;
+}
+
+.kpi-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: $bg-card;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+}
+
+.kpi-empty__icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.kpi-empty__text {
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0 0 0.25rem;
+}
+
+.kpi-empty__sub {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  margin: 0;
+}

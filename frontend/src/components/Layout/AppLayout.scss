@@ -210,6 +210,12 @@
     font-weight: 600;
     color: $text-secondary;
   }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
 }
 
 // ── Content ──

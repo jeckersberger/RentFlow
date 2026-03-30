@@ -1,0 +1,402 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+// ── Layout ──
+.wf-editor {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: $space-4;
+  min-height: 540px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+}
+
+// ── Left panel: definition list ──
+.wf-editor__sidebar {
+  display: flex;
+  flex-direction: column;
+  background: $bg-card;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.wf-editor__sidebar-header {
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $border-subtle;
+  color: $text-secondary;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.wf-editor__sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: $space-2;
+}
+
+.wf-editor__sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
+  color: $text-secondary;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: background $transition-fast, color $transition-fast;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: $text-primary;
+  }
+
+  &--active {
+    background: rgba(0, 212, 255, 0.08);
+    color: $accent-cyan;
+    border-color: rgba(0, 212, 255, 0.15);
+  }
+}
+
+.wf-editor__sidebar-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.wf-editor__sidebar-empty {
+  padding: $space-6 $space-4;
+  text-align: center;
+  color: $text-muted;
+  font-size: $font-size-sm;
+  font-style: italic;
+}
+
+// ── Right panel: workflow detail ──
+.wf-editor__detail {
+  display: flex;
+  flex-direction: column;
+  background: $bg-card;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.wf-editor__detail-empty {
+  @include flex-center;
+  flex: 1;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-8;
+  color: $text-muted;
+  font-size: $font-size-sm;
+
+  svg {
+    opacity: 0.3;
+  }
+}
+
+// ── Detail header ──
+.wf-editor__detail-header {
+  padding: $space-4 $space-6;
+  border-bottom: 1px solid $border-subtle;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.wf-editor__detail-title-row {
+  @include flex-between;
+}
+
+.wf-editor__detail-name {
+  font-size: $font-size-xl;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0;
+}
+
+.wf-editor__toggle {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  cursor: pointer;
+  user-select: none;
+}
+
+.wf-editor__toggle-label {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+}
+
+.wf-editor__toggle-track {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+  transition: background $transition-fast;
+
+  &--active {
+    background: rgba($success, 0.4);
+  }
+}
+
+.wf-editor__toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: $text-muted;
+  transition: transform $transition-fast, background $transition-fast;
+
+  .wf-editor__toggle-track--active & {
+    transform: translateX(18px);
+    background: $success;
+  }
+}
+
+.wf-editor__detail-meta {
+  display: flex;
+  gap: $space-4;
+  flex-wrap: wrap;
+}
+
+.wf-editor__meta-item {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-sm;
+  color: $text-muted;
+
+  span {
+    color: $text-secondary;
+  }
+}
+
+// ── Steps / Node display ──
+.wf-editor__steps {
+  flex: 1;
+  padding: $space-6;
+  overflow-y: auto;
+}
+
+.wf-editor__steps-title {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 0 0 $space-4 0;
+}
+
+.wf-editor__node-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding-left: $space-4;
+}
+
+// ── Single node ──
+.wf-editor__node {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.wf-editor__node-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.wf-editor__node-circle {
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid $border-subtle;
+  background: $bg-secondary;
+  color: $text-secondary;
+  flex-shrink: 0;
+  transition: border-color $transition-fast, color $transition-fast;
+  position: relative;
+  z-index: 1;
+
+  &--trigger {
+    border-color: $accent-cyan;
+    color: $accent-cyan;
+    background: rgba(0, 212, 255, 0.08);
+  }
+
+  &--condition {
+    border-color: $warning;
+    color: $warning;
+    background: rgba(245, 158, 11, 0.08);
+  }
+
+  &--action {
+    border-color: $accent-purple;
+    color: $accent-purple;
+    background: rgba(139, 92, 246, 0.08);
+  }
+
+  &--end {
+    border-color: $success;
+    color: $success;
+    background: rgba(34, 197, 94, 0.08);
+  }
+}
+
+.wf-editor__node-line {
+  width: 2px;
+  height: 24px;
+  background: $border-subtle;
+}
+
+.wf-editor__node-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-2 0;
+}
+
+.wf-editor__node-label {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+.wf-editor__node-sub {
+  font-size: $font-size-xs;
+  color: $text-muted;
+}
+
+.wf-editor__no-steps {
+  padding: $space-6;
+  text-align: center;
+  color: $text-muted;
+  font-size: $font-size-sm;
+  font-style: italic;
+}
+
+// ── Bottom bar ──
+.wf-editor__bottom {
+  padding: $space-4 $space-6;
+  border-top: 1px solid $border-subtle;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wf-editor__template-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: $accent-cyan;
+  color: #000;
+  border: 1px solid $accent-cyan;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  font-family: $font-family;
+  cursor: pointer;
+  transition: filter $transition-fast;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
+// ── Template modal content ──
+.wf-editor__template-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.wf-editor__template-item {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid $border-subtle;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background: rgba(0, 212, 255, 0.06);
+    border-color: $border-hover;
+  }
+}
+
+.wf-editor__template-item-icon {
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.1);
+  color: $accent-purple;
+  flex-shrink: 0;
+}
+
+.wf-editor__template-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wf-editor__template-item-name {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $text-primary;
+  @include truncate;
+}
+
+.wf-editor__template-item-desc {
+  font-size: $font-size-xs;
+  color: $text-muted;
+  @include truncate;
+}
+
+.wf-editor__template-empty {
+  padding: $space-6;
+  text-align: center;
+  color: $text-muted;
+  font-size: $font-size-sm;
+  font-style: italic;
+}
+
+.wf-editor__template-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-3;
+  padding: $space-6;
+  color: $text-secondary;
+  font-size: $font-size-sm;
+}
+
+// ── Loading state ──
+.wf-editor__loading {
+  @include flex-center;
+  gap: $space-3;
+  padding: $space-8;
+  color: $text-secondary;
+  font-size: $font-size-sm;
+}

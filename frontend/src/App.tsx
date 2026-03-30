@@ -48,6 +48,9 @@ const BankImport = React.lazy(() => import('@/pages/Banking/BankImport'));
 const CalendarPage = React.lazy(() => import('@/pages/Calendar/CalendarPage'));
 const SettingsPage = React.lazy(() => import('@/pages/Settings/SettingsPage'));
 const TemplateEditor = React.lazy(() => import('@/pages/Documents/TemplateEditor'));
+const PortalPage = React.lazy(() => import('@/pages/Portal/PortalPage'));
+const WorkflowList = React.lazy(() => import('@/pages/Workflows/WorkflowList'));
+const WorkflowEditor = React.lazy(() => import('@/pages/Workflows/WorkflowEditor'));
 
 // Layout (already exists with Sidebar + Header)
 const AppLayout = React.lazy(() => import('@/components/Layout/AppLayout'));
@@ -75,6 +78,7 @@ export default function App() {
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/portal" element={<PortalPage />} />
 
             <Route
               path="/*"
@@ -119,6 +123,8 @@ export default function App() {
               <Route path="reporting" element={<ReportingList />} />
               <Route path="maintenance" element={<MaintenanceList />} />
               <Route path="transport" element={<TransportList />} />
+              <Route path="workflows" element={<WorkflowList />} />
+              <Route path="workflows/editor" element={<WorkflowEditor />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="account" element={<AccountPage />} />
             </Route>

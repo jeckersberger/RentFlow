@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useSidebarStore } from '@/stores/sidebarStore';
 import { fetchCount } from '@/services/api';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { NotificationBell } from '@/components/NotificationBell/NotificationBell';
 import './AppLayout.scss';
 
 const navItems = [
@@ -22,6 +24,7 @@ const navItems = [
   { to: '/expenses', icon: '💳', label: 'Ausgaben', badgeKey: null },
   { to: '/maintenance', icon: '🔧', label: 'Wartung', badgeKey: null },
   { to: '/transport', icon: '🚛', label: 'Transport', badgeKey: null },
+  { to: '/workflows', icon: '🔀', label: 'Workflows', badgeKey: null },
   { to: '/reporting', icon: '📊', label: 'Reports', badgeKey: null },
   { to: '/settings', icon: '⚙️', label: 'Einstellungen', badgeKey: null },
   { to: '/account', icon: '👤', label: 'Konto', badgeKey: null },
@@ -79,6 +82,7 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const { isExpanded, isPinned, expand, collapse, pin } = useSidebarStore();
   const badges = useBadgeCounts();
+  useWebSocket();
 
   const handleLogout = () => {
     localStorage.removeItem('cd_access_token');
@@ -141,6 +145,9 @@ export default function AppLayout() {
         <header className="app-header">
           <div className="app-header__left">
             <h2 className="app-header__title">CrateDesk</h2>
+          </div>
+          <div className="app-header__right">
+            <NotificationBell />
           </div>
         </header>
 
