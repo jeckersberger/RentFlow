@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Pencil } from 'lucide-react';
 import { PageWrapper } from '@/components/PageWrapper/PageWrapper';
 import { DataTable, Column } from '@/components/DataTable/DataTable';
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge';
@@ -47,6 +49,7 @@ const documentColumns: Column<Document>[] = [
 ];
 
 export default function DocumentList() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('documents');
 
   const { data: templates, isLoading: templatesLoading } = useQuery({
@@ -63,7 +66,19 @@ export default function DocumentList() {
   const documentItems: Document[] = Array.isArray(documents) ? documents : [];
 
   return (
-    <PageWrapper title="Dokumente">
+    <PageWrapper
+      title="Dokumente"
+      actions={
+        <button
+          className="tabs__btn tabs__btn--active"
+          onClick={() => navigate('/documents/templates')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          <Pencil size={14} />
+          Template Editor
+        </button>
+      }
+    >
       <div className="tabs">
         <button className={`tabs__btn ${tab === 'documents' ? 'tabs__btn--active' : ''}`} onClick={() => setTab('documents')}>Dokumente</button>
         <button className={`tabs__btn ${tab === 'templates' ? 'tabs__btn--active' : ''}`} onClick={() => setTab('templates')}>Templates</button>

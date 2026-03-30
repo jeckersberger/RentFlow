@@ -47,6 +47,7 @@ const DunningOverview = React.lazy(() => import('@/pages/Invoices/DunningOvervie
 const BankImport = React.lazy(() => import('@/pages/Banking/BankImport'));
 const CalendarPage = React.lazy(() => import('@/pages/Calendar/CalendarPage'));
 const SettingsPage = React.lazy(() => import('@/pages/Settings/SettingsPage'));
+const TemplateEditor = React.lazy(() => import('@/pages/Documents/TemplateEditor'));
 
 // Layout (already exists with Sidebar + Header)
 const AppLayout = React.lazy(() => import('@/components/Layout/AppLayout'));
@@ -113,6 +114,7 @@ export default function App() {
               <Route path="warehouse/inventory" element={<WarehouseInventory />} />
               <Route path="crew" element={<CrewList />} />
               <Route path="documents" element={<DocumentList />} />
+              <Route path="documents/templates" element={<TemplateEditor />} />
               <Route path="expenses" element={<ExpenseList />} />
               <Route path="reporting" element={<ReportingList />} />
               <Route path="maintenance" element={<MaintenanceList />} />
