@@ -49,7 +49,10 @@ func CORS(cfg CORSConfig) func(http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Methods", methods)
 			w.Header().Set("Access-Control-Allow-Headers", headers)
 			w.Header().Set("Access-Control-Max-Age", maxAge)
+			// Only set credentials header if not wildcard (browser rejects * + credentials)
+		if !allowedOrigins["*"] {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
 
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusNoContent)
