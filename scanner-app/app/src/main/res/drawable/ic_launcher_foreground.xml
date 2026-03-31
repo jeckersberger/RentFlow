@@ -4,12 +4,12 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Letter E -->
+    <!-- Letter C -->
     <path
         android:fillColor="#00E5FF"
-        android:pathData="M28,36 L28,72 L50,72 L50,66 L34,66 L34,57 L48,57 L48,51 L34,51 L34,42 L50,42 L50,36 Z" />
-    <!-- Letter F -->
+        android:pathData="M48,36 L34,36 C30.7,36 28,38.7 28,42 L28,66 C28,69.3 30.7,72 34,72 L48,72 L48,66 L34,66 L34,42 L48,42 Z" />
+    <!-- Letter D -->
     <path
         android:fillColor="#00E5FF"
-        android:pathData="M56,36 L56,72 L62,72 L62,57 L76,57 L76,51 L62,51 L62,42 L78,42 L78,36 Z" />
+        android:pathData="M56,36 L56,72 L70,72 C73.3,72 76,69.3 76,66 L76,42 C76,38.7 73.3,36 70,36 Z M70,66 L62,66 L62,42 L70,42 Z" />
 </vector>
