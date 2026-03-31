@@ -28,8 +28,6 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 RUN mkdir -p /usr/share/nginx/html
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:80/health || exit 1
 
 # Expose port
 EXPOSE 80
