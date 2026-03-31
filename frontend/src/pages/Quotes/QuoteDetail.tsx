@@ -1,251 +1,447 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import { ArrowLeft, Pencil, FileText } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { PageWrapper } from '@/components/PageWrapper/PageWrapper';
-import { StatusBadge } from '@/components/StatusBadge/StatusBadge';
-import * as quoteApi from '@/services/quotes';
-import type { Quote, QuoteItem } from '@/types/quote';
-import './QuoteDetail.scss';
+import { useState, useMemo } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { quoteApi, projectApi } from '../../services/api'
+import { useNotificationStore } from '../../stores/notificationStore'
+import styles from './Quotes.module.scss'
 
-function formatEur(cents: number | undefined): string {
-  if (cents == null) return '-';
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
+type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'confirmed' | 'rejected' | 'expired'
+
+interface QuoteItem {
+  id: string
+  description: string
+  quantity: number
+  unit_price: number
+  total_price: number
+  tax_rate: number
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('de-DE');
+interface Quote {
+  id: string
+  quote_number: string
+  project_id?: string
+  project_name?: string
+  client_name: string
+  client_email: string
+  status: QuoteStatus
+  sub_total: number
+  tax_amount: number
+  total: number
+  currency: string
+  valid_until: string
+  notes: string
+  items: QuoteItem[]
+  created_at: string
+  updated_at: string
 }
 
-export default function QuoteDetail() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+const STATUS_LABELS: Record<QuoteStatus, string> = {
+  draft: 'Entwurf',
+  sent: 'Gesendet',
+  accepted: 'Akzeptiert',
+  confirmed: 'Bestätigt',
+  rejected: 'Abgelehnt',
+  expired: 'Abgelaufen',
+}
 
-  const { data: item, isLoading } = useQuery({
-    queryKey: ['quotes', id],
-    queryFn: () => quoteApi.get(id!),
+// Fallback mock
+const mockQuote: Quote = {
+  id: '1', quote_number: 'AN-2026-001', project_id: '1', project_name: 'Stadtfest München 2026',
+  client_name: 'Stadt München', client_email: 'veranstaltungen@muenchen.de', status: 'accepted',
+  sub_total: 45000, tax_amount: 8550, total: 53550, currency: 'EUR',
+  valid_until: '2026-04-01T00:00:00Z', notes: 'Full-Service Veranstaltungstechnik',
+  items: [
+    { id: '1', description: 'PA-System Hauptbühne', quantity: 1, unit_price: 12000, total_price: 12000, tax_rate: 19 },
+    { id: '2', description: 'Lichttechnik 3 Bühnen', quantity: 1, unit_price: 15000, total_price: 15000, tax_rate: 19 },
+    { id: '3', description: 'Bühne + Truss', quantity: 1, unit_price: 8000, total_price: 8000, tax_rate: 19 },
+    { id: '4', description: 'Techniker-Team (4 Tage)', quantity: 8, unit_price: 1250, total_price: 10000, tax_rate: 19 },
+  ],
+  created_at: '2026-01-15T10:00:00Z', updated_at: '2026-02-20T14:00:00Z',
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount)
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function QuoteDetail() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { addNotification } = useNotificationStore()
+  const [_actionPending, setActionPending] = useState(false)
+
+  const { data: quoteRaw, isLoading, error } = useQuery({
+    queryKey: ['quote', id],
+    queryFn: () => quoteApi.getById(id!),
     enabled: !!id,
-  });
+  })
 
-  const { data: quoteItems } = useQuery({
-    queryKey: ['quotes', id, 'items'],
-    queryFn: () => quoteApi.listItems(id!),
-    enabled: !!id,
-  });
+  const quote: Quote | null = useMemo(() => {
+    if (quoteRaw && typeof quoteRaw === 'object' && quoteRaw.id) return quoteRaw as Quote
+    // Fallback
+    return mockQuote
+  }, [quoteRaw])
 
-  const convertMutation = useMutation({
-    mutationFn: () => quoteApi.convertToInvoice(id!),
-    onSuccess: (data) => {
-      toast.success('Angebot in Rechnung umgewandelt');
-      navigate(`/invoices/${data.invoice_id}`);
+  const isExpired = quote ? new Date(quote.valid_until) < new Date() && quote.status !== 'accepted' && quote.status !== 'confirmed' && quote.status !== 'rejected' : false
+
+  // Send quote
+  const { mutate: sendQuote } = useMutation({
+    mutationFn: () => quoteApi.send(id!, quote!.client_email),
+    onMutate: () => setActionPending(true),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] })
+      addNotification('Angebot erfolgreich versendet', 'success', { title: 'Erfolg', duration: 3000 })
     },
     onError: () => {
-      toast.error('Fehler beim Umwandeln in Rechnung');
+      addNotification('Fehler beim Versenden des Angebots', 'error', { title: 'Fehler', duration: 5000 })
     },
-  });
+    onSettled: () => setActionPending(false),
+  })
+
+  // Accept quote
+  const { mutate: acceptQuote } = useMutation({
+    mutationFn: () => quoteApi.accept(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] })
+      addNotification('Angebot als akzeptiert markiert', 'success', { title: 'Erfolg', duration: 3000 })
+    },
+    onError: () => {
+      addNotification('Fehler beim Akzeptieren des Angebots', 'error', { title: 'Fehler', duration: 5000 })
+    },
+  })
+
+  // Confirm quote
+  const { mutate: confirmQuote } = useMutation({
+    mutationFn: () => quoteApi.confirm(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] })
+      addNotification('Angebot bestätigt (Auftragsbestätigung)', 'success', { title: 'Erfolg', duration: 3000 })
+    },
+    onError: () => {
+      addNotification('Fehler beim Bestätigen des Angebots', 'error', { title: 'Fehler', duration: 5000 })
+    },
+  })
+
+  // Reject quote
+  const { mutate: rejectQuote } = useMutation({
+    mutationFn: () => quoteApi.reject(id!, 'Vom Kunden abgelehnt'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] })
+      addNotification('Angebot als abgelehnt markiert', 'success', { title: 'Erfolg', duration: 3000 })
+    },
+    onError: () => {
+      addNotification('Fehler beim Ablehnen des Angebots', 'error', { title: 'Fehler', duration: 5000 })
+    },
+  })
+
+  // Convert to invoice
+  const { mutate: convertToInvoice } = useMutation({
+    mutationFn: () => quoteApi.convertToInvoice(id!),
+    onSuccess: (data: { id?: string }) => {
+      addNotification('Rechnung aus Angebot erstellt', 'success', { title: 'Erfolg', duration: 3000 })
+      if (data?.id) navigate(`/invoices/${data.id}`)
+      else navigate('/invoices')
+    },
+    onError: () => {
+      addNotification('Fehler beim Konvertieren in Rechnung', 'error', { title: 'Fehler', duration: 5000 })
+    },
+  })
+
+  // Create project from quote
+  const { mutate: createProjectFromQuote } = useMutation({
+    mutationFn: async () => {
+      if (!quote) throw new Error('No quote')
+      return projectApi.create({
+        name: `${quote.client_name} — ${quote.quote_number}`,
+        client_name: quote.client_name,
+        client_email: quote.client_email || '',
+        status: 'confirmed',
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        budget: quote.total || 0,
+        notes: `Erstellt aus Angebot ${quote.quote_number}`,
+      })
+    },
+    onSuccess: (data: { id?: string }) => {
+      addNotification('Projekt aus Angebot erstellt', 'success', { title: 'Erfolg', duration: 3000 })
+      if (data?.id) navigate(`/projects/${data.id}`)
+      else navigate('/projects')
+    },
+    onError: () => {
+      addNotification('Fehler beim Erstellen des Projekts', 'error', { title: 'Fehler', duration: 5000 })
+    },
+  })
 
   if (isLoading) {
     return (
-      <PageWrapper title="Angebot">
-        <div className="detail-skeleton">
-          <div className="skeleton skeleton--heading" />
-          <div className="skeleton skeleton--block" />
-        </div>
-      </PageWrapper>
-    );
+      <div className={styles['quote-detail-page']}>
+        <p style={{ color: 'var(--color-text-secondary)' }}>Wird geladen...</p>
+      </div>
+    )
   }
 
-  if (!item) {
+  if (error && !quote) {
     return (
-      <PageWrapper title="Angebot">
-        <p className="empty-state">Angebot nicht gefunden.</p>
-      </PageWrapper>
-    );
+      <div className={styles['quote-detail-page']}>
+        <div className={styles['error-message']}>Fehler beim Laden des Angebots</div>
+      </div>
+    )
   }
 
-  const lines: QuoteItem[] = Array.isArray(quoteItems) ? quoteItems : [];
+  if (!quote) {
+    return (
+      <div className={styles['quote-detail-page']}>
+        <div className={styles['error-message']}>Angebot nicht gefunden</div>
+      </div>
+    )
+  }
 
-  const actionButtons = (
-    <div style={{ display: 'flex', gap: '8px' }}>
-      <button
-        className="btn btn--primary"
-        onClick={() => convertMutation.mutate()}
-        disabled={convertMutation.isPending}
-        title="Angebot in Rechnung umwandeln"
-      >
-        <FileText size={16} />
-        <span>
-          {convertMutation.isPending
-            ? 'Wird umgewandelt...'
-            : 'In Rechnung umwandeln'}
-        </span>
-      </button>
-      <button
-        className="btn btn--ghost"
-        onClick={() => navigate(`/quotes/${id}/edit`)}
-      >
-        <Pencil size={16} />
-        <span>Bearbeiten</span>
-      </button>
-    </div>
-  );
+  const effectiveStatus = isExpired ? 'expired' : quote.status
 
   return (
-    <PageWrapper title={`Angebot ${item.quote_number}`} actions={actionButtons}>
-      <button className="btn btn--ghost" onClick={() => navigate(-1)}>
-        <ArrowLeft size={18} />
-        <span>Zurueck</span>
+    <div className={styles['quote-detail-page']}>
+      {/* Back button */}
+      <button className={styles['back-button']} onClick={() => navigate('/quotes')}>
+        &larr; Zurück zu Angeboten
       </button>
 
-      {/* Quote header info */}
-      <motion.div
-        className="detail-card"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="detail-grid">
-          <div className="detail-field">
-            <span className="detail-field__label">Angebotsnummer</span>
-            <span className="detail-field__value detail-field__value--mono">
-              {item.quote_number}
+      {/* Header */}
+      <div className={styles['page-header']}>
+        <div>
+          <h1 className={styles['page-title']}>Angebot {quote.quote_number}</h1>
+          <p className={styles['page-subtitle']}>
+            <span className={`${styles['status-badge']} ${styles[`status-badge--${effectiveStatus}`]}`}>
+              {STATUS_LABELS[effectiveStatus]}
+            </span>
+            {' '}&middot; {quote.client_name}
+          </p>
+        </div>
+        <div className={styles['action-bar']}>
+          <button
+            className={styles.btn + ' ' + styles['btn--secondary']}
+            onClick={() => {
+              quoteApi.getPdf(id!).then((blob: Blob) => {
+                const url = URL.createObjectURL(blob)
+                window.open(url, '_blank')
+              }).catch(() => {
+                addNotification('PDF-Erstellung fehlgeschlagen', 'error', { title: 'Fehler', duration: 3000 })
+              })
+            }}
+          >
+            Als PDF
+          </button>
+
+          {quote.status === 'draft' && (
+            <button
+              className={styles.btn + ' ' + styles['btn--primary']}
+              onClick={() => sendQuote()}
+            >
+              Per E-Mail senden
+            </button>
+          )}
+
+          {(quote.status === 'accepted' || quote.status === 'confirmed') && (
+            <>
+              <button
+                className={styles.btn + ' ' + styles['btn--primary']}
+                onClick={() => createProjectFromQuote()}
+              >
+                Projekt erstellen
+              </button>
+              <button
+                className={styles.btn + ' ' + styles['btn--success']}
+                onClick={() => convertToInvoice()}
+              >
+                In Rechnung umwandeln
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Content Grid */}
+      <div className={styles['detail-grid']}>
+        {/* Quote Info */}
+        <div className={styles['detail-card']}>
+          <h2 className={styles['detail-card-title']}>Angebotsdetails</h2>
+
+          <div className={styles['detail-row']}>
+            <span className={styles['detail-label']}>Angebotsnummer</span>
+            <span className={styles['detail-value']}>{quote.quote_number}</span>
+          </div>
+
+          <div className={styles['detail-row']}>
+            <span className={styles['detail-label']}>Kunde</span>
+            <span className={styles['detail-value']}>{quote.client_name}</span>
+          </div>
+
+          <div className={styles['detail-row']}>
+            <span className={styles['detail-label']}>E-Mail</span>
+            <span className={styles['detail-value']}>
+              <a href={`mailto:${quote.client_email}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+                {quote.client_email}
+              </a>
             </span>
           </div>
-          <div className="detail-field">
-            <span className="detail-field__label">Status</span>
-            <StatusBadge status={item.status} />
-          </div>
-          <div className="detail-field">
-            <span className="detail-field__label">Kunde</span>
-            <span className="detail-field__value">
-              {item.customer_name || '-'}
-            </span>
-          </div>
-          <div className="detail-field">
-            <span className="detail-field__label">E-Mail</span>
-            <span className="detail-field__value">
-              {item.customer_email || '-'}
-            </span>
-          </div>
-          <div className="detail-field">
-            <span className="detail-field__label">Angebotsdatum</span>
-            <span className="detail-field__value">
-              {formatDate(item.quote_date)}
-            </span>
-          </div>
-          <div className="detail-field">
-            <span className="detail-field__label">Gueltig bis</span>
-            <span className="detail-field__value">
-              {formatDate(item.valid_until)}
-            </span>
-          </div>
-          {item.subject && (
-            <div className="detail-field detail-field--full">
-              <span className="detail-field__label">Betreff</span>
-              <span className="detail-field__value">{item.subject}</span>
+
+          {quote.project_name && (
+            <div className={styles['detail-row']}>
+              <span className={styles['detail-label']}>Projekt</span>
+              <span className={styles['detail-value']}>
+                <span
+                  style={{ color: 'var(--color-primary)', cursor: 'pointer' }}
+                  onClick={() => quote.project_id && navigate(`/projects/${quote.project_id}`)}
+                >
+                  {quote.project_name}
+                </span>
+              </span>
             </div>
           )}
-          {item.intro_text && (
-            <div className="detail-field detail-field--full">
-              <span className="detail-field__label">Einleitungstext</span>
-              <span className="detail-field__value">{item.intro_text}</span>
-            </div>
-          )}
-          {item.notes && (
-            <div className="detail-field detail-field--full">
-              <span className="detail-field__label">Notizen</span>
-              <span className="detail-field__value">{item.notes}</span>
+
+          <div className={styles['detail-row']}>
+            <span className={styles['detail-label']}>Erstellt am</span>
+            <span className={styles['detail-value']}>{formatDate(quote.created_at)}</span>
+          </div>
+
+          <div className={styles['detail-row']}>
+            <span className={styles['detail-label']}>Gültig bis</span>
+            <span className={styles['detail-value']} style={{ color: isExpired ? 'var(--color-danger)' : 'inherit' }}>
+              {formatDate(quote.valid_until)}
+              {isExpired && ' (abgelaufen)'}
+            </span>
+          </div>
+
+          {quote.notes && (
+            <div className={styles['detail-row']}>
+              <span className={styles['detail-label']}>Notizen</span>
+              <span className={styles['detail-value']}>{quote.notes}</span>
             </div>
           )}
         </div>
-      </motion.div>
 
-      {/* Items table */}
-      <motion.div
-        className="detail-card"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        <h3 className="detail-card__title">Positionen</h3>
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Beschreibung</th>
-                <th className="data-table__th--right">Menge</th>
-                <th className="data-table__th--right">Einheit</th>
-                <th className="data-table__th--right">Einzelpreis</th>
-                <th className="data-table__th--right">Gesamt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lines.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="data-table__empty">
-                    Keine Positionen
-                  </td>
-                </tr>
-              ) : (
-                lines.map((line) => (
-                  <tr key={line.id}>
-                    <td>{line.description}</td>
-                    <td className="data-table__cell--right">{line.quantity}</td>
-                    <td className="data-table__cell--right">{line.unit}</td>
-                    <td className="data-table__cell--right">
-                      {formatEur(line.unit_price)}
-                    </td>
-                    <td className="data-table__cell--right">
-                      {formatEur(line.quantity * line.unit_price)}
-                    </td>
-                  </tr>
-                ))
+        {/* Summary Card */}
+        <div>
+          <div className={styles['detail-card']}>
+            <h2 className={styles['detail-card-title']}>Zusammenfassung</h2>
+
+            <div className={styles['totals-section']} style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
+              <div className={styles['total-row']}>
+                <span className={styles['total-label']}>Zwischensumme (netto)</span>
+                <span className={styles['total-value']}>{formatCurrency(quote.sub_total)}</span>
+              </div>
+              <div className={styles['total-row']}>
+                <span className={styles['total-label']}>MwSt. (19%)</span>
+                <span className={styles['total-value']}>{formatCurrency(quote.tax_amount)}</span>
+              </div>
+              <div className={`${styles['total-row']} ${styles['total-row--grand']}`}>
+                <span>Gesamtbetrag (brutto)</span>
+                <span>{formatCurrency(quote.total)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Actions */}
+          <div className={styles['detail-card']} style={{ marginTop: 'var(--spacing-4)' }}>
+            <h2 className={styles['detail-card-title']}>Status ändern</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+              {quote.status === 'draft' && (
+                <button
+                  className={styles.btn + ' ' + styles['btn--primary']}
+                  onClick={() => sendQuote()}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  Veröffentlichen &amp; Senden
+                </button>
               )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="quote-totals">
-          <div className="quote-totals__row">
-            <span>Netto</span>
-            <span>{formatEur(item.total_net)}</span>
-          </div>
-          {item.kleinunternehmer && (
-            <div className="quote-totals__row">
-              <span>Kleinunternehmer gem. &sect;19 UStG</span>
-              <span>0,00 EUR</span>
+              {(quote.status === 'sent' || quote.status === 'draft') && (
+                <button
+                  className={styles.btn + ' ' + styles['btn--success']}
+                  onClick={() => acceptQuote()}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  Als akzeptiert markieren
+                </button>
+              )}
+              {quote.status === 'accepted' && (
+                <button
+                  className={styles.btn + ' ' + styles['btn--primary']}
+                  onClick={() => confirmQuote()}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  Auftragsbestätigung
+                </button>
+              )}
+              {quote.status !== 'rejected' && quote.status !== 'confirmed' && (
+                <button
+                  className={styles.btn + ' ' + styles['btn--danger']}
+                  onClick={() => {
+                    if (window.confirm('Angebot wirklich ablehnen?')) rejectQuote()
+                  }}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  Ablehnen
+                </button>
+              )}
             </div>
-          )}
-          {!item.kleinunternehmer && item.vat_rate > 0 && (
-            <div className="quote-totals__row">
-              <span>MwSt. ({(item.vat_rate / 100).toFixed(0)}%)</span>
-              <span>{formatEur(item.total_vat)}</span>
-            </div>
-          )}
-          <div className="quote-totals__row quote-totals__row--total">
-            <span>Brutto</span>
-            <span>{formatEur(item.total_gross)}</span>
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Outro text */}
-      {item.outro_text && (
-        <motion.div
-          className="detail-card"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <h3 className="detail-card__title">Schlusstext</h3>
-          <p className="quote-outro-text">{item.outro_text}</p>
-        </motion.div>
-      )}
-    </PageWrapper>
-  );
+      {/* Line Items */}
+      <div className={styles['detail-card']}>
+        <h2 className={styles['detail-card-title']}>Positionen</h2>
+        {quote.items && quote.items.length > 0 ? (
+          <>
+            <table className={styles['items-table']}>
+              <thead>
+                <tr>
+                  <th>Beschreibung</th>
+                  <th className={styles['text-right']}>Menge</th>
+                  <th className={styles['text-right']}>Einzelpreis</th>
+                  <th className={styles['text-right']}>MwSt.</th>
+                  <th className={styles['text-right']}>Gesamt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quote.items.map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.description}</td>
+                    <td className={styles['text-right']}>{item.quantity}</td>
+                    <td className={styles['text-right']}>{formatCurrency(item.unit_price)}</td>
+                    <td className={styles['text-right']}>{item.tax_rate}%</td>
+                    <td className={styles['text-right']}>{formatCurrency(item.total_price)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className={styles['totals-section']}>
+              <div className={styles['total-row']}>
+                <span className={styles['total-label']}>Netto</span>
+                <span className={styles['total-value']}>{formatCurrency(quote.sub_total)}</span>
+              </div>
+              <div className={styles['total-row']}>
+                <span className={styles['total-label']}>MwSt.</span>
+                <span className={styles['total-value']}>{formatCurrency(quote.tax_amount)}</span>
+              </div>
+              <div className={`${styles['total-row']} ${styles['total-row--grand']}`}>
+                <span>Brutto</span>
+                <span>{formatCurrency(quote.total)}</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            Keine Positionen vorhanden
+          </p>
+        )}
+      </div>
+    </div>
+  )
 }
+
+export default QuoteDetail

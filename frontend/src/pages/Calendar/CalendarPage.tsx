@@ -1,240 +1,212 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { PageWrapper } from '@/components/PageWrapper/PageWrapper';
-import * as projectApi from '@/services/projects';
-import type { CalendarEvent } from '@/services/projects';
-import './CalendarPage.scss';
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { projectApi } from '../../services/api'
+import styles from './Calendar.module.scss'
 
-const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-
-function pad(n: number): string {
-  return n.toString().padStart(2, '0');
+interface Project {
+  id: string
+  name: string
+  client?: string
+  status: string
+  start_date: string
+  end_date: string
+  location?: string
 }
 
-function formatMonth(year: number, month: number): string {
-  const date = new Date(year, month);
-  return date.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+
+const PROJECT_COLORS = [
+  'rgba(0, 212, 255, 0.7)',
+  'rgba(139, 92, 246, 0.7)',
+  'rgba(16, 185, 129, 0.7)',
+  'rgba(245, 158, 11, 0.7)',
+  'rgba(239, 68, 68, 0.7)',
+  'rgba(6, 182, 212, 0.7)',
+  'rgba(168, 85, 247, 0.7)',
+  'rgba(34, 197, 94, 0.7)',
+]
+
+function getColorForProject(index: number) {
+  return PROJECT_COLORS[index % PROJECT_COLORS.length]
 }
 
-function dateStr(year: number, month: number, day: number): string {
-  return `${year}-${pad(month + 1)}-${pad(day)}`;
-}
+function CalendarPage() {
+  const navigate = useNavigate()
+  const [currentDate, setCurrentDate] = useState(new Date())
 
-function getDaysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
-}
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
 
-/** Returns 0=Mon ... 6=Sun for the first day of the month. */
-function getStartDayOfWeek(year: number, month: number): number {
-  const jsDay = new Date(year, month, 1).getDay(); // 0=Sun
-  return jsDay === 0 ? 6 : jsDay - 1;
-}
+  const { data: projectsData, isLoading } = useQuery({
+    queryKey: ['projects-calendar'],
+    queryFn: () => projectApi.list(1, 100),
+    staleTime: 1000 * 60 * 5,
+  })
 
-interface CalendarDay {
-  day: number;
-  dateKey: string;
-  isCurrentMonth: boolean;
-  isToday: boolean;
-}
+  const projects: Project[] = useMemo(() => {
+    const raw = projectsData?.items || projectsData?.data || (Array.isArray(projectsData) ? projectsData : [])
+    return raw.filter((p: Project) => p.start_date && p.end_date)
+  }, [projectsData])
 
-function buildCalendarGrid(year: number, month: number): CalendarDay[] {
-  const today = new Date();
-  const todayKey = dateStr(today.getFullYear(), today.getMonth(), today.getDate());
+  const firstDayOfMonth = new Date(year, month, 1)
+  // Monday = 0, Sunday = 6
+  const startDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
 
-  const daysInMonth = getDaysInMonth(year, month);
-  const startDay = getStartDayOfWeek(year, month);
-
-  // Previous month fill
-  const prevMonth = month === 0 ? 11 : month - 1;
-  const prevYear = month === 0 ? year - 1 : year;
-  const daysInPrevMonth = getDaysInMonth(prevYear, prevMonth);
-
-  const grid: CalendarDay[] = [];
-
-  for (let i = startDay - 1; i >= 0; i--) {
-    const day = daysInPrevMonth - i;
-    grid.push({
-      day,
-      dateKey: dateStr(prevYear, prevMonth, day),
-      isCurrentMonth: false,
-      isToday: false,
-    });
-  }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const key = dateStr(year, month, d);
-    grid.push({
-      day: d,
-      dateKey: key,
-      isCurrentMonth: true,
-      isToday: key === todayKey,
-    });
-  }
-
-  // Next month fill to complete the grid (always 6 rows = 42 cells)
-  const nextMonth = month === 11 ? 0 : month + 1;
-  const nextYear = month === 11 ? year + 1 : year;
-  const remaining = 42 - grid.length;
-  for (let d = 1; d <= remaining; d++) {
-    grid.push({
-      day: d,
-      dateKey: dateStr(nextYear, nextMonth, d),
-      isCurrentMonth: false,
-      isToday: false,
-    });
-  }
-
-  return grid;
-}
-
-function getEventsForDay(
-  events: CalendarEvent[],
-  dateKey: string
-): CalendarEvent[] {
-  return events.filter((ev) => {
-    if (!ev.start_date) return false;
-    const start = ev.start_date;
-    const end = ev.end_date || ev.start_date;
-    return dateKey >= start && dateKey <= end;
-  });
-}
-
-export default function CalendarPage() {
-  const navigate = useNavigate();
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
-
-  const from = dateStr(year, month, 1);
-  const toDate = new Date(year, month + 1, 0);
-  const to = dateStr(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
-
-  const { data: events = [], isLoading } = useQuery({
-    queryKey: ['calendar', from, to],
-    queryFn: () => projectApi.getCalendar(from, to),
-  });
-
-  const calendarEvents = Array.isArray(events) ? events : [];
-
-  const grid = useMemo(() => buildCalendarGrid(year, month), [year, month]);
-
-  const goPrev = () => {
-    if (month === 0) {
-      setYear(year - 1);
-      setMonth(11);
-    } else {
-      setMonth(month - 1);
+  const calendarDays = useMemo(() => {
+    const days: (number | null)[] = []
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null)
     }
-  };
-
-  const goNext = () => {
-    if (month === 11) {
-      setYear(year + 1);
-      setMonth(0);
-    } else {
-      setMonth(month + 1);
+    for (let d = 1; d <= daysInMonth; d++) {
+      days.push(d)
     }
-  };
+    // Fill remaining to complete the grid
+    while (days.length % 7 !== 0) {
+      days.push(null)
+    }
+    return days
+  }, [startDayOfWeek, daysInMonth])
 
-  const goToday = () => {
-    setYear(now.getFullYear());
-    setMonth(now.getMonth());
-  };
+  function getProjectsForDay(day: number): { project: Project; color: string }[] {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return projects
+      .map((p, idx) => ({ project: p, color: getColorForProject(idx) }))
+      .filter(({ project }) => {
+        return dateStr >= project.start_date && dateStr <= project.end_date
+      })
+  }
 
-  const handleExportICS = () => {
-    const token = localStorage.getItem('cd_access_token') || '';
-    const url = `/api/v1/projects/calendar.ics?from=${from}&to=${to}`;
-    // Use a temporary anchor to trigger the download with auth
-    fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.blob())
-      .then((blob) => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'cratedesk-calendar.ics';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
-  };
+  function goToToday() {
+    setCurrentDate(new Date())
+  }
 
-  const headerActions = (
-    <div className="calendar-actions">
-      <button className="btn btn--ghost" onClick={goPrev} title="Vorheriger Monat">
-        <ChevronLeft size={18} />
-      </button>
-      <button className="btn btn--ghost calendar-actions__today" onClick={goToday}>
-        Heute
-      </button>
-      <button className="btn btn--ghost" onClick={goNext} title="Naechster Monat">
-        <ChevronRight size={18} />
-      </button>
-      <span className="calendar-actions__month">{formatMonth(year, month)}</span>
-      <button className="btn btn--secondary" onClick={handleExportICS} title="ICS Export">
-        <Download size={16} />
-        <span>ICS</span>
-      </button>
-    </div>
-  );
+  function goPrev() {
+    setCurrentDate(new Date(year, month - 1, 1))
+  }
+
+  function goNext() {
+    setCurrentDate(new Date(year, month + 1, 1))
+  }
+
+  const monthName = currentDate.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
+  const today = new Date()
+  const isToday = (day: number) =>
+    day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
 
   return (
-    <PageWrapper title="Kalender" actions={headerActions}>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Kalender</h1>
+          <p className={styles.subtitle}>Projektplanung und Terminübersicht in der Monatsansicht</p>
+        </div>
+        <div className={styles.headerActions}>
+          <button className={styles.btnSecondary} onClick={() => navigate('/projects/new')}>
+            + Projekt erstellen
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.navigation}>
+        <button className={styles.navBtn} onClick={goPrev}>&larr;</button>
+        <button className={styles.todayBtn} onClick={goToToday}>Heute</button>
+        <h2 className={styles.monthLabel}>{monthName}</h2>
+        <button className={styles.navBtn} onClick={goNext}>&rarr;</button>
+      </div>
+
       {isLoading ? (
-        <div className="calendar-loading">Lade Kalender...</div>
+        <div className={styles.loadingState}>
+          <div className={styles.spinner} />
+          <p>Projekte werden geladen...</p>
+        </div>
       ) : (
-        <motion.div
-          className="calendar-grid-wrapper"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="calendar-grid">
-            {WEEKDAYS.map((wd) => (
-              <div key={wd} className="calendar-grid__header">
-                {wd}
-              </div>
+        <div className={styles.calendarCard}>
+          <div className={styles.weekdayHeader}>
+            {WEEKDAYS.map(day => (
+              <div key={day} className={styles.weekdayCell}>{day}</div>
             ))}
-            {grid.map((cell) => {
-              const dayEvents = getEventsForDay(calendarEvents, cell.dateKey);
+          </div>
+          <div className={styles.grid}>
+            {calendarDays.map((day, idx) => {
+              const dayProjects = day ? getProjectsForDay(day) : []
               return (
                 <div
-                  key={cell.dateKey}
-                  className={[
-                    'calendar-grid__cell',
-                    !cell.isCurrentMonth && 'calendar-grid__cell--outside',
-                    cell.isToday && 'calendar-grid__cell--today',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
+                  key={idx}
+                  className={`${styles.dayCell} ${!day ? styles.dayCellEmpty : ''} ${day && isToday(day) ? styles.dayCellToday : ''}`}
                 >
-                  <span className="calendar-grid__day">{cell.day}</span>
-                  <div className="calendar-grid__events">
-                    {dayEvents.slice(0, 3).map((ev) => (
-                      <button
-                        key={ev.id}
-                        className="calendar-event"
-                        style={{ backgroundColor: ev.color || '#3b82f6' }}
-                        onClick={() => navigate(`/projects/${ev.id}`)}
-                        title={`${ev.title}${ev.venue_name ? ' – ' + ev.venue_name : ''}`}
-                      >
-                        <span className="calendar-event__title">{ev.title}</span>
-                      </button>
-                    ))}
-                    {dayEvents.length > 3 && (
-                      <span className="calendar-grid__more">
-                        +{dayEvents.length - 3}
-                      </span>
-                    )}
-                  </div>
+                  {day && (
+                    <>
+                      <span className={styles.dayNumber}>{day}</span>
+                      <div className={styles.dayProjects}>
+                        {dayProjects.slice(0, 3).map(({ project, color }) => (
+                          <div
+                            key={project.id}
+                            className={styles.projectBar}
+                            style={{ backgroundColor: color }}
+                            onClick={() => navigate(`/projects/${project.id}`)}
+                            title={`${project.name} (${project.client || ''})`}
+                          >
+                            {project.name}
+                          </div>
+                        ))}
+                        {dayProjects.length > 3 && (
+                          <div className={styles.moreIndicator}>
+                            +{dayProjects.length - 3} weitere
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
-              );
+              )
             })}
           </div>
-        </motion.div>
+        </div>
       )}
-    </PageWrapper>
-  );
+
+      {/* Legend */}
+      {projects.length > 0 && (
+        <div className={styles.legend}>
+          <h3 className={styles.legendTitle}>Projekte</h3>
+          <div className={styles.legendItems}>
+            {projects.map((p, idx) => (
+              <div
+                key={p.id}
+                className={styles.legendItem}
+                onClick={() => navigate(`/projects/${p.id}`)}
+              >
+                <span
+                  className={styles.legendDot}
+                  style={{ backgroundColor: getColorForProject(idx) }}
+                />
+                <span className={styles.legendName}>{p.name}</span>
+                <span className={styles.legendDate}>
+                  {new Date(p.start_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                  {' - '}
+                  {new Date(p.end_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!isLoading && projects.length === 0 && (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>📅</div>
+          <h3 className={styles.emptyTitle}>Keine Projekte vorhanden</h3>
+          <p className={styles.emptyDescription}>
+            Erstellen Sie ein Projekt, um es im Kalender zu sehen.
+          </p>
+          <button className={styles.btnPrimary} onClick={() => navigate('/projects/new')}>
+            Projekt erstellen
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
+
+export default CalendarPage

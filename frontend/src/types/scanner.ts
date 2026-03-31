@@ -1,55 +1,26 @@
+export type ScanType = 'check_in' | 'check_out' | 'inventory' | 'pack_verify'
+
 export interface ScanEvent {
-  id: string;
-  tenant_id: string;
-  user_id: string;
-  device_id: string;
-  barcode: string;
-  rfid_tag: string;
-  equipment_id: string;
-  action: string;
-  project_id: string;
-  location_id: string;
-  condition_rating: number;
-  condition_notes: string;
-  gps_lat: number;
-  gps_lng: number;
-  timestamp: string;
-  synced_at: string;
-  created_at: string;
+  id: string
+  barcode: string
+  equipment_id?: string
+  equipment_name?: string
+  scan_type: ScanType
+  project_id?: string
+  user_id: string
+  timestamp: string
+  location?: string
+  notes?: string
 }
 
-export interface ScannerDevice {
-  id: string;
-  tenant_id: string;
-  device_id: string;
-  device_name: string;
-  device_type: string;
-  fcm_token: string;
-  ring_requested: boolean;
-  last_seen: string;
-  created_at: string;
-}
-
-export interface ScanRequest {
-  barcode?: string;
-  rfid_tag?: string;
-}
-
-export interface CheckoutRequest {
-  equipment_ids: string[];
-  project_id: string;
-  device_id?: string;
-}
-
-export interface CheckinRequest {
-  equipment_ids: string[];
-  condition_rating?: number;
-  condition_notes?: string;
-  device_id?: string;
-}
-
-export interface BulkSyncResponse {
-  inserted: number;
-  skipped: number;
-  total: number;
+export interface ScanResult {
+  success: boolean
+  message: string
+  equipment?: {
+    id: string
+    name: string
+    sku: string
+    status: string
+  }
+  event?: ScanEvent
 }

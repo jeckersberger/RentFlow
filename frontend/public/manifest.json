@@ -1,9 +1,42 @@
 {
-  "name": "CrateDesk",
-  "short_name": "CrateDesk",
+  "name": "RentFlow — Vermietungssoftware",
+  "short_name": "RentFlow",
+  "description": "Professionelle Lagerverwaltung und Rechnungssoftware für Veranstaltungstechnik",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f1117",
-  "theme_color": "#00d4ff",
-  "icons": [{"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"}]
+  "background_color": "#0a0f1a",
+  "theme_color": "#0a0f1a",
+  "orientation": "any",
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Scanner",
+      "short_name": "Scan",
+      "url": "/scanner",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Neues Projekt",
+      "short_name": "Projekt",
+      "url": "/projects/new",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Equipment",
+      "url": "/equipment",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "icons": [
+    { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png" },
+    { "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "/icons/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "/icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "prefer_related_applications": false
 }

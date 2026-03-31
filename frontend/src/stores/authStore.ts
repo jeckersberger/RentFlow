@@ -1,62 +1,76 @@
-import { create } from 'zustand';
-import type { AuthState, User } from '../types/auth';
-import { login as loginApi } from '../services/auth';
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
-const STORAGE_KEY_TOKEN = 'cd_access_token';
-const STORAGE_KEY_USER = 'cd_user';
-
-interface AuthStore extends AuthState {
-  login: (email: string, password: string, tenantSlug: string) => Promise<void>;
-  logout: () => void;
-  init: () => void;
+interface User {
+  id?: string
+  email: string
+  name: string
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  accessToken: null,
-  user: null,
-  isAuthenticated: false,
+interface AuthStore {
+  token: string | null
+  user: User | null
+  tenantId: string | null
+  isAuthenticated: boolean
+  login: (token: string, user: User) => void
+  logout: () => void
+  setUser: (user: User) => void
+  setToken: (token: string) => void
+  setTenantId: (tenantId: string) => void
+}
 
-  login: async (email: string, password: string, tenantSlug: string) => {
-    const response = await loginApi(email, password, tenantSlug);
-    const { tokens, user } = response;
+function decodeJWT(token: string): Record<string, unknown> {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch {
+    return {}
+  }
+}
 
-    localStorage.setItem(STORAGE_KEY_TOKEN, tokens.access_token);
-    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-
-    set({
-      accessToken: tokens.access_token,
-      user,
-      isAuthenticated: true,
-    });
-  },
-
-  logout: () => {
-    localStorage.removeItem(STORAGE_KEY_TOKEN);
-    localStorage.removeItem(STORAGE_KEY_USER);
-
-    set({
-      accessToken: null,
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      token: null,
       user: null,
+      tenantId: null,
       isAuthenticated: false,
-    });
-  },
 
-  init: () => {
-    const token = localStorage.getItem(STORAGE_KEY_TOKEN);
-    const userJson = localStorage.getItem(STORAGE_KEY_USER);
-
-    if (token && userJson) {
-      try {
-        const user: User = JSON.parse(userJson);
+      login: (token: string, user: User) => {
+        const payload = decodeJWT(token)
+        const tenantId = (payload.tenant_id as string) || null
         set({
-          accessToken: token,
+          token,
           user,
+          tenantId,
           isAuthenticated: true,
-        });
-      } catch {
-        localStorage.removeItem(STORAGE_KEY_TOKEN);
-        localStorage.removeItem(STORAGE_KEY_USER);
-      }
+        })
+      },
+
+      logout: () =>
+        set({
+          token: null,
+          user: null,
+          tenantId: null,
+          isAuthenticated: false,
+        }),
+
+      setUser: (user: User) =>
+        set({ user }),
+
+      setToken: (token: string) =>
+        set({ token }),
+
+      setTenantId: (tenantId: string) =>
+        set({ tenantId }),
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        tenantId: state.tenantId,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
-  },
-}));
+  )
+)

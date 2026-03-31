@@ -1,36 +1,72 @@
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  line-height: 1.4;
+
+  &--sm {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.65rem;
+  }
+
+  &--md {
+    padding: 0.3rem 0.75rem;
+  }
+
+  &--lg {
+    padding: 0.45rem 1rem;
+    font-size: var(--font-size-sm);
+  }
 
   &--success {
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.12);
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.1);
   }
 
   &--warning {
+    background: rgba(245, 158, 11, 0.15);
     color: #fbbf24;
-    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.1);
   }
 
-  &--error {
+  &--danger {
+    background: rgba(239, 68, 68, 0.15);
     color: #f87171;
-    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
   }
 
   &--info {
+    background: rgba(59, 130, 246, 0.15);
     color: #60a5fa;
-    background: rgba(96, 165, 250, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.1);
   }
 
-  &--default {
-    color: rgba(255, 255, 255, 0.55);
-    background: rgba(255, 255, 255, 0.06);
+  &--orange {
+    background: rgba(249, 115, 22, 0.15);
+    color: #fb923c;
+    border: 1px solid rgba(249, 115, 22, 0.25);
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.1);
+  }
+
+  &--cyan {
+    background: rgba(0, 212, 255, 0.15);
+    color: #22d3ee;
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.1);
+  }
+
+  &--secondary {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-strong);
   }
 }

@@ -1,329 +1,479 @@
-import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Save } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { PageWrapper } from '@/components/PageWrapper/PageWrapper';
-import * as projectApi from '@/services/projects';
-import type { Project } from '@/types/project';
-import './ProjectForm.scss';
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { projectApi, contactApi } from '../../services/api'
+import { Input } from '../../components/Form/Input'
+import { Select } from '../../components/Form/Select'
+import { TextArea } from '../../components/Form/TextArea'
+import { CreateProjectDTO, ProjectStatus } from '../../types/project'
+import '../Equipment/Equipment.scss'
 
-const STATUS_OPTIONS = [
+const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
   { value: 'draft', label: 'Entwurf' },
-  { value: 'confirmed', label: 'Bestaetigt' },
-  { value: 'active', label: 'Aktiv' },
+  { value: 'quoted', label: 'Angebot' },
+  { value: 'confirmed', label: 'Bestätigt' },
+  { value: 'in_progress', label: 'In Bearbeitung' },
   { value: 'completed', label: 'Abgeschlossen' },
   { value: 'cancelled', label: 'Storniert' },
-  { value: 'archived', label: 'Archiviert' },
-];
+]
 
-interface ProjectFormData {
-  name: string;
-  project_number: string;
-  status: string;
-  contact_name: string;
-  contact_email: string;
-  contact_phone: string;
-  venue_name: string;
-  venue_address: string;
-  start_date: string;
-  end_date: string;
-  budget: string;
-  notes: string;
+const PROJECT_TYPE_OPTIONS = [
+  { value: 'dryhire', label: 'Dryhire' },
+  { value: 'band', label: 'Band' },
+  { value: 'production', label: 'Produktion' },
+  { value: 'sale', label: 'Verkauf' },
+  { value: 'installation', label: 'Festinstallation' },
+]
+
+interface Contact {
+  id: string
+  name?: string
+  company_name?: string
+  email?: string
 }
 
-function centsToEur(cents: number | undefined): string {
-  if (cents == null || cents === 0) return '';
-  return (cents / 100).toFixed(2);
-}
+function ProjectFormPage() {
+  const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const isEditing = !!id
 
-function eurToCents(eurStr: string): number {
-  const parsed = parseFloat(eurStr.replace(',', '.'));
-  if (isNaN(parsed)) return 0;
-  return Math.round(parsed * 100);
-}
-
-function toDateInput(dateStr?: string): string {
-  if (!dateStr) return '';
-  return dateStr.slice(0, 10);
-}
-
-export default function ProjectForm() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const isEdit = !!id;
-
-  const { data: existing, isLoading } = useQuery({
-    queryKey: ['projects', id],
-    queryFn: () => projectApi.get(id!),
-    enabled: isEdit,
-  });
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isDirty },
-  } = useForm<ProjectFormData>({
-    defaultValues: {
-      name: '',
-      project_number: '',
-      status: 'draft',
-      contact_name: '',
-      contact_email: '',
-      contact_phone: '',
-      venue_name: '',
-      venue_address: '',
-      start_date: '',
-      end_date: '',
-      budget: '',
-      notes: '',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [formData, setFormData] = useState<CreateProjectDTO & { project_type?: string; color?: string; venue_name?: string; contact_id?: string }>({
+    name: '',
+    description: '',
+    client_name: '',
+    client_email: '',
+    client_phone: '',
+    venue_address: {
+      street: '',
+      city: '',
+      state: '',
+      postal_code: '',
+      country: 'AT',
     },
-  });
+    status: 'draft',
+    start_date: '',
+    end_date: '',
+    budget: 0,
+    currency: 'EUR',
+    notes: '',
+    project_type: '',
+    color: '#00d4ff',
+    venue_name: '',
+    contact_id: '',
+  })
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showMoreDetails, setShowMoreDetails] = useState(false)
+
+  // Load contacts for customer selector
+  const { data: contactsData } = useQuery({
+    queryKey: ['contacts-list'],
+    queryFn: () => contactApi.list({ limit: 200 }),
+    staleTime: 1000 * 60 * 5,
+  })
+  const contacts: Contact[] = contactsData?.data || []
+
+  const { data: project, isLoading: isLoadingProject } = useQuery({
+    queryKey: ['project', id],
+    queryFn: () => projectApi.getById(id!),
+    enabled: isEditing,
+  })
+
+  const { mutate: saveProject, isPending } = useMutation({
+    mutationFn: async () => {
+      // Convert date strings to ISO 8601 for Go backend
+      const payload = {
+        ...formData,
+        start_date: formData.start_date ? new Date(formData.start_date).toISOString() : undefined,
+        end_date: formData.end_date ? new Date(formData.end_date).toISOString() : undefined,
+      }
+      if (isEditing && id) {
+        return projectApi.update(id, payload)
+      } else {
+        return projectApi.create(payload)
+      }
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onSuccess: (data: any) => {
+      const newId = data?.id || id
+      if (newId) {
+        navigate(`/projects/${newId}`)
+      } else {
+        navigate('/projects')
+      }
+    },
+    onError: (error: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorMessage =
+        (error as any)?.response?.data?.error ||
+        (error as any)?.response?.data?.message ||
+        'Fehler beim Speichern des Projekts'
+      setErrors({ submit: errorMessage })
+    },
+  })
 
   useEffect(() => {
-    if (existing) {
-      reset({
-        name: existing.name || '',
-        project_number: existing.project_number || '',
-        status: existing.status || 'draft',
-        contact_name: existing.contact_name || '',
-        contact_email: existing.contact_email || '',
-        contact_phone: existing.contact_phone || '',
-        venue_name: existing.venue_name || '',
-        venue_address: existing.venue_address || '',
-        start_date: toDateInput(existing.start_date),
-        end_date: toDateInput(existing.end_date),
-        budget: centsToEur(existing.budget),
-        notes: existing.notes || '',
-      });
+    if (project && isEditing) {
+      setFormData({
+        name: project.name || '',
+        description: project.description || '',
+        client_name: project.client_name || '',
+        client_email: project.client_email || '',
+        client_phone: project.client_phone || '',
+        venue_address: {
+          street: project.venue_address?.street || '',
+          city: project.venue_address?.city || '',
+          state: project.venue_address?.state || '',
+          postal_code: project.venue_address?.postal_code || '',
+          country: project.venue_address?.country || 'AT',
+        },
+        status: project.status || 'draft',
+        start_date: project.start_date ? project.start_date.slice(0, 10) : '',
+        end_date: project.end_date ? project.end_date.slice(0, 10) : '',
+        budget: project.budget || 0,
+        currency: project.currency || 'EUR',
+        notes: project.notes || '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        project_type: (project as any).project_type || '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        color: (project as any).color || '#00d4ff',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        venue_name: (project as any).venue_name || '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        contact_id: (project as any).contact_id || '',
+      })
     }
-  }, [existing, reset]);
+  }, [project, isEditing])
 
-  const mutation = useMutation({
-    mutationFn: (payload: Partial<Project>) =>
-      isEdit ? projectApi.update(id!, payload) : projectApi.create(payload),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success(isEdit ? 'Projekt aktualisiert' : 'Projekt erstellt');
-      navigate(`/projects/${result.id}`);
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || 'Fehler beim Speichern');
-    },
-  });
+  // Auto-expand "Mehr Details" when editing and optional fields have data
+  useEffect(() => {
+    if (isEditing && project) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = project as any
+      const hasOptionalData = p.project_type || p.venue_name ||
+        p.venue_address?.street || p.venue_address?.city ||
+        p.budget > 0 || p.notes || p.color !== '#00d4ff'
+      if (hasOptionalData) {
+        setShowMoreDetails(true)
+      }
+    }
+  }, [project, isEditing])
 
-  const onSubmit = (formData: ProjectFormData) => {
-    const payload: Partial<Project> = {
-      name: formData.name,
-      project_number: formData.project_number,
-      status: formData.status,
-      contact_name: formData.contact_name,
-      contact_email: formData.contact_email,
-      contact_phone: formData.contact_phone,
-      venue_name: formData.venue_name,
-      venue_address: formData.venue_address,
-      start_date: formData.start_date || undefined,
-      end_date: formData.end_date || undefined,
-      budget: eurToCents(formData.budget),
-      notes: formData.notes,
-    };
-    mutation.mutate(payload);
-  };
+  const toggleMoreDetails = useCallback(() => {
+    setShowMoreDetails((prev) => !prev)
+  }, [])
 
-  if (isEdit && isLoading) {
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.name?.trim()) {
+      newErrors.name = 'Projektname ist erforderlich'
+    }
+    if (!formData.start_date) {
+      newErrors.start_date = 'Startdatum ist erforderlich'
+    }
+    if (formData.start_date && formData.end_date && formData.end_date < formData.start_date) {
+      newErrors.end_date = 'Enddatum darf nicht vor dem Startdatum liegen'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleInputChange = (field: string, value: unknown) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+    if (errors[field]) {
+      setErrors((prev) => {
+        const updated = { ...prev }
+        delete updated[field]
+        return updated
+      })
+    }
+  }
+
+  const handleAddressChange = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      venue_address: {
+        ...prev.venue_address!,
+        [field]: value,
+      },
+    }))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (validateForm()) {
+      saveProject()
+    }
+  }
+
+  if (isLoadingProject) {
     return (
-      <PageWrapper title="Projekt">
-        <div className="detail-skeleton">
-          <div className="skeleton skeleton--heading" />
-          <div className="skeleton skeleton--block" />
+      <div className="equipment-form-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-3)', animation: 'pulse-active 1.5s infinite' }}>
+            ...
+          </div>
+          <p style={{ color: 'var(--color-text-secondary)' }}>Projekt wird geladen...</p>
         </div>
-      </PageWrapper>
-    );
+      </div>
+    )
   }
 
   return (
-    <PageWrapper title={isEdit ? 'Projekt bearbeiten' : 'Neues Projekt'}>
-      <button
-        type="button"
-        className="btn btn--ghost"
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft size={18} />
-        <span>Zurueck</span>
-      </button>
+    <div className="equipment-form-page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            {isEditing ? 'Projekt bearbeiten' : 'Neues Projekt'}
+          </h1>
+        </div>
+      </div>
 
-      <motion.div
-        className="form-card"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="pf-name">Name *</label>
-              <input
-                id="pf-name"
-                type="text"
-                placeholder="Projektname"
-                {...register('name', { required: 'Name ist erforderlich' })}
+      <form onSubmit={handleSubmit} className="form-section">
+        {errors.submit && (
+          <div className="error-message" role="alert">
+            {errors.submit}
+          </div>
+        )}
+
+        {/* === Essential fields (always visible) === */}
+        <div style={{ marginBottom: 'var(--spacing-4)' }}>
+          <Input
+            label="Projektname *"
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            placeholder="z.B. Firmenfeier Müller GmbH"
+            error={errors.name}
+            style={{ fontSize: '1.1rem' }}
+          />
+        </div>
+
+        <div className="form-section__grid">
+          <Input
+            label="Startdatum"
+            type="date"
+            value={formData.start_date}
+            onChange={(e) => handleInputChange('start_date', e.target.value)}
+            error={errors.start_date}
+          />
+          <Input
+            label="Enddatum"
+            type="date"
+            value={formData.end_date}
+            onChange={(e) => handleInputChange('end_date', e.target.value)}
+            error={errors.end_date}
+          />
+        </div>
+
+        <div style={{ marginTop: 'var(--spacing-4)' }}>
+          {contacts.length > 0 ? (
+            <Select
+              label="Kunde"
+              options={contacts.map((c) => ({
+                value: c.id,
+                label: c.company_name ? `${c.name || ''} (${c.company_name})` : c.name || c.email || c.id,
+              }))}
+              value={formData.contact_id || ''}
+              onChange={(e) => {
+                const selectedContact = contacts.find((c) => c.id === e.target.value)
+                handleInputChange('contact_id', e.target.value)
+                if (selectedContact) {
+                  handleInputChange('client_name', selectedContact.company_name || selectedContact.name || '')
+                  if (selectedContact.email) {
+                    handleInputChange('client_email', selectedContact.email)
+                  }
+                }
+              }}
+              placeholder="Kunde auswählen oder unten eingeben..."
+            />
+          ) : (
+            <Input
+              label="Kunde"
+              value={formData.client_name}
+              onChange={(e) => handleInputChange('client_name', e.target.value)}
+              placeholder="z.B. Müller GmbH"
+            />
+          )}
+        </div>
+
+        {/* === Expandable "Mehr Details" section === */}
+        <div style={{ marginTop: 'var(--spacing-5)' }}>
+          <button
+            type="button"
+            onClick={toggleMoreDetails}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-2)',
+              background: 'none',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: 'var(--spacing-2) var(--spacing-3)',
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-medium)',
+              width: '100%',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {showMoreDetails ? '▲ Weniger Details' : '▼ Mehr Details'}
+          </button>
+        </div>
+
+        {showMoreDetails && (
+          <div style={{ marginTop: 'var(--spacing-4)' }}>
+            <h2 className="form-section__title">Details</h2>
+            <div className="form-section__grid">
+              <Select
+                label="Projekttyp"
+                options={PROJECT_TYPE_OPTIONS}
+                value={formData.project_type || ''}
+                onChange={(e) => handleInputChange('project_type', e.target.value)}
+                placeholder="Typ auswählen..."
               />
-              {errors.name && (
-                <span className="form-error">{errors.name.message}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="pf-number">Projektnummer</label>
-              <input
-                id="pf-number"
-                type="text"
-                placeholder="z.B. P-2026-001"
-                {...register('project_number')}
+              <Select
+                label="Status"
+                options={STATUS_OPTIONS}
+                value={formData.status || 'draft'}
+                onChange={(e) => handleInputChange('status', e.target.value)}
+                placeholder="Status auswählen"
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="pf-status">Status</label>
-              <select id="pf-status" {...register('status')}>
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+            <div style={{ marginTop: 'var(--spacing-3)' }}>
+              <TextArea
+                label="Veranstaltungsort"
+                value={[
+                  formData.venue_name || '',
+                  formData.venue_address?.street || '',
+                  [formData.venue_address?.postal_code || '', formData.venue_address?.city || ''].filter(Boolean).join(' '),
+                ].filter(Boolean).join('\n')}
+                onChange={(e) => {
+                  const lines = e.target.value.split('\n')
+                  handleInputChange('venue_name', lines[0] || '')
+                  handleAddressChange('street', lines[1] || '')
+                  // Parse "PLZ Stadt" from line 3
+                  const line3 = lines[2] || ''
+                  const plzMatch = line3.match(/^(\d{4,5})\s*(.*)$/)
+                  if (plzMatch) {
+                    handleAddressChange('postal_code', plzMatch[1])
+                    handleAddressChange('city', plzMatch[2])
+                  } else {
+                    handleAddressChange('city', line3)
+                    handleAddressChange('postal_code', '')
+                  }
+                }}
+                placeholder={"Stadthalle Wien\nHauptstraße 1\n1010 Wien"}
+                rows={3}
+              />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="pf-budget">Budget (EUR)</label>
-              <input
-                id="pf-budget"
+            <div className="form-section__grid" style={{ marginTop: 'var(--spacing-3)' }}>
+              <Input
+                label="Budget (EUR)"
                 type="number"
+                value={formData.budget || 0}
+                onChange={(e) => handleInputChange('budget', parseFloat(e.target.value) || 0)}
                 step="0.01"
                 min="0"
-                placeholder="0.00"
-                {...register('budget')}
               />
+              <div className="form-group">
+                <label className="form-label">Farbe</label>
+                <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    value={formData.color || '#00d4ff'}
+                    onChange={(e) => handleInputChange('color', e.target.value)}
+                    style={{
+                      width: '48px',
+                      height: '40px',
+                      padding: '2px',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: 'var(--color-bg-tertiary)',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <Input
+                    value={formData.color || '#00d4ff'}
+                    onChange={(e) => handleInputChange('color', e.target.value)}
+                    placeholder="#00d4ff"
+                    style={{ fontFamily: 'monospace' }}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="pf-contact-name">Ansprechpartner</label>
-              <input
-                id="pf-contact-name"
-                type="text"
-                placeholder="Name"
-                {...register('contact_name')}
-              />
-            </div>
+            {/* Customer details (when selected from dropdown above) */}
+            {contacts.length > 0 && (
+              <div className="form-section__grid" style={{ marginTop: 'var(--spacing-3)' }}>
+                <Input
+                  label="Kundenname"
+                  value={formData.client_name}
+                  onChange={(e) => handleInputChange('client_name', e.target.value)}
+                  placeholder="z.B. Müller GmbH"
+                />
+                <Input
+                  label="E-Mail"
+                  type="email"
+                  value={formData.client_email || ''}
+                  onChange={(e) => handleInputChange('client_email', e.target.value)}
+                  placeholder="kunde@beispiel.de"
+                />
+                <Input
+                  label="Telefon"
+                  type="tel"
+                  value={formData.client_phone || ''}
+                  onChange={(e) => handleInputChange('client_phone', e.target.value)}
+                  placeholder="+43 ..."
+                />
+              </div>
+            )}
 
-            <div className="form-group">
-              <label htmlFor="pf-contact-email">E-Mail</label>
-              <input
-                id="pf-contact-email"
-                type="email"
-                placeholder="name@firma.de"
-                {...register('contact_email', {
-                  pattern: {
-                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                    message: 'Ungueltige E-Mail-Adresse',
-                  },
-                })}
-              />
-              {errors.contact_email && (
-                <span className="form-error">
-                  {errors.contact_email.message}
-                </span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="pf-contact-phone">Telefon</label>
-              <input
-                id="pf-contact-phone"
-                type="text"
-                placeholder="+49 ..."
-                {...register('contact_phone')}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="pf-venue">Veranstaltungsort</label>
-              <input
-                id="pf-venue"
-                type="text"
-                placeholder="Location"
-                {...register('venue_name')}
-              />
-            </div>
-
-            <div className="form-group form-group--full">
-              <label htmlFor="pf-venue-address">Adresse</label>
-              <input
-                id="pf-venue-address"
-                type="text"
-                placeholder="Strasse, PLZ Ort"
-                {...register('venue_address')}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="pf-start">Startdatum</label>
-              <input
-                id="pf-start"
-                type="date"
-                {...register('start_date')}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="pf-end">Enddatum</label>
-              <input
-                id="pf-end"
-                type="date"
-                {...register('end_date')}
-              />
-            </div>
-
-            <div className="form-group form-group--full">
-              <label htmlFor="pf-notes">Notizen</label>
-              <textarea
-                id="pf-notes"
-                placeholder="Zusaetzliche Informationen..."
-                rows={3}
-                {...register('notes')}
+            <div style={{ marginTop: 'var(--spacing-3)' }}>
+              <TextArea
+                label="Notizen"
+                value={formData.notes || ''}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="Interne Notizen zum Projekt..."
+                rows={4}
               />
             </div>
           </div>
+        )}
 
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn--secondary"
-              onClick={() => navigate(-1)}
-            >
-              Abbrechen
-            </button>
-            <button
-              type="submit"
-              className="btn btn--primary"
-              disabled={mutation.isPending || (!isDirty && isEdit)}
-            >
-              {mutation.isPending ? (
-                <span className="loading-spinner loading-spinner--small" />
-              ) : (
-                <>
-                  <Save size={16} />
-                  <span>{isEdit ? 'Speichern' : 'Erstellen'}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </PageWrapper>
-  );
+        <div className="form-section__footer">
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={() => navigate(-1)}
+          >
+            Abbrechen
+          </button>
+          <button
+            type="submit"
+            className="btn btn--primary"
+            disabled={isPending}
+          >
+            {isPending
+              ? 'Wird gespeichert...'
+              : isEditing
+              ? 'Änderungen speichern'
+              : 'Projekt erstellen'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
 }
+
+export default ProjectFormPage

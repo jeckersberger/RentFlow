@@ -1,82 +1,335 @@
-@use 'variables' as *;
-@use 'mixins' as *;
+@import './variables.scss';
 
-// CSS Reset
+// ============================================================================
+// FONT IMPORTS
+// ============================================================================
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+// ============================================================================
+// CSS RESET & NORMALIZATION
+// ============================================================================
+
 *,
 *::before,
 *::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 html {
+  height: 100%;
   font-size: 16px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: $font-family;
-  font-size: $font-size-base;
-  color: $text-primary;
-  background: $bg-primary;
-  line-height: 1.6;
-  min-height: 100vh;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+
+  // Subtle background noise texture via CSS
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
 }
 
-img,
-svg {
-  display: block;
-  max-width: 100%;
+// ============================================================================
+// TYPOGRAPHY
+// ============================================================================
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  padding: 0;
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-text-primary);
+}
+
+h1 { font-size: var(--font-size-4xl); }
+h2 { font-size: var(--font-size-3xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+h6 { font-size: var(--font-size-base); }
+
+p {
+  margin: 0 0 var(--spacing-4) 0;
+  &:last-child { margin-bottom: 0; }
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+
+  &:hover { color: var(--color-primary-light); }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+// ============================================================================
+// FORMS – Dark-optimized
+// ============================================================================
+
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: var(--input-padding-y) var(--input-padding-x);
+  border: var(--input-border-width) solid var(--input-border-color);
+  border-radius: var(--radius-input);
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+    background-color: var(--color-bg-tertiary);
+  }
+
+  &:disabled {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+
+  option {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+}
+
+textarea {
+  resize: vertical;
+  min-height: 6rem;
 }
 
 button {
   cursor: pointer;
-  font-family: inherit;
   border: none;
   background: none;
-  color: inherit;
-}
+  transition: all var(--transition-fast);
 
-input,
-textarea,
-select {
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit;
-  background: $bg-input;
-  border: 1px solid $border-subtle;
-  border-radius: $radius-sm;
-  padding: $space-3 $space-4;
-  outline: none;
-  transition: border-color $transition-base;
-
-  &:focus {
-    border-color: $accent-cyan;
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px rgba(0, 212, 255, 0.5);
   }
 
-  &::placeholder {
-    color: $text-muted;
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
-ul,
-ol {
-  list-style: none;
+// ============================================================================
+// LISTS
+// ============================================================================
+
+ul, ol {
+  margin: 0 0 var(--spacing-4) var(--spacing-6);
+  padding: 0;
+  li {
+    margin-bottom: var(--spacing-2);
+    &:last-child { margin-bottom: 0; }
+  }
 }
 
-a {
-  color: $accent-cyan;
-  text-decoration: none;
-  transition: color $transition-fast;
+dl {
+  margin: 0;
+  dt {
+    font-weight: var(--font-weight-semibold);
+    margin-top: var(--spacing-4);
+    &:first-child { margin-top: 0; }
+  }
+  dd {
+    margin-left: var(--spacing-4);
+    margin-bottom: var(--spacing-2);
+  }
+}
+
+// ============================================================================
+// CODE & PREFORMATTED TEXT
+// ============================================================================
+
+code, pre {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+code {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-primary);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-sm);
+}
+
+pre {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  overflow-x: auto;
+  margin-bottom: var(--spacing-4);
+
+  code {
+    background: none;
+    color: inherit;
+    padding: 0;
+  }
+}
+
+// ============================================================================
+// TABLES – Dark card style
+// ============================================================================
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--spacing-4);
+}
+
+thead {
+  background-color: var(--color-bg-tertiary);
+}
+
+th, td {
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+th {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  white-space: nowrap;
+}
+
+tbody tr {
+  transition: background-color var(--transition-fast);
 
   &:hover {
-    color: #33ddff;
+    background-color: var(--color-bg-hover);
+  }
+
+  &:last-child td {
+    border-bottom: none;
   }
 }
 
-// Scrollbar styling
+// ============================================================================
+// IMAGES & MEDIA
+// ============================================================================
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+// ============================================================================
+// SELECTION
+// ============================================================================
+
+::selection {
+  background-color: rgba(0, 212, 255, 0.3);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: rgba(0, 212, 255, 0.3);
+  color: #ffffff;
+}
+
+:root.light-mode ::selection {
+  background-color: rgba(0, 184, 217, 0.25);
+  color: #1e293b;
+}
+
+:root.light-mode ::-moz-selection {
+  background-color: rgba(0, 184, 217, 0.25);
+  color: #1e293b;
+}
+
+// ============================================================================
+// UTILITIES
+// ============================================================================
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// ============================================================================
+// SCROLLBAR – Sleek dark style
+// ============================================================================
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-700) transparent;
+}
+
+:root.light-mode * {
+  scrollbar-color: var(--color-gray-300) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -87,115 +340,130 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
+  background: rgba(0, 212, 255, 0.2);
+  border-radius: var(--radius-full);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 212, 255, 0.4);
   }
 }
 
-// Firefox scrollbar
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
-}
+:root.light-mode ::-webkit-scrollbar-thumb {
+  background: rgba(0, 184, 217, 0.25);
 
-// Global card class with glassmorphism
-.card {
-  @include glass-card;
-  padding: $space-6;
-}
-
-// Utility: visually hidden
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-// ──────────────────────────────────────
-// Buttons
-// ──────────────────────────────────────
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  padding: $space-2 $space-4;
-  border: none;
-  border-radius: $radius-sm;
-  font-size: $font-size-sm;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background $transition-fast, opacity $transition-fast;
-  white-space: nowrap;
-
-  &--primary {
-    color: #fff;
-    background: $accent-cyan;
-
-    &:hover {
-      background: #33ddff;
-    }
-  }
-
-  &--secondary {
-    color: $text-primary;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid $border-subtle;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-  }
-
-  &--ghost {
-    color: $text-secondary;
-    background: transparent;
-    padding: $space-2 $space-3;
-
-    &:hover {
-      color: $text-primary;
-      background: rgba(255, 255, 255, 0.05);
-    }
+  &:hover {
+    background: rgba(0, 184, 217, 0.45);
   }
 }
 
-// ──────────────────────────────────────
-// Loading fallback (Suspense)
-// ──────────────────────────────────────
+// ============================================================================
+// FOCUS VISIBLE – Cyan glow ring
+// ============================================================================
 
-.loading-fallback {
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px rgba(0, 212, 255, 0.5);
+}
+
+// ============================================================================
+// ROOT CONTAINER
+// ============================================================================
+
+#root {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   min-height: 100vh;
+  width: 100%;
 }
 
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: $accent-cyan;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+// ============================================================================
+// UTILITY CLASSES
+// ============================================================================
 
-  &--small {
-    width: 18px;
-    height: 18px;
-    border-width: 2px;
+.text-gradient {
+  background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 12px;
+}
+
+.animate-in {
+  animation: animateIn 0.4s ease-out both;
+}
+
+@keyframes animateIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+// ============================================================================
+// TOUCH DEVICE OPTIMIZATIONS
+// ============================================================================
+
+@media (hover: none) and (pointer: coarse) {
+  // Minimum touch target sizes (WCAG 2.5.5)
+  button, a, [role="button"], .btn, select, input[type="checkbox"], input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  // Disable hover transform effects on touch devices
+  .card:hover,
+  .stat-card:hover,
+  .quick-action-btn:hover,
+  .upcoming-project-card:hover,
+  .welcome-step:hover,
+  .status-box:hover {
+    transform: none;
+  }
+
+  // Reduce hover-driven visual changes that don't make sense on touch
+  .widget-list__item--clickable:hover {
+    transform: none;
+  }
+}
+
+// ============================================================================
+// MOBILE RESPONSIVE PATTERNS
+// ============================================================================
+
+@media (max-width: 768px) {
+  // Global heading scale-down
+  h1 { font-size: var(--font-size-2xl); }
+  h2 { font-size: var(--font-size-xl); }
+  h3 { font-size: var(--font-size-lg); }
+
+  // Tables: enable horizontal scroll on mobile
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    thead, tbody, tfoot, tr, th, td {
+      // Keep default table display for horizontal scroll
+    }
+  }
+
+  // Forms: single column, larger touch targets
+  .form-section__grid {
+    grid-template-columns: 1fr;
+  }
+
+  input, textarea, select {
+    font-size: 16px; // Prevents iOS zoom on focus
   }
 }

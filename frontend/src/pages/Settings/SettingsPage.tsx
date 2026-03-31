@@ -1,467 +1,561 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Building2,
-  Coins,
-  Users,
-  Mail,
-  Server,
-  Save,
-  UserPlus,
-  RefreshCw,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import { PageWrapper } from '@/components/PageWrapper/PageWrapper';
-import { DataTable, Column } from '@/components/DataTable/DataTable';
-import api from '@/services/api';
-import './SettingsPage.scss';
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { tenantApi, userApi, categoryApi } from '../../services/api'
+import { useAuthStore } from '../../stores/authStore'
+import { Input } from '../../components/Form/Input'
+import { Category } from '../../types/equipment'
+import '../Equipment/Equipment.scss'
+import './Settings.scss'
 
-// ── Types ──
+type SettingsTab = 'company' | 'users' | 'categories' | 'notifications'
 
-type TabKey = 'firma' | 'finanzen' | 'benutzer' | 'email' | 'system';
+const SETTINGS_TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
+  { value: 'company', label: 'Unternehmenseinstellungen', icon: '🏢' },
+  { value: 'users', label: 'Benutzerverwaltung', icon: '👥' },
+  { value: 'categories', label: 'Kategorien', icon: '📂' },
+  { value: 'notifications', label: 'Benachrichtigungen', icon: '🔔' },
+]
 
-interface DunningConfig {
-  reminder_days: number;
-  dunning1_days: number;
-  dunning2_days: number;
-  reminder_fee: number;
-  dunning1_fee: number;
-  dunning2_fee: number;
-  auto_send: boolean;
+interface TenantData {
+  id: string
+  name: string
+  slug: string
+  address_street: string
+  address_city: string
+  address_zip: string
+  address_country: string
+  currency: string
+  tax_rate: number
+  invoice_prefix: string
+  default_language: string
 }
 
-interface UserRow {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  is_active: boolean;
+interface UserData {
+  id: string
+  name: string
+  email: string
+  role: string
+  status: string
 }
 
-interface EmailStatus {
-  configured: boolean;
-  provider?: string;
-}
+function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<SettingsTab>('company')
+  const tenantId = useAuthStore((s) => s.tenantId)
+  const queryClient = useQueryClient()
 
-interface AiStatus {
-  configured: boolean;
-  model?: string;
-}
+  // --- Company tab state ---
+  const [companyName, setCompanyName] = useState('')
+  const [addressStreet, setAddressStreet] = useState('')
+  const [addressCity, setAddressCity] = useState('')
+  const [addressZip, setAddressZip] = useState('')
+  const [addressCountry, setAddressCountry] = useState('')
+  const [currency, setCurrency] = useState('')
+  const [taxRate, setTaxRate] = useState('')
+  const [invoicePrefix, setInvoicePrefix] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
-const tabs: { key: TabKey; label: string; icon: typeof Building2 }[] = [
-  { key: 'firma', label: 'Firma', icon: Building2 },
-  { key: 'finanzen', label: 'Finanzen', icon: Coins },
-  { key: 'benutzer', label: 'Benutzer', icon: Users },
-  { key: 'email', label: 'E-Mail', icon: Mail },
-  { key: 'system', label: 'System', icon: Server },
-];
+  // --- Category tab state ---
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryIcon, setNewCategoryIcon] = useState('')
+  const [newCategoryColor, setNewCategoryColor] = useState('#6366f1')
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false)
 
-const defaultDunning: DunningConfig = {
-  reminder_days: 14,
-  dunning1_days: 28,
-  dunning2_days: 42,
-  reminder_fee: 0,
-  dunning1_fee: 500,
-  dunning2_fee: 1000,
-  auto_send: false,
-};
+  // ============================================================================
+  // COMPANY TAB - Tenant data
+  // ============================================================================
+  const {
+    data: tenantData,
+    isLoading: tenantLoading,
+    error: tenantError,
+  } = useQuery<TenantData>({
+    queryKey: ['tenant', tenantId],
+    queryFn: () => tenantApi.getById(tenantId!),
+    enabled: !!tenantId,
+  })
 
-// ── Helpers ──
+  useEffect(() => {
+    if (tenantData) {
+      setCompanyName(tenantData.name || '')
+      setAddressStreet(tenantData.address_street || '')
+      setAddressCity(tenantData.address_city || '')
+      setAddressZip(tenantData.address_zip || '')
+      setAddressCountry(tenantData.address_country || '')
+      setCurrency(tenantData.currency || 'EUR')
+      setTaxRate(String(tenantData.tax_rate ?? ''))
+      setInvoicePrefix(tenantData.invoice_prefix || '')
+    }
+  }, [tenantData])
 
-function FieldGroup({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="settings-field">
-      <label>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-// ── Component ──
-
-export default function SettingsPage() {
-  const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TabKey>('firma');
-
-  // ── Dunning config ──
-  const { data: dunningRaw } = useQuery({
-    queryKey: ['dunning-config'],
-    queryFn: () => api.get('/api/v1/dunning/config') as unknown as DunningConfig,
-  });
-  const dunningConfig = dunningRaw ?? defaultDunning;
-
-  const [dunningForm, setDunningForm] = useState<DunningConfig | null>(null);
-  const activeDunning = dunningForm ?? dunningConfig;
-
-  const dunningMutation = useMutation({
-    mutationFn: async (cfg: DunningConfig) => {
-      const result = await api.put('/api/v1/dunning/config', cfg);
-      return result as unknown as DunningConfig;
-    },
+  const updateTenantMutation = useMutation({
+    mutationFn: (data: Partial<TenantData>) => tenantApi.update(tenantId!, data),
     onSuccess: () => {
-      toast.success('Mahnwesen-Konfiguration gespeichert');
-      queryClient.invalidateQueries({ queryKey: ['dunning-config'] });
-      setDunningForm(null);
+      queryClient.invalidateQueries({ queryKey: ['tenant', tenantId] })
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
     },
-    onError: () => toast.error('Fehler beim Speichern'),
-  });
+  })
 
-  function updateDunning<K extends keyof DunningConfig>(
-    key: K,
-    value: DunningConfig[K],
-  ) {
-    setDunningForm((prev) => ({ ...(prev ?? dunningConfig), [key]: value }));
+  const handleSaveCompany = () => {
+    updateTenantMutation.mutate({
+      name: companyName,
+      address_street: addressStreet,
+      address_city: addressCity,
+      address_zip: addressZip,
+      address_country: addressCountry,
+      currency,
+      tax_rate: parseFloat(taxRate) || 0,
+      invoice_prefix: invoicePrefix,
+    })
   }
 
-  // ── Users ──
-  const { data: usersRaw, isLoading: usersLoading } = useQuery({
-    queryKey: ['settings-users'],
-    queryFn: () => api.get('/api/v1/users') as unknown as UserRow[],
-    enabled: tab === 'benutzer',
-  });
-  const users: UserRow[] = Array.isArray(usersRaw) ? usersRaw : [];
+  // ============================================================================
+  // USERS TAB
+  // ============================================================================
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    error: usersError,
+  } = useQuery<UserData[]>({
+    queryKey: ['users'],
+    queryFn: () => userApi.list(),
+    enabled: activeTab === 'users',
+  })
 
-  const userColumns: Column<UserRow>[] = [
-    {
-      key: 'name',
-      label: 'Name',
-      render: (r) => `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || '-',
+  // ============================================================================
+  // CATEGORIES TAB
+  // ============================================================================
+  const {
+    data: categoriesData,
+    isLoading: categoriesLoading,
+    error: categoriesError,
+  } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: () => categoryApi.list(),
+    enabled: activeTab === 'categories',
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (data: { name: string; icon: string; color: string }) =>
+      categoryApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      setNewCategoryName('')
+      setNewCategoryIcon('')
+      setNewCategoryColor('#6366f1')
+      setShowNewCategoryForm(false)
     },
-    { key: 'email', label: 'E-Mail' },
-    {
-      key: 'role',
-      label: 'Rolle',
-      render: (r) => (
-        <span className="settings-role-badge">{r.role ?? 'user'}</span>
-      ),
-    },
-    {
-      key: 'is_active',
-      label: 'Status',
-      render: (r) => (
-        <span
-          className={`settings-status-pill ${r.is_active ? 'settings-status-pill--active' : 'settings-status-pill--inactive'}`}
-        >
-          {r.is_active ? 'Aktiv' : 'Inaktiv'}
-        </span>
-      ),
-    },
-  ];
+  })
 
-  // ── Email status ──
-  const { data: emailStatus } = useQuery({
-    queryKey: ['email-status'],
-    queryFn: () => api.get('/api/v1/email/status') as unknown as EmailStatus,
-    enabled: tab === 'email',
-  });
+  const handleCreateCategory = () => {
+    if (!newCategoryName.trim()) return
+    createCategoryMutation.mutate({
+      name: newCategoryName.trim(),
+      icon: newCategoryIcon.trim() || '📦',
+      color: newCategoryColor,
+    })
+  }
 
-  // ── AI status ──
-  const { data: aiStatus } = useQuery({
-    queryKey: ['ai-status'],
-    queryFn: () => api.get('/api/v1/ai/status') as unknown as AiStatus,
-    enabled: tab === 'system',
-  });
+  // ============================================================================
+  // Helper: role badge
+  // ============================================================================
+  const roleBadgeClass = (role: string) => {
+    switch (role?.toLowerCase()) {
+      case 'admin':
+      case 'owner':
+        return 'badge badge--primary'
+      default:
+        return 'badge badge--secondary'
+    }
+  }
 
-  // ── Render ──
+  const statusBadgeClass = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'active':
+        return 'badge badge--success'
+      case 'invited':
+      case 'pending':
+        return 'badge badge--warning'
+      default:
+        return 'badge badge--secondary'
+    }
+  }
+
+  const statusLabel = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'active':
+        return 'Aktiv'
+      case 'invited':
+      case 'pending':
+        return 'Einladung ausstehend'
+      case 'inactive':
+      case 'disabled':
+        return 'Deaktiviert'
+      default:
+        return status
+    }
+  }
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'company':
+        return (
+          <div className="settings-content">
+            <h2 className="form-section__title">Unternehmenseinstellungen</h2>
+
+            {tenantLoading && <p>Daten werden geladen...</p>}
+            {tenantError && (
+              <p style={{ color: 'var(--color-error)' }}>
+                Fehler beim Laden der Unternehmensdaten:{' '}
+                {(tenantError as Error).message}
+              </p>
+            )}
+
+            {!tenantLoading && !tenantError && (
+              <>
+                <div className="form-section__grid">
+                  <Input
+                    label="Unternehmensname"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                  />
+                  <Input
+                    label="Rechnungspräfix"
+                    value={invoicePrefix}
+                    onChange={(e) => setInvoicePrefix(e.target.value)}
+                    placeholder="z.B. RF"
+                  />
+                </div>
+
+                <div className="form-section__grid">
+                  <Input
+                    label="Straße"
+                    value={addressStreet}
+                    onChange={(e) => setAddressStreet(e.target.value)}
+                  />
+                  <Input
+                    label="PLZ"
+                    value={addressZip}
+                    onChange={(e) => setAddressZip(e.target.value)}
+                  />
+                  <Input
+                    label="Stadt"
+                    value={addressCity}
+                    onChange={(e) => setAddressCity(e.target.value)}
+                  />
+                  <Input
+                    label="Land"
+                    value={addressCountry}
+                    onChange={(e) => setAddressCountry(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-section__grid">
+                  <Input
+                    label="Währung"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    placeholder="EUR"
+                  />
+                  <Input
+                    label="Steuersatz (%)"
+                    type="number"
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(e.target.value)}
+                    placeholder="19"
+                  />
+                </div>
+
+                <div className="form-section__footer">
+                  {updateTenantMutation.isError && (
+                    <p style={{ color: 'var(--color-error)', marginRight: 'auto' }}>
+                      Fehler beim Speichern:{' '}
+                      {(updateTenantMutation.error as Error).message}
+                    </p>
+                  )}
+                  {saveSuccess && (
+                    <p style={{ color: 'var(--color-success)', marginRight: 'auto' }}>
+                      Erfolgreich gespeichert!
+                    </p>
+                  )}
+                  <button
+                    className="btn btn--primary"
+                    onClick={handleSaveCompany}
+                    disabled={updateTenantMutation.isPending}
+                  >
+                    {updateTenantMutation.isPending ? 'Speichern...' : 'Speichern'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )
+
+      case 'users':
+        return (
+          <div className="settings-content">
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 'var(--spacing-4)',
+              }}
+            >
+              <h2 className="form-section__title" style={{ margin: 0 }}>
+                Benutzer
+              </h2>
+            </div>
+
+            {usersLoading && <p>Benutzer werden geladen...</p>}
+            {usersError && (
+              <p style={{ color: 'var(--color-error)' }}>
+                Fehler beim Laden der Benutzer:{' '}
+                {(usersError as Error).message}
+              </p>
+            )}
+
+            {!usersLoading && !usersError && usersData && (
+              <div className="users-table">
+                <div className="users-table__header">
+                  <div>Name</div>
+                  <div>E-Mail</div>
+                  <div>Rolle</div>
+                  <div>Status</div>
+                </div>
+
+                {(Array.isArray(usersData) ? usersData : []).map((user) => (
+                  <div key={user.id} className="users-table__row">
+                    <div>{user.name}</div>
+                    <div>{user.email}</div>
+                    <div>
+                      <span className={roleBadgeClass(user.role)}>
+                        {user.role}
+                      </span>
+                    </div>
+                    <div>
+                      <span className={statusBadgeClass(user.status)}>
+                        {statusLabel(user.status)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                {(Array.isArray(usersData) ? usersData : []).length === 0 && (
+                  <div className="users-table__row">
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center' }}>
+                      Keine Benutzer gefunden.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+
+      case 'categories':
+        return (
+          <div className="settings-content">
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 'var(--spacing-4)',
+              }}
+            >
+              <h2 className="form-section__title" style={{ margin: 0 }}>
+                Ausrüstungskategorien
+              </h2>
+              <button
+                className="btn btn--primary"
+                onClick={() => setShowNewCategoryForm(!showNewCategoryForm)}
+              >
+                + Neue Kategorie
+              </button>
+            </div>
+
+            {showNewCategoryForm && (
+              <div
+                style={{
+                  padding: 'var(--padding-md)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: 'var(--spacing-4)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--spacing-3)',
+                }}
+              >
+                <div className="form-section__grid">
+                  <Input
+                    label="Name"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="z.B. Beleuchtung"
+                  />
+                  <Input
+                    label="Icon (Emoji)"
+                    value={newCategoryIcon}
+                    onChange={(e) => setNewCategoryIcon(e.target.value)}
+                    placeholder="z.B. 💡"
+                  />
+                  <div className="form-group">
+                    <label className="form-label">Farbe</label>
+                    <input
+                      type="color"
+                      value={newCategoryColor}
+                      onChange={(e) => setNewCategoryColor(e.target.value)}
+                      style={{ width: '100%', height: '38px', cursor: 'pointer' }}
+                    />
+                  </div>
+                </div>
+                {createCategoryMutation.isError && (
+                  <p style={{ color: 'var(--color-error)' }}>
+                    Fehler beim Erstellen:{' '}
+                    {(createCategoryMutation.error as Error).message}
+                  </p>
+                )}
+                <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                  <button
+                    className="btn btn--primary"
+                    onClick={handleCreateCategory}
+                    disabled={createCategoryMutation.isPending || !newCategoryName.trim()}
+                  >
+                    {createCategoryMutation.isPending ? 'Erstellen...' : 'Erstellen'}
+                  </button>
+                  <button
+                    className="btn btn--secondary"
+                    onClick={() => setShowNewCategoryForm(false)}
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {categoriesLoading && <p>Kategorien werden geladen...</p>}
+            {categoriesError && (
+              <p style={{ color: 'var(--color-error)' }}>
+                Fehler beim Laden der Kategorien:{' '}
+                {(categoriesError as Error).message}
+              </p>
+            )}
+
+            {!categoriesLoading && !categoriesError && (
+              <div className="categories-list">
+                {(Array.isArray(categoriesData) ? categoriesData : []).map(
+                  (category) => (
+                    <div key={category.id} className="category-item">
+                      <span className="category-item__name">
+                        <span style={{ marginRight: 'var(--spacing-2)' }}>
+                          {category.icon || '📦'}
+                        </span>
+                        {category.name}
+                        {category.color && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              width: 12,
+                              height: 12,
+                              borderRadius: '50%',
+                              backgroundColor: category.color,
+                              marginLeft: 'var(--spacing-2)',
+                              verticalAlign: 'middle',
+                            }}
+                          />
+                        )}
+                      </span>
+                    </div>
+                  )
+                )}
+
+                {(Array.isArray(categoriesData) ? categoriesData : []).length ===
+                  0 && <p>Keine Kategorien vorhanden.</p>}
+              </div>
+            )}
+          </div>
+        )
+
+      case 'notifications':
+        return (
+          <div className="settings-content">
+            <h2 className="form-section__title">Benachrichtigungseinstellungen</h2>
+
+            <div className="notification-settings">
+              <label className="notification-toggle">
+                <input type="checkbox" defaultChecked />
+                <span>E-Mail-Benachrichtigungen für neue Projekte</span>
+              </label>
+
+              <label className="notification-toggle">
+                <input type="checkbox" defaultChecked />
+                <span>
+                  Benachrichtigung bei Ausrüstung, die bald gewartet werden muss
+                </span>
+              </label>
+
+              <label className="notification-toggle">
+                <input type="checkbox" defaultChecked />
+                <span>Erinnerung an überfällige Rechnungen</span>
+              </label>
+
+              <label className="notification-toggle">
+                <input type="checkbox" />
+                <span>Tägliche Zusammenfassung</span>
+              </label>
+
+              <label className="notification-toggle">
+                <input type="checkbox" defaultChecked />
+                <span>System- und Sicherheitsmitteilungen</span>
+              </label>
+            </div>
+
+            <div className="form-section__footer">
+              <button className="btn btn--primary">Speichern</button>
+            </div>
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
 
   return (
-    <PageWrapper title="Einstellungen">
-      {/* Tab bar */}
-      <div className="settings-tabs">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          return (
-            <button
-              key={t.key}
-              className={`settings-tab ${tab === t.key ? 'settings-tab--active' : ''}`}
-              onClick={() => setTab(t.key)}
-            >
-              <Icon size={16} />
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
+    <div className="settings-page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Einstellungen</h1>
+          <p className="page-subtitle">
+            Verwalten Sie Ihre Kontoeinstellungen und Systemkonfiguration
+          </p>
+        </div>
       </div>
 
-      {/* Tab content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={tab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.2 }}
-        >
-          {/* ───── Tab 1: Firma ───── */}
-          {tab === 'firma' && (
-            <div className="settings-card">
-              <h3>Firmendaten</h3>
-              <p className="settings-hint" style={{ marginBottom: 20 }}>
-                Wird in Mandanten-Einstellungen verwaltet. Aenderungen wirken
-                sich auf alle generierten Dokumente aus.
-              </p>
-              <div className="settings-grid settings-grid--3">
-                {[
-                  ['Firmenname', 'JE Sound & Light GmbH'],
-                  ['Strasse', 'Musterstrasse 12'],
-                  ['PLZ', '4020'],
-                  ['Ort', 'Linz'],
-                  ['Telefon', '+43 660 1234567'],
-                  ['E-Mail', 'office@example.at'],
-                  ['Steuernummer', 'ATU12345678'],
-                  ['IBAN', 'AT12 3456 7890 1234 5678'],
-                  ['BIC', 'BKAUATWW'],
-                  ['Bankname', 'Erste Bank'],
-                ].map(([label, placeholder]) => (
-                  <FieldGroup key={label} label={label}>
-                    <input
-                      type="text"
-                      disabled
-                      placeholder={placeholder}
-                      value=""
-                      readOnly
-                    />
-                  </FieldGroup>
-                ))}
-              </div>
-              <p className="settings-hint" style={{ marginTop: 16 }}>
-                Diese Felder werden zentral verwaltet und koennen hier nicht
-                bearbeitet werden.
-              </p>
-            </div>
-          )}
+      <div className="settings-container">
+        <div className="settings-nav">
+          {SETTINGS_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              className={`settings-nav__item ${
+                activeTab === tab.value ? 'settings-nav__item--active' : ''
+              }`}
+              onClick={() => setActiveTab(tab.value)}
+            >
+              <span className="settings-nav__icon">{tab.icon}</span>
+              <span className="settings-nav__label">{tab.label}</span>
+            </button>
+          ))}
+        </div>
 
-          {/* ───── Tab 2: Finanzen ───── */}
-          {tab === 'finanzen' && (
-            <div className="settings-card">
-              <div className="settings-card__header">
-                <h3>Mahnwesen-Konfiguration</h3>
-                <button
-                  className="btn btn--primary"
-                  disabled={!dunningForm || dunningMutation.isPending}
-                  onClick={() => {
-                    if (dunningForm) dunningMutation.mutate(dunningForm);
-                  }}
-                >
-                  <Save size={16} />
-                  {dunningMutation.isPending ? 'Speichern...' : 'Speichern'}
-                </button>
-              </div>
-
-              <div className="settings-grid">
-                <FieldGroup label="Zahlungserinnerung nach (Tage)">
-                  <input
-                    type="number"
-                    min={1}
-                    value={activeDunning.reminder_days}
-                    onChange={(e) =>
-                      updateDunning('reminder_days', Number(e.target.value))
-                    }
-                  />
-                </FieldGroup>
-                <FieldGroup label="1. Mahnung nach (Tage)">
-                  <input
-                    type="number"
-                    min={1}
-                    value={activeDunning.dunning1_days}
-                    onChange={(e) =>
-                      updateDunning('dunning1_days', Number(e.target.value))
-                    }
-                  />
-                </FieldGroup>
-                <FieldGroup label="2. Mahnung nach (Tage)">
-                  <input
-                    type="number"
-                    min={1}
-                    value={activeDunning.dunning2_days}
-                    onChange={(e) =>
-                      updateDunning('dunning2_days', Number(e.target.value))
-                    }
-                  />
-                </FieldGroup>
-                <FieldGroup label="Erinnerungsgebuehr (EUR)">
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={(activeDunning.reminder_fee / 100).toFixed(2)}
-                    onChange={(e) =>
-                      updateDunning(
-                        'reminder_fee',
-                        Math.round(Number(e.target.value) * 100),
-                      )
-                    }
-                  />
-                </FieldGroup>
-                <FieldGroup label="Gebuehr 1. Mahnung (EUR)">
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={(activeDunning.dunning1_fee / 100).toFixed(2)}
-                    onChange={(e) =>
-                      updateDunning(
-                        'dunning1_fee',
-                        Math.round(Number(e.target.value) * 100),
-                      )
-                    }
-                  />
-                </FieldGroup>
-                <FieldGroup label="Gebuehr 2. Mahnung (EUR)">
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={(activeDunning.dunning2_fee / 100).toFixed(2)}
-                    onChange={(e) =>
-                      updateDunning(
-                        'dunning2_fee',
-                        Math.round(Number(e.target.value) * 100),
-                      )
-                    }
-                  />
-                </FieldGroup>
-              </div>
-
-              <div className="settings-toggle-row">
-                <label className="settings-toggle">
-                  <input
-                    type="checkbox"
-                    checked={activeDunning.auto_send}
-                    onChange={(e) =>
-                      updateDunning('auto_send', e.target.checked)
-                    }
-                  />
-                  <span className="settings-toggle__slider" />
-                </label>
-                <span>Mahnungen automatisch versenden</span>
-              </div>
-            </div>
-          )}
-
-          {/* ───── Tab 3: Benutzer ───── */}
-          {tab === 'benutzer' && (
-            <div className="settings-card">
-              <div className="settings-card__header">
-                <h3>Benutzer</h3>
-                <button
-                  className="btn btn--primary"
-                  onClick={() =>
-                    toast('Einladungssystem wird eingerichtet', {
-                      icon: '\u{2709}\uFE0F',
-                    })
-                  }
-                >
-                  <UserPlus size={16} />
-                  Einladen
-                </button>
-              </div>
-              <DataTable
-                columns={userColumns}
-                data={users}
-                loading={usersLoading}
-                emptyMessage="Keine Benutzer gefunden."
-              />
-            </div>
-          )}
-
-          {/* ───── Tab 4: E-Mail ───── */}
-          {tab === 'email' && (
-            <div className="settings-card">
-              <h3>E-Mail (SMTP)</h3>
-              <div className="settings-status-row">
-                <span
-                  className={`settings-dot ${emailStatus?.configured ? 'settings-dot--ok' : 'settings-dot--error'}`}
-                />
-                <span className="settings-status-label">
-                  {emailStatus?.configured
-                    ? 'SMTP konfiguriert'
-                    : 'SMTP nicht konfiguriert'}
-                </span>
-              </div>
-              {emailStatus?.configured && emailStatus.provider && (
-                <p className="settings-hint">
-                  Provider: {emailStatus.provider}
-                </p>
-              )}
-              {!emailStatus?.configured && (
-                <div className="settings-instructions">
-                  <p>
-                    Um den E-Mail-Versand zu aktivieren, muessen folgende
-                    Umgebungsvariablen auf dem Server gesetzt werden:
-                  </p>
-                  <ul>
-                    <li>
-                      <code>SMTP_HOST</code> &mdash; z.B.{' '}
-                      <code>smtp.mailgun.org</code>
-                    </li>
-                    <li>
-                      <code>SMTP_PORT</code> &mdash; z.B. <code>587</code>
-                    </li>
-                    <li>
-                      <code>SMTP_USER</code> &mdash; Benutzername
-                    </li>
-                    <li>
-                      <code>SMTP_PASSWORD</code> &mdash; Passwort
-                    </li>
-                    <li>
-                      <code>SMTP_FROM</code> &mdash; Absenderadresse
-                    </li>
-                  </ul>
-                  <p className="settings-hint">
-                    Nach dem Setzen der Variablen den Notification-Service neu
-                    starten.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ───── Tab 5: System ───── */}
-          {tab === 'system' && (
-            <div className="settings-card">
-              <h3>System</h3>
-              <div className="settings-grid">
-                <FieldGroup label="App-Version">
-                  <span className="settings-value">v1.1.0</span>
-                </FieldGroup>
-                <FieldGroup label="KI-Status">
-                  <div className="settings-status-row">
-                    <span
-                      className={`settings-dot ${aiStatus?.configured ? 'settings-dot--ok' : 'settings-dot--error'}`}
-                    />
-                    <span>
-                      {aiStatus?.configured
-                        ? aiStatus.model ?? 'Aktiv'
-                        : 'Nicht konfiguriert'}
-                    </span>
-                  </div>
-                </FieldGroup>
-              </div>
-
-              <div className="settings-actions-row">
-                <button
-                  className="btn btn--secondary"
-                  onClick={() =>
-                    toast.success('Keine Updates verfuegbar. Sie nutzen die aktuelle Version.')
-                  }
-                >
-                  <RefreshCw size={16} />
-                  Nach Updates suchen
-                </button>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
-    </PageWrapper>
-  );
+        <div className="settings-main">{renderContent()}</div>
+      </div>
+    </div>
+  )
 }
+
+export default SettingsPage

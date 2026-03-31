@@ -1,0 +1,33 @@
+{
+  "title": "Lager",
+  "subtitle": "Lagerverwaltung",
+  "loading": "Lager wird geladen...",
+  "status": {
+    "confirmed": "Bestätigt",
+    "packed": "Gepackt",
+    "in_transit": "Unterwegs",
+    "on_site": "Vor Ort",
+    "return_expected": "Rückgabe erwartet"
+  },
+  "buttons": {
+    "return_scan": "Retour scannen",
+    "change_status": "Status ändern zu: {{status}}"
+  },
+  "date_nav": {
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "projects_count": "{{count}} Projekte",
+    "parts_count": "{{count}} Teile"
+  },
+  "kanban": {
+    "loading": "Laden...",
+    "no_projects": "Keine Projekte"
+  },
+  "card": {
+    "equipment": "Equipment",
+    "notes": "Notizen",
+    "unknown_client": "Unbekannt"
+  },
+  "warehouse_select": "Lager auswählen",
+  "main_warehouse": "Hauptlager"
+}

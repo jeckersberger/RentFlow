@@ -1,0 +1,187 @@
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+}
+
+.form-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  padding: var(--padding-md);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-input);
+  font-size: var(--font-size-base);
+  font-family: var(--font-sans);
+  background-color: var(--glass-bg-input-strong);
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15), 0 0 12px rgba(0, 212, 255, 0.08);
+    background-color: var(--glass-bg-input-strong);
+  }
+
+  &:hover:not(:focus):not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  &:disabled {
+    background-color: var(--color-bg-tertiary);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--error {
+    border-color: var(--color-danger);
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15), 0 0 12px rgba(239, 68, 68, 0.08);
+    }
+  }
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 2.5rem;
+
+  option {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.form-error {
+  color: var(--color-danger-light);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.form-helper {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.form-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-4);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--glass-bg-input);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(0, 212, 255, 0.04);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.06);
+  }
+
+  &--error {
+    border-color: var(--color-danger);
+    background-color: rgba(239, 68, 68, 0.04);
+  }
+
+  &__input {
+    display: none;
+  }
+
+  &__content {
+    text-align: center;
+  }
+
+  &__icon {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-2);
+    color: var(--color-text-muted);
+  }
+
+  &__text {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+  }
+
+  &__list {
+    margin-top: var(--spacing-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+    width: 100%;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--padding-md);
+    background-color: var(--glass-bg-input);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  &__filename {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__remove {
+    margin-left: var(--spacing-2);
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    padding: var(--spacing-1);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+
+    &:hover {
+      color: var(--color-danger-light);
+      background: rgba(239, 68, 68, 0.1);
+    }
+  }
+}

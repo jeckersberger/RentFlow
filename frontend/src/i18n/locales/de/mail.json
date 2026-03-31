@@ -1,0 +1,57 @@
+{
+  "inbox": {
+    "title": "Posteingang",
+    "subtitle": "Eingehende Nachrichten und E-Mails verwalten",
+    "compose": "+ Verfassen",
+    "tabs": {
+      "general": "Allgemein",
+      "invoices": "Rechnungen",
+      "personal": "Persönlich"
+    },
+    "search_placeholder": "E-Mails durchsuchen...",
+    "empty": {
+      "title": "Keine E-Mails",
+      "description": "Kein Posteingang in dieser Kategorie."
+    },
+    "from": "Von",
+    "select_prompt": "Wählen Sie eine E-Mail aus, um sie zu lesen",
+    "full_content": "[Vollständiger E-Mail-Inhalt wird hier angezeigt]",
+    "actions": {
+      "reply": "Antworten",
+      "forward": "Weiterleiten",
+      "archive": "Archivieren"
+    }
+  },
+  "sent": {
+    "title": "Gesendet",
+    "subtitle": "Gesendete Nachrichten und E-Mails einsehen",
+    "compose": "+ Verfassen",
+    "search_placeholder": "Gesendete E-Mails durchsuchen...",
+    "to": "An",
+    "empty": {
+      "title": "Keine gesendeten E-Mails",
+      "description": "Sie haben noch keine E-Mails gesendet."
+    },
+    "select_prompt": "Wählen Sie eine E-Mail aus, um sie zu lesen",
+    "full_content": "[Vollständiger E-Mail-Inhalt wird hier angezeigt]",
+    "status": {
+      "delivered": "Zugestellt",
+      "opened": "Geöffnet",
+      "error": "Fehler"
+    },
+    "actions": {
+      "resend": "Erneut senden",
+      "forward": "Weiterleiten"
+    }
+  },
+  "compose": {
+    "title": "Neue Nachricht",
+    "to": "An",
+    "subject": "Betreff",
+    "body": "Nachricht",
+    "send": "Senden",
+    "save_draft": "Entwurf speichern",
+    "discard": "Verwerfen",
+    "attach": "Anhang hinzufügen"
+  }
+}

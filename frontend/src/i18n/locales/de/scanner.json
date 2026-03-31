@@ -1,0 +1,67 @@
+{
+  "title": "Scanner",
+  "subtitle": "Barcode- & QR-Code Scanner",
+  "modes": {
+    "check_in": "Rückgabe",
+    "check_out": "Ausgabe",
+    "warehouse_store": "Einlagern",
+    "inventory": "Inventur"
+  },
+  "buttons": {
+    "start_session": "Session starten",
+    "end_session": "Session beenden",
+    "start_camera": "Kamera starten",
+    "stop_camera": "Kamera stoppen",
+    "toggle_batch": "Batch-Modus",
+    "submit_condition": "Zustandsbericht senden",
+    "cancel": "Abbrechen",
+    "sync_queue": "Warteschlange synchronisieren",
+    "connect_usb": "USB-Scanner verbinden"
+  },
+  "feedback": {
+    "equipment_not_found": "Ausrüstung nicht gefunden",
+    "select_project": "Bitte wählen Sie ein Projekt für das Auschecken",
+    "checked_out_success": "{{name}} erfolgreich ausgecheckt",
+    "checked_in_success": "{{name}} erfolgreich eingecheckt",
+    "scanned_success": "{{name}} erfolgreich gescannt",
+    "unknown_error": "Unbekannter Fehler",
+    "offline_queued": "Offline - in Warteschlange gespeichert",
+    "offline_queue_full": "Offline-Warteschlange voll",
+    "camera_error": "Kamera konnte nicht gestartet werden"
+  },
+  "session": {
+    "active": "Session aktiv",
+    "total_scans": "Gesamt Scans",
+    "successful": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "success_rate": "Erfolgsrate",
+    "check_outs": "Ausgaben",
+    "check_ins": "Rückgaben"
+  },
+  "input": {
+    "placeholder": "Barcode eingeben oder scannen...",
+    "project_select": "Projekt auswählen",
+    "project_required": "Projekt für Ausgabe erforderlich"
+  },
+  "condition_report": {
+    "title": "Zustandsbericht",
+    "equipment": "Equipment",
+    "rating": "Bewertung",
+    "rating_good": "Gut",
+    "rating_fair": "Akzeptabel",
+    "rating_poor": "Schlecht",
+    "rating_damaged": "Beschädigt",
+    "notes": "Anmerkungen",
+    "notes_placeholder": "Beschreiben Sie den Zustand...",
+    "submitting": "Wird gesendet..."
+  },
+  "recent_scans": "Letzte Scans",
+  "no_scans": "Noch keine Scans durchgeführt",
+  "offline_mode": "Offline-Modus",
+  "offline_queue_count": "{{count}} Scans in Warteschlange",
+  "status": {
+    "success": "Erfolg",
+    "error": "Fehler",
+    "pending": "Ausstehend"
+  }
+}

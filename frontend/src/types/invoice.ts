@@ -1,48 +1,96 @@
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'partial'
+
+export interface InvoiceLineItem {
+  id: string
+  invoice_id: string
+  name?: string
+  description: string
+  quantity: number
+  unit_price: number
+  total: number
+  tax_rate?: number
+  tax_amount?: number
+}
+
+export interface InvoicePayment {
+  id: string
+  invoice_id: string
+  amount: number
+  date: string
+  method?: string
+  notes?: string
+}
+
+export interface DunningEntry {
+  id: string
+  invoice_id: string
+  level: number
+  level_name: string
+  fee: number
+  sent_at: string
+  due_date: string
+  notes: string
+  created_at: string
+  updated_at: string
+  // legacy compat
+  date: string
+  sent: boolean
+}
+
 export interface Invoice {
-  id: string;
-  tenant_id: string;
-  invoice_number: string;
-  invoice_type: string;
-  status: string;
-  customer_name: string;
-  customer_email: string;
-  customer_address: string;
-  invoice_date: string;
-  due_date: string;
-  vat_rate: number;
-  kleinunternehmer: boolean;
-  total_net: number;
-  total_vat: number;
-  total_gross: number;
-  amount_paid: number;
-  notes: string;
-  hash: string;
-  previous_hash: string;
-  finalized_at: string | null;
-  created_at: string;
-  updated_at: string;
+  id: string
+  number: string
+  client_id: string
+  client_name?: string
+  client_email?: string
+  client_address?: string
+  project_id?: string
+  project_name?: string
+  status: InvoiceStatus
+  issue_date: string
+  due_date: string
+  subtotal: number
+  tax_total?: number
+  total: number
+  notes?: string
+  paid_date?: string
+  payment_terms?: string
+  is_kleinunternehmer?: boolean
+  kleinunternehmer_text?: string
+  bank_name?: string
+  bank_iban?: string
+  bank_bic?: string
+  bank_account_holder?: string
+  payments?: InvoicePayment[]
+  dunning_entries?: DunningEntry[]
+  created_at: string
+  updated_at: string
+  line_items?: InvoiceLineItem[]
 }
 
-export interface InvoiceItem {
-  id: string;
-  tenant_id: string;
-  invoice_id: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  unit_price: number;
-  position: number;
-  created_at: string;
-  updated_at: string;
+export interface CreateInvoiceDTO {
+  number: string
+  client_id: string
+  project_id?: string
+  issue_date: string
+  due_date: string
+  notes?: string
+  line_items: Array<{
+    name?: string
+    description: string
+    quantity: number
+    unit_price: number
+    tax_rate?: number
+  }>
 }
 
-export interface Payment {
-  id: string;
-  tenant_id: string;
-  invoice_id: string;
-  amount: number;
-  payment_date: string;
-  payment_method: string;
-  reference: string;
-  created_at: string;
+export interface UpdateInvoiceDTO extends Partial<CreateInvoiceDTO> {
+  status?: InvoiceStatus
+}
+
+export interface InvoiceListResponse {
+  data: Invoice[]
+  total: number
+  page: number
+  limit: number
 }

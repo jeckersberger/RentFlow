@@ -1,0 +1,62 @@
+{
+  "title": "AI Dashboard",
+  "subtitle": "Intelligent analysis and optimization for your rental business",
+  "header_stats": {
+    "providers_active": "Providers active",
+    "price_suggestions": "Price suggestions",
+    "maintenance_warnings": "Maintenance warnings"
+  },
+  "sections": {
+    "ai_status": "AI Status",
+    "price_optimization": "Price Optimization",
+    "demand_forecast": "Demand Forecast",
+    "predictive_maintenance": "Predictive Maintenance",
+    "activity_log": "AI Activity Log"
+  },
+  "providers": {
+    "requests": "{{count}} requests",
+    "not_configured": "Not configured",
+    "configure": "Configure"
+  },
+  "confidence": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "price_optimization": {
+    "potential": "+{{amount}} EUR/day potential",
+    "accept_all": "Accept all",
+    "table": {
+      "equipment": "Equipment",
+      "category": "Category",
+      "current_price": "Current Price",
+      "ai_suggestion": "AI Suggestion",
+      "confidence": "Confidence",
+      "reason": "Reason",
+      "action": "Action"
+    },
+    "accepted": "Accepted",
+    "accept": "Accept",
+    "per_day": "EUR/day",
+    "revenue_impact": "Revenue Impact",
+    "revenue_description": "Monthly revenue: Current vs. with AI pricing"
+  },
+  "demand_forecast": {
+    "next_months": "Next 6 months",
+    "festival_season": "Festival Season",
+    "concert_season": "Concert Season",
+    "trade_fair_autumn": "Trade Fair Autumn"
+  },
+  "maintenance": {
+    "last_maintenance": "Last Maintenance",
+    "predicted": "Predicted",
+    "plan_maintenance": "Plan Maintenance"
+  },
+  "actions": {
+    "price": "Price",
+    "mail": "Email",
+    "maintenance": "Maintenance",
+    "forecast": "Forecast",
+    "recognition": "Recognition"
+  }
+}
