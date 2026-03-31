@@ -64,7 +64,7 @@ export default function InstallPrompt() {
         <Download size={20} />
       </div>
       <div className={styles.text}>
-        <div className={styles.title}>RentFlow als App installieren</div>
+        <div className={styles.title}>CrateDesk als App installieren</div>
         <div className={styles.subtitle}>Schnellzugriff direkt vom Homescreen</div>
       </div>
       <div className={styles.actions}>

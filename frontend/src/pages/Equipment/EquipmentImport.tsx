@@ -27,7 +27,7 @@ interface ImportResult {
   details: string[]
 }
 
-// RentFlow fields for equipment
+// CrateDesk fields for equipment
 const RENTFLOW_FIELDS = [
   { value: '', label: '-- Nicht zuordnen --' },
   { value: 'name', label: 'Name *' },
@@ -390,7 +390,7 @@ function EquipmentImportPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 'var(--spacing-2)', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
                 <span style={labelHeaderStyle}>CSV-Spalte</span>
                 <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>&rarr;</span>
-                <span style={labelHeaderStyle}>RentFlow-Feld</span>
+                <span style={labelHeaderStyle}>CrateDesk-Feld</span>
               </div>
               {headers.map((header, idx) => (
                 <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 'var(--spacing-2)', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>

@@ -153,7 +153,7 @@ function ModulesPage() {
     <div className="sp-page">
       <div className="sp-header">
         <h1>Module</h1>
-        <p>Aktivieren oder deaktivieren Sie Funktionsbereiche von RentFlow.</p>
+        <p>Aktivieren oder deaktivieren Sie Funktionsbereiche von CrateDesk.</p>
       </div>
 
       {/* Always active modules */}

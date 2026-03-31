@@ -122,7 +122,7 @@ function ForgotPasswordPage() {
         )}
       </div>
 
-      <div className="login-version">RentFlow</div>
+      <div className="login-version">CrateDesk</div>
     </div>
   )
 }

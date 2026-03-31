@@ -52,7 +52,7 @@ const SERVICE_REGISTRY: Omit<ServiceInfo, 'status' | 'response_time' | 'last_che
 
 function AdminPage() {
   const [settings, setSettings] = useState<SystemSettings>({
-    company_name: 'RentFlow GmbH',
+    company_name: 'CrateDesk GmbH',
     timezone: 'Europe/Berlin',
     language: 'de-DE',
     maintenance_mode: false,

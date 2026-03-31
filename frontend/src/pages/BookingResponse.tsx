@@ -71,7 +71,7 @@ function BookingResponse() {
       <div className="booking-page">
         <div className="booking-card">
           <div className="booking-card__header">
-            <h1 className="booking-card__title">RentFlow</h1>
+            <h1 className="booking-card__title">CrateDesk</h1>
             <p className="booking-card__subtitle">Buchungsanfrage</p>
           </div>
           <div className="booking-card__body">
@@ -93,7 +93,7 @@ function BookingResponse() {
       <div className="booking-page">
         <div className="booking-card">
           <div className="booking-card__header">
-            <h1 className="booking-card__title">RentFlow</h1>
+            <h1 className="booking-card__title">CrateDesk</h1>
             <p className="booking-card__subtitle">Buchungsanfrage</p>
           </div>
           <div className="booking-card__body">
@@ -119,7 +119,7 @@ function BookingResponse() {
     <div className="booking-page">
       <div className="booking-card">
         <div className="booking-card__header">
-          <h1 className="booking-card__title">RentFlow</h1>
+          <h1 className="booking-card__title">CrateDesk</h1>
           <p className="booking-card__subtitle">Buchungsanfrage</p>
         </div>
 
@@ -221,7 +221,7 @@ function BookingResponse() {
       </div>
 
       <div className="booking-version">
-        RentFlow
+        CrateDesk
       </div>
     </div>
   )

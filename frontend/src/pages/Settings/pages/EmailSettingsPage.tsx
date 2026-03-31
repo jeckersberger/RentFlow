@@ -129,7 +129,7 @@ function EmailSettingsPage() {
         <div className="sp-grid">
           <div className="sp-field">
             <label className="sp-label">Absendername</label>
-            <input className="sp-input" value={form.sender_name} onChange={(e) => update('sender_name', e.target.value)} placeholder="RentFlow GmbH" />
+            <input className="sp-input" value={form.sender_name} onChange={(e) => update('sender_name', e.target.value)} placeholder="CrateDesk GmbH" />
           </div>
           <div className="sp-field">
             <label className="sp-label">Absender-E-Mail</label>
@@ -144,7 +144,7 @@ function EmailSettingsPage() {
 
       <div className="sp-card">
         <h3 className="sp-card__title">E-Mail-Signatur</h3>
-        <textarea className="sp-textarea" value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Mit freundlichen Grüßen,&#10;Ihr RentFlow-Team" />
+        <textarea className="sp-textarea" value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Mit freundlichen Grüßen,&#10;Ihr CrateDesk-Team" />
       </div>
 
       <div className="sp-footer">

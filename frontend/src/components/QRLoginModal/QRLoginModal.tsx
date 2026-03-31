@@ -127,7 +127,7 @@ export function QRLoginModal({ isOpen, onClose }: QRLoginModalProps) {
         {status === 'ready' && qrDataUrl && (
           <>
             <p className="qr-login-modal__description">
-              Scanne diesen QR-Code mit der RentFlow Scanner-App, um dich einzuloggen.
+              Scanne diesen QR-Code mit der CrateDesk Scanner-App, um dich einzuloggen.
             </p>
             <div className="qr-login-modal__qr-container">
               <img src={qrDataUrl} alt="QR-Code fuer Scanner Login" className="qr-login-modal__qr-image" />

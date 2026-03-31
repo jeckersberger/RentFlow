@@ -285,7 +285,7 @@ function Sidebar() {
         <div className="sidebar__header">
           <div className="sidebar__logo">
             <div className="sidebar__logo-icon">RF</div>
-            {!collapsed && <span className="sidebar__logo-text">RentFlow</span>}
+            {!collapsed && <span className="sidebar__logo-text">CrateDesk</span>}
           </div>
           <button
             className="sidebar__collapse-btn"
@@ -480,7 +480,7 @@ function Sidebar() {
             <div className="mobile-overlay__header">
               <div className="sidebar__logo">
                 <div className="sidebar__logo-icon">RF</div>
-                <span className="sidebar__logo-text">RentFlow</span>
+                <span className="sidebar__logo-text">CrateDesk</span>
               </div>
               <button className="mobile-overlay__close" onClick={closeMobileMenu}>
                 <X size={20} />

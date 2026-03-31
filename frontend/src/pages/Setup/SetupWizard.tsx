@@ -390,7 +390,7 @@ function SetupWizard() {
           <div className="setup-step">
             <h2 className="setup-step__title">Was vermieten/verleihen Sie?</h2>
             <p className="setup-step__description">
-              Waehlen Sie Ihre Branche, um RentFlow optimal fuer Sie einzurichten.
+              Waehlen Sie Ihre Branche, um CrateDesk optimal fuer Sie einzurichten.
             </p>
 
             {!selectedGroup ? (
@@ -489,7 +489,7 @@ function SetupWizard() {
                     setFieldErrors({ ...fieldErrors, company_name: '' })
                   }
                 }}
-                placeholder="Z. B. RentFlow GmbH"
+                placeholder="Z. B. CrateDesk GmbH"
               />
               {fieldErrors.company_name && (
                 <p className="setup-form__error">{fieldErrors.company_name}</p>
@@ -1015,7 +1015,7 @@ function SetupWizard() {
           <div className="setup-card__logo">
             <span className="setup-card__logo-icon">📦</span>
           </div>
-          <h1 className="setup-card__title">RentFlow</h1>
+          <h1 className="setup-card__title">CrateDesk</h1>
           <p className="setup-card__subtitle">
             Initialisierung - Bitte füllen Sie das Setup-Formular aus
           </p>

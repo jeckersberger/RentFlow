@@ -27,7 +27,7 @@ export function WelcomeWidget() {
   return (
     <div className="welcome-widget">
       <div className="welcome-widget__header">
-        <h2 className="welcome-widget__title">Willkommen bei RentFlow!</h2>
+        <h2 className="welcome-widget__title">Willkommen bei CrateDesk!</h2>
         <p className="welcome-widget__description">
           Hier sind Ihre nächsten Schritte, um loszulegen:
         </p>
