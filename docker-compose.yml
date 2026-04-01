@@ -57,10 +57,7 @@ services:
     environment:
       DOCKER_API_VERSION: "1.43"
     command:
-      - "--api=true"
-      - "--api.dashboard=true"
       - "--api.insecure=true"
-      - "--entrypoints.traefik.address=:8080"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=cratedesk"
@@ -150,7 +147,7 @@ services:
       - cratedesk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/equipment`) || PathPrefix(`/api/v1/categories`) || PathPrefix(`/api/v1/equipment-types`) || PathPrefix(`/api/v1/flightcases`) || PathPrefix(`/api/v1/price-rules`) || PathPrefix(`/api/v1/scan`)"
+      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/equipment`) || PathPrefix(`/api/v1/categories`) || PathPrefix(`/api/v1/equipment-types`) || PathPrefix(`/api/v1/flightcases`) || PathPrefix(`/api/v1/price-rules`)"
       - "traefik.http.services.inventory.loadbalancer.server.port=8002"
 
   # =============================================================================
