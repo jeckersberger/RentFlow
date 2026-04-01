@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -76,6 +77,17 @@ type FlightcaseRepository interface {
 type EquipmentHistoryRepository interface {
 	Record(ctx context.Context, entry *EquipmentHistory) error
 	ListByEquipment(ctx context.Context, equipmentID uuid.UUID, tenantID uuid.UUID, page int, perPage int) ([]*EquipmentHistory, int64, error)
+}
+
+// AvailabilityRepository defines queries for the equipment availability feature.
+type AvailabilityRepository interface {
+	// GetTypeAvailability returns per-type availability summaries for a tenant
+	// within the given date range, optionally filtered by category.
+	GetTypeAvailability(ctx context.Context, tenantID uuid.UUID, filter AvailabilityFilter) ([]TypeAvailabilitySummary, error)
+
+	// GetEquipmentBookings returns booking periods for a single equipment item
+	// overlapping the given date range.
+	GetEquipmentBookings(ctx context.Context, tenantID uuid.UUID, equipmentID uuid.UUID, from time.Time, to time.Time) ([]EquipmentBooking, error)
 }
 
 // PriceRuleRepository defines persistence operations for PriceRule aggregates.

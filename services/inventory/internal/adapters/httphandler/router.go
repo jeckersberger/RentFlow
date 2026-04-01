@@ -42,6 +42,7 @@ func NewRouter(
 			r.Get("/", equipmentHandler.List)
 			r.Post("/", equipmentHandler.Create)
 			r.Get("/search", equipmentHandler.Search)
+			r.Get("/availability", availabilityHandler.ListAvailability)
 			r.Post("/availability-check", availabilityHandler.CheckSingle)
 			r.Post("/batch-availability", availabilityHandler.CheckBatch)
 			r.Get("/lookup/barcode/{barcode}", equipmentHandler.LookupBarcode)
@@ -53,6 +54,7 @@ func NewRouter(
 			r.Patch("/{id}/condition", equipmentHandler.UpdateCondition)
 			r.Patch("/{id}/rfid", equipmentHandler.AssignRFID)
 			r.Get("/{id}/history", equipmentHandler.GetHistory)
+			r.Get("/{id}/availability", availabilityHandler.GetItemAvailability)
 			r.Post("/{id}/calculate-price", pricingHandler.CalculatePrice)
 		})
 

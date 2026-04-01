@@ -221,3 +221,80 @@ func (h *PacklistHandler) UpdateItemReturned(w http.ResponseWriter, r *http.Requ
 
 	response.NoContent(w)
 }
+
+func (h *PacklistHandler) UpdateItemStatus(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	itemID, err := parseUUID(chi.URLParam(r, "itemId"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	var req application.UpdateItemStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	if err := h.packlistService.UpdateItemStatus(r.Context(), claims.TenantID, itemID, req); err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.NoContent(w)
+}
+
+func (h *PacklistHandler) BulkUpdateItemStatus(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	packlistID, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	var req application.BulkUpdateItemStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	affected, err := h.packlistService.BulkUpdateItemStatus(r.Context(), claims.TenantID, packlistID, req)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, map[string]int64{"updated": affected})
+}
+
+func (h *PacklistHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	packlistID, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	summary, err := h.packlistService.GetSummary(r.Context(), claims.TenantID, packlistID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, summary)
+}

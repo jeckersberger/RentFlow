@@ -38,6 +38,15 @@ type UpdateReturnedRequest struct {
 	QuantityReturned int `json:"quantity_returned"`
 }
 
+type UpdateItemStatusRequest struct {
+	Status string `json:"status"`
+}
+
+type BulkUpdateItemStatusRequest struct {
+	ItemIDs []uuid.UUID `json:"item_ids"`
+	Status  string      `json:"status"`
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -138,6 +147,7 @@ func (s *PacklistService) AddItem(ctx context.Context, tenantID, packlistID uuid
 		PacklistID:      packlistID,
 		EquipmentID:     req.EquipmentID,
 		QuantityPlanned: req.QuantityPlanned,
+		Status:          domain.PacklistItemStatusPlanned,
 		Notes:           req.Notes,
 	}
 
@@ -174,4 +184,92 @@ func (s *PacklistService) UpdateItemReturned(ctx context.Context, tenantID, item
 		return fmt.Errorf("update returned quantity: %w", err)
 	}
 	return nil
+}
+
+// UpdateItemStatus validates the transition and updates the status of a single packlist item.
+func (s *PacklistService) UpdateItemStatus(ctx context.Context, tenantID, itemID uuid.UUID, req UpdateItemStatusRequest) error {
+	if !domain.ValidateItemStatus(req.Status) {
+		return domain.ErrInvalidPacklistItemStatus
+	}
+
+	item, err := s.packlistRepo.GetItemByID(ctx, itemID, tenantID)
+	if err != nil {
+		return fmt.Errorf("update item status – get item: %w", err)
+	}
+
+	if !domain.ValidateItemTransition(item.Status, req.Status) {
+		return domain.ErrInvalidItemStatusTransition
+	}
+
+	damaged := item.Damaged
+	if req.Status == domain.PacklistItemStatusDamaged {
+		damaged = true
+	}
+
+	if err := s.packlistRepo.UpdateItemStatus(ctx, itemID, tenantID, req.Status, damaged); err != nil {
+		return fmt.Errorf("update item status: %w", err)
+	}
+
+	s.logger.Info().
+		Str("item_id", itemID.String()).
+		Str("from", item.Status).
+		Str("to", req.Status).
+		Msg("packlist item status updated")
+	return nil
+}
+
+// BulkUpdateItemStatus validates the transition for each item and updates all in one query.
+func (s *PacklistService) BulkUpdateItemStatus(ctx context.Context, tenantID uuid.UUID, packlistID uuid.UUID, req BulkUpdateItemStatusRequest) (int64, error) {
+	if !domain.ValidateItemStatus(req.Status) {
+		return 0, domain.ErrInvalidPacklistItemStatus
+	}
+
+	if len(req.ItemIDs) == 0 {
+		return 0, fmt.Errorf("item_ids is required")
+	}
+
+	// Verify packlist exists and belongs to tenant
+	if _, err := s.packlistRepo.GetByID(ctx, packlistID, tenantID); err != nil {
+		return 0, fmt.Errorf("bulk update item status – verify packlist: %w", err)
+	}
+
+	// Validate transition for each item
+	for _, itemID := range req.ItemIDs {
+		item, err := s.packlistRepo.GetItemByID(ctx, itemID, tenantID)
+		if err != nil {
+			return 0, fmt.Errorf("bulk update item status – get item %s: %w", itemID, err)
+		}
+		if !domain.ValidateItemTransition(item.Status, req.Status) {
+			return 0, fmt.Errorf("%w: item %s cannot transition from %s to %s",
+				domain.ErrInvalidItemStatusTransition, itemID, item.Status, req.Status)
+		}
+	}
+
+	damaged := req.Status == domain.PacklistItemStatusDamaged
+
+	affected, err := s.packlistRepo.BulkUpdateItemStatus(ctx, req.ItemIDs, tenantID, req.Status, damaged)
+	if err != nil {
+		return 0, fmt.Errorf("bulk update item status: %w", err)
+	}
+
+	s.logger.Info().
+		Int("count", len(req.ItemIDs)).
+		Int64("affected", affected).
+		Str("status", req.Status).
+		Msg("packlist items bulk status updated")
+	return affected, nil
+}
+
+// GetSummary returns aggregated status counts for all items in a packlist.
+func (s *PacklistService) GetSummary(ctx context.Context, tenantID, packlistID uuid.UUID) (*domain.PacklistSummary, error) {
+	// Verify packlist exists and belongs to tenant
+	if _, err := s.packlistRepo.GetByID(ctx, packlistID, tenantID); err != nil {
+		return nil, fmt.Errorf("get packlist summary – verify: %w", err)
+	}
+
+	summary, err := s.packlistRepo.GetSummary(ctx, packlistID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("get packlist summary: %w", err)
+	}
+	return summary, nil
 }

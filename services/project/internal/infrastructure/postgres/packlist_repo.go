@@ -23,6 +23,7 @@ const packlistColumns = `id, project_id, tenant_id, name, status, created_by, cr
 const packlistItemColumns = `
 	id, packlist_id, equipment_id,
 	quantity_planned, quantity_packed, quantity_returned,
+	status, damaged,
 	packed_by, packed_at, notes`
 
 // PacklistRepo implements domain.PacklistRepository using PostgreSQL.
@@ -61,6 +62,7 @@ func scanPacklist(row pgx.Row) (*domain.Packlist, error) {
 func scanPacklistItem(row pgx.Row) (*domain.PacklistItem, error) {
 	item := &domain.PacklistItem{}
 	var (
+		status   *string
 		packedBy *uuid.UUID
 		packedAt *time.Time
 		notes    *string
@@ -69,12 +71,17 @@ func scanPacklistItem(row pgx.Row) (*domain.PacklistItem, error) {
 	err := row.Scan(
 		&item.ID, &item.PacklistID, &item.EquipmentID,
 		&item.QuantityPlanned, &item.QuantityPacked, &item.QuantityReturned,
+		&status, &item.Damaged,
 		&packedBy, &packedAt, &notes,
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	item.Status = derefString(status)
+	if item.Status == "" {
+		item.Status = domain.PacklistItemStatusPlanned
+	}
 	item.PackedBy = packedBy
 	item.PackedAt = packedAt
 	item.Notes = derefString(notes)
@@ -196,14 +203,21 @@ func (r *PacklistRepo) AddItem(ctx context.Context, item *domain.PacklistItem) e
 		INSERT INTO packlist_items (
 			id, packlist_id, equipment_id,
 			quantity_planned, quantity_packed, quantity_returned,
+			status, damaged,
 			packed_by, packed_at, notes
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 		) RETURNING id`
+
+	status := item.Status
+	if status == "" {
+		status = domain.PacklistItemStatusPlanned
+	}
 
 	err := r.pool.QueryRow(ctx, query,
 		item.ID, item.PacklistID, item.EquipmentID,
 		item.QuantityPlanned, item.QuantityPacked, item.QuantityReturned,
+		status, item.Damaged,
 		item.PackedBy, item.PackedAt, nilIfEmpty(item.Notes),
 	).Scan(&item.ID)
 	if err != nil {
@@ -224,7 +238,7 @@ func (r *PacklistRepo) GetItems(ctx context.Context, packlistID, tenantID uuid.U
 		 JOIN packlists pl ON pl.id = pi.packlist_id
 		 WHERE pi.packlist_id = $1 AND pl.tenant_id = $2
 		 ORDER BY pi.equipment_id ASC`,
-		"id, packlist_id, equipment_id, quantity_planned, quantity_packed, quantity_returned, packed_by, packed_at, notes",
+		"id, packlist_id, equipment_id, quantity_planned, quantity_packed, quantity_returned, status, damaged, packed_by, packed_at, notes",
 	)
 
 	rows, err := r.pool.Query(ctx, query, packlistID, tenantID)
@@ -245,6 +259,94 @@ func (r *PacklistRepo) GetItems(ctx context.Context, packlistID, tenantID uuid.U
 		return nil, fmt.Errorf("packlist_repo: get_items rows: %w", err)
 	}
 	return items, nil
+}
+
+// GetItemByID retrieves a single packlist item by ID, scoped to tenant.
+func (r *PacklistRepo) GetItemByID(ctx context.Context, itemID, tenantID uuid.UUID) (*domain.PacklistItem, error) {
+	query := `SELECT pi.id, pi.packlist_id, pi.equipment_id,
+		pi.quantity_planned, pi.quantity_packed, pi.quantity_returned,
+		pi.status, pi.damaged,
+		pi.packed_by, pi.packed_at, pi.notes
+		FROM packlist_items pi
+		JOIN packlists pl ON pl.id = pi.packlist_id
+		WHERE pi.id = $1 AND pl.tenant_id = $2`
+
+	item, err := scanPacklistItem(r.pool.QueryRow(ctx, query, itemID, tenantID))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("packlist_repo: get_item_by_id: %w", err)
+	}
+	return item, nil
+}
+
+// UpdateItemStatus changes the status and damaged flag of a single packlist item.
+// Tenant isolation: only updates if the item's packlist belongs to the given tenant.
+func (r *PacklistRepo) UpdateItemStatus(ctx context.Context, itemID, tenantID uuid.UUID, status string, damaged bool) error {
+	tag, err := r.pool.Exec(ctx,
+		`UPDATE packlist_items SET status = $2, damaged = $3
+		 WHERE id = $1
+		   AND packlist_id IN (SELECT id FROM packlists WHERE tenant_id = $4)`,
+		itemID, status, damaged, tenantID,
+	)
+	if err != nil {
+		return fmt.Errorf("packlist_repo: update_item_status: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
+// BulkUpdateItemStatus changes the status and damaged flag for multiple packlist items.
+// Returns the number of rows affected. Tenant isolation via sub-select.
+func (r *PacklistRepo) BulkUpdateItemStatus(ctx context.Context, itemIDs []uuid.UUID, tenantID uuid.UUID, status string, damaged bool) (int64, error) {
+	if len(itemIDs) == 0 {
+		return 0, nil
+	}
+
+	tag, err := r.pool.Exec(ctx,
+		`UPDATE packlist_items SET status = $2, damaged = $3
+		 WHERE id = ANY($1)
+		   AND packlist_id IN (SELECT id FROM packlists WHERE tenant_id = $4)`,
+		itemIDs, status, damaged, tenantID,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("packlist_repo: bulk_update_item_status: %w", err)
+	}
+	return tag.RowsAffected(), nil
+}
+
+// GetSummary returns aggregated status counts for all items in a packlist.
+func (r *PacklistRepo) GetSummary(ctx context.Context, packlistID, tenantID uuid.UUID) (*domain.PacklistSummary, error) {
+	query := `
+		SELECT
+			COUNT(*)::int AS total,
+			COUNT(*) FILTER (WHERE pi.status = 'planned' OR pi.status IS NULL)::int AS planned,
+			COUNT(*) FILTER (WHERE pi.status = 'packed')::int AS packed,
+			COUNT(*) FILTER (WHERE pi.status = 'loaded')::int AS loaded,
+			COUNT(*) FILTER (WHERE pi.status = 'on_site')::int AS on_site,
+			COUNT(*) FILTER (WHERE pi.status = 'returned')::int AS returned,
+			COUNT(*) FILTER (WHERE pi.damaged = true)::int AS damaged
+		FROM packlist_items pi
+		JOIN packlists pl ON pl.id = pi.packlist_id
+		WHERE pi.packlist_id = $1 AND pl.tenant_id = $2`
+
+	summary := &domain.PacklistSummary{}
+	err := r.pool.QueryRow(ctx, query, packlistID, tenantID).Scan(
+		&summary.Total,
+		&summary.Planned,
+		&summary.Packed,
+		&summary.Loaded,
+		&summary.OnSite,
+		&summary.Returned,
+		&summary.Damaged,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("packlist_repo: get_summary: %w", err)
+	}
+	return summary, nil
 }
 
 // UpdateItemPacked updates the packed quantity and packed-by info for a packlist item.

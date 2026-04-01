@@ -36,6 +36,10 @@ type PacklistRepository interface {
 	UpdateStatus(ctx context.Context, id, tenantID uuid.UUID, status string) error
 	AddItem(ctx context.Context, item *PacklistItem) error
 	GetItems(ctx context.Context, packlistID, tenantID uuid.UUID) ([]*PacklistItem, error)
+	GetItemByID(ctx context.Context, itemID, tenantID uuid.UUID) (*PacklistItem, error)
+	UpdateItemStatus(ctx context.Context, itemID, tenantID uuid.UUID, status string, damaged bool) error
+	BulkUpdateItemStatus(ctx context.Context, itemIDs []uuid.UUID, tenantID uuid.UUID, status string, damaged bool) (int64, error)
+	GetSummary(ctx context.Context, packlistID, tenantID uuid.UUID) (*PacklistSummary, error)
 	UpdateItemPacked(ctx context.Context, itemID uuid.UUID, qty int, packedBy *uuid.UUID, tenantID uuid.UUID) error
 	UpdateItemReturned(ctx context.Context, itemID uuid.UUID, qty int, tenantID uuid.UUID) error
 }

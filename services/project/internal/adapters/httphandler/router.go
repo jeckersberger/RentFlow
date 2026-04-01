@@ -55,10 +55,13 @@ func NewRouter(
 			r.Post("/", packlistHandler.Create)
 			r.Get("/{id}", packlistHandler.Get)
 			r.Patch("/{id}/status", packlistHandler.UpdateStatus)
+			r.Get("/{id}/summary", packlistHandler.GetSummary)
 			r.Post("/{id}/items", packlistHandler.AddItem)
 			r.Get("/{id}/items", packlistHandler.GetItems)
+			r.Post("/{id}/bulk-status", packlistHandler.BulkUpdateItemStatus)
 			r.Patch("/{id}/items/{itemId}/packed", packlistHandler.UpdateItemPacked)
 			r.Patch("/{id}/items/{itemId}/returned", packlistHandler.UpdateItemReturned)
+			r.Patch("/{id}/items/{itemId}/status", packlistHandler.UpdateItemStatus)
 		})
 
 		// Reservation endpoints

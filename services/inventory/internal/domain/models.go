@@ -203,6 +203,43 @@ type EquipmentHistory struct {
 // Price Rule domain
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Availability domain
+// ---------------------------------------------------------------------------
+
+// AvailabilityFilter holds query parameters for the availability overview endpoint.
+type AvailabilityFilter struct {
+	From       time.Time  `json:"from"`
+	To         time.Time  `json:"to"`
+	CategoryID *uuid.UUID `json:"category_id,omitempty"`
+}
+
+// TypeAvailabilitySummary aggregates availability for a single equipment type.
+type TypeAvailabilitySummary struct {
+	EquipmentTypeID uuid.UUID `json:"equipment_type_id"`
+	Name            string    `json:"name"`
+	TotalQuantity   int       `json:"total_quantity"`
+	Reserved        int       `json:"reserved"`
+	InMaintenance   int       `json:"in_maintenance"`
+	Available       int       `json:"available"`
+	AvailabilityPct int       `json:"availability_pct"`
+}
+
+// EquipmentBooking represents a period during which a specific equipment item
+// is reserved or checked out.
+type EquipmentBooking struct {
+	EquipmentID uuid.UUID `json:"equipment_id"`
+	Status      string    `json:"status"`
+	StartDate   time.Time `json:"start_date"`
+	EndDate     time.Time `json:"end_date"`
+	ProjectID   *uuid.UUID `json:"project_id,omitempty"`
+	ProjectName string    `json:"project_name,omitempty"`
+}
+
+// ---------------------------------------------------------------------------
+// Price Rule domain
+// ---------------------------------------------------------------------------
+
 // PriceRule defines pricing tiers, quantity discounts, and seasonal surcharges
 // for a piece of equipment or a category.
 type PriceRule struct {

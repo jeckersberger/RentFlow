@@ -66,6 +66,7 @@ func main() {
 	flightcaseRepo := postgres.NewFlightcaseRepo(pool)
 	historyRepo := postgres.NewHistoryRepo(pool)
 	priceRuleRepo := postgres.NewPriceRuleRepo(pool)
+	availabilityRepo := postgres.NewAvailabilityRepo(pool)
 
 	// 7. Create application services.
 	equipmentSvc := application.NewEquipmentService(equipmentRepo, historyRepo, log)
@@ -73,7 +74,7 @@ func main() {
 	typeSvc := application.NewEquipmentTypeService(typeRepo, equipmentRepo, log)
 	flightcaseSvc := application.NewFlightcaseService(flightcaseRepo, log)
 	pricingSvc := application.NewPricingService(priceRuleRepo, equipmentRepo, log)
-	availabilitySvc := application.NewAvailabilityService(equipmentRepo, log)
+	availabilitySvc := application.NewAvailabilityService(equipmentRepo, availabilityRepo, log)
 
 	// 8. Create HTTP handlers.
 	equipmentH := httphandler.NewEquipmentHandler(equipmentSvc, log)

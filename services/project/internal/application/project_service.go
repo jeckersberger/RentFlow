@@ -483,9 +483,11 @@ func (s *ProjectService) GetCalendar(ctx context.Context, tenantID uuid.UUID, fr
 // icsStatus maps project statuses to iCalendar STATUS values.
 func icsStatus(status string) string {
 	switch status {
-	case domain.ProjectStatusConfirmed, domain.ProjectStatusActive:
+	case domain.ProjectStatusConfirmed, domain.ProjectStatusActive,
+		domain.ProjectStatusInPreparation, domain.ProjectStatusCompleted,
+		domain.ProjectStatusInvoiced:
 		return "CONFIRMED"
-	case domain.ProjectStatusDraft:
+	case domain.ProjectStatusInquiry, domain.ProjectStatusOfferSent:
 		return "TENTATIVE"
 	case domain.ProjectStatusCancelled:
 		return "CANCELLED"
