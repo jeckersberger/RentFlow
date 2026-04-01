@@ -57,7 +57,10 @@ services:
     environment:
       DOCKER_API_VERSION: "1.43"
     command:
-      - "--api=false"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--entrypoints.traefik.address=:8080"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=cratedesk"
