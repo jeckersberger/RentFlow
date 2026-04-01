@@ -57,7 +57,7 @@ services:
     environment:
       DOCKER_API_VERSION: "1.43"
     command:
-      - "--api.dashboard=false"
+      - "--api=false"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=cratedesk"
