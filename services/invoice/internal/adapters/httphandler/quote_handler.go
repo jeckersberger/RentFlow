@@ -258,3 +258,36 @@ func (h *QuoteHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	response.Success(w, map[string]string{"status": req.Status})
 }
+
+// Delete removes a quote that is still in draft status.
+func (h *QuoteHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	id, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltige ID"))
+		return
+	}
+
+	// Only draft quotes can be deleted
+	quote, err := h.quoteService.GetByID(r.Context(), id, claims.TenantID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+	if quote.Status != domain.QuoteStatusDraft {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Nur Entwuerfe koennen geloescht werden"))
+		return
+	}
+
+	if err := h.quoteService.UpdateStatus(r.Context(), id, claims.TenantID, domain.QuoteStatusCancelled); err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, map[string]string{"deleted": "true"})
+}

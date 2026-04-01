@@ -13,6 +13,7 @@ type InvoiceRepository interface {
 	Update(ctx context.Context, invoice *Invoice) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, status string) error
 	UpdateAmountPaid(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, amount int64) error
+	UpdateTotals(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, totalNet, totalVat, totalGross int64) error
 	GetLastHash(ctx context.Context, tenantID uuid.UUID) (string, error)
 	Search(ctx context.Context, tenantID uuid.UUID, query string, page int, perPage int) ([]*Invoice, int64, error)
 }

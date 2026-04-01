@@ -19,15 +19,16 @@ import (
 // ---------------------------------------------------------------------------
 
 type CreateInvoiceRequest struct {
-	CustomerName     string `json:"customer_name"`
-	CustomerEmail    string `json:"customer_email"`
-	CustomerAddress  string `json:"customer_address"`
-	InvoiceDate      string `json:"invoice_date"`
-	DueDate          string `json:"due_date"`
-	InvoiceType      string `json:"invoice_type"`
-	VatRate          *int64 `json:"vat_rate"`
-	Kleinunternehmer bool   `json:"kleinunternehmer"`
-	Notes            string `json:"notes"`
+	CustomerName     string            `json:"customer_name"`
+	CustomerEmail    string            `json:"customer_email"`
+	CustomerAddress  string            `json:"customer_address"`
+	InvoiceDate      string            `json:"invoice_date"`
+	DueDate          string            `json:"due_date"`
+	InvoiceType      string            `json:"invoice_type"`
+	VatRate          *int64            `json:"vat_rate"`
+	Kleinunternehmer bool              `json:"kleinunternehmer"`
+	Notes            string            `json:"notes"`
+	Items            []AddItemRequest  `json:"items,omitempty"`
 }
 
 type UpdateInvoiceRequest struct {
@@ -161,6 +162,48 @@ func (s *InvoiceService) Create(ctx context.Context, tenantID uuid.UUID, req Cre
 
 	if err := s.invoiceRepo.Create(ctx, invoice); err != nil {
 		return nil, fmt.Errorf("create invoice: %w", err)
+	}
+
+	// Process inline items if provided
+	if len(req.Items) > 0 {
+		var totalNet int64
+		for i, itemReq := range req.Items {
+			item := &domain.InvoiceItem{
+				ID:          uuid.New(),
+				TenantID:    tenantID,
+				InvoiceID:   invoice.ID,
+				Description: itemReq.Description,
+				Quantity:    itemReq.Quantity,
+				Unit:        itemReq.Unit,
+				UnitPrice:   itemReq.UnitPrice,
+				Position:    itemReq.Position,
+			}
+			if item.Position == 0 {
+				item.Position = i + 1
+			}
+			if item.Quantity == 0 {
+				item.Quantity = 1
+			}
+			if item.Unit == "" {
+				item.Unit = "Stueck"
+			}
+			if err := s.itemRepo.Create(ctx, item); err != nil {
+				return nil, fmt.Errorf("create invoice item %d: %w", i+1, err)
+			}
+			totalNet += item.Quantity * item.UnitPrice
+		}
+
+		var totalVat int64
+		if !invoice.Kleinunternehmer && invoice.VatRate > 0 {
+			totalVat = totalNet * invoice.VatRate / 10000
+		}
+		invoice.TotalNet = totalNet
+		invoice.TotalVat = totalVat
+		invoice.TotalGross = totalNet + totalVat
+
+		if err := s.invoiceRepo.UpdateTotals(ctx, invoice.ID, tenantID, totalNet, totalVat, totalNet+totalVat); err != nil {
+			s.logger.Warn().Err(err).Msg("failed to update invoice totals after inline items")
+		}
 	}
 
 	s.logger.Info().Str("invoice_id", invoice.ID.String()).Str("number", invoiceNumber).Msg("invoice created")

@@ -52,6 +52,7 @@ func NewRouter(
 
 		// Packlist endpoints
 		r.Route("/api/v1/packlists", func(r chi.Router) {
+			r.Get("/", packlistHandler.List)
 			r.Post("/", packlistHandler.Create)
 			r.Get("/{id}", packlistHandler.Get)
 			r.Patch("/{id}/status", packlistHandler.UpdateStatus)

@@ -53,6 +53,7 @@ func NewRouter(
 			r.Post("/", quoteHandler.Create)
 			r.Get("/{id}", quoteHandler.Get)
 			r.Put("/{id}", quoteHandler.Update)
+			r.Delete("/{id}", quoteHandler.Delete)
 			r.Post("/{id}/items", quoteHandler.AddItem)
 			r.Get("/{id}/items", quoteHandler.ListItems)
 			r.Delete("/{id}/items/{itemId}", quoteHandler.RemoveItem)

@@ -228,6 +228,20 @@ func (r *InvoiceRepo) UpdateAmountPaid(ctx context.Context, id uuid.UUID, tenant
 	return nil
 }
 
+func (r *InvoiceRepo) UpdateTotals(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, totalNet, totalVat, totalGross int64) error {
+	tag, err := r.pool.Exec(ctx,
+		`UPDATE invoices SET total_net = $3, total_vat = $4, total_gross = $5, updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,
+		id, tenantID, totalNet, totalVat, totalGross,
+	)
+	if err != nil {
+		return fmt.Errorf("invoice_repo: update_totals: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
 func (r *InvoiceRepo) GetLastHash(ctx context.Context, tenantID uuid.UUID) (string, error) {
 	var hash *string
 	err := r.pool.QueryRow(ctx,

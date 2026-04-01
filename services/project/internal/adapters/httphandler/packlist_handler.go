@@ -47,6 +47,22 @@ func (h *PacklistHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.Created(w, created)
 }
 
+func (h *PacklistHandler) List(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	packlists, err := h.packlistService.List(r.Context(), claims.TenantID)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, packlists)
+}
+
 func (h *PacklistHandler) Get(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {

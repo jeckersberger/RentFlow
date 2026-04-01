@@ -97,6 +97,10 @@ func (s *PacklistService) Create(ctx context.Context, tenantID, userID uuid.UUID
 	return packlist, nil
 }
 
+func (s *PacklistService) List(ctx context.Context, tenantID uuid.UUID) ([]*domain.Packlist, error) {
+	return s.packlistRepo.List(ctx, tenantID)
+}
+
 func (s *PacklistService) GetByID(ctx context.Context, id, tenantID uuid.UUID) (*domain.Packlist, error) {
 	pl, err := s.packlistRepo.GetByID(ctx, id, tenantID)
 	if err != nil {
