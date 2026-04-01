@@ -62,6 +62,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=cratedesk"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.middlewares=security-headers@docker"
       - "--entrypoints.websecure.address=:443"
       - "--log.level=${TRAEFIK_LOG_LEVEL:-INFO}"
     ports:
@@ -70,6 +71,16 @@ services:
       - "127.0.0.1:${TRAEFIK_DASHBOARD_PORT:-8080}:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=false"
+      # Security headers middleware (applied to all routers via docker default)
+      - "traefik.http.middlewares.security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.security-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.security-headers.headers.customResponseHeaders.X-Permitted-Cross-Domain-Policies=none"
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
     networks:
       - cratedesk
     depends_on:
@@ -385,7 +396,7 @@ services:
       - cratedesk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.reporting.rule=PathPrefix(`/api/v1/report-definitions`) || PathPrefix(`/api/v1/report-snapshots`) || PathPrefix(`/api/v1/dashboard-widgets`)"
+      - "traefik.http.routers.reporting.rule=PathPrefix(`/api/v1/report-definitions`) || PathPrefix(`/api/v1/report-snapshots`) || PathPrefix(`/api/v1/dashboard-widgets`) || PathPrefix(`/api/v1/reporting`)"
       - "traefik.http.services.reporting.loadbalancer.server.port=8016"
 
   # =============================================================================
@@ -555,7 +566,7 @@ services:
       - cratedesk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.workflow.rule=PathPrefix(`/api/v1/workflow-definitions`) || PathPrefix(`/api/v1/workflow-instances`)"
+      - "traefik.http.routers.workflow.rule=PathPrefix(`/api/v1/workflow-definitions`) || PathPrefix(`/api/v1/workflow-instances`) || PathPrefix(`/api/v1/workflow-templates`)"
       - "traefik.http.services.workflow.loadbalancer.server.port=8013"
 
   # =============================================================================
