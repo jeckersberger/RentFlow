@@ -530,7 +530,7 @@ export const invoiceApi = {
     api.get(`/api/v1/invoices/${quoteId}/quote-pdf`, { responseType: 'blob' }).then(res => res.data),
 
   sendEmail: (id: string) =>
-    MOCK_MODE ? mockDelay({ success: true }) : api.post(`/api/v1/invoices/${id}/send-email`).then(res => res.data),
+    MOCK_MODE ? mockDelay({ success: true }) : api.post(`/api/v1/invoices/${id}/send`).then(res => res.data),
 
   createDunning: (id: string, level: number, fee?: number, message?: string) =>
     MOCK_MODE
@@ -548,12 +548,18 @@ export const invoiceApi = {
           date: new Date().toISOString(),
           sent: true,
         })
-      : api.post(`/api/v1/invoices/${id}/dunning`, { level, fee, message }).then(res => res.data),
+      : api.post('/api/v1/dunning/send-reminder', { invoice_id: id, level: level === 1 ? 'reminder' : level === 2 ? 'dunning_1' : 'dunning_2', notes: message || '' }).then(res => res.data),
 
   getDunningHistory: (id: string) =>
     MOCK_MODE
       ? mockDelay([])
-      : api.get(`/api/v1/invoices/${id}/dunning`).then(res => res.data),
+      : api.get(`/api/v1/dunning/entries/${id}`).then(res => res.data),
+
+  getOverdueInvoices: () =>
+    api.get('/api/v1/dunning/overdue').then(res => res.data),
+
+  runDunningCheck: () =>
+    api.post('/api/v1/dunning/check').then(res => res.data),
 }
 
 // ============================================================================
@@ -684,25 +690,25 @@ export const quoteApi = {
       ? mockDelay({ ...data, id: String(Date.now()) })
       : api.post('/api/v1/quotes', data).then(res => res.data),
 
-  send: (id: string, email: string) =>
+  updateStatus: (id: string, status: string) =>
     MOCK_MODE
       ? mockDelay({ success: true })
-      : api.post(`/api/v1/quotes/${id}/send`, { email }).then(res => res.data),
+      : api.patch(`/api/v1/quotes/${id}/status`, { status }).then(res => res.data),
+
+  send: (id: string) =>
+    MOCK_MODE
+      ? mockDelay({ success: true })
+      : api.patch(`/api/v1/quotes/${id}/status`, { status: 'sent' }).then(res => res.data),
 
   accept: (id: string) =>
     MOCK_MODE
       ? mockDelay({ success: true })
-      : api.post(`/api/v1/quotes/${id}/accept`).then(res => res.data),
+      : api.patch(`/api/v1/quotes/${id}/status`, { status: 'accepted' }).then(res => res.data),
 
-  confirm: (id: string) =>
+  reject: (id: string) =>
     MOCK_MODE
       ? mockDelay({ success: true })
-      : api.post(`/api/v1/quotes/${id}/confirm`).then(res => res.data),
-
-  reject: (id: string, reason: string) =>
-    MOCK_MODE
-      ? mockDelay({ success: true })
-      : api.post(`/api/v1/quotes/${id}/reject`, { reason }).then(res => res.data),
+      : api.patch(`/api/v1/quotes/${id}/status`, { status: 'declined' }).then(res => res.data),
 
   convertToInvoice: (id: string) =>
     MOCK_MODE
@@ -711,6 +717,38 @@ export const quoteApi = {
 
   getPdf: (id: string) =>
     api.get(`/api/v1/quotes/${id}/pdf`, { responseType: 'blob' }).then(res => res.data),
+}
+
+// ============================================================================
+// BANKING API endpoints
+// ============================================================================
+export const bankingApi = {
+  importCSV: (file: File) =>
+    file.text().then(csvText =>
+      api.post('/api/v1/banking/import', csvText, {
+        headers: { 'Content-Type': 'text/csv' },
+      }).then(res => res.data)
+    ),
+
+  autoMatch: () =>
+    api.post('/api/v1/banking/auto-match').then(res => res.data),
+
+  confirmMatch: (transactionId: string, invoiceId: string) =>
+    api.post('/api/v1/banking/confirm-match', { transaction_id: transactionId, invoice_id: invoiceId }).then(res => res.data),
+
+  listTransactions: (matched?: boolean) =>
+    api.get('/api/v1/banking/transactions', { params: matched !== undefined ? { matched } : {} }).then(res => res.data),
+}
+
+// ============================================================================
+// DATEV EXPORT API endpoints
+// ============================================================================
+export const datevApi = {
+  exportCSV: (from: string, to: string, format = 'skr03') =>
+    api.get('/api/v1/export/datev', {
+      params: { from, to, format },
+      responseType: 'blob',
+    }).then(res => res.data),
 }
 
 // ============================================================================

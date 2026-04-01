@@ -123,17 +123,20 @@ const MailInboxPage = lazy(() => import('./pages/Mail/MailInboxPage'))
 const MailSentPage = lazy(() => import('./pages/Mail/MailSentPage'))
 const MailComposePage = lazy(() => import('./pages/Mail/MailComposePage'))
 
+// Banking Page
+const BankingPage = lazy(() => import('./pages/Banking/BankingPage'))
+
 // Remaining Placeholder Pages — lazy-loaded as a single chunk
-const NewTourPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewTourPage })))
-const NewVehiclePage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewVehiclePage })))
-const VehicleDetailPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.VehicleDetailPage })))
-const NewMaintenanceTaskPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewMaintenanceTaskPage })))
-const NewECheckPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewECheckPage })))
-const MaintenancePlanDetailPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.MaintenancePlanDetailPage })))
-const NewCrewMemberPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewCrewMemberPage })))
-const DocumentDetailPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.DocumentDetailPage })))
-const NewDocumentPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewDocumentPage })))
-const NewClaimPage = lazy(() => import('./pages/PlaceholderPages').then(m => ({ default: m.NewClaimPage })))
+const NewTourPage = lazy(() => import('./pages/Transport/NewTourPage'))
+const NewVehiclePage = lazy(() => import('./pages/Transport/NewVehiclePage'))
+const VehicleDetailPage = lazy(() => import('./pages/Transport/VehicleDetailPage'))
+const NewMaintenanceTaskPage = lazy(() => import('./pages/Maintenance/NewMaintenanceTaskPage'))
+const NewECheckPage = lazy(() => import('./pages/Maintenance/NewECheckPage'))
+const MaintenancePlanDetailPage = lazy(() => import('./pages/Maintenance/MaintenancePlanDetailPage'))
+const NewCrewMemberPage = lazy(() => import('./pages/Crew/NewCrewMemberPage'))
+const DocumentDetailPage = lazy(() => import('./pages/Documents/DocumentDetailPage'))
+const NewDocumentPage = lazy(() => import('./pages/Documents/NewDocumentPage'))
+const NewClaimPage = lazy(() => import('./pages/Insurance/NewClaimPage'))
 
 // Phase 4 Pages
 const AIPage = lazy(() => import('./pages/AI/AIPage'))
@@ -275,6 +278,9 @@ function App() {
             <Route path="quotes" element={<QuotesPage />} />
             <Route path="quotes/new" element={<QuoteNewPage />} />
             <Route path="quotes/:id" element={<QuoteDetailPage />} />
+
+            {/* Banking */}
+            <Route path="banking" element={<BankingPage />} />
 
             {/* Contacts */}
             <Route path="contacts" element={<ContactsPage />} />

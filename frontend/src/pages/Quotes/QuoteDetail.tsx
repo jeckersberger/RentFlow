@@ -90,7 +90,7 @@ function QuoteDetail() {
 
   // Send quote
   const { mutate: sendQuote } = useMutation({
-    mutationFn: () => quoteApi.send(id!, quote!.client_email),
+    mutationFn: () => quoteApi.send(id!),
     onMutate: () => setActionPending(true),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] })
@@ -114,9 +114,9 @@ function QuoteDetail() {
     },
   })
 
-  // Confirm quote
+  // Confirm quote (same as accept — backend uses status 'accepted')
   const { mutate: confirmQuote } = useMutation({
-    mutationFn: () => quoteApi.confirm(id!),
+    mutationFn: () => quoteApi.updateStatus(id!, 'accepted'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] })
       addNotification('Angebot bestätigt (Auftragsbestätigung)', 'success', { title: 'Erfolg', duration: 3000 })
@@ -128,7 +128,7 @@ function QuoteDetail() {
 
   // Reject quote
   const { mutate: rejectQuote } = useMutation({
-    mutationFn: () => quoteApi.reject(id!, 'Vom Kunden abgelehnt'),
+    mutationFn: () => quoteApi.reject(id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] })
       addNotification('Angebot als abgelehnt markiert', 'success', { title: 'Erfolg', duration: 3000 })
