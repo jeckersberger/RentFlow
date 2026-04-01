@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { mailApi } from '../../services/api'
-import styles from './Mail.module.scss'
+import './Mail.scss'
 
 interface SentEmail {
   id: string
@@ -73,32 +73,32 @@ function MailSentPage() {
 
   const getStatusClass = (status: string) => {
     switch (status) {
-      case 'Zugestellt': return styles.statusDelivered
-      case 'Geöffnet': return styles.statusOpened
-      case 'Fehler': return styles.statusError
+      case 'Zugestellt': return 'statusDelivered'
+      case 'Geöffnet': return 'statusOpened'
+      case 'Fehler': return 'statusError'
       default: return ''
     }
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <div className="page">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Gesendet</h1>
-          <p className={styles.subtitle}>Gesendete Nachrichten und E-Mails einsehen</p>
+          <h1 className="title">Gesendet</h1>
+          <p className="subtitle">Gesendete Nachrichten und E-Mails einsehen</p>
         </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnPrimary} onClick={() => navigate('/mail/compose')}>
+        <div className="headerActions">
+          <button className="btnPrimary" onClick={() => navigate('/mail/compose')}>
             + Verfassen
           </button>
         </div>
       </div>
 
       {/* Filter */}
-      <div className={styles.filterBar}>
+      <div className="filterBar">
         <input
           type="text"
-          className={styles.searchInput}
+          className="searchInput"
           placeholder="Gesendete E-Mails durchsuchen..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
@@ -106,19 +106,19 @@ function MailSentPage() {
       </div>
 
       {/* Content: List + Detail */}
-      <div className={styles.mailLayout}>
+      <div className="mailLayout">
         {/* Email List */}
-        <div className={styles.mailList}>
+        <div className="mailList">
           {isLoading ? (
-            <div className={styles.emptyState}>
-              <h3 className={styles.emptyTitle}>Laden...</h3>
-              <p className={styles.emptyDescription}>Gesendete E-Mails werden geladen.</p>
+            <div className="emptyState">
+              <h3 className="emptyTitle">Laden...</h3>
+              <p className="emptyDescription">Gesendete E-Mails werden geladen.</p>
             </div>
           ) : filteredEmails.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'📤'}</div>
-              <h3 className={styles.emptyTitle}>Keine gesendeten E-Mails</h3>
-              <p className={styles.emptyDescription}>
+            <div className="emptyState">
+              <div className="emptyIcon">{'📤'}</div>
+              <h3 className="emptyTitle">Keine gesendeten E-Mails</h3>
+              <p className="emptyDescription">
                 {searchQuery ? 'Keine E-Mails gefunden. Versuchen Sie eine andere Suche.' : 'Sie haben noch keine E-Mails gesendet.'}
               </p>
             </div>
@@ -126,21 +126,21 @@ function MailSentPage() {
             filteredEmails.map(email => (
               <div
                 key={email.id}
-                className={`${styles.mailItem} ${selectedEmail?.id === email.id ? styles.mailItemSelected : ''}`}
+                className={`mailItem ${selectedEmail?.id === email.id ? 'mailItemSelected' : ''}`}
                 onClick={() => setSelectedEmail(email)}
               >
-                <div className={styles.mailItemHeader}>
-                  <span className={styles.mailFrom}>An: {email.to}</span>
-                  <span className={styles.mailDate}>{formatDate(email.date)}</span>
+                <div className="mailItemHeader">
+                  <span className="mailFrom">An: {email.to}</span>
+                  <span className="mailDate">{formatDate(email.date)}</span>
                 </div>
-                <div className={styles.mailSubject}>{email.subject}</div>
-                <div className={styles.mailPreview}>{email.preview}</div>
-                <div className={styles.sentMeta}>
-                  <span className={`${styles.sentStatus} ${getStatusClass(email.status)}`}>
+                <div className="mailSubject">{email.subject}</div>
+                <div className="mailPreview">{email.preview}</div>
+                <div className="sentMeta">
+                  <span className={`sentStatus ${getStatusClass(email.status)}`}>
                     {email.status}
                   </span>
                   {email.project && (
-                    <span className={styles.projectBadge}>{email.project}</span>
+                    <span className="projectBadge">{email.project}</span>
                   )}
                 </div>
               </div>
@@ -149,14 +149,14 @@ function MailSentPage() {
         </div>
 
         {/* Email Detail */}
-        <div className={styles.mailDetail}>
+        <div className="mailDetail">
           {selectedEmail ? (
             <>
-              <div className={styles.detailHeader}>
-                <h2 className={styles.detailSubject}>{selectedEmail.subject}</h2>
-                <div className={styles.detailMeta}>
-                  <span className={styles.detailFrom}>An: {selectedEmail.to}</span>
-                  <span className={styles.detailDate}>
+              <div className="detailHeader">
+                <h2 className="detailSubject">{selectedEmail.subject}</h2>
+                <div className="detailMeta">
+                  <span className="detailFrom">An: {selectedEmail.to}</span>
+                  <span className="detailDate">
                     {new Date(selectedEmail.date).toLocaleDateString('de-DE', {
                       day: '2-digit',
                       month: 'long',
@@ -166,35 +166,35 @@ function MailSentPage() {
                     })}
                   </span>
                 </div>
-                <div className={styles.detailStatusRow}>
-                  <span className={`${styles.sentStatusLarge} ${getStatusClass(selectedEmail.status)}`}>
+                <div className="detailStatusRow">
+                  <span className={`sentStatusLarge ${getStatusClass(selectedEmail.status)}`}>
                     {selectedEmail.status}
                   </span>
                   {selectedEmail.project && (
-                    <span className={styles.projectBadgeLarge}>{selectedEmail.project}</span>
+                    <span className="projectBadgeLarge">{selectedEmail.project}</span>
                   )}
                 </div>
               </div>
-              <div className={styles.detailBody}>
+              <div className="detailBody">
                 {selectedEmail.body ? (
                   <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedEmail.body) }} />
                 ) : (
                   <>
                     <p>{selectedEmail.preview}</p>
-                    <p className={styles.detailPlaceholder}>
+                    <p className="detailPlaceholder">
                       [Vollständiger E-Mail-Inhalt wird hier angezeigt]
                     </p>
                   </>
                 )}
               </div>
-              <div className={styles.detailActions}>
-                <button className={styles.btnSecondary}>Erneut senden</button>
-                <button className={styles.btnSecondary}>Weiterleiten</button>
+              <div className="detailActions">
+                <button className="btnSecondary">Erneut senden</button>
+                <button className="btnSecondary">Weiterleiten</button>
               </div>
             </>
           ) : (
-            <div className={styles.detailEmpty}>
-              <div className={styles.emptyIcon}>📧</div>
+            <div className="detailEmpty">
+              <div className="emptyIcon">📧</div>
               <p>Wählen Sie eine E-Mail aus, um sie zu lesen</p>
             </div>
           )}

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { federationApi } from '../../services/api'
 import type { Partner, EquipmentAvailability, SubRentalRequest } from '../../types/federation'
 import { SkeletonTable, SkeletonCard } from '../../components/Skeleton/SkeletonLoader'
-import styles from './Federation.module.scss'
+import './Federation.scss'
 
 
 function FederationPage() {
@@ -158,11 +158,11 @@ function FederationPage() {
   }
 
   return (
-    <div className={styles.federationPage}>
-      <div className={styles.header}>
+    <div className="federationPage">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Federation Partner-Netzwerk</h1>
-          <p className={styles.subtitle}>Verwalten Sie Ihre Partnerschaften und Equipment-Verfuegbarkeit</p>
+          <h1 className="title">Federation Partner-Netzwerk</h1>
+          <p className="subtitle">Verwalten Sie Ihre Partnerschaften und Equipment-Verfuegbarkeit</p>
         </div>
         <button
           className="btn btn--primary"
@@ -174,53 +174,53 @@ function FederationPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>{'🌐'}</div>
-          <div className={styles.statLabel}>Partner gesamt</div>
-          <div className={styles.statValue}>{partners.length}</div>
-          <div className={styles.statSubtext}>{partners.filter(p => p.trust_level !== 'suspended').length} aktiv verbunden</div>
+      <div className="statsGrid">
+        <div className="statCard">
+          <div className="statIcon">{'🌐'}</div>
+          <div className="statLabel">Partner gesamt</div>
+          <div className="statValue">{partners.length}</div>
+          <div className="statSubtext">{partners.filter(p => p.trust_level !== 'suspended').length} aktiv verbunden</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>{'\u2713'}</div>
-          <div className={styles.statLabel}>Verifizierte Partner</div>
-          <div className={styles.statValue} style={{ color: '#10b981' }}>
+        <div className="statCard">
+          <div className="statIcon">{'\u2713'}</div>
+          <div className="statLabel">Verifizierte Partner</div>
+          <div className="statValue" style={{ color: '#10b981' }}>
             {partners.filter(p => p.trust_level === 'verified').length}
           </div>
-          <div className={styles.statSubtext}>Hoechste Vertrauensstufe</div>
+          <div className="statSubtext">Hoechste Vertrauensstufe</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>{'📦'}</div>
-          <div className={styles.statLabel}>Verfuegbare Ausruestung</div>
-          <div className={styles.statValue}>{totalEquipmentCount}</div>
-          <div className={styles.statSubtext}>{equipmentAvailability.length} verschiedene Typen</div>
+        <div className="statCard">
+          <div className="statIcon">{'📦'}</div>
+          <div className="statLabel">Verfuegbare Ausruestung</div>
+          <div className="statValue">{totalEquipmentCount}</div>
+          <div className="statSubtext">{equipmentAvailability.length} verschiedene Typen</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>{'📋'}</div>
-          <div className={styles.statLabel}>Offene Anfragen</div>
-          <div className={styles.statValue} style={{ color: '#f59e0b' }}>
+        <div className="statCard">
+          <div className="statIcon">{'📋'}</div>
+          <div className="statLabel">Offene Anfragen</div>
+          <div className="statValue" style={{ color: '#f59e0b' }}>
             {subRentalRequests.filter(r => r.status === 'pending').length}
           </div>
-          <div className={styles.statSubtext}>{subRentalRequests.filter(r => r.status === 'approved').length} genehmigt</div>
+          <div className="statSubtext">{subRentalRequests.filter(r => r.status === 'approved').length} genehmigt</div>
         </div>
       </div>
 
       {/* Tab Bar */}
-      <div className={styles.tabBar}>
+      <div className="tabBar">
         <button
-          className={`${styles.tabButton} ${activeTab === 'partners' ? styles['tabButton--active'] : ''}`}
+          className={`tabButton ${activeTab === 'partners' ? 'tabButton--active' : ''}`}
           onClick={() => setActiveTab('partners')}
         >
           Partner ({partners.length})
         </button>
         <button
-          className={`${styles.tabButton} ${activeTab === 'equipment' ? styles['tabButton--active'] : ''}`}
+          className={`tabButton ${activeTab === 'equipment' ? 'tabButton--active' : ''}`}
           onClick={() => setActiveTab('equipment')}
         >
           Equipment-Katalog ({equipmentAvailability.length})
         </button>
         <button
-          className={`${styles.tabButton} ${activeTab === 'subrental' ? styles['tabButton--active'] : ''}`}
+          className={`tabButton ${activeTab === 'subrental' ? 'tabButton--active' : ''}`}
           onClick={() => setActiveTab('subrental')}
         >
           Sub-Rental ({subRentalRequests.length})
@@ -229,12 +229,12 @@ function FederationPage() {
 
       {/* Partners Tab */}
       {activeTab === 'partners' && (
-        <section className={styles.section}>
-          <div className={styles.filterSection}>
-            <label htmlFor="trust-filter" className={styles.filterLabel}>Vertrauensstufe:</label>
+        <section className="section">
+          <div className="filterSection">
+            <label htmlFor="trust-filter" className="filterLabel">Vertrauensstufe:</label>
             <select
               id="trust-filter"
-              className={styles.filterSelect}
+              className="filterSelect"
               value={filterTrust}
               onChange={(e) => setFilterTrust(e.target.value)}
             >
@@ -249,10 +249,10 @@ function FederationPage() {
           {isLoadingPartners ? (
             <SkeletonTable rows={4} columns={4} />
           ) : filteredPartners.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'🌐'}</div>
-              <h3 className={styles.emptyTitle}>Keine Partner gefunden</h3>
-              <p className={styles.emptyText}>
+            <div className="emptyState">
+              <div className="emptyIcon">{'🌐'}</div>
+              <h3 className="emptyTitle">Keine Partner gefunden</h3>
+              <p className="emptyText">
                 {partners.length === 0
                   ? 'Verbinden Sie sich mit anderen CrateDesk-Firmen um Equipment zu teilen und Ihre Reichweite zu erhoehen.'
                   : 'Keine Partner mit der gewaehlten Vertrauensstufe gefunden.'}
@@ -264,33 +264,33 @@ function FederationPage() {
               )}
             </div>
           ) : (
-            <div className={styles.partnersGrid}>
+            <div className="partnersGrid">
               {filteredPartners.map((partner) => (
-                <div key={partner.id} className={styles.partnerCard}>
-                  <div className={styles.partnerHeader}>
+                <div key={partner.id} className="partnerCard">
+                  <div className="partnerHeader">
                     <div>
-                      <h3 className={styles.partnerName}>{partner.name}</h3>
-                      <p className={styles.partnerCompany}>{partner.company}</p>
+                      <h3 className="partnerName">{partner.name}</h3>
+                      <p className="partnerCompany">{partner.company}</p>
                     </div>
-                    <div className={styles.partnerHeaderRight}>
+                    <div className="partnerHeaderRight">
                       <div
-                        className={styles.partnerStatusBadge}
+                        className="partnerStatusBadge"
                         style={{ backgroundColor: `${getPartnerStatusColor(partner.trust_level)}15`, color: getPartnerStatusColor(partner.trust_level), borderColor: getPartnerStatusColor(partner.trust_level) }}
                       >
                         {getPartnerStatusLabel(partner.trust_level)}
                       </div>
-                      <div className={styles.ratingBadge}>
+                      <div className="ratingBadge">
                         {'\u2605'} {partner.rating}
                       </div>
                     </div>
                   </div>
 
-                  <div className={styles.trustBadge} style={{ borderColor: getTrustColor(partner.trust_level) }}>
+                  <div className="trustBadge" style={{ borderColor: getTrustColor(partner.trust_level) }}>
                     <span style={{ color: getTrustColor(partner.trust_level) }}>{'\u25CF'}</span>
                     {getTrustLabel(partner.trust_level)}
                   </div>
 
-                  <div className={styles.partnerMeta}>
+                  <div className="partnerMeta">
                     <p><strong>Land:</strong> {partner.country}</p>
                     <p><strong>E-Mail:</strong> {partner.email}</p>
                     <p><strong>Telefon:</strong> {partner.phone}</p>
@@ -298,17 +298,17 @@ function FederationPage() {
                     <p><strong>Beigetreten:</strong> {new Date(partner.joined_date).toLocaleDateString('de-DE')}</p>
                   </div>
 
-                  <div className={styles.certificateSection}>
-                    <div className={styles.certificateStatus} style={{ borderColor: getCertificateColor(partner.certificate_status) }}>
+                  <div className="certificateSection">
+                    <div className="certificateStatus" style={{ borderColor: getCertificateColor(partner.certificate_status) }}>
                       <span style={{ color: getCertificateColor(partner.certificate_status) }}>{'\u25CF'}</span>
                       Zertifikat: {getCertificateLabel(partner.certificate_status)}
                     </div>
-                    <p className={styles.certificateExpiry}>
+                    <p className="certificateExpiry">
                       Gueltig bis: {new Date(partner.certificate_expiry).toLocaleDateString('de-DE')}
                     </p>
                   </div>
 
-                  <div className={styles.partnerActions}>
+                  <div className="partnerActions">
                     <button className="btn btn--sm btn--primary" onClick={() => setSelectedPartner(partner)}>Details</button>
                     <button className="btn btn--sm" onClick={() => alert(`Nachricht an ${partner.name} wird vorbereitet...`)}>Nachricht</button>
                   </div>
@@ -321,33 +321,33 @@ function FederationPage() {
 
       {/* Equipment Tab */}
       {activeTab === 'equipment' && (
-        <section className={styles.section}>
+        <section className="section">
           {isLoadingEquipment ? (
             <SkeletonCard count={3} />
           ) : equipmentAvailability.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'📦'}</div>
-              <h3 className={styles.emptyTitle}>Keine Ausruestung verfuegbar</h3>
-              <p className={styles.emptyText}>Partner-Equipment wird hier angezeigt sobald Verbindungen bestehen.</p>
+            <div className="emptyState">
+              <div className="emptyIcon">{'📦'}</div>
+              <h3 className="emptyTitle">Keine Ausruestung verfuegbar</h3>
+              <p className="emptyText">Partner-Equipment wird hier angezeigt sobald Verbindungen bestehen.</p>
             </div>
           ) : (
-            <div className={styles.equipmentTable}>
-              <div className={styles.tableHeader}>
-                <div className={styles.headerCell}>Partner</div>
-                <div className={styles.headerCell}>Ausruestung</div>
-                <div className={styles.headerCell}>Menge</div>
-                <div className={styles.headerCell}>Standort</div>
-                <div className={styles.headerCell}>Liefertage</div>
-                <div className={styles.headerCell}>Preis/Tag</div>
+            <div className="equipmentTable">
+              <div className="tableHeader">
+                <div className="headerCell">Partner</div>
+                <div className="headerCell">Ausruestung</div>
+                <div className="headerCell">Menge</div>
+                <div className="headerCell">Standort</div>
+                <div className="headerCell">Liefertage</div>
+                <div className="headerCell">Preis/Tag</div>
               </div>
               {equipmentAvailability.map((item, idx) => (
-                <div key={idx} className={styles.tableRow}>
-                  <div className={styles.cell}>{item.partner_name}</div>
-                  <div className={styles.cell}><strong>{item.equipment_type}</strong></div>
-                  <div className={styles.cell}>{item.quantity_available}x</div>
-                  <div className={styles.cell}>{item.location}</div>
-                  <div className={styles.cell}>{item.delivery_days} Tag(e)</div>
-                  <div className={styles.cell}><strong>{item.price_per_day}{'\u20AC'}</strong>/Tag</div>
+                <div key={idx} className="tableRow">
+                  <div className="cell">{item.partner_name}</div>
+                  <div className="cell"><strong>{item.equipment_type}</strong></div>
+                  <div className="cell">{item.quantity_available}x</div>
+                  <div className="cell">{item.location}</div>
+                  <div className="cell">{item.delivery_days} Tag(e)</div>
+                  <div className="cell"><strong>{item.price_per_day}{'\u20AC'}</strong>/Tag</div>
                 </div>
               ))}
             </div>
@@ -357,12 +357,12 @@ function FederationPage() {
 
       {/* Sub-Rental Tab */}
       {activeTab === 'subrental' && (
-        <section className={styles.section}>
-          <div className={styles.filterSection}>
-            <label htmlFor="subrental-filter" className={styles.filterLabel}>Status:</label>
+        <section className="section">
+          <div className="filterSection">
+            <label htmlFor="subrental-filter" className="filterLabel">Status:</label>
             <select
               id="subrental-filter"
-              className={styles.filterSelect}
+              className="filterSelect"
               value={subRentalFilter}
               onChange={(e) => setSubRentalFilter(e.target.value)}
             >
@@ -377,22 +377,22 @@ function FederationPage() {
           {isLoadingSubRentals ? (
             <SkeletonTable rows={4} columns={4} />
           ) : filteredSubRentals.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'📋'}</div>
-              <h3 className={styles.emptyTitle}>Keine Anfragen vorhanden</h3>
-              <p className={styles.emptyText}>Sub-Rental Anfragen von und an Partner erscheinen hier.</p>
+            <div className="emptyState">
+              <div className="emptyIcon">{'📋'}</div>
+              <h3 className="emptyTitle">Keine Anfragen vorhanden</h3>
+              <p className="emptyText">Sub-Rental Anfragen von und an Partner erscheinen hier.</p>
             </div>
           ) : (
-            <div className={styles.requestsList}>
+            <div className="requestsList">
               {filteredSubRentals.map((request) => (
-                <div key={request.id} className={styles.requestCard}>
-                  <div className={styles.requestHeader}>
+                <div key={request.id} className="requestCard">
+                  <div className="requestHeader">
                     <div>
-                      <h4 className={styles.requestTitle}>{request.equipment}</h4>
-                      <p className={styles.requestPartner}>{request.partner_name}</p>
+                      <h4 className="requestTitle">{request.equipment}</h4>
+                      <p className="requestPartner">{request.partner_name}</p>
                     </div>
                     <div
-                      className={styles.requestStatus}
+                      className="requestStatus"
                       style={{ backgroundColor: `${getStatusBadgeColor(request.status)}20`, borderColor: getStatusBadgeColor(request.status) }}
                     >
                       <span style={{ color: getStatusBadgeColor(request.status) }}>{'\u25CF'}</span>
@@ -400,7 +400,7 @@ function FederationPage() {
                     </div>
                   </div>
 
-                  <div className={styles.requestDetails}>
+                  <div className="requestDetails">
                     <span><strong>Menge:</strong> {request.quantity}x</span>
                     <span><strong>Von:</strong> {new Date(request.start_date).toLocaleDateString('de-DE')}</span>
                     <span><strong>Bis:</strong> {new Date(request.end_date).toLocaleDateString('de-DE')}</span>
@@ -408,7 +408,7 @@ function FederationPage() {
                   </div>
 
                   {/* Status workflow mini */}
-                  <div className={styles.requestWorkflow}>
+                  <div className="requestWorkflow">
                     {(['pending', 'approved', 'completed'] as const).map((step) => {
                       const stepOrder = ['pending', 'approved', 'completed']
                       const currentOrder = stepOrder.indexOf(request.status === 'rejected' ? 'pending' : request.status)
@@ -416,21 +416,21 @@ function FederationPage() {
                       const isComplete = thisOrder <= currentOrder && request.status !== 'rejected'
 
                       return (
-                        <div key={step} className={`${styles.workflowStep} ${isComplete ? styles['workflowStep--complete'] : ''}`}>
-                          <div className={styles.workflowDot}></div>
-                          <span className={styles.workflowLabel}>{getSubRentalStatusLabel(step)}</span>
+                        <div key={step} className={`workflowStep ${isComplete ? 'workflowStep--complete' : ''}`}>
+                          <div className="workflowDot"></div>
+                          <span className="workflowLabel">{getSubRentalStatusLabel(step)}</span>
                         </div>
                       )
                     })}
                     {request.status === 'rejected' && (
-                      <div className={`${styles.workflowStep} ${styles['workflowStep--rejected']}`}>
-                        <div className={styles.workflowDot}></div>
-                        <span className={styles.workflowLabel}>Abgelehnt</span>
+                      <div className="workflowStep workflowStep--rejected">
+                        <div className="workflowDot"></div>
+                        <span className="workflowLabel">Abgelehnt</span>
                       </div>
                     )}
                   </div>
 
-                  <div className={styles.requestActions}>
+                  <div className="requestActions">
                     {request.status === 'pending' && (
                       <>
                         <button className="btn btn--sm btn--primary" onClick={() => alert('Anfrage genehmigt!')}>Genehmigen</button>
@@ -453,25 +453,25 @@ function FederationPage() {
 
       {/* Partner Detail Modal */}
       {selectedPartner && (
-        <div className={styles.modalOverlay} onClick={() => setSelectedPartner(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Partner-Details</h2>
-              <button className={styles.modalClose} onClick={() => setSelectedPartner(null)}>{'\u2715'}</button>
+        <div className="modalOverlay" onClick={() => setSelectedPartner(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modalHeader">
+              <h2 className="modalTitle">Partner-Details</h2>
+              <button className="modalClose" onClick={() => setSelectedPartner(null)}>{'\u2715'}</button>
             </div>
-            <div className={styles.modalBody}>
-              <div className={styles.partnerDetailHeader}>
+            <div className="modalBody">
+              <div className="partnerDetailHeader">
                 <h3>{selectedPartner.company}</h3>
                 <p>{selectedPartner.name}</p>
-                <div className={styles.trustBadge} style={{ borderColor: getTrustColor(selectedPartner.trust_level), marginTop: 'var(--spacing-2)' }}>
+                <div className="trustBadge" style={{ borderColor: getTrustColor(selectedPartner.trust_level), marginTop: 'var(--spacing-2)' }}>
                   <span style={{ color: getTrustColor(selectedPartner.trust_level) }}>{'\u25CF'}</span>
                   {getTrustLabel(selectedPartner.trust_level)}
                 </div>
               </div>
 
-              <div className={styles.partnerDetailSection}>
+              <div className="partnerDetailSection">
                 <h4>Kontakt</h4>
-                <div className={styles.partnerDetailGrid}>
+                <div className="partnerDetailGrid">
                   <div><strong>E-Mail:</strong> {selectedPartner.email}</div>
                   <div><strong>Telefon:</strong> {selectedPartner.phone}</div>
                   <div><strong>Land:</strong> {selectedPartner.country}</div>
@@ -479,15 +479,15 @@ function FederationPage() {
                 </div>
               </div>
 
-              <div className={styles.partnerDetailSection}>
+              <div className="partnerDetailSection">
                 <h4>Equipment-Katalog</h4>
                 {equipmentAvailability.filter(e => e.partner_id === selectedPartner.id).length > 0 ? (
-                  <div className={styles.partnerEquipmentList}>
+                  <div className="partnerEquipmentList">
                     {equipmentAvailability.filter(e => e.partner_id === selectedPartner.id).map((eq, idx) => (
-                      <div key={idx} className={styles.partnerEquipmentItem}>
-                        <span className={styles.partnerEquipmentName}>{eq.equipment_type}</span>
-                        <span className={styles.partnerEquipmentQty}>{eq.quantity_available}x verfuegbar</span>
-                        <span className={styles.partnerEquipmentPrice}>{eq.price_per_day}{'\u20AC'}/Tag</span>
+                      <div key={idx} className="partnerEquipmentItem">
+                        <span className="partnerEquipmentName">{eq.equipment_type}</span>
+                        <span className="partnerEquipmentQty">{eq.quantity_available}x verfuegbar</span>
+                        <span className="partnerEquipmentPrice">{eq.price_per_day}{'\u20AC'}/Tag</span>
                       </div>
                     ))}
                   </div>
@@ -496,15 +496,15 @@ function FederationPage() {
                 )}
               </div>
 
-              <div className={styles.partnerDetailSection}>
+              <div className="partnerDetailSection">
                 <h4>Sub-Rental Anfragen</h4>
                 {subRentalRequests.filter(r => r.partner_id === selectedPartner.id).length > 0 ? (
-                  <div className={styles.partnerSubRentalList}>
+                  <div className="partnerSubRentalList">
                     {subRentalRequests.filter(r => r.partner_id === selectedPartner.id).map(r => (
-                      <div key={r.id} className={styles.partnerSubRentalItem}>
+                      <div key={r.id} className="partnerSubRentalItem">
                         <span>{r.equipment} ({r.quantity}x)</span>
                         <span
-                          className={styles.partnerSubRentalStatus}
+                          className="partnerSubRentalStatus"
                           style={{ color: getStatusBadgeColor(r.status) }}
                         >
                           {getSubRentalStatusLabel(r.status)}
@@ -517,7 +517,7 @@ function FederationPage() {
                 )}
               </div>
 
-              <div className={styles.modalFooter}>
+              <div className="modalFooter">
                 <button className="btn btn--secondary" onClick={() => setSelectedPartner(null)}>Schliessen</button>
                 <button className="btn btn--primary" onClick={() => alert(`Equipment von ${selectedPartner.company} anfragen...`)}>Equipment anfragen</button>
               </div>
@@ -528,46 +528,46 @@ function FederationPage() {
 
       {/* Connect Partner Modal (Wizard) */}
       {showConnectModal && (
-        <div className={styles.modalOverlay} onClick={() => connectStatus !== 'connecting' && resetConnectModal()}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Partner verbinden</h2>
-              <button className={styles.modalClose} onClick={resetConnectModal} disabled={connectStatus === 'connecting'}>{'\u2715'}</button>
+        <div className="modalOverlay" onClick={() => connectStatus !== 'connecting' && resetConnectModal()}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modalHeader">
+              <h2 className="modalTitle">Partner verbinden</h2>
+              <button className="modalClose" onClick={resetConnectModal} disabled={connectStatus === 'connecting'}>{'\u2715'}</button>
             </div>
-            <div className={styles.modalBody}>
+            <div className="modalBody">
               {/* Wizard Steps indicator */}
-              <div className={styles.wizardSteps}>
-                <div className={`${styles.wizardStep} ${connectStep >= 1 ? styles['wizardStep--active'] : ''}`}>
-                  <div className={styles.wizardStepDot}>1</div>
+              <div className="wizardSteps">
+                <div className={`wizardStep ${connectStep >= 1 ? 'wizardStep--active' : ''}`}>
+                  <div className="wizardStepDot">1</div>
                   <span>Partner-URL</span>
                 </div>
-                <div className={styles.wizardConnector}></div>
-                <div className={`${styles.wizardStep} ${connectStep >= 2 ? styles['wizardStep--active'] : ''}`}>
-                  <div className={styles.wizardStepDot}>2</div>
+                <div className="wizardConnector"></div>
+                <div className={`wizardStep ${connectStep >= 2 ? 'wizardStep--active' : ''}`}>
+                  <div className="wizardStepDot">2</div>
                   <span>Verbinden</span>
                 </div>
-                <div className={styles.wizardConnector}></div>
-                <div className={`${styles.wizardStep} ${connectStep >= 3 ? styles['wizardStep--active'] : ''}`}>
-                  <div className={styles.wizardStepDot}>3</div>
+                <div className="wizardConnector"></div>
+                <div className={`wizardStep ${connectStep >= 3 ? 'wizardStep--active' : ''}`}>
+                  <div className="wizardStepDot">3</div>
                   <span>Fertig</span>
                 </div>
               </div>
 
               {connectStep === 1 && (
-                <div className={styles.wizardContent}>
+                <div className="wizardContent">
                   <h3>Partner-URL eingeben</h3>
                   <p>Geben Sie die CrateDesk-URL des Partners ein, mit dem Sie sich verbinden moechten.</p>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Partner CrateDesk URL</label>
+                  <div className="formGroup">
+                    <label className="formLabel">Partner CrateDesk URL</label>
                     <input
                       type="url"
-                      className={styles.formInput}
+                      className="formInput"
                       placeholder="https://partner.rentflow.de"
                       value={connectUrl}
                       onChange={(e) => setConnectUrl(e.target.value)}
                     />
                   </div>
-                  <div className={styles.modalFooter}>
+                  <div className="modalFooter">
                     <button className="btn btn--secondary" onClick={resetConnectModal}>Abbrechen</button>
                     <button className="btn btn--primary" onClick={handleConnect} disabled={!connectUrl.trim()}>
                       Verbindung herstellen
@@ -577,24 +577,24 @@ function FederationPage() {
               )}
 
               {connectStep === 2 && (
-                <div className={styles.wizardContent} style={{ textAlign: 'center' }}>
-                  <div className={styles.connectingSpinner}></div>
+                <div className="wizardContent" style={{ textAlign: 'center' }}>
+                  <div className="connectingSpinner"></div>
                   <h3>Verbindung wird hergestellt...</h3>
                   <p>Wir kontaktieren den Partner-Server und tauschen Zertifikate aus.</p>
-                  <div className={styles.connectSteps}>
-                    <div className={`${styles.connectStepItem} ${styles['connectStepItem--complete']}`}>DNS-Aufloesung...</div>
-                    <div className={`${styles.connectStepItem} ${styles['connectStepItem--active']}`}>Zertifikataustausch...</div>
-                    <div className={styles.connectStepItem}>Trust-Level festlegen...</div>
+                  <div className="connectSteps">
+                    <div className="connectStepItem connectStepItem--complete">DNS-Aufloesung...</div>
+                    <div className="connectStepItem connectStepItem--active">Zertifikataustausch...</div>
+                    <div className="connectStepItem">Trust-Level festlegen...</div>
                   </div>
                 </div>
               )}
 
               {connectStep === 3 && (
-                <div className={styles.wizardContent} style={{ textAlign: 'center' }}>
-                  <div className={styles.successIcon}>{'\u2713'}</div>
+                <div className="wizardContent" style={{ textAlign: 'center' }}>
+                  <div className="successIcon">{'\u2713'}</div>
                   <h3>Verbindung erfolgreich!</h3>
                   <p>Der Partner wurde erfolgreich verbunden. Der Status ist "Provisorisch" bis die Verifizierung abgeschlossen ist.</p>
-                  <div className={styles.modalFooter} style={{ justifyContent: 'center' }}>
+                  <div className="modalFooter" style={{ justifyContent: 'center' }}>
                     <button className="btn btn--primary" onClick={resetConnectModal}>Fertig</button>
                   </div>
                 </div>

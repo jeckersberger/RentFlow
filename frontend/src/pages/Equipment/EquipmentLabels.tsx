@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf'
 import { Printer, Download, Eye } from 'lucide-react'
 import { equipmentApi, categoryApi } from '../../services/api'
 import { Equipment, Category } from '../../types/equipment'
-import styles from './EquipmentLabels.module.scss'
+import './EquipmentLabels.scss'
 
 // ============================================================================
 // TYPES
@@ -355,9 +355,9 @@ function EquipmentLabelsPage() {
 
     if (labelFormat === 'small') {
       return (
-        <div className={`${styles.labelPreview} ${styles.labelSmall}`}>
+        <div className="labelPreview labelSmall">
           {qrUrl ? (
-            <div className={styles.labelQr}>
+            <div className="labelQr">
               <img src={qrUrl} alt="QR" width={44} height={44} />
             </div>
           ) : (
@@ -371,15 +371,15 @@ function EquipmentLabelsPage() {
 
     if (labelFormat === 'medium') {
       return (
-        <div className={`${styles.labelPreview} ${styles.labelMedium}`}>
+        <div className="labelPreview labelMedium">
           {qrUrl && (
-            <div className={styles.labelQr}>
+            <div className="labelQr">
               <img src={qrUrl} alt="QR" width={60} height={60} />
             </div>
           )}
-          <div className={styles.labelInfo}>
-            <div className={styles.labelName} style={{ fontSize: '11px' }}>{item.name}</div>
-            <div className={styles.labelSku} style={{ fontSize: '9px' }}>{barcodeValue}</div>
+          <div className="labelInfo">
+            <div className="labelName" style={{ fontSize: '11px' }}>{item.name}</div>
+            <div className="labelSku" style={{ fontSize: '9px' }}>{barcodeValue}</div>
           </div>
         </div>
       )
@@ -387,28 +387,28 @@ function EquipmentLabelsPage() {
 
     if (labelFormat === 'large') {
       return (
-        <div className={`${styles.labelPreview} ${styles.labelLarge}`}>
+        <div className="labelPreview labelLarge">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
             {qrUrl && (
-              <div className={styles.labelQr}>
+              <div className="labelQr">
                 <img src={qrUrl} alt="QR" width={80} height={80} />
               </div>
             )}
-            <div className={styles.labelBarcode}>
+            <div className="labelBarcode">
               <BarcodeCanvas value={barcodeValue} width={100} height={28} />
-              <div className={styles.labelBarcodeText}>{barcodeValue}</div>
+              <div className="labelBarcodeText">{barcodeValue}</div>
             </div>
           </div>
-          <div className={styles.labelInfo}>
-            <div className={styles.labelName} style={{ fontSize: '14px' }}>{item.name}</div>
-            <div className={styles.labelSku} style={{ fontSize: '10px' }}>{barcodeValue}</div>
-            {catName && <div className={styles.labelCategory} style={{ fontSize: '9px' }}>{catName}</div>}
+          <div className="labelInfo">
+            <div className="labelName" style={{ fontSize: '14px' }}>{item.name}</div>
+            <div className="labelSku" style={{ fontSize: '10px' }}>{barcodeValue}</div>
+            {catName && <div className="labelCategory" style={{ fontSize: '9px' }}>{catName}</div>}
             {item.location_id && (
-              <div className={styles.labelLocation} style={{ fontSize: '8px' }}>
+              <div className="labelLocation" style={{ fontSize: '8px' }}>
                 Standort: {item.location_id}
               </div>
             )}
-            <div className={styles.labelCompanyLogo} style={{ marginTop: '8px', borderTop: '1px solid #ddd', paddingTop: '4px', borderBottom: 'none', marginBottom: 0 }}>
+            <div className="labelCompanyLogo" style={{ marginTop: '8px', borderTop: '1px solid #ddd', paddingTop: '4px', borderBottom: 'none', marginBottom: 0 }}>
               [Firmenlogo]
             </div>
           </div>
@@ -418,21 +418,21 @@ function EquipmentLabelsPage() {
 
     // Flightcase
     return (
-      <div className={`${styles.labelPreview} ${styles.labelFlightcase}`}>
-        <div className={styles.flightcaseHeader}>
+      <div className="labelPreview labelFlightcase">
+        <div className="flightcaseHeader">
           <div>
-            <div className={styles.flightcaseTitle}>Flightcase Inhalt</div>
-            <div className={styles.flightcaseSubtitle}>
+            <div className="flightcaseTitle">Flightcase Inhalt</div>
+            <div className="flightcaseSubtitle">
               {selectedItems.length} Artikel | Erstellt: {new Date().toLocaleDateString('de-DE')}
             </div>
           </div>
           {qrUrl && (
-            <div className={styles.labelQr}>
+            <div className="labelQr">
               <img src={qrUrl} alt="QR" width={48} height={48} />
             </div>
           )}
         </div>
-        <div className={styles.flightcaseTable}>
+        <div className="flightcaseTable">
           <table>
             <thead>
               <tr>
@@ -465,9 +465,9 @@ function EquipmentLabelsPage() {
 
     if (labelFormat === 'small') {
       return (
-        <div className={`${styles.printLabel} ${styles.printLabelSmall}`} key={item.id}>
+        <div className="printLabel printLabelSmall" key={item.id}>
           {qrUrl ? (
-            <div className={styles.printLabelQr}>
+            <div className="printLabelQr">
               <img src={qrUrl} alt="QR" width={50} height={50} />
             </div>
           ) : (
@@ -479,15 +479,15 @@ function EquipmentLabelsPage() {
 
     if (labelFormat === 'medium') {
       return (
-        <div className={styles.printLabel} key={item.id}>
+        <div className="printLabel" key={item.id}>
           {qrUrl && (
-            <div className={styles.printLabelQr}>
+            <div className="printLabelQr">
               <img src={qrUrl} alt="QR" width={64} height={64} />
             </div>
           )}
-          <div className={styles.printLabelInfo}>
-            <div className={styles.printLabelName}>{item.name}</div>
-            <div className={styles.printLabelSku}>{barcodeValue}</div>
+          <div className="printLabelInfo">
+            <div className="printLabelName">{item.name}</div>
+            <div className="printLabelSku">{barcodeValue}</div>
           </div>
         </div>
       )
@@ -495,26 +495,26 @@ function EquipmentLabelsPage() {
 
     if (labelFormat === 'large') {
       return (
-        <div className={styles.printLabel} key={item.id}>
+        <div className="printLabel" key={item.id}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
             {qrUrl && (
-              <div className={styles.printLabelQr}>
+              <div className="printLabelQr">
                 <img src={qrUrl} alt="QR" width={80} height={80} />
               </div>
             )}
-            <div className={styles.printLabelBarcode}>
+            <div className="printLabelBarcode">
               <BarcodeCanvas value={barcodeValue} width={120} height={32} />
               <div style={{ fontFamily: 'monospace', fontSize: '7px', fontWeight: 700, textAlign: 'center', marginTop: '1px' }}>
                 {barcodeValue}
               </div>
             </div>
           </div>
-          <div className={styles.printLabelInfo}>
-            <div className={styles.printLabelName}>{item.name}</div>
-            <div className={styles.printLabelSku}>{barcodeValue}</div>
-            {catName && <div className={styles.printLabelCategory}>{catName}</div>}
+          <div className="printLabelInfo">
+            <div className="printLabelName">{item.name}</div>
+            <div className="printLabelSku">{barcodeValue}</div>
+            {catName && <div className="printLabelCategory">{catName}</div>}
             {item.location_id && (
-              <div className={styles.printLabelLocation}>Standort: {item.location_id}</div>
+              <div className="printLabelLocation">Standort: {item.location_id}</div>
             )}
             <div style={{ marginTop: '6px', fontSize: '8px', color: '#999', textAlign: 'right' }}>
               [Firmenlogo]
@@ -526,21 +526,21 @@ function EquipmentLabelsPage() {
 
     // Flightcase
     return (
-      <div className={`${styles.printLabel} ${styles.printLabelFlightcase}`} key="flightcase">
-        <div className={styles.flightcaseHeader}>
+      <div className="printLabel printLabelFlightcase" key="flightcase">
+        <div className="flightcaseHeader">
           <div>
-            <div className={styles.flightcaseTitle}>Flightcase Inhalt</div>
-            <div className={styles.flightcaseSubtitle}>
+            <div className="flightcaseTitle">Flightcase Inhalt</div>
+            <div className="flightcaseSubtitle">
               {selectedItems.length} Artikel | {new Date().toLocaleDateString('de-DE')}
             </div>
           </div>
           {qrUrl && (
-            <div className={styles.printLabelQr}>
+            <div className="printLabelQr">
               <img src={qrUrl} alt="QR" width={48} height={48} />
             </div>
           )}
         </div>
-        <div className={styles.flightcaseTable}>
+        <div className="flightcaseTable">
           <table>
             <thead>
               <tr>
@@ -570,35 +570,35 @@ function EquipmentLabelsPage() {
 
   if (isLoading) {
     return (
-      <div className={styles.labelsPage}>
-        <div className={styles.loading}>Ausr\u00fcstungsdaten werden geladen...</div>
+      <div className="labelsPage">
+        <div className="loading">Ausr\u00fcstungsdaten werden geladen...</div>
       </div>
     )
   }
 
-  const gridClass = `${styles.labelsGrid} ${
+  const gridClass = `labelsGrid ${
     columnsPerRow === 1
-      ? styles.labelsPer1
+      ? 'labelsPer1'
       : columnsPerRow === 2
-        ? styles.labelsPer2
+        ? 'labelsPer2'
         : columnsPerRow === 4
-          ? styles.labelsPer4
-          : styles.labelsPer3
+          ? 'labelsPer4'
+          : 'labelsPer3'
   }`
 
   return (
-    <div className={styles.labelsPage}>
+    <div className="labelsPage">
       {/* Header */}
-      <div className={styles.header}>
+      <div className="header">
         <div>
-          <h1 className={styles.headerTitle}>Label-Designer</h1>
-          <p className={styles.headerSubtitle}>
+          <h1 className="headerTitle">Label-Designer</h1>
+          <p className="headerSubtitle">
             QR-Codes, Barcodes und Etiketten f\u00fcr Ihre Ausr\u00fcstung erstellen und drucken
           </p>
         </div>
-        <div className={styles.headerActions}>
+        <div className="headerActions">
           <button
-            className={styles.btnSecondary}
+            className="btnSecondary"
             onClick={handleDownloadPdf}
             disabled={selectedItems.length === 0 || generatingPdf}
           >
@@ -606,7 +606,7 @@ function EquipmentLabelsPage() {
             {generatingPdf ? 'PDF wird erstellt...' : 'Als PDF herunterladen'}
           </button>
           <button
-            className={styles.btnPrimary}
+            className="btnPrimary"
             onClick={handlePrint}
             disabled={selectedItems.length === 0}
           >
@@ -617,20 +617,20 @@ function EquipmentLabelsPage() {
       </div>
 
       {/* Main Layout */}
-      <div className={styles.mainLayout}>
+      <div className="mainLayout">
         {/* Sidebar */}
-        <div className={styles.sidebar}>
+        <div className="sidebar">
           {/* Equipment Selector */}
-          <div className={styles.card}>
-            <h3 className={styles.cardTitle}>Ausr\u00fcstung ausw\u00e4hlen</h3>
+          <div className="card">
+            <h3 className="cardTitle">Ausr\u00fcstung ausw\u00e4hlen</h3>
             <input
               type="text"
-              className={styles.searchInput}
+              className="searchInput"
               placeholder="Nach Name oder SKU suchen..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
             />
-            <div className={styles.selectAllRow} onClick={toggleAll}>
+            <div className="selectAllRow" onClick={toggleAll}>
               <input
                 type="checkbox"
                 checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length}
@@ -638,55 +638,55 @@ function EquipmentLabelsPage() {
               />
               <span>Alle ausw\u00e4hlen ({filteredItems.length})</span>
             </div>
-            <div className={styles.equipmentList}>
+            <div className="equipmentList">
               {filteredItems.map((item) => (
-                <label key={item.id} className={styles.equipmentItem}>
+                <label key={item.id} className="equipmentItem">
                   <input
                     type="checkbox"
                     checked={selectedIds.has(item.id)}
                     onChange={() => toggleItem(item.id)}
                   />
-                  <div className={styles.equipmentItemInfo}>
-                    <div className={styles.equipmentItemName}>{item.name}</div>
-                    <div className={styles.equipmentItemSku}>{item.barcode || item.sku}</div>
+                  <div className="equipmentItemInfo">
+                    <div className="equipmentItemName">{item.name}</div>
+                    <div className="equipmentItemSku">{item.barcode || item.sku}</div>
                   </div>
                 </label>
               ))}
               {filteredItems.length === 0 && (
-                <div className={styles.emptyState}>Keine Ausr\u00fcstung gefunden</div>
+                <div className="emptyState">Keine Ausr\u00fcstung gefunden</div>
               )}
             </div>
             {selectedIds.size > 0 && (
-              <div className={styles.selectedCount}>
+              <div className="selectedCount">
                 {selectedIds.size} von {allItems.length} ausgew\u00e4hlt
               </div>
             )}
           </div>
 
           {/* Format Selector */}
-          <div className={styles.card}>
-            <h3 className={styles.cardTitle}>Label-Format</h3>
-            <div className={styles.formatGrid}>
+          <div className="card">
+            <h3 className="cardTitle">Label-Format</h3>
+            <div className="formatGrid">
               {LABEL_FORMATS.map((fmt) => (
                 <button
                   key={fmt.key}
-                  className={`${styles.formatOption} ${labelFormat === fmt.key ? styles.formatOptionActive : ''}`}
+                  className={`formatOption ${labelFormat === fmt.key ? 'formatOptionActive' : ''}`}
                   onClick={() => setLabelFormat(fmt.key)}
                 >
-                  <span className={styles.formatIcon}>{fmt.icon}</span>
-                  <span className={styles.formatName}>{fmt.name}</span>
-                  <span className={styles.formatSize}>{fmt.size}</span>
+                  <span className="formatIcon">{fmt.icon}</span>
+                  <span className="formatName">{fmt.name}</span>
+                  <span className="formatSize">{fmt.size}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Print Options */}
-          <div className={styles.card}>
-            <h3 className={styles.cardTitle}>Druckoptionen</h3>
-            <div className={styles.printOptions}>
+          <div className="card">
+            <h3 className="cardTitle">Druckoptionen</h3>
+            <div className="printOptions">
               {labelFormat !== 'flightcase' && (
-                <div className={styles.optionRow}>
+                <div className="optionRow">
                   <label>Anzahl pro Zeile</label>
                   <select
                     value={columnsPerRow}
@@ -699,9 +699,9 @@ function EquipmentLabelsPage() {
                   </select>
                 </div>
               )}
-              <div className={styles.printButtons}>
+              <div className="printButtons">
                 <button
-                  className={styles.btnPrimary}
+                  className="btnPrimary"
                   onClick={handlePrint}
                   disabled={selectedItems.length === 0}
                 >
@@ -709,7 +709,7 @@ function EquipmentLabelsPage() {
                   Im Browser drucken
                 </button>
                 <button
-                  className={styles.btnSecondary}
+                  className="btnSecondary"
                   onClick={handleDownloadPdf}
                   disabled={selectedItems.length === 0 || generatingPdf}
                 >
@@ -722,18 +722,18 @@ function EquipmentLabelsPage() {
         </div>
 
         {/* Content Area */}
-        <div className={styles.contentArea}>
+        <div className="contentArea">
           {/* Live Preview */}
-          <div className={styles.previewSection}>
-            <h3 className={styles.previewTitle}>
+          <div className="previewSection">
+            <h3 className="previewTitle">
               <Eye size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
               Vorschau (Originalgr\u00f6\u00dfe)
             </h3>
-            <div className={styles.previewContainer}>
+            <div className="previewContainer">
               {previewItem ? (
                 renderLabelPreview(previewItem)
               ) : (
-                <div className={styles.previewEmpty}>
+                <div className="previewEmpty">
                   W\u00e4hlen Sie Ausr\u00fcstung aus, um eine Vorschau zu sehen
                 </div>
               )}
@@ -741,12 +741,12 @@ function EquipmentLabelsPage() {
           </div>
 
           {/* All Labels Grid (for print) */}
-          <div className={styles.labelsSection}>
-            <h3 className={styles.cardTitle}>
+          <div className="labelsSection">
+            <h3 className="cardTitle">
               Labels ({selectedItems.length})
             </h3>
             {selectedItems.length === 0 ? (
-              <div className={styles.emptyState}>
+              <div className="emptyState">
                 W\u00e4hlen Sie links Ausr\u00fcstung aus, um Labels zu erzeugen
               </div>
             ) : labelFormat === 'flightcase' ? (

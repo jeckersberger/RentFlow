@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { equipmentApi, projectApi, categoryApi } from '../../services/api'
 import { Equipment, Category } from '../../types/equipment'
 import { Project } from '../../types/project'
-import styles from './EquipmentTimeline.module.scss'
+import './EquipmentTimeline.scss'
 
 // ============================================================================
 // Types
@@ -368,20 +368,20 @@ function EquipmentTimeline() {
 
   const getBarClass = (type: Booking['type']): string => {
     switch (type) {
-      case 'reserved': return styles.barReserved
-      case 'checked_out': return styles.barCheckedOut
-      case 'maintenance': return styles.barMaintenance
-      case 'damaged': return styles.barDamaged
-      default: return styles.barReserved
+      case 'reserved': return 'barReserved'
+      case 'checked_out': return 'barCheckedOut'
+      case 'maintenance': return 'barMaintenance'
+      case 'damaged': return 'barDamaged'
+      default: return 'barReserved'
     }
   }
 
   const getTooltipTypeClass = (type: Booking['type']): string => {
     switch (type) {
-      case 'reserved': return styles.tooltipTypeReserved
-      case 'checked_out': return styles.tooltipTypeCheckedOut
-      case 'maintenance': return styles.tooltipTypeMaintenance
-      case 'damaged': return styles.tooltipTypeDamaged
+      case 'reserved': return 'tooltipTypeReserved'
+      case 'checked_out': return 'tooltipTypeCheckedOut'
+      case 'maintenance': return 'tooltipTypeMaintenance'
+      case 'damaged': return 'tooltipTypeDamaged'
       default: return ''
     }
   }
@@ -443,14 +443,14 @@ function EquipmentTimeline() {
   // ============================================================================
 
   return (
-    <div className={styles.timelinePage}>
+    <div className="timelinePage">
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Verfügbarkeits-Zeitleiste</h1>
-          <p className={styles.subtitle}>Equipment-Auslastung und Projektplanung im Überblick</p>
+      <div className="header">
+        <div className="headerLeft">
+          <h1 className="title">Verfügbarkeits-Zeitleiste</h1>
+          <p className="subtitle">Equipment-Auslastung und Projektplanung im Überblick</p>
         </div>
-        <div className={styles.headerActions}>
+        <div className="headerActions">
           <button
             className="btn btn--secondary"
             onClick={() => navigate('/equipment')}
@@ -467,55 +467,55 @@ function EquipmentTimeline() {
       </div>
 
       {/* Toolbar */}
-      <div className={styles.toolbar}>
-        <div className={styles.dateNav}>
-          <button className={styles.navBtn} onClick={goPrev} title="Zurück">
+      <div className="toolbar">
+        <div className="dateNav">
+          <button className="navBtn" onClick={goPrev} title="Zurück">
             &#9664;
           </button>
-          <button className={`${styles.navBtn} ${styles.navBtnActive}`} onClick={goToday}>
+          <button className="navBtn navBtnActive" onClick={goToday}>
             Heute
           </button>
-          <button className={styles.navBtn} onClick={goNext} title="Vorwärts">
+          <button className="navBtn" onClick={goNext} title="Vorwärts">
             &#9654;
           </button>
-          <span className={styles.dateDisplay}>
+          <span className="dateDisplay">
             {MONTH_NAMES_DE[startDate.getMonth()]} {startDate.getFullYear()}
             {startDate.getMonth() !== endDate.getMonth() && ` – ${MONTH_SHORT_DE[endDate.getMonth()]} ${endDate.getFullYear()}`}
           </span>
         </div>
 
-        <div className={styles.legend}>
-          <div className={styles.legendItem}>
-            <span className={`${styles.legendDot} ${styles.legendReserved}`} />
+        <div className="legend">
+          <div className="legendItem">
+            <span className="legendDot legendReserved" />
             <span>Reserviert</span>
           </div>
-          <div className={styles.legendItem}>
-            <span className={`${styles.legendDot} ${styles.legendCheckedOut}`} />
+          <div className="legendItem">
+            <span className="legendDot legendCheckedOut" />
             <span>Vermietet</span>
           </div>
-          <div className={styles.legendItem}>
-            <span className={`${styles.legendDot} ${styles.legendMaintenance}`} />
+          <div className="legendItem">
+            <span className="legendDot legendMaintenance" />
             <span>Wartung</span>
           </div>
-          <div className={styles.legendItem}>
-            <span className={`${styles.legendDot} ${styles.legendDamaged}`} />
+          <div className="legendItem">
+            <span className="legendDot legendDamaged" />
             <span>Beschädigt</span>
           </div>
-          <div className={styles.legendItem}>
-            <span className={`${styles.legendDot} ${styles.legendAvailable}`} />
+          <div className="legendItem">
+            <span className="legendDot legendAvailable" />
             <span>Verfügbar</span>
           </div>
         </div>
 
-        <div className={styles.zoomToggle}>
+        <div className="zoomToggle">
           <button
-            className={`${styles.zoomBtn} ${viewMode === 'day' ? styles.zoomBtnActive : ''}`}
+            className={`zoomBtn ${viewMode === 'day' ? 'zoomBtnActive' : ''}`}
             onClick={() => setViewMode('day')}
           >
             Tage
           </button>
           <button
-            className={`${styles.zoomBtn} ${viewMode === 'week' ? styles.zoomBtnActive : ''}`}
+            className={`zoomBtn ${viewMode === 'week' ? 'zoomBtnActive' : ''}`}
             onClick={() => setViewMode('week')}
           >
             Wochen
@@ -525,26 +525,26 @@ function EquipmentTimeline() {
 
       {/* Timeline */}
       {isLoading ? (
-        <div className={styles.loadingState}>Lade Zeitleiste...</div>
+        <div className="loadingState">Lade Zeitleiste...</div>
       ) : equipment.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>📦</div>
-          <div className={styles.emptyStateText}>Noch kein Equipment vorhanden</div>
+        <div className="emptyState">
+          <div className="emptyStateIcon">📦</div>
+          <div className="emptyStateText">Noch kein Equipment vorhanden</div>
           <button className="btn btn--primary" onClick={() => navigate('/equipment/new')}>
             Erstes Equipment anlegen
           </button>
         </div>
       ) : (
-        <div className={styles.timelineContainer}>
+        <div className="timelineContainer">
           {/* Left sidebar - equipment names */}
-          <div className={styles.sidebarColumn}>
-            <div className={styles.sidebarHeader}>Equipment</div>
-            <div className={styles.sidebarBody} ref={sidebarBodyRef}>
+          <div className="sidebarColumn">
+            <div className="sidebarHeader">Equipment</div>
+            <div className="sidebarBody" ref={sidebarBodyRef}>
               {flatRows.map((row) => {
                 if (row.type === 'category') {
                   return (
-                    <div key={`cat-${row.catId}`} className={styles.categoryGroupHeader}>
-                      <span className={styles.categoryGroupHeaderDot} style={{ backgroundColor: row.color }} />
+                    <div key={`cat-${row.catId}`} className="categoryGroupHeader">
+                      <span className="categoryGroupHeaderDot" style={{ backgroundColor: row.color }} />
                       {row.name}
                     </div>
                   )
@@ -552,15 +552,15 @@ function EquipmentTimeline() {
                 return (
                   <div
                     key={`eq-${row.eq.id}`}
-                    className={styles.equipmentRow}
+                    className="equipmentRow"
                     onClick={() => navigate(`/equipment/${row.eq.id}`)}
                     title={row.eq.name}
                   >
                     <span
-                      className={styles.equipmentStatus}
+                      className="equipmentStatus"
                       style={{ backgroundColor: getStatusColor(row.eq.status) }}
                     />
-                    <span className={styles.equipmentName}>{row.eq.name}</span>
+                    <span className="equipmentName">{row.eq.name}</span>
                   </div>
                 )
               })}
@@ -568,10 +568,10 @@ function EquipmentTimeline() {
           </div>
 
           {/* Right area - grid */}
-          <div className={styles.gridArea}>
+          <div className="gridArea">
             {/* Grid header - dates */}
-            <div className={styles.gridHeader} ref={gridHeaderRef}>
-              <div className={styles.gridHeaderInner}>
+            <div className="gridHeader" ref={gridHeaderRef}>
+              <div className="gridHeaderInner">
                 {dates.map((date, idx) => {
                   const isToday = isSameDay(date, today)
                   const isWkend = isWeekend(date)
@@ -580,12 +580,12 @@ function EquipmentTimeline() {
                   return (
                     <div
                       key={idx}
-                      className={`${styles.dayColumn} ${isWkend ? styles.dayColumnWeekend : ''} ${isToday ? styles.dayColumnToday : ''}`}
+                      className={`dayColumn ${isWkend ? 'dayColumnWeekend' : ''} ${isToday ? 'dayColumnToday' : ''}`}
                       style={{ width: cellWidth }}
                     >
-                      <span className={styles.dayName}>{DAY_NAMES_DE[date.getDay()]}</span>
-                      <span className={styles.dayNumber}>{date.getDate()}</span>
-                      {showMonth && <span className={styles.dayMonth}>{MONTH_SHORT_DE[date.getMonth()]}</span>}
+                      <span className="dayName">{DAY_NAMES_DE[date.getDay()]}</span>
+                      <span className="dayNumber">{date.getDate()}</span>
+                      {showMonth && <span className="dayMonth">{MONTH_SHORT_DE[date.getMonth()]}</span>}
                     </div>
                   )
                 })}
@@ -593,21 +593,21 @@ function EquipmentTimeline() {
             </div>
 
             {/* Grid body - rows with bars */}
-            <div className={styles.gridBody} ref={gridBodyRef}>
-              <div className={styles.gridBodyInner} style={{ width: visibleDays * cellWidth }}>
+            <div className="gridBody" ref={gridBodyRef}>
+              <div className="gridBodyInner" style={{ width: visibleDays * cellWidth }}>
                 {/* Today line */}
                 {todayLineLeft !== null && (
-                  <div className={styles.todayLine} style={{ left: todayLineLeft }} />
+                  <div className="todayLine" style={{ left: todayLineLeft }} />
                 )}
 
                 {flatRows.map((row) => {
                   if (row.type === 'category') {
                     return (
-                      <div key={`catrow-${row.catId}`} className={styles.categoryRowHeader}>
+                      <div key={`catrow-${row.catId}`} className="categoryRowHeader">
                         {dates.map((date, dIdx) => (
                           <div
                             key={dIdx}
-                            className={`${styles.gridCell} ${isWeekend(date) ? styles.gridCellWeekend : ''}`}
+                            className={`gridCell ${isWeekend(date) ? 'gridCellWeekend' : ''}`}
                             style={{ width: cellWidth, height: 28 }}
                           />
                         ))}
@@ -618,12 +618,12 @@ function EquipmentTimeline() {
                   const eqBookings = bookingsByEquipment.get(row.eq.id) || []
 
                   return (
-                    <div key={`row-${row.eq.id}`} className={styles.gridRow}>
+                    <div key={`row-${row.eq.id}`} className="gridRow">
                       {/* Cell backgrounds */}
                       {dates.map((date, dIdx) => (
                         <div
                           key={dIdx}
-                          className={`${styles.gridCell} ${isWeekend(date) ? styles.gridCellWeekend : ''} ${isSameDay(date, today) ? styles.gridCellToday : ''}`}
+                          className={`gridCell ${isWeekend(date) ? 'gridCellWeekend' : ''} ${isSameDay(date, today) ? 'gridCellToday' : ''}`}
                           style={{ width: cellWidth, height: 40 }}
                         />
                       ))}
@@ -636,7 +636,7 @@ function EquipmentTimeline() {
                         return (
                           <div
                             key={booking.id}
-                            className={`${styles.bookingBar} ${getBarClass(booking.type)}`}
+                            className={`bookingBar ${getBarClass(booking.type)}`}
                             style={barStyle}
                             onClick={(e) => {
                               e.stopPropagation()
@@ -646,7 +646,7 @@ function EquipmentTimeline() {
                             onMouseMove={handleBarMove}
                             onMouseLeave={handleBarLeave}
                           >
-                            <span className={styles.bookingBarLabel}>
+                            <span className="bookingBarLabel">
                               {booking.projectName}
                             </span>
                           </div>
@@ -664,22 +664,22 @@ function EquipmentTimeline() {
       {/* Tooltip */}
       {tooltip && (
         <div
-          className={styles.tooltip}
+          className="tooltip"
           style={{ left: tooltip.x, top: tooltip.y }}
         >
-          <div className={`${styles.tooltipType} ${getTooltipTypeClass(tooltip.booking.type)}`}>
+          <div className={`tooltipType ${getTooltipTypeClass(tooltip.booking.type)}`}>
             {getTypeLabel(tooltip.booking.type)}
           </div>
-          <p className={styles.tooltipTitle}>{tooltip.booking.projectName}</p>
+          <p className="tooltipTitle">{tooltip.booking.projectName}</p>
           {tooltip.booking.clientName && (
-            <div className={styles.tooltipRow}>
-              <span className={styles.tooltipRowLabel}>Kunde</span>
-              <span className={styles.tooltipRowValue}>{tooltip.booking.clientName}</span>
+            <div className="tooltipRow">
+              <span className="tooltipRowLabel">Kunde</span>
+              <span className="tooltipRowValue">{tooltip.booking.clientName}</span>
             </div>
           )}
-          <div className={styles.tooltipRow}>
-            <span className={styles.tooltipRowLabel}>Zeitraum</span>
-            <span className={styles.tooltipRowValue}>
+          <div className="tooltipRow">
+            <span className="tooltipRowLabel">Zeitraum</span>
+            <span className="tooltipRowValue">
               {formatDateRange(tooltip.booking.startDate, tooltip.booking.endDate)}
             </span>
           </div>

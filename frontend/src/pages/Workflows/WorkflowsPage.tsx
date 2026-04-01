@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { workflowApi } from '../../services/api'
 import type { WorkflowDefinition, WorkflowTemplate } from '../../types/workflow'
 import { SkeletonCard } from '../../components/Skeleton/SkeletonLoader'
-import styles from './Workflows.module.scss'
+import './Workflows.scss'
 
 // Demo data for when API returns empty
 const demoWorkflows: WorkflowDefinition[] = [
@@ -199,11 +199,11 @@ function WorkflowsPage() {
   }
 
   return (
-    <div className={styles.workflowsPage}>
-      <div className={styles.header}>
+    <div className="workflowsPage">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Workflow-Editor</h1>
-          <p className={styles.subtitle}>Erstellen und verwalten Sie automatisierte Workflows</p>
+          <h1 className="title">Workflow-Editor</h1>
+          <p className="subtitle">Erstellen und verwalten Sie automatisierte Workflows</p>
         </div>
         <button
           className="btn btn--primary"
@@ -215,49 +215,49 @@ function WorkflowsPage() {
       </div>
 
       {/* KPI Stats */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>{'\u26A1'}</div>
-          <div className={styles.statLabel}>Gesamt Workflows</div>
-          <div className={styles.statValue}>{isLoadingWorkflows ? '--' : workflows.length}</div>
-          <div className={styles.statSubtext}>Definierte Automatisierungen</div>
+      <div className="statsGrid">
+        <div className="statCard">
+          <div className="statIcon">{'\u26A1'}</div>
+          <div className="statLabel">Gesamt Workflows</div>
+          <div className="statValue">{isLoadingWorkflows ? '--' : workflows.length}</div>
+          <div className="statSubtext">Definierte Automatisierungen</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>{'\u{1F7E2}'}</div>
-          <div className={styles.statLabel}>Aktive Workflows</div>
-          <div className={styles.statValue} style={{ color: 'var(--color-success)' }}>
+        <div className="statCard">
+          <div className="statIcon">{'\u{1F7E2}'}</div>
+          <div className="statLabel">Aktive Workflows</div>
+          <div className="statValue" style={{ color: 'var(--color-success)' }}>
             {isLoadingWorkflows ? '--' : activeWorkflows.length}
           </div>
-          <div className={styles.statSubtext}>Laufen gerade</div>
+          <div className="statSubtext">Laufen gerade</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>{'\u{1F504}'}</div>
-          <div className={styles.statLabel}>Ausgefuehrte Instanzen</div>
-          <div className={styles.statValue}>
+        <div className="statCard">
+          <div className="statIcon">{'\u{1F504}'}</div>
+          <div className="statLabel">Ausgefuehrte Instanzen</div>
+          <div className="statValue">
             {isLoadingWorkflows ? '--' : totalInstances}
           </div>
-          <div className={styles.statSubtext}>Seit Erstellung</div>
+          <div className="statSubtext">Seit Erstellung</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>{'\u{1F4CB}'}</div>
-          <div className={styles.statLabel}>Vorlagen</div>
-          <div className={styles.statValue}>
+        <div className="statCard">
+          <div className="statIcon">{'\u{1F4CB}'}</div>
+          <div className="statLabel">Vorlagen</div>
+          <div className="statValue">
             {isLoadingTemplates ? '--' : templates.length}
           </div>
-          <div className={styles.statSubtext}>Vordefinierte Templates</div>
+          <div className="statSubtext">Vordefinierte Templates</div>
         </div>
       </div>
 
       {/* Section Tabs */}
-      <div className={styles.tabBar}>
+      <div className="tabBar">
         <button
-          className={`${styles.tabButton} ${activeSection === 'workflows' ? styles['tabButton--active'] : ''}`}
+          className={`tabButton ${activeSection === 'workflows' ? 'tabButton--active' : ''}`}
           onClick={() => setActiveSection('workflows')}
         >
           Workflow-Definitionen ({workflows.length})
         </button>
         <button
-          className={`${styles.tabButton} ${activeSection === 'templates' ? styles['tabButton--active'] : ''}`}
+          className={`tabButton ${activeSection === 'templates' ? 'tabButton--active' : ''}`}
           onClick={() => setActiveSection('templates')}
         >
           Template-Galerie ({templates.length})
@@ -266,29 +266,29 @@ function WorkflowsPage() {
 
       {/* Workflows Section */}
       {activeSection === 'workflows' && (
-        <section className={styles.section}>
+        <section className="section">
           {isLoadingWorkflows ? (
             <SkeletonCard count={3} />
           ) : workflows.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'\u26A1'}</div>
-              <h3 className={styles.emptyTitle}>Keine Workflows vorhanden</h3>
-              <p className={styles.emptyText}>Erstellen Sie einen neuen Workflow oder waehlen Sie eine Vorlage aus der Template-Galerie.</p>
+            <div className="emptyState">
+              <div className="emptyIcon">{'\u26A1'}</div>
+              <h3 className="emptyTitle">Keine Workflows vorhanden</h3>
+              <p className="emptyText">Erstellen Sie einen neuen Workflow oder waehlen Sie eine Vorlage aus der Template-Galerie.</p>
               <button className="btn btn--primary" onClick={() => setShowNewWorkflowModal(true)}>
                 Ersten Workflow erstellen
               </button>
             </div>
           ) : (
-            <div className={styles.workflowsList}>
+            <div className="workflowsList">
               {workflows.map((workflow: WorkflowDefinition) => (
-                <div key={workflow.id} className={styles.workflowCard}>
-                  <div className={styles.workflowHeader}>
+                <div key={workflow.id} className="workflowCard">
+                  <div className="workflowHeader">
                     <div>
-                      <h3 className={styles.workflowName}>{workflow.name}</h3>
-                      <p className={styles.workflowDesc}>{workflow.description}</p>
+                      <h3 className="workflowName">{workflow.name}</h3>
+                      <p className="workflowDesc">{workflow.description}</p>
                     </div>
                     <div
-                      className={styles.statusBadge}
+                      className="statusBadge"
                       style={{ backgroundColor: `${getStatusColor(workflow.status)}20`, borderColor: getStatusColor(workflow.status) }}
                     >
                       <span style={{ color: getStatusColor(workflow.status) }}>{'\u25CF'}</span>
@@ -297,46 +297,46 @@ function WorkflowsPage() {
                   </div>
 
                   {/* Workflow Info Bar */}
-                  <div className={styles.workflowInfoBar}>
-                    <span className={styles.infoTag}>
+                  <div className="workflowInfoBar">
+                    <span className="infoTag">
                       {getTriggerIcon(workflow.trigger)} {getTriggerLabel(workflow.trigger)}
                     </span>
-                    <span className={styles.infoTag}>
+                    <span className="infoTag">
                       {workflow.steps?.length || 0} Schritte
                     </span>
-                    <span className={styles.infoTag}>
+                    <span className="infoTag">
                       {workflow.instances_count} Ausfuehrungen
                     </span>
-                    <span className={styles.infoTag}>
+                    <span className="infoTag">
                       Aktualisiert: {new Date(workflow.updated_at).toLocaleDateString('de-DE')}
                     </span>
                   </div>
 
                   {/* Workflow Steps Visualization */}
-                  <div className={styles.stepsContainer}>
+                  <div className="stepsContainer">
                     {(Array.isArray(workflow.steps) ? workflow.steps : []).map((step, idx) => (
-                      <div key={step.id} className={styles.stepRow}>
-                        <div className={styles.stepCard}>
-                          <div className={styles.stepIcon}>
+                      <div key={step.id} className="stepRow">
+                        <div className="stepCard">
+                          <div className="stepIcon">
                             {step.type === 'trigger' && '\u25B6'}
                             {step.type === 'action' && '\u2699'}
                             {step.type === 'condition' && '\u25C6'}
                             {step.type === 'notification' && '\u{1F514}'}
                             {step.type === 'decision' && '\u25C7'}
                           </div>
-                          <div className={styles.stepInfo}>
-                            <div className={styles.stepLabel}>{step.name}</div>
-                            <div className={styles.stepType}>{step.type}</div>
+                          <div className="stepInfo">
+                            <div className="stepLabel">{step.name}</div>
+                            <div className="stepType">{step.type}</div>
                           </div>
                         </div>
                         {idx < (Array.isArray(workflow.steps) ? workflow.steps : []).length - 1 && (
-                          <div className={styles.stepArrow}>{'\u2193'}</div>
+                          <div className="stepArrow">{'\u2193'}</div>
                         )}
                       </div>
                     ))}
                   </div>
 
-                  <div className={styles.workflowActions}>
+                  <div className="workflowActions">
                     <button className="btn btn--sm btn--primary" onClick={() => alert(`Workflow "${workflow.name}" bearbeiten...`)}>Bearbeiten</button>
                     <button className="btn btn--sm" onClick={() => alert(`Workflow "${workflow.name}" Details...`)}>Details</button>
                     <button className="btn btn--sm" onClick={() => alert(`Workflow "${workflow.name}" dupliziert!`)}>Duplizieren</button>
@@ -356,26 +356,26 @@ function WorkflowsPage() {
 
       {/* Templates Section */}
       {activeSection === 'templates' && (
-        <section className={styles.section}>
+        <section className="section">
           {isLoadingTemplates ? (
             <SkeletonCard count={3} />
           ) : templates.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'\u{1F4E6}'}</div>
-              <p className={styles.emptyText}>Keine Templates verfuegbar</p>
+            <div className="emptyState">
+              <div className="emptyIcon">{'\u{1F4E6}'}</div>
+              <p className="emptyText">Keine Templates verfuegbar</p>
             </div>
           ) : (
-            <div className={styles.templatesGrid}>
+            <div className="templatesGrid">
               {templates.map((template: WorkflowTemplate) => (
                 <div
                   key={template.id}
-                  className={`${styles.templateCard} ${selectedTemplate === template.id ? styles['templateCard--selected'] : ''}`}
+                  className={`templateCard ${selectedTemplate === template.id ? 'templateCard--selected' : ''}`}
                   onClick={() => setSelectedTemplate(selectedTemplate === template.id ? null : template.id)}
                 >
-                  <div className={styles.templateIcon}>{template.icon}</div>
-                  <h3 className={styles.templateName}>{template.name}</h3>
-                  <p className={styles.templateDesc}>{template.description}</p>
-                  <span className={styles.templateCategory}>{template.category}</span>
+                  <div className="templateIcon">{template.icon}</div>
+                  <h3 className="templateName">{template.name}</h3>
+                  <p className="templateDesc">{template.description}</p>
+                  <span className="templateCategory">{template.category}</span>
                   {selectedTemplate === template.id && (
                     <button
                       className="btn btn--sm btn--primary"
@@ -397,12 +397,12 @@ function WorkflowsPage() {
 
       {/* New Workflow Modal */}
       {showNewWorkflowModal && (
-        <div className={styles.modalOverlay} onClick={() => !workflowSubmitted && setShowNewWorkflowModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Neuer Workflow</h2>
+        <div className="modalOverlay" onClick={() => !workflowSubmitted && setShowNewWorkflowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modalHeader">
+              <h2 className="modalTitle">Neuer Workflow</h2>
               <button
-                className={styles.modalClose}
+                className="modalClose"
                 onClick={() => setShowNewWorkflowModal(false)}
                 disabled={workflowSubmitted}
               >
@@ -411,30 +411,30 @@ function WorkflowsPage() {
             </div>
 
             {workflowSubmitted ? (
-              <div className={styles.modalBody}>
-                <div className={styles.successState}>
-                  <div className={styles.successIcon}>{'\u2713'}</div>
+              <div className="modalBody">
+                <div className="successState">
+                  <div className="successIcon">{'\u2713'}</div>
                   <h3>Workflow erstellt</h3>
                   <p>Der Workflow "{newWorkflowForm.name}" wurde erfolgreich erstellt und ist als Entwurf gespeichert.</p>
                 </div>
               </div>
             ) : (
-              <div className={styles.modalBody}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Workflow-Name *</label>
+              <div className="modalBody">
+                <div className="formGroup">
+                  <label className="formLabel">Workflow-Name *</label>
                   <input
                     type="text"
-                    className={styles.formInput}
+                    className="formInput"
                     placeholder="z.B. Mahnung bei Ueberfaelligkeit"
                     value={newWorkflowForm.name}
                     onChange={(e) => setNewWorkflowForm({ ...newWorkflowForm, name: e.target.value })}
                   />
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Beschreibung</label>
+                <div className="formGroup">
+                  <label className="formLabel">Beschreibung</label>
                   <textarea
-                    className={styles.formTextarea}
+                    className="formTextarea"
                     rows={3}
                     placeholder="Was macht dieser Workflow?"
                     value={newWorkflowForm.description}
@@ -442,10 +442,10 @@ function WorkflowsPage() {
                   />
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Trigger-Typ *</label>
+                <div className="formGroup">
+                  <label className="formLabel">Trigger-Typ *</label>
                   <select
-                    className={styles.formSelect}
+                    className="formSelect"
                     value={newWorkflowForm.trigger}
                     onChange={(e) => setNewWorkflowForm({ ...newWorkflowForm, trigger: e.target.value })}
                   >
@@ -454,7 +454,7 @@ function WorkflowsPage() {
                     <option value="manual">Manuell</option>
                     <option value="webhook">Webhook</option>
                   </select>
-                  <span className={styles.formHint}>
+                  <span className="formHint">
                     {newWorkflowForm.trigger === 'event' && 'Wird durch ein System-Event ausgeloest (z.B. Equipment ueberfaellig)'}
                     {newWorkflowForm.trigger === 'scheduled' && 'Wird zu festgelegten Zeiten automatisch ausgefuehrt'}
                     {newWorkflowForm.trigger === 'manual' && 'Wird manuell durch einen Benutzer gestartet'}
@@ -462,10 +462,10 @@ function WorkflowsPage() {
                   </span>
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Bedingungen</label>
+                <div className="formGroup">
+                  <label className="formLabel">Bedingungen</label>
                   <textarea
-                    className={styles.formTextarea}
+                    className="formTextarea"
                     rows={2}
                     placeholder="z.B. Wenn Rueckgabedatum > 24h ueberschritten..."
                     value={newWorkflowForm.conditions}
@@ -473,10 +473,10 @@ function WorkflowsPage() {
                   />
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Aktionen</label>
+                <div className="formGroup">
+                  <label className="formLabel">Aktionen</label>
                   <textarea
-                    className={styles.formTextarea}
+                    className="formTextarea"
                     rows={2}
                     placeholder="z.B. E-Mail senden, Status aendern, Aufgabe erstellen..."
                     value={newWorkflowForm.actions}
@@ -484,7 +484,7 @@ function WorkflowsPage() {
                   />
                 </div>
 
-                <div className={styles.modalFooter}>
+                <div className="modalFooter">
                   <button className="btn btn--secondary" onClick={() => setShowNewWorkflowModal(false)}>
                     Abbrechen
                   </button>

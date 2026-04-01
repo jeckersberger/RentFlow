@@ -11,7 +11,7 @@ import { useNotificationStore } from '../../stores/notificationStore'
 import ContactForm, { ContactFormData } from './ContactForm'
 import ContactImport from './ContactImport'
 import { generateCSV, downloadCSV, formatDateForExport } from '../../utils/csvExport'
-import styles from './Contacts.module.scss'
+import './Contacts.scss'
 
 interface Contact {
   id: string
@@ -229,31 +229,31 @@ function ContactsPage() {
   }
 
   return (
-    <div className={styles['contacts-page']}>
+    <div className="contacts-page">
       {/* Header */}
-      <div className={styles['page-header']}>
+      <div className="page-header">
         <div>
-          <h1 className={styles['page-title']}>Kontakte</h1>
-          <p className={styles['page-subtitle']}>
+          <h1 className="page-title">Kontakte</h1>
+          <p className="page-subtitle">
             {filteredContacts.length} Kontakt{filteredContacts.length !== 1 ? 'e' : ''} gesamt
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
           <button
-            className={styles.btn + ' ' + styles['btn--secondary']}
+            className="btn btn--secondary"
             onClick={exportContactsCSV}
             disabled={filteredContacts.length === 0}
           >
             Exportieren
           </button>
           <button
-            className={styles.btn + ' ' + styles['btn--secondary']}
+            className="btn btn--secondary"
             onClick={() => setShowImport(true)}
           >
             CSV importieren
           </button>
           <button
-            className={styles.btn + ' ' + styles['btn--primary']}
+            className="btn btn--primary"
             onClick={() => setShowCreateForm(true)}
           >
             + Kontakt hinzufügen
@@ -262,7 +262,7 @@ function ContactsPage() {
       </div>
 
       {/* Filters */}
-      <div className={styles['filters-bar']}>
+      <div className="filters-bar">
         <Input
           type="text"
           placeholder="Nach Name, E-Mail oder Stadt suchen..."
@@ -304,9 +304,9 @@ function ContactsPage() {
       )}
 
       {/* Main Content */}
-      <div className={styles['contacts-layout']}>
+      <div className="contacts-layout">
         {/* Contacts Table */}
-        <div className={styles['contacts-list-container']}>
+        <div className="contacts-list-container">
           {_isLoading ? (
             <SkeletonTable rows={6} columns={7} />
           ) : filteredContacts.length === 0 ? (
@@ -320,7 +320,7 @@ function ContactsPage() {
               compact
             />
           ) : (
-            <table className={styles['contacts-table']}>
+            <table className="contacts-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -336,19 +336,19 @@ function ContactsPage() {
                 {filteredContacts.map((contact) => (
                   <tr
                     key={contact.id}
-                    className={selectedContact?.id === contact.id ? styles.active : ''}
+                    className={selectedContact?.id === contact.id ? 'active' : ''}
                     onClick={() => setSelectedContact(contact)}
                   >
                     <td>
-                      <div className={styles['contact-name-cell']}>
-                        <div className={`${styles['contact-avatar']} ${styles[`contact-avatar--${contact.type}`]}`}>
+                      <div className="contact-name-cell">
+                        <div className={`contact-avatar ${`contact-avatar--${contact.type}`}`}>
                           {getInitials(contact)}
                         </div>
                         <span>{getDisplayName(contact)}</span>
                       </div>
                     </td>
                     <td>
-                      <span className={`${styles['type-badge']} ${styles[`type-badge--${contact.type}`]}`}>
+                      <span className={`type-badge ${`type-badge--${contact.type}`}`}>
                         {contact.type === 'company' ? 'Firma' : 'Person'}
                       </span>
                     </td>
@@ -366,14 +366,14 @@ function ContactsPage() {
 
         {/* Detail Sidebar */}
         {selectedContact && (
-          <div className={styles['contact-detail-sidebar']}>
-            <div className={styles['sidebar-header']}>
+          <div className="contact-detail-sidebar">
+            <div className="sidebar-header">
               <div>
-                <div className={`${styles['sidebar-avatar']} ${styles[`sidebar-avatar--${selectedContact.type}`]}`}>
+                <div className={`sidebar-avatar ${`sidebar-avatar--${selectedContact.type}`}`}>
                   {getInitials(selectedContact)}
                 </div>
-                <h2 className={styles['sidebar-name']}>{getDisplayName(selectedContact)}</h2>
-                <p className={styles['sidebar-type']}>
+                <h2 className="sidebar-name">{getDisplayName(selectedContact)}</h2>
+                <p className="sidebar-type">
                   {selectedContact.type === 'company' ? 'Firma' : 'Person'}
                   {selectedContact.tags?.length > 0 && (
                     <> &middot; {selectedContact.tags.join(', ')}</>
@@ -381,7 +381,7 @@ function ContactsPage() {
                 </p>
               </div>
               <button
-                className={styles['sidebar-close']}
+                className="sidebar-close"
                 onClick={() => setSelectedContact(null)}
                 title="Schließen"
               >
@@ -390,40 +390,40 @@ function ContactsPage() {
             </div>
 
             {/* Contact Info */}
-            <div className={styles['sidebar-section']}>
-              <h3 className={styles['sidebar-section-title']}>Kontaktdaten</h3>
+            <div className="sidebar-section">
+              <h3 className="sidebar-section-title">Kontaktdaten</h3>
 
               {selectedContact.email && (
-                <div className={styles['sidebar-field']}>
-                  <span className={styles['sidebar-field-label']}>E-Mail</span>
-                  <span className={styles['sidebar-field-value']}>
+                <div className="sidebar-field">
+                  <span className="sidebar-field-label">E-Mail</span>
+                  <span className="sidebar-field-value">
                     <a href={`mailto:${selectedContact.email}`}>{selectedContact.email}</a>
                   </span>
                 </div>
               )}
 
               {selectedContact.phone && (
-                <div className={styles['sidebar-field']}>
-                  <span className={styles['sidebar-field-label']}>Telefon</span>
-                  <span className={styles['sidebar-field-value']}>
+                <div className="sidebar-field">
+                  <span className="sidebar-field-label">Telefon</span>
+                  <span className="sidebar-field-value">
                     <a href={`tel:${selectedContact.phone}`}>{selectedContact.phone}</a>
                   </span>
                 </div>
               )}
 
               {selectedContact.mobile && (
-                <div className={styles['sidebar-field']}>
-                  <span className={styles['sidebar-field-label']}>Mobil</span>
-                  <span className={styles['sidebar-field-value']}>
+                <div className="sidebar-field">
+                  <span className="sidebar-field-label">Mobil</span>
+                  <span className="sidebar-field-value">
                     <a href={`tel:${selectedContact.mobile}`}>{selectedContact.mobile}</a>
                   </span>
                 </div>
               )}
 
               {selectedContact.website && (
-                <div className={styles['sidebar-field']}>
-                  <span className={styles['sidebar-field-label']}>Website</span>
-                  <span className={styles['sidebar-field-value']}>
+                <div className="sidebar-field">
+                  <span className="sidebar-field-label">Website</span>
+                  <span className="sidebar-field-value">
                     <a href={selectedContact.website} target="_blank" rel="noopener noreferrer">
                       {selectedContact.website}
                     </a>
@@ -434,10 +434,10 @@ function ContactsPage() {
 
             {/* Address */}
             {(selectedContact.street || selectedContact.city) && (
-              <div className={styles['sidebar-section']}>
-                <h3 className={styles['sidebar-section-title']}>Adresse</h3>
-                <div className={styles['sidebar-field']}>
-                  <span className={styles['sidebar-field-value']}>
+              <div className="sidebar-section">
+                <h3 className="sidebar-section-title">Adresse</h3>
+                <div className="sidebar-field">
+                  <span className="sidebar-field-value">
                     {selectedContact.street && `${selectedContact.street} ${selectedContact.house_number}`}
                     {selectedContact.street && <br />}
                     {selectedContact.zip} {selectedContact.city}
@@ -449,7 +449,7 @@ function ContactsPage() {
                   href={googleMapsLink(selectedContact)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={styles.btn + ' ' + styles['btn--secondary'] + ' ' + styles['btn--sm']}
+                  className="btn btn--secondary btn--sm"
                   style={{ marginTop: 'var(--spacing-2)', textDecoration: 'none' }}
                 >
                   In Google Maps öffnen
@@ -459,19 +459,19 @@ function ContactsPage() {
 
             {/* Company-specific */}
             {selectedContact.type === 'company' && selectedContact.vat_id && (
-              <div className={styles['sidebar-section']}>
-                <h3 className={styles['sidebar-section-title']}>Firmendaten</h3>
-                <div className={styles['sidebar-field']}>
-                  <span className={styles['sidebar-field-label']}>USt-ID</span>
-                  <span className={styles['sidebar-field-value']}>{selectedContact.vat_id}</span>
+              <div className="sidebar-section">
+                <h3 className="sidebar-section-title">Firmendaten</h3>
+                <div className="sidebar-field">
+                  <span className="sidebar-field-label">USt-ID</span>
+                  <span className="sidebar-field-value">{selectedContact.vat_id}</span>
                 </div>
               </div>
             )}
 
             {/* Notes */}
             {selectedContact.notes && (
-              <div className={styles['sidebar-section']}>
-                <h3 className={styles['sidebar-section-title']}>Notizen</h3>
+              <div className="sidebar-section">
+                <h3 className="sidebar-section-title">Notizen</h3>
                 <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', margin: 0, whiteSpace: 'pre-wrap' }}>
                   {selectedContact.notes}
                 </p>
@@ -479,16 +479,16 @@ function ContactsPage() {
             )}
 
             {/* Associated Projects */}
-            <div className={styles['sidebar-section']}>
-              <h3 className={styles['sidebar-section-title']}>Projekte ({projectCounts[selectedContact.id] || 0})</h3>
+            <div className="sidebar-section">
+              <h3 className="sidebar-section-title">Projekte ({projectCounts[selectedContact.id] || 0})</h3>
               {(projectCounts[selectedContact.id] || 0) > 0 ? (
                 <div>
                   <div
-                    className={styles['sidebar-project-item']}
+                    className="sidebar-project-item"
                     onClick={() => navigate('/projects')}
                   >
-                    <span className={styles['sidebar-project-name']}>Projekte anzeigen</span>
-                    <span className={styles['sidebar-project-status']}>&rarr;</span>
+                    <span className="sidebar-project-name">Projekte anzeigen</span>
+                    <span className="sidebar-project-status">&rarr;</span>
                   </div>
                 </div>
               ) : (
@@ -499,8 +499,8 @@ function ContactsPage() {
             </div>
 
             {/* Communication History */}
-            <div className={styles['sidebar-section']}>
-              <h3 className={styles['sidebar-section-title']}>Kommunikation</h3>
+            <div className="sidebar-section">
+              <h3 className="sidebar-section-title">Kommunikation</h3>
               <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', margin: 0 }}>
                 Erstellt am {formatDate(selectedContact.created_at)}
                 <br />
@@ -509,15 +509,15 @@ function ContactsPage() {
             </div>
 
             {/* Actions */}
-            <div className={styles['sidebar-actions']}>
+            <div className="sidebar-actions">
               <button
-                className={styles.btn + ' ' + styles['btn--secondary'] + ' ' + styles['btn--sm']}
+                className="btn btn--secondary btn--sm"
                 onClick={() => setEditingContact(selectedContact)}
               >
                 Bearbeiten
               </button>
               <button
-                className={styles.btn + ' ' + styles['btn--danger'] + ' ' + styles['btn--sm']}
+                className="btn btn--danger btn--sm"
                 onClick={() => {
                   if (window.confirm(`Kontakt "${getDisplayName(selectedContact)}" wirklich löschen?`)) {
                     deleteContact(selectedContact.id)

@@ -4,7 +4,7 @@ import { Project } from '../../../types/project'
 import { api, equipmentApi, reservationApi } from '../../../services/api'
 import { getStatusLabel } from '../../../utils/statusLabels'
 import { PackingListTab } from './PackingListTab'
-import styles from '../ProjectDetail.module.scss'
+import '../ProjectDetail.scss'
 
 interface EquipmentTabProps {
   project: Project
@@ -195,8 +195,8 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
   return (
     <div>
       {/* Mode toggle: Equipment vs Packliste */}
-      <div className={styles.sectionHeader}>
-        <h3 className={styles.sectionTitle}>
+      <div className="sectionHeader">
+        <h3 className="sectionTitle">
           {showPackingList ? 'Packliste' : 'Equipment'}
           {!showPackingList && !isLoading && ` (${filtered.length})`}
         </h3>
@@ -468,7 +468,7 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
         <PackingListTab project={project} />
       ) : (
         <>
-          <div className={styles.searchBar}>
+          <div className="searchBar">
             <input
               type="text"
               placeholder="Equipment suchen..."
@@ -478,28 +478,28 @@ export function EquipmentTab({ project }: EquipmentTabProps) {
           </div>
 
           {isLoading ? (
-            <div className={styles.emptyState}>
-              <p className={styles.emptyStateText}>Equipment wird geladen...</p>
+            <div className="emptyState">
+              <p className="emptyStateText">Equipment wird geladen...</p>
             </div>
           ) : error ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyStateIcon}>{'\u26A0\uFE0F'}</div>
-              <h4 className={styles.emptyStateTitle}>Fehler beim Laden</h4>
-              <p className={styles.emptyStateText}>
+            <div className="emptyState">
+              <div className="emptyStateIcon">{'\u26A0\uFE0F'}</div>
+              <h4 className="emptyStateTitle">Fehler beim Laden</h4>
+              <p className="emptyStateText">
                 Equipment-Daten konnten nicht geladen werden.
               </p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyStateIcon}>{'\u{1F4E6}'}</div>
-              <h4 className={styles.emptyStateTitle}>Kein Equipment zugewiesen</h4>
-              <p className={styles.emptyStateText}>
+            <div className="emptyState">
+              <div className="emptyStateIcon">{'\u{1F4E6}'}</div>
+              <h4 className="emptyStateTitle">Kein Equipment zugewiesen</h4>
+              <p className="emptyStateText">
                 Klicken Sie auf &laquo;Equipment hinzufuegen&raquo;, um Artikel zu diesem Projekt zuzuweisen.
               </p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table className={styles.dataTable}>
+              <table className="dataTable">
                 <thead>
                   <tr>
                     <th>Equipment</th>

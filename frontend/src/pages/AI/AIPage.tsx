@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { aiApi, configApi } from '../../services/api'
-import styles from './AI.module.scss'
+import './AI.scss'
 
 // ============================================================================
 // HELPER COMPONENTS
@@ -17,7 +17,7 @@ function ActivityIcon({ type }: { type: string }) {
     recognition: '\u{1F4F7}',
     chat: '\u{1F4AC}',
   }
-  return <span className={styles.activityIcon}>{icons[type] || '\u2022'}</span>
+  return <span className="activityIcon">{icons[type] || '\u2022'}</span>
 }
 
 // ============================================================================
@@ -159,23 +159,23 @@ function AIPage() {
   }
 
   return (
-    <div className={styles.dashboard}>
+    <div className="dashboard">
       {/* Header */}
-      <div className={styles.dashboardHeader}>
+      <div className="dashboardHeader">
         <div>
-          <h1 className={styles.dashboardTitle}>KI-Dashboard</h1>
-          <p className={styles.dashboardSubtitle}>
+          <h1 className="dashboardTitle">KI-Dashboard</h1>
+          <p className="dashboardSubtitle">
             Intelligente Analyse und Optimierung fuer Ihren Verleih
           </p>
         </div>
-        <div className={styles.headerStats}>
-          <div className={styles.headerStat}>
-            <span className={styles.headerStatValue}>{mergedProviders.filter((p: any) => p.active).length}</span>
-            <span className={styles.headerStatLabel}>Provider aktiv</span>
+        <div className="headerStats">
+          <div className="headerStat">
+            <span className="headerStatValue">{mergedProviders.filter((p: any) => p.active).length}</span>
+            <span className="headerStatLabel">Provider aktiv</span>
           </div>
-          <div className={styles.headerStat}>
-            <span className={styles.headerStatValue}>{activityLog.length}</span>
-            <span className={styles.headerStatLabel}>KI-Anfragen</span>
+          <div className="headerStat">
+            <span className="headerStatValue">{activityLog.length}</span>
+            <span className="headerStatLabel">KI-Anfragen</span>
           </div>
         </div>
       </div>
@@ -207,35 +207,35 @@ function AIPage() {
       )}
 
       {/* Section 1: KI-Status / Provider Overview */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>KI-Status</h2>
+      <section className="section">
+        <h2 className="sectionTitle">KI-Status</h2>
         {isLoadingProviders ? (
-          <div className={styles.providerGrid}>
-            <div className={styles.providerCard} style={{ opacity: 0.5 }}>
-              <div className={styles.providerHeader}>
-                <span className={styles.providerName}>Laden...</span>
+          <div className="providerGrid">
+            <div className="providerCard" style={{ opacity: 0.5 }}>
+              <div className="providerHeader">
+                <span className="providerName">Laden...</span>
               </div>
             </div>
           </div>
         ) : mergedProviders.length > 0 ? (
-          <div className={styles.providerGrid}>
+          <div className="providerGrid">
             {mergedProviders.map((provider: any, idx: number) => (
               <div
                 key={idx}
-                className={`${styles.providerCard} ${provider.active ? styles.providerActive : styles.providerInactive}`}
+                className={`providerCard ${provider.active ? 'providerActive' : 'providerInactive'}`}
               >
-                <div className={styles.providerHeader}>
-                  <span className={`${styles.statusDot} ${provider.active ? styles.statusDotActive : styles.statusDotInactive}`} />
-                  <span className={styles.providerName}>{provider.label}</span>
+                <div className="providerHeader">
+                  <span className={`statusDot ${provider.active ? 'statusDotActive' : 'statusDotInactive'}`} />
+                  <span className="providerName">{provider.label}</span>
                 </div>
-                <div className={styles.providerDetails}>
-                  <span className={styles.providerModel}>{provider.model}</span>
+                <div className="providerDetails">
+                  <span className="providerModel">{provider.model}</span>
                   {!provider.active && (
-                    <span className={styles.providerInactiveText}>Nicht konfiguriert</span>
+                    <span className="providerInactiveText">Nicht konfiguriert</span>
                   )}
                 </div>
                 {!provider.active && (
-                  <Link to="/settings/integrations" className={styles.configureLink}>
+                  <Link to="/settings/integrations" className="configureLink">
                     Konfigurieren
                   </Link>
                 )}
@@ -265,8 +265,8 @@ function AIPage() {
       </section>
 
       {/* Section 2: KI-Chat */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>KI-Chat</h2>
+      <section className="section">
+        <h2 className="sectionTitle">KI-Chat</h2>
         <div style={{
           background: 'var(--glass-bg)',
           border: '1px solid var(--color-border)',
@@ -400,9 +400,9 @@ function AIPage() {
       </section>
 
       {/* Section 3: Preis-Optimierung */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Preis-Optimierung</h2>
+      <section className="section">
+        <div className="sectionHeader">
+          <h2 className="sectionTitle">Preis-Optimierung</h2>
         </div>
         <div style={{
           background: 'var(--glass-bg)',
@@ -422,9 +422,9 @@ function AIPage() {
       </section>
 
       {/* Section 4: Demand Forecasting */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Nachfrageprognose</h2>
+      <section className="section">
+        <div className="sectionHeader">
+          <h2 className="sectionTitle">Nachfrageprognose</h2>
         </div>
         <div style={{
           background: 'var(--glass-bg)',
@@ -444,8 +444,8 @@ function AIPage() {
       </section>
 
       {/* Section 5: Predictive Maintenance */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Vorausschauende Wartung</h2>
+      <section className="section">
+        <h2 className="sectionTitle">Vorausschauende Wartung</h2>
         <div style={{
           background: 'var(--glass-bg)',
           border: '1px solid var(--color-border)',
@@ -464,8 +464,8 @@ function AIPage() {
       </section>
 
       {/* Section 6: KI-Aktivitaetslog */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>KI-Aktivitaetslog</h2>
+      <section className="section">
+        <h2 className="sectionTitle">KI-Aktivitaetslog</h2>
         {isLoadingActivity ? (
           <div style={{
             background: 'var(--glass-bg)',
@@ -494,15 +494,15 @@ function AIPage() {
             </p>
           </div>
         ) : (
-          <div className={styles.activityList}>
+          <div className="activityList">
             {activityLog.map((entry: any, idx: number) => (
-              <div key={entry.id || idx} className={styles.activityItem}>
+              <div key={entry.id || idx} className="activityItem">
                 <ActivityIcon type={entry.type || entry.request_type || 'chat'} />
-                <div className={styles.activityContent}>
-                  <span className={styles.activityDescription}>
+                <div className="activityContent">
+                  <span className="activityDescription">
                     {entry.description || entry.message || entry.input_text || entry.content || 'KI-Anfrage'}
                   </span>
-                  <span className={styles.activityTime}>
+                  <span className="activityTime">
                     {entry.timestamp || entry.created_at || ''}
                   </span>
                 </div>

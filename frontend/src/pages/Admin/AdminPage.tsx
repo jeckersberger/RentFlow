@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { adminApi, authApi, equipmentApi, projectApi } from '../../services/api'
-import styles from './Admin.module.scss'
+import './Admin.scss'
 
 interface ServiceInfo {
   id: string
@@ -257,68 +257,68 @@ function AdminPage() {
   }, [])
 
   return (
-    <div className={styles.adminPage}>
-      <div className={styles.header}>
+    <div className="adminPage">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Admin-Bereich</h1>
-          <p className={styles.subtitle}>System-Einstellungen, Health Monitoring und Benutzerverwaltung</p>
+          <h1 className="title">Admin-Bereich</h1>
+          <p className="subtitle">System-Einstellungen, Health Monitoring und Benutzerverwaltung</p>
         </div>
       </div>
 
       {/* System Info Overview */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>System-Uebersicht</h2>
-        <div className={styles.statsCards}>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Datenbank</div>
-            <div className={styles.statValue} style={{ fontSize: 'var(--font-size-2xl)' }}>PostgreSQL</div>
-            <div className={styles.progressBar}>
+      <section className="section">
+        <h2 className="sectionTitle">System-Uebersicht</h2>
+        <div className="statsCards">
+          <div className="statCard">
+            <div className="statLabel">Datenbank</div>
+            <div className="statValue" style={{ fontSize: 'var(--font-size-2xl)' }}>PostgreSQL</div>
+            <div className="progressBar">
               <div
-                className={styles.progressFill}
+                className="progressFill"
                 style={{ width: '57%', backgroundColor: 'var(--color-primary)' }}
               />
             </div>
-            <p className={styles.progressText}>287 GB / 500 GB (57%)</p>
+            <p className="progressText">287 GB / 500 GB (57%)</p>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Gesamt-Equipment</div>
-            <div className={styles.statValue}>{totalEquipment}</div>
-            <p className={styles.progressText}>Geraete im Bestand</p>
+          <div className="statCard">
+            <div className="statLabel">Gesamt-Equipment</div>
+            <div className="statValue">{totalEquipment}</div>
+            <p className="progressText">Geraete im Bestand</p>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Projekte</div>
-            <div className={styles.statValue}>{totalProjects}</div>
-            <p className={styles.progressText}>Gesamt erfasst</p>
+          <div className="statCard">
+            <div className="statLabel">Projekte</div>
+            <div className="statValue">{totalProjects}</div>
+            <p className="progressText">Gesamt erfasst</p>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Session-Uptime</div>
-            <div className={styles.statValue} style={{ fontSize: 'var(--font-size-xl)', fontFamily: 'monospace' }}>{uptime}</div>
-            <p className={styles.progressText}>Aktuelle Browser-Session</p>
+          <div className="statCard">
+            <div className="statLabel">Session-Uptime</div>
+            <div className="statValue" style={{ fontSize: 'var(--font-size-xl)', fontFamily: 'monospace' }}>{uptime}</div>
+            <p className="progressText">Aktuelle Browser-Session</p>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Backups</div>
-            <div className={styles.statValue}>24</div>
-            <p className={styles.progressText}>Letztes: {new Date('2026-03-22T02:00:00Z').toLocaleString('de-DE')}</p>
+          <div className="statCard">
+            <div className="statLabel">Backups</div>
+            <div className="statValue">24</div>
+            <p className="progressText">Letztes: {new Date('2026-03-22T02:00:00Z').toLocaleString('de-DE')}</p>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Services</div>
-            <div className={styles.statValue}>{SERVICE_REGISTRY.length}</div>
-            <p className={styles.progressText}>Microservices registriert</p>
+          <div className="statCard">
+            <div className="statLabel">Services</div>
+            <div className="statValue">{SERVICE_REGISTRY.length}</div>
+            <p className="progressText">Microservices registriert</p>
           </div>
         </div>
       </section>
 
       {/* Service Health Dashboard */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Service-Health Dashboard</h2>
+      <section className="section">
+        <div className="sectionHeader">
+          <h2 className="sectionTitle">Service-Health Dashboard</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
-            <div className={styles.healthSummary}>
+            <div className="healthSummary">
               <span style={{ color: '#10b981' }}>{'\u25CF'} {operationalCount} Online</span>
               {degradedCount > 0 && <span style={{ color: '#f59e0b' }}>{'\u25CF'} {degradedCount} Eingeschraenkt</span>}
               {downCount > 0 && <span style={{ color: '#ef4444' }}>{'\u25CF'} {downCount} Offline</span>}
@@ -335,17 +335,17 @@ function AdminPage() {
           </div>
         </div>
 
-        <div className={styles.servicesGrid}>
+        <div className="servicesGrid">
           {serviceStatuses.map((service) => (
-            <div key={service.id} className={styles.serviceCard} style={{
+            <div key={service.id} className="serviceCard" style={{
               borderColor: service.status === 'operational' ? 'rgba(16, 185, 129, 0.3)' :
                 service.status === 'degraded' ? 'rgba(245, 158, 11, 0.3)' :
                 service.status === 'down' ? 'rgba(239, 68, 68, 0.3)' : undefined,
             }}>
-              <div className={styles.serviceHeader}>
-                <div className={styles.serviceName}>{service.name}</div>
+              <div className="serviceHeader">
+                <div className="serviceName">{service.name}</div>
                 <div
-                  className={styles.statusIndicator}
+                  className="statusIndicator"
                   style={{
                     backgroundColor: getStatusColor(service.status),
                     boxShadow: `0 0 8px ${getStatusColor(service.status)}40`,
@@ -358,26 +358,26 @@ function AdminPage() {
                 {service.description}
               </div>
 
-              <div className={styles.serviceMetrics}>
-                <div className={styles.metric}>
-                  <span className={styles.metricLabel}>Port:</span>
-                  <span className={styles.metricValue}>{service.port}</span>
+              <div className="serviceMetrics">
+                <div className="metric">
+                  <span className="metricLabel">Port:</span>
+                  <span className="metricValue">{service.port}</span>
                 </div>
-                <div className={styles.metric}>
-                  <span className={styles.metricLabel}>Status:</span>
-                  <span className={styles.metricValue} style={{ color: getStatusColor(service.status) }}>
+                <div className="metric">
+                  <span className="metricLabel">Status:</span>
+                  <span className="metricValue" style={{ color: getStatusColor(service.status) }}>
                     {getStatusLabel(service.status)}
                   </span>
                 </div>
-                <div className={styles.metric}>
-                  <span className={styles.metricLabel}>Response:</span>
-                  <span className={styles.metricValue} style={{ color: getResponseTimeColor(service.response_time) }}>
+                <div className="metric">
+                  <span className="metricLabel">Response:</span>
+                  <span className="metricValue" style={{ color: getResponseTimeColor(service.response_time) }}>
                     {service.response_time !== null ? `${service.response_time}ms` : '--'}
                   </span>
                 </div>
               </div>
 
-              <div className={styles.lastCheck}>
+              <div className="lastCheck">
                 {service.last_checked
                   ? `Geprueft: ${new Date(service.last_checked).toLocaleTimeString('de-DE')}`
                   : 'Noch nicht geprueft'}
@@ -388,9 +388,9 @@ function AdminPage() {
       </section>
 
       {/* System Settings */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>System-Einstellungen</h2>
+      <section className="section">
+        <div className="sectionHeader">
+          <h2 className="sectionTitle">System-Einstellungen</h2>
           <button
             className={`btn btn--sm ${isEditingSettings ? 'btn--danger' : 'btn--primary'}`}
             onClick={() => {
@@ -405,26 +405,26 @@ function AdminPage() {
           </button>
         </div>
 
-        <div className={styles.settingsForm}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Unternehmensname:</label>
+        <div className="settingsForm">
+          <div className="formGroup">
+            <label className="label">Unternehmensname:</label>
             {isEditingSettings ? (
               <input
                 type="text"
-                className={styles.input}
+                className="input"
                 value={settings.company_name}
                 onChange={(e) => handleSettingChange('company_name', e.target.value)}
               />
             ) : (
-              <div className={styles.displayValue}>{settings.company_name}</div>
+              <div className="displayValue">{settings.company_name}</div>
             )}
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Zeitzone:</label>
+          <div className="formGroup">
+            <label className="label">Zeitzone:</label>
             {isEditingSettings ? (
               <select
-                className={styles.select}
+                className="select"
                 value={settings.timezone}
                 onChange={(e) => handleSettingChange('timezone', e.target.value)}
               >
@@ -434,15 +434,15 @@ function AdminPage() {
                 <option value="UTC">UTC</option>
               </select>
             ) : (
-              <div className={styles.displayValue}>{settings.timezone}</div>
+              <div className="displayValue">{settings.timezone}</div>
             )}
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Sprache:</label>
+          <div className="formGroup">
+            <label className="label">Sprache:</label>
             {isEditingSettings ? (
               <select
-                className={styles.select}
+                className="select"
                 value={settings.language}
                 onChange={(e) => handleSettingChange('language', e.target.value)}
               >
@@ -451,12 +451,12 @@ function AdminPage() {
                 <option value="fr-FR">Francais</option>
               </select>
             ) : (
-              <div className={styles.displayValue}>{settings.language}</div>
+              <div className="displayValue">{settings.language}</div>
             )}
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
+          <div className="formGroup">
+            <label className="label">
               <input
                 type="checkbox"
                 checked={settings.maintenance_mode}
@@ -467,8 +467,8 @@ function AdminPage() {
             </label>
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
+          <div className="formGroup">
+            <label className="label">
               <input
                 type="checkbox"
                 checked={settings.debug_mode}
@@ -493,9 +493,9 @@ function AdminPage() {
       </section>
 
       {/* User Management */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Benutzerverwaltung ({users.length} Benutzer)</h2>
+      <section className="section">
+        <div className="sectionHeader">
+          <h2 className="sectionTitle">Benutzerverwaltung ({users.length} Benutzer)</h2>
           <button className="btn btn--sm btn--primary" onClick={() => alert('Benutzer-Erstellung wird implementiert...')}>
             + Neuer Benutzer
           </button>

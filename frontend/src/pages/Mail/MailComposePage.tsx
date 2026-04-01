@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { mailApi, contactApi, projectApi } from '../../services/api'
 import { useNotificationStore } from '../../stores/notificationStore'
-import styles from './Mail.module.scss'
+import './Mail.scss'
 
 interface ComposeForm {
   from_mailbox_id: string
@@ -105,11 +105,11 @@ function MailComposePage() {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <div className="page">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Neue E-Mail</h1>
-          <p className={styles.subtitle}>Verfassen und senden Sie eine neue Nachricht</p>
+          <h1 className="title">Neue E-Mail</h1>
+          <p className="subtitle">Verfassen und senden Sie eine neue Nachricht</p>
         </div>
       </div>
 
@@ -166,7 +166,7 @@ function MailComposePage() {
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             onFocus={() => { if (contactSuggestions.length > 0) setShowSuggestions(true) }}
             placeholder="empfaenger@beispiel.de"
-            className={styles.searchInput}
+            className="searchInput"
             style={{ width: '100%' }}
           />
           {showSuggestions && (
@@ -219,7 +219,7 @@ function MailComposePage() {
             value={form.subject}
             onChange={e => setForm(prev => ({ ...prev, subject: e.target.value }))}
             placeholder="Betreff eingeben..."
-            className={styles.searchInput}
+            className="searchInput"
             style={{ width: '100%' }}
           />
         </div>
@@ -298,19 +298,19 @@ function MailComposePage() {
         {/* Actions */}
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', justifyContent: 'flex-end', paddingTop: 'var(--spacing-3)', borderTop: '1px solid var(--color-border)' }}>
           <button
-            className={styles.btnSecondary}
+            className="btnSecondary"
             onClick={() => navigate(-1)}
           >
             Abbrechen
           </button>
           <button
-            className={styles.btnSecondary}
+            className="btnSecondary"
             onClick={handleSaveDraft}
           >
             Als Entwurf speichern
           </button>
           <button
-            className={styles.btnPrimary}
+            className="btnPrimary"
             onClick={handleSend}
             disabled={sendMutation.isPending}
             style={sendMutation.isPending ? { opacity: 0.7, cursor: 'not-allowed' } : undefined}

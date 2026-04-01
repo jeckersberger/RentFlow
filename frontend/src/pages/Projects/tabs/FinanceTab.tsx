@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Project } from '../../../types/project'
 import { invoiceApi, reservationApi } from '../../../services/api'
-import styles from '../ProjectDetail.module.scss'
+import '../ProjectDetail.scss'
 
 interface FinanceTabProps {
   project: Project
@@ -152,10 +152,10 @@ export function FinanceTab({ project }: FinanceTabProps) {
   const paidPercent = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0
 
   const summaryCards = [
-    { label: 'Budget', value: budget, cls: styles.financeCardValueRevenue },
-    { label: 'In Rechnung gestellt', value: totalInvoiced, cls: styles.financeCardValueCost },
-    { label: 'Bezahlt', value: totalPaid, cls: styles.financeCardValueProfit },
-    { label: 'Offen', value: totalOpen, cls: styles.financeCardValueDiscount },
+    { label: 'Budget', value: budget, cls: 'financeCardValueRevenue' },
+    { label: 'In Rechnung gestellt', value: totalInvoiced, cls: 'financeCardValueCost' },
+    { label: 'Bezahlt', value: totalPaid, cls: 'financeCardValueProfit' },
+    { label: 'Offen', value: totalOpen, cls: 'financeCardValueDiscount' },
   ]
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('de-DE')
@@ -163,11 +163,11 @@ export function FinanceTab({ project }: FinanceTabProps) {
   return (
     <div>
       {/* Summary Cards */}
-      <div className={styles.financeSummary}>
+      <div className="financeSummary">
         {summaryCards.map((card) => (
-          <div key={card.label} className={styles.financeCard}>
-            <div className={styles.financeCardLabel}>{card.label}</div>
-            <div className={`${styles.financeCardValue} ${card.cls}`}>
+          <div key={card.label} className="financeCard">
+            <div className="financeCardLabel">{card.label}</div>
+            <div className={`financeCardValue ${card.cls}`}>
               {'\u20AC'}{card.value.toFixed(2)}
             </div>
           </div>
@@ -175,7 +175,7 @@ export function FinanceTab({ project }: FinanceTabProps) {
       </div>
 
       {/* Progress bars */}
-      <div className={styles.glassCard} style={{ marginBottom: 'var(--spacing-6)' }}>
+      <div className="glassCard" style={{ marginBottom: 'var(--spacing-6)' }}>
         <div style={{ display: 'flex', gap: 'var(--spacing-8)', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', flex: 1 }}>
             <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--spacing-2)', textTransform: 'uppercase', letterSpacing: 'var(--letter-spacing-wide)' }}>
@@ -205,9 +205,9 @@ export function FinanceTab({ project }: FinanceTabProps) {
       </div>
 
       {/* Invoices Section */}
-      <div className={styles.glassCard} style={{ marginBottom: 'var(--spacing-5)' }}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.glassCardTitle} style={{ margin: 0 }}>
+      <div className="glassCard" style={{ marginBottom: 'var(--spacing-5)' }}>
+        <div className="sectionHeader">
+          <div className="glassCardTitle" style={{ margin: 0 }}>
             Rechnungen ({projectInvoices.length})
           </div>
           <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
@@ -247,20 +247,20 @@ export function FinanceTab({ project }: FinanceTabProps) {
         )}
 
         {isLoading ? (
-          <div className={styles.emptyState} style={{ padding: 'var(--spacing-6)' }}>
-            <p className={styles.emptyStateText}>Rechnungen werden geladen...</p>
+          <div className="emptyState" style={{ padding: 'var(--spacing-6)' }}>
+            <p className="emptyStateText">Rechnungen werden geladen...</p>
           </div>
         ) : error ? (
-          <div className={styles.emptyState} style={{ padding: 'var(--spacing-6)' }}>
-            <p className={styles.emptyStateText}>Fehler beim Laden der Rechnungen.</p>
+          <div className="emptyState" style={{ padding: 'var(--spacing-6)' }}>
+            <p className="emptyStateText">Fehler beim Laden der Rechnungen.</p>
           </div>
         ) : projectInvoices.length === 0 ? (
-          <div className={styles.emptyState} style={{ padding: 'var(--spacing-6)' }}>
-            <p className={styles.emptyStateText}>Noch keine Rechnungen fuer dieses Projekt.</p>
+          <div className="emptyState" style={{ padding: 'var(--spacing-6)' }}>
+            <p className="emptyStateText">Noch keine Rechnungen fuer dieses Projekt.</p>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className={styles.dataTable}>
+            <table className="dataTable">
               <thead>
                 <tr>
                   <th>Nummer</th>
@@ -325,10 +325,10 @@ export function FinanceTab({ project }: FinanceTabProps) {
 
       {/* Financial Breakdown (static categories based on invoices) */}
       {projectInvoices.length > 0 && (
-        <div className={styles.glassCard}>
-          <div className={styles.glassCardTitle}>Rechnungspositionen</div>
+        <div className="glassCard">
+          <div className="glassCardTitle">Rechnungspositionen</div>
           <div style={{ overflowX: 'auto' }}>
-            <table className={styles.dataTable}>
+            <table className="dataTable">
               <thead>
                 <tr>
                   <th>Position</th>

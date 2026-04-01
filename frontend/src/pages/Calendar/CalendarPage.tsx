@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { projectApi } from '../../services/api'
-import styles from './Calendar.module.scss'
+import './Calendar.scss'
 
 interface Project {
   id: string
@@ -96,54 +96,54 @@ function CalendarPage() {
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <div className="page">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Kalender</h1>
-          <p className={styles.subtitle}>Projektplanung und Terminübersicht in der Monatsansicht</p>
+          <h1 className="title">Kalender</h1>
+          <p className="subtitle">Projektplanung und Terminübersicht in der Monatsansicht</p>
         </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnSecondary} onClick={() => navigate('/projects/new')}>
+        <div className="headerActions">
+          <button className="btnSecondary" onClick={() => navigate('/projects/new')}>
             + Projekt erstellen
           </button>
         </div>
       </div>
 
-      <div className={styles.navigation}>
-        <button className={styles.navBtn} onClick={goPrev}>&larr;</button>
-        <button className={styles.todayBtn} onClick={goToToday}>Heute</button>
-        <h2 className={styles.monthLabel}>{monthName}</h2>
-        <button className={styles.navBtn} onClick={goNext}>&rarr;</button>
+      <div className="navigation">
+        <button className="navBtn" onClick={goPrev}>&larr;</button>
+        <button className="todayBtn" onClick={goToToday}>Heute</button>
+        <h2 className="monthLabel">{monthName}</h2>
+        <button className="navBtn" onClick={goNext}>&rarr;</button>
       </div>
 
       {isLoading ? (
-        <div className={styles.loadingState}>
-          <div className={styles.spinner} />
+        <div className="loadingState">
+          <div className="spinner" />
           <p>Projekte werden geladen...</p>
         </div>
       ) : (
-        <div className={styles.calendarCard}>
-          <div className={styles.weekdayHeader}>
+        <div className="calendarCard">
+          <div className="weekdayHeader">
             {WEEKDAYS.map(day => (
-              <div key={day} className={styles.weekdayCell}>{day}</div>
+              <div key={day} className="weekdayCell">{day}</div>
             ))}
           </div>
-          <div className={styles.grid}>
+          <div className="grid">
             {calendarDays.map((day, idx) => {
               const dayProjects = day ? getProjectsForDay(day) : []
               return (
                 <div
                   key={idx}
-                  className={`${styles.dayCell} ${!day ? styles.dayCellEmpty : ''} ${day && isToday(day) ? styles.dayCellToday : ''}`}
+                  className={`dayCell ${!day ? 'dayCellEmpty' : ''} ${day && isToday(day) ? 'dayCellToday' : ''}`}
                 >
                   {day && (
                     <>
-                      <span className={styles.dayNumber}>{day}</span>
-                      <div className={styles.dayProjects}>
+                      <span className="dayNumber">{day}</span>
+                      <div className="dayProjects">
                         {dayProjects.slice(0, 3).map(({ project, color }) => (
                           <div
                             key={project.id}
-                            className={styles.projectBar}
+                            className="projectBar"
                             style={{ backgroundColor: color }}
                             onClick={() => navigate(`/projects/${project.id}`)}
                             title={`${project.name} (${project.client || ''})`}
@@ -152,7 +152,7 @@ function CalendarPage() {
                           </div>
                         ))}
                         {dayProjects.length > 3 && (
-                          <div className={styles.moreIndicator}>
+                          <div className="moreIndicator">
                             +{dayProjects.length - 3} weitere
                           </div>
                         )}
@@ -168,21 +168,21 @@ function CalendarPage() {
 
       {/* Legend */}
       {projects.length > 0 && (
-        <div className={styles.legend}>
-          <h3 className={styles.legendTitle}>Projekte</h3>
-          <div className={styles.legendItems}>
+        <div className="legend">
+          <h3 className="legendTitle">Projekte</h3>
+          <div className="legendItems">
             {projects.map((p, idx) => (
               <div
                 key={p.id}
-                className={styles.legendItem}
+                className="legendItem"
                 onClick={() => navigate(`/projects/${p.id}`)}
               >
                 <span
-                  className={styles.legendDot}
+                  className="legendDot"
                   style={{ backgroundColor: getColorForProject(idx) }}
                 />
-                <span className={styles.legendName}>{p.name}</span>
-                <span className={styles.legendDate}>
+                <span className="legendName">{p.name}</span>
+                <span className="legendDate">
                   {new Date(p.start_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                   {' - '}
                   {new Date(p.end_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
@@ -194,13 +194,13 @@ function CalendarPage() {
       )}
 
       {!isLoading && projects.length === 0 && (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📅</div>
-          <h3 className={styles.emptyTitle}>Keine Projekte vorhanden</h3>
-          <p className={styles.emptyDescription}>
+        <div className="emptyState">
+          <div className="emptyIcon">📅</div>
+          <h3 className="emptyTitle">Keine Projekte vorhanden</h3>
+          <p className="emptyDescription">
             Erstellen Sie ein Projekt, um es im Kalender zu sehen.
           </p>
-          <button className={styles.btnPrimary} onClick={() => navigate('/projects/new')}>
+          <button className="btnPrimary" onClick={() => navigate('/projects/new')}>
             Projekt erstellen
           </button>
         </div>

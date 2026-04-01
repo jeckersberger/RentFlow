@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
 import { projectApi } from '../../../services/api'
 import { useAuthStore } from '../../../stores/authStore'
-import styles from '../ProjectDetail.module.scss'
+import '../ProjectDetail.scss'
 
 interface CommunicationTabProps {
   project: Project
@@ -93,8 +93,8 @@ export function CommunicationTab({ project }: CommunicationTabProps) {
 
   return (
     <div>
-      <div className={styles.sectionHeader}>
-        <h3 className={styles.sectionTitle}>Kommunikation</h3>
+      <div className="sectionHeader">
+        <h3 className="sectionTitle">Kommunikation</h3>
         <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
           <button
             className="btn btn--primary"
@@ -164,10 +164,10 @@ export function CommunicationTab({ project }: CommunicationTabProps) {
 
       {/* Notes Timeline */}
       {sortedNotes.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>{'\u{1F4AC}'}</div>
-          <h4 className={styles.emptyStateTitle}>Keine Eintraege</h4>
-          <p className={styles.emptyStateText}>
+        <div className="emptyState">
+          <div className="emptyStateIcon">{'\u{1F4AC}'}</div>
+          <h4 className="emptyStateTitle">Keine Eintraege</h4>
+          <p className="emptyStateText">
             Noch keine Kommunikation zu diesem Projekt. Fuegen Sie eine Notiz hinzu.
           </p>
         </div>

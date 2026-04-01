@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
 import { projectApi, packlistApi } from '../../../services/api'
-import styles from './PackingListTab.module.scss'
+import './PackingListTab.scss'
 
 // ============================================================================
 // Types
@@ -250,7 +250,7 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
   // ---- Render: Loading ----
   if (isLoading) {
     return (
-      <div className={styles.packingList || ''}>
+      <div className="packingList">
         <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
           Packliste wird geladen...
         </div>
@@ -261,23 +261,23 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
   // ---- Render: Print mode ----
   if (isPrintMode) {
     return (
-      <div className={styles.printView}>
-        <div className={styles.printHeader}>
+      <div className="printView">
+        <div className="printHeader">
           <h1>Packliste</h1>
-          <div className={styles.printMeta}>
+          <div className="printMeta">
             <p><strong>Projekt:</strong> {project.name}</p>
             <p><strong>Datum:</strong> {new Date().toLocaleDateString('de-DE')}</p>
             <p><strong>Zeitraum:</strong> {new Date(project.start_date).toLocaleDateString('de-DE')} &ndash; {new Date(project.end_date).toLocaleDateString('de-DE')}</p>
             {project.client_name && <p><strong>Kunde:</strong> {project.client_name}</p>}
           </div>
-          <div className={styles.printProgress}>
+          <div className="printProgress">
             {packedCount} von {totalItems} Positionen gepackt ({progressPercent}%)
           </div>
         </div>
         {filteredLocationGroups.map(({ location, items: locItems }) => (
-          <div key={location} className={styles.printCategory}>
+          <div key={location} className="printCategory">
             <h2>{location}</h2>
-            <table className={styles.printTable}>
+            <table className="printTable">
               <thead>
                 <tr>
                   <th style={{ width: '30px' }}></th>
@@ -290,7 +290,7 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
               <tbody>
                 {locItems.map((item) => (
                   <tr key={item.id}>
-                    <td className={styles.printCheckbox}>
+                    <td className="printCheckbox">
                       {item.status === 'gepackt' ? '\u2611' : '\u2610'}
                     </td>
                     <td>{item.name}</td>
@@ -303,7 +303,7 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
             </table>
           </div>
         ))}
-        <div className={styles.printFooter}>
+        <div className="printFooter">
           <p>Gepackt von: _________________________ &nbsp;&nbsp; Datum: _________________________</p>
           <p>Kontrolliert von: _________________________ &nbsp;&nbsp; Unterschrift: _________________________</p>
         </div>
@@ -312,22 +312,22 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
   }
 
   return (
-    <div className={styles.packingList}>
+    <div className="packingList">
       {/* Header with progress */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h3 className={styles.title}>Packliste</h3>
-          <span className={styles.projectLabel}>{project.name}</span>
+      <div className="header">
+        <div className="headerLeft">
+          <h3 className="title">Packliste</h3>
+          <span className="projectLabel">{project.name}</span>
         </div>
-        <div className={styles.headerActions}>
-          <button className={`btn btn--secondary ${styles.actionBtn}`} onClick={handlePrint}>
+        <div className="headerActions">
+          <button className="btn btn--secondary actionBtn" onClick={handlePrint}>
             Drucken
           </button>
-          <button className={`btn btn--secondary ${styles.actionBtn}`} onClick={resetAll}>
+          <button className="btn btn--secondary actionBtn" onClick={resetAll}>
             Zuruecksetzen
           </button>
           <button
-            className={`btn btn--primary ${styles.actionBtn}`}
+            className="btn btn--primary actionBtn"
             onClick={markAllPacked}
             disabled={packedCount === totalItems}
           >
@@ -337,41 +337,41 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
       </div>
 
       {/* Progress bar */}
-      <div className={styles.progressSection}>
-        <div className={styles.progressInfo}>
-          <span className={styles.progressText}>
+      <div className="progressSection">
+        <div className="progressInfo">
+          <span className="progressText">
             {packedCount} von {totalItems} Positionen gepackt ({progressPercent}%)
           </span>
-          <div className={styles.progressStats}>
+          <div className="progressStats">
             {fehltCount > 0 && (
-              <span className={styles.statBadgeDanger}>{fehltCount} fehlt</span>
+              <span className="statBadgeDanger">{fehltCount} fehlt</span>
             )}
             {ersetztCount > 0 && (
-              <span className={styles.statBadgeWarning}>{ersetztCount} ersetzt</span>
+              <span className="statBadgeWarning">{ersetztCount} ersetzt</span>
             )}
-            <span className={styles.statBadgeInfo}>
+            <span className="statBadgeInfo">
               {totalItems} Positionen gesamt
             </span>
           </div>
         </div>
-        <div className={styles.progressBar}>
+        <div className="progressBar">
           <div
-            className={styles.progressFill}
+            className="progressFill"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
       </div>
 
       {/* Filter bar */}
-      <div className={styles.filterBar}>
+      <div className="filterBar">
         {(['alle', 'ausstehend', 'gepackt', 'fehlt', 'ersetzt'] as const).map((f) => (
           <button
             key={f}
-            className={`${styles.filterBtn} ${filter === f ? styles.filterBtnActive : ''}`}
+            className={`filterBtn ${filter === f ? 'filterBtnActive' : ''}`}
             onClick={() => setFilter(f)}
           >
             {f === 'alle' ? 'Alle' : STATUS_CONFIG[f].icon + ' ' + STATUS_CONFIG[f].label}
-            <span className={styles.filterCount}>
+            <span className="filterCount">
               {f === 'alle'
                 ? totalItems
                 : allItems.filter((i) => i.status === f).length}
@@ -382,10 +382,10 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
 
       {/* Empty state */}
       {totalItems === 0 && (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>{'\u{1F4E6}'}</div>
-          <h4 className={styles.emptyStateTitle}>Keine Artikel in der Packliste</h4>
-          <p className={styles.emptyStateText}>
+        <div className="emptyState">
+          <div className="emptyStateIcon">{'\u{1F4E6}'}</div>
+          <h4 className="emptyStateTitle">Keine Artikel in der Packliste</h4>
+          <p className="emptyStateText">
             Erstellen Sie zuerst eine Packliste und fuegen Sie Equipment hinzu, um die Packliste zu verwenden.
           </p>
         </div>
@@ -395,30 +395,30 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
       {filteredLocationGroups.map(({ location, items: locItems }) => {
         const locPacked = locItems.filter((i) => i.status === 'gepackt').length
         return (
-          <div key={location} className={styles.categoryGroup}>
-            <div className={styles.categoryHeader}>
-              <span className={styles.categoryIcon}>{'\u{1F4CD}'}</span>
-              <span className={styles.categoryLabel}>{location}</span>
-              <span className={styles.categoryCount}>
+          <div key={location} className="categoryGroup">
+            <div className="categoryHeader">
+              <span className="categoryIcon">{'\u{1F4CD}'}</span>
+              <span className="categoryLabel">{location}</span>
+              <span className="categoryCount">
                 {locPacked}/{locItems.length} gepackt
               </span>
             </div>
-            <div className={styles.itemList}>
+            <div className="itemList">
               {locItems.map((item) => {
                 const statusConf = STATUS_CONFIG[item.status]
                 const isAnimating = animatingIds.has(item.id)
                 return (
                   <div
                     key={item.id}
-                    className={`${styles.packItem} ${
-                      item.status === 'gepackt' ? styles.packItemPacked : ''
-                    } ${isAnimating ? styles.packItemAnimating : ''}`}
+                    className={`packItem ${
+                      item.status === 'gepackt' ? 'packItemPacked' : ''
+                    } ${isAnimating ? 'packItemAnimating' : ''}`}
                   >
                     {/* Status checkbox area */}
-                    <div className={styles.packItemCheck}>
+                    <div className="packItemCheck">
                       <button
-                        className={`${styles.checkBtn} ${
-                          item.status === 'gepackt' ? styles.checkBtnPacked : ''
+                        className={`checkBtn ${
+                          item.status === 'gepackt' ? 'checkBtnPacked' : ''
                         }`}
                         onClick={() => toggleItemStatus(item.id, 'gepackt')}
                         title="Als gepackt markieren"
@@ -428,27 +428,27 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
                             <path d="M4 10l4 4 8-8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         ) : (
-                          <span className={styles.checkBtnEmpty} />
+                          <span className="checkBtnEmpty" />
                         )}
                       </button>
                     </div>
 
                     {/* Item info */}
-                    <div className={styles.packItemInfo}>
-                      <div className={styles.packItemName}>{item.name}</div>
-                      <div className={styles.packItemMeta}>
+                    <div className="packItemInfo">
+                      <div className="packItemName">{item.name}</div>
+                      <div className="packItemMeta">
                         <span>{item.quantity}x</span>
                         {item.barcode && (
-                          <span className={styles.serialNumber}>{item.barcode}</span>
+                          <span className="serialNumber">{item.barcode}</span>
                         )}
                         <span>{item.quantity_packed}/{item.quantity} gepackt</span>
                       </div>
                     </div>
 
                     {/* Status badge */}
-                    <div className={styles.packItemStatus}>
+                    <div className="packItemStatus">
                       <span
-                        className={styles.statusBadge}
+                        className="statusBadge"
                         style={{
                           color: statusConf.color,
                           backgroundColor: statusConf.bgColor,
@@ -459,16 +459,16 @@ export function PackingListTab({ project, onItemStatusChange }: PackingListTabPr
                     </div>
 
                     {/* Status action buttons */}
-                    <div className={styles.packItemActions}>
+                    <div className="packItemActions">
                       <button
-                        className={`${styles.miniBtn} ${styles.miniBtnDanger}`}
+                        className="miniBtn miniBtnDanger"
                         onClick={() => toggleItemStatus(item.id, 'fehlt')}
                         title="Als fehlend markieren"
                       >
                         {'\u274C'}
                       </button>
                       <button
-                        className={`${styles.miniBtn} ${styles.miniBtnWarning}`}
+                        className="miniBtn miniBtnWarning"
                         onClick={() => toggleItemStatus(item.id, 'ersetzt')}
                         title="Als ersetzt markieren"
                       >

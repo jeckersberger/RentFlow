@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { equipmentApi, maintenanceApi } from '../../services/api'
 import { SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
 import type { ElectricalTest, MaintenancePlan } from '../../types/maintenance'
-import styles from './Workshop.module.scss'
+import './Workshop.scss'
 
 type TabKey = 'repairs' | 'inspections' | 'lost' | 'inventory'
 
@@ -222,22 +222,22 @@ function WorkshopPage() {
 
   const getPriorityClass = (priority: string) => {
     switch (priority) {
-      case 'Hoch': return styles.priorityHigh
-      case 'Mittel': return styles.priorityMedium
-      case 'Niedrig': return styles.priorityLow
-      default: return styles.priorityMedium
+      case 'Hoch': return 'priorityHigh'
+      case 'Mittel': return 'priorityMedium'
+      case 'Niedrig': return 'priorityLow'
+      default: return 'priorityMedium'
     }
   }
 
   const getStatusClass = (status: string) => {
     switch (status) {
-      case 'Offen': return styles.statusOpen
-      case 'In Arbeit': return styles.statusProgress
-      case 'Erledigt': return styles.statusDone
-      case 'Fällig': return styles.statusWarning
-      case 'Überfällig': return styles.statusDanger
-      case 'Geplant': return styles.statusPlanned
-      case 'Bestanden': return styles.statusDone
+      case 'Offen': return 'statusOpen'
+      case 'In Arbeit': return 'statusProgress'
+      case 'Erledigt': return 'statusDone'
+      case 'Fällig': return 'statusWarning'
+      case 'Überfällig': return 'statusDanger'
+      case 'Geplant': return 'statusPlanned'
+      case 'Bestanden': return 'statusDone'
       default: return ''
     }
   }
@@ -309,64 +309,64 @@ function WorkshopPage() {
   const overdueInspections = inspections.filter(i => i.status === 'Überfällig').length
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <div className="page">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Werkstatt</h1>
-          <p className={styles.subtitle}>Reparaturen, Prüfungen und Bestandsverwaltung</p>
+          <h1 className="title">Werkstatt</h1>
+          <p className="subtitle">Reparaturen, Prüfungen und Bestandsverwaltung</p>
         </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnPrimary} onClick={() => setShowRepairModal(true)}>
+        <div className="headerActions">
+          <button className="btnPrimary" onClick={() => setShowRepairModal(true)}>
             + Reparatur melden
           </button>
-          <button className={styles.btnSecondary} onClick={() => { setActiveTab('inspections'); setShowPlanModal(true) }}>
+          <button className="btnSecondary" onClick={() => { setActiveTab('inspections'); setShowPlanModal(true) }}>
             + Wartungsplan erstellen
           </button>
-          <button className={styles.btnSecondary} onClick={() => { setActiveTab('inspections'); setShowECheckModal(true) }}>
+          <button className="btnSecondary" onClick={() => { setActiveTab('inspections'); setShowECheckModal(true) }}>
             + E-Check erstellen
           </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className={styles.statsGrid}>
-        <div className={`${styles.statCard} ${openRepairs > 0 ? styles.statCardDanger : ''}`}>
-          <div className={styles.statLabel}>Offene Reparaturen</div>
-          <div className={styles.statValue}>{openRepairs}</div>
+      <div className="statsGrid">
+        <div className={`statCard ${openRepairs > 0 ? 'statCardDanger' : ''}`}>
+          <div className="statLabel">Offene Reparaturen</div>
+          <div className="statValue">{openRepairs}</div>
         </div>
-        <div className={`${styles.statCard} ${inProgressRepairs > 0 ? styles.statCardWarning : ''}`}>
-          <div className={styles.statLabel}>In Arbeit</div>
-          <div className={styles.statValue}>{inProgressRepairs}</div>
+        <div className={`statCard ${inProgressRepairs > 0 ? 'statCardWarning' : ''}`}>
+          <div className="statLabel">In Arbeit</div>
+          <div className="statValue">{inProgressRepairs}</div>
         </div>
-        <div className={`${styles.statCard} ${overdueInspections > 0 ? styles.statCardDanger : ''}`}>
-          <div className={styles.statLabel}>Überfällige Prüfungen</div>
-          <div className={styles.statValue}>{overdueInspections}</div>
+        <div className={`statCard ${overdueInspections > 0 ? 'statCardDanger' : ''}`}>
+          <div className="statLabel">Überfällige Prüfungen</div>
+          <div className="statValue">{overdueInspections}</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>E-Checks gesamt</div>
-          <div className={styles.statValue}>{electricalTests.length}</div>
+        <div className="statCard">
+          <div className="statLabel">E-Checks gesamt</div>
+          <div className="statValue">{electricalTests.length}</div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className={styles.tabBar}>
+      <div className="tabBar">
         {tabs.map(tab => (
           <button
             key={tab.key}
-            className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+            className={`tab ${activeTab === tab.key ? 'tabActive' : ''}`}
             onClick={() => setActiveTab(tab.key)}
           >
             {tab.label}
-            {tab.count > 0 && <span className={styles.tabBadge}>{tab.count}</span>}
+            {tab.count > 0 && <span className="tabBadge">{tab.count}</span>}
           </button>
         ))}
       </div>
 
       {/* Filter */}
-      <div className={styles.filterBar}>
+      <div className="filterBar">
         <input
           type="text"
-          className={styles.searchInput}
+          className="searchInput"
           placeholder="Suchen..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
@@ -374,19 +374,19 @@ function WorkshopPage() {
       </div>
 
       {/* Content */}
-      <div className={styles.tableCard}>
+      <div className="tableCard">
         {isLoading ? (
           <SkeletonTable rows={5} columns={5} />
         ) : activeTab === 'repairs' ? (
           repairs.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>🔧</div>
-              <h3 className={styles.emptyTitle}>Keine Reparaturen</h3>
-              <p className={styles.emptyDescription}>Alle Geräte sind in einwandfreiem Zustand.</p>
-              <button className={styles.btnPrimary} onClick={() => setShowRepairModal(true)}>Reparatur melden</button>
+            <div className="emptyState">
+              <div className="emptyIcon">🔧</div>
+              <h3 className="emptyTitle">Keine Reparaturen</h3>
+              <p className="emptyDescription">Alle Geräte sind in einwandfreiem Zustand.</p>
+              <button className="btnPrimary" onClick={() => setShowRepairModal(true)}>Reparatur melden</button>
             </div>
           ) : (
-            <table className={styles.table}>
+            <table className="table">
               <thead>
                 <tr>
                   <th>Equipment</th>
@@ -400,12 +400,12 @@ function WorkshopPage() {
               <tbody>
                 {repairs.filter(r => r.equipmentName.toLowerCase().includes(searchQuery.toLowerCase())).map(repair => (
                   <tr key={repair.id}>
-                    <td className={styles.equipmentName}>{repair.equipmentName}</td>
+                    <td className="equipmentName">{repair.equipmentName}</td>
                     <td>{repair.defect}</td>
-                    <td><span className={`${styles.badge} ${getPriorityClass(repair.priority)}`}>{repair.priority}</span></td>
-                    <td><span className={`${styles.badge} ${getStatusClass(repair.status)}`}>{repair.status}</span></td>
-                    <td className={styles.assignee}>{repair.assignedTo}</td>
-                    <td className={styles.dateCell}>{formatDate(repair.createdAt)}</td>
+                    <td><span className={`badge ${getPriorityClass(repair.priority)}`}>{repair.priority}</span></td>
+                    <td><span className={`badge ${getStatusClass(repair.status)}`}>{repair.status}</span></td>
+                    <td className="assignee">{repair.assignedTo}</td>
+                    <td className="dateCell">{formatDate(repair.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -414,18 +414,18 @@ function WorkshopPage() {
         ) : activeTab === 'inspections' ? (
           <div>
             {/* Wartungspläne */}
-            <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>Wartungspläne</h3>
-              <button className={styles.btnSmallPrimary} onClick={() => setShowPlanModal(true)}>
+            <div className="sectionHeader">
+              <h3 className="sectionTitle">Wartungspläne</h3>
+              <button className="btnSmallPrimary" onClick={() => setShowPlanModal(true)}>
                 + Wartungsplan erstellen
               </button>
             </div>
             {plans.length === 0 ? (
-              <div className={styles.emptyStateCompact}>
-                <p className={styles.emptyDescription}>Noch keine Wartungspläne angelegt.</p>
+              <div className="emptyStateCompact">
+                <p className="emptyDescription">Noch keine Wartungspläne angelegt.</p>
               </div>
             ) : (
-              <table className={styles.table}>
+              <table className="table">
                 <thead>
                   <tr>
                     <th>Equipment</th>
@@ -438,11 +438,11 @@ function WorkshopPage() {
                 <tbody>
                   {inspections.filter(i => i.equipmentName.toLowerCase().includes(searchQuery.toLowerCase())).map(insp => (
                     <tr key={insp.id}>
-                      <td className={styles.equipmentName}>{insp.equipmentName}</td>
+                      <td className="equipmentName">{insp.equipmentName}</td>
                       <td>{plans.find((p: any) => p.id === insp.id)?.name || '—'}</td>
-                      <td><span className={styles.typeBadge}>{INTERVAL_LABELS[insp.type] || insp.type}</span></td>
-                      <td className={styles.dateCell}>{formatDate(insp.nextDate)}</td>
-                      <td><span className={`${styles.badge} ${getStatusClass(insp.status)}`}>{insp.status}</span></td>
+                      <td><span className="typeBadge">{INTERVAL_LABELS[insp.type] || insp.type}</span></td>
+                      <td className="dateCell">{formatDate(insp.nextDate)}</td>
+                      <td><span className={`badge ${getStatusClass(insp.status)}`}>{insp.status}</span></td>
                     </tr>
                   ))}
                 </tbody>
@@ -450,18 +450,18 @@ function WorkshopPage() {
             )}
 
             {/* E-Check / DGUV Prüfungen */}
-            <div className={styles.sectionHeader} style={{ marginTop: 'var(--spacing-6)' }}>
-              <h3 className={styles.sectionTitle}>E-Check / DGUV V3 Prüfungen</h3>
-              <button className={styles.btnSmallPrimary} onClick={() => setShowECheckModal(true)}>
+            <div className="sectionHeader" style={{ marginTop: 'var(--spacing-6)' }}>
+              <h3 className="sectionTitle">E-Check / DGUV V3 Prüfungen</h3>
+              <button className="btnSmallPrimary" onClick={() => setShowECheckModal(true)}>
                 + E-Check erstellen
               </button>
             </div>
             {electricalTests.length === 0 ? (
-              <div className={styles.emptyStateCompact}>
-                <p className={styles.emptyDescription}>Noch keine E-Checks durchgeführt.</p>
+              <div className="emptyStateCompact">
+                <p className="emptyDescription">Noch keine E-Checks durchgeführt.</p>
               </div>
             ) : (
-              <table className={styles.table}>
+              <table className="table">
                 <thead>
                   <tr>
                     <th>Equipment</th>
@@ -478,30 +478,30 @@ function WorkshopPage() {
                     .filter(t => (t.equipment_name || '').toLowerCase().includes(searchQuery.toLowerCase()))
                     .map((test: ElectricalTest) => (
                     <tr key={test.id}>
-                      <td className={styles.equipmentName}>{test.equipment_name || 'Unbekannt'}</td>
-                      <td className={styles.dateCell}>{formatDate(test.test_date)}</td>
-                      <td className={styles.dateCell}>{test.next_test_date ? formatDate(test.next_test_date) : '—'}</td>
+                      <td className="equipmentName">{test.equipment_name || 'Unbekannt'}</td>
+                      <td className="dateCell">{formatDate(test.test_date)}</td>
+                      <td className="dateCell">{test.next_test_date ? formatDate(test.next_test_date) : '—'}</td>
                       <td>{test.tester_id}</td>
                       <td>
-                        <span className={`${styles.badge} ${styles[RESULT_CLASS[test.result]] || ''}`}>
+                        <span className={`badge ${RESULT_CLASS[test.result] || ''}`}>
                           {RESULT_LABELS[test.result] || test.result}
                         </span>
                       </td>
-                      <td className={styles.measurementCell}>
+                      <td className="measurementCell">
                         {test.insulation_resistance_mohm != null && (
-                          <span className={styles.measurement}>Iso: {test.insulation_resistance_mohm} MOhm</span>
+                          <span className="measurement">Iso: {test.insulation_resistance_mohm} MOhm</span>
                         )}
                         {test.protective_conductor_resistance_ohm != null && (
-                          <span className={styles.measurement}>SL: {test.protective_conductor_resistance_ohm} Ohm</span>
+                          <span className="measurement">SL: {test.protective_conductor_resistance_ohm} Ohm</span>
                         )}
                         {test.leakage_current_ma != null && (
-                          <span className={styles.measurement}>Abl: {test.leakage_current_ma} mA</span>
+                          <span className="measurement">Abl: {test.leakage_current_ma} mA</span>
                         )}
                         {test.insulation_resistance_mohm == null && test.protective_conductor_resistance_ohm == null && test.leakage_current_ma == null && '—'}
                       </td>
                       <td>
                         <button
-                          className={styles.btnSmallSecondary}
+                          className="btnSmallSecondary"
                           onClick={() => handlePrintLabel(test)}
                           title="Prüfplakette drucken"
                         >
@@ -516,13 +516,13 @@ function WorkshopPage() {
           </div>
         ) : activeTab === 'lost' ? (
           lostItems.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📦</div>
-              <h3 className={styles.emptyTitle}>Keine verlorenen Materialien</h3>
-              <p className={styles.emptyDescription}>Alle Materialien sind erfasst.</p>
+            <div className="emptyState">
+              <div className="emptyIcon">📦</div>
+              <h3 className="emptyTitle">Keine verlorenen Materialien</h3>
+              <p className="emptyDescription">Alle Materialien sind erfasst.</p>
             </div>
           ) : (
-            <table className={styles.table}>
+            <table className="table">
               <thead>
                 <tr>
                   <th>Equipment</th>
@@ -535,66 +535,66 @@ function WorkshopPage() {
               <tbody>
                 {lostItems.map(item => (
                   <tr key={item.id}>
-                    <td className={styles.equipmentName}>{item.equipmentName}</td>
+                    <td className="equipmentName">{item.equipmentName}</td>
                     <td>{item.lastSeen}</td>
-                    <td><span className={styles.projectTag}>{item.project}</span></td>
+                    <td><span className="projectTag">{item.project}</span></td>
                     <td>{item.reportedBy}</td>
-                    <td className={styles.dateCell}>{formatDate(item.reportedAt)}</td>
+                    <td className="dateCell">{formatDate(item.reportedAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )
         ) : (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📊</div>
-            <h3 className={styles.emptyTitle}>Bestandszählung</h3>
-            <p className={styles.emptyDescription}>
+          <div className="emptyState">
+            <div className="emptyIcon">📊</div>
+            <h3 className="emptyTitle">Bestandszählung</h3>
+            <p className="emptyDescription">
               Starten Sie eine neue Bestandszählung, um Ihren Lagerbestand abzugleichen.
             </p>
-            <button className={styles.btnPrimary}>Zählung starten</button>
+            <button className="btnPrimary">Zählung starten</button>
           </div>
         )}
       </div>
 
       {/* Repair Modal */}
       {showRepairModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowRepairModal(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Reparatur melden</h2>
-              <button className={styles.modalClose} onClick={() => setShowRepairModal(false)}>&times;</button>
+        <div className="modalOverlay" onClick={() => setShowRepairModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modalHeader">
+              <h2 className="modalTitle">Reparatur melden</h2>
+              <button className="modalClose" onClick={() => setShowRepairModal(false)}>&times;</button>
             </div>
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Equipment</label>
-                <select className={styles.formSelect}>
+            <div className="modalBody">
+              <div className="formGroup">
+                <label className="formLabel">Equipment</label>
+                <select className="formSelect">
                   <option value="">Equipment auswählen...</option>
                   {equipment.map((e: any) => (
                     <option key={e.id} value={e.id}>{e.name}</option>
                   ))}
                 </select>
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Defektbeschreibung</label>
-                <textarea className={styles.formTextarea} rows={3} placeholder="Beschreiben Sie den Defekt..." />
+              <div className="formGroup">
+                <label className="formLabel">Defektbeschreibung</label>
+                <textarea className="formTextarea" rows={3} placeholder="Beschreiben Sie den Defekt..." />
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Priorität</label>
-                <select className={styles.formSelect}>
+              <div className="formGroup">
+                <label className="formLabel">Priorität</label>
+                <select className="formSelect">
                   <option value="Niedrig">Niedrig</option>
                   <option value="Mittel">Mittel</option>
                   <option value="Hoch">Hoch</option>
                 </select>
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Zuweisen an</label>
-                <input type="text" className={styles.formInput} placeholder="Mitarbeitername..." />
+              <div className="formGroup">
+                <label className="formLabel">Zuweisen an</label>
+                <input type="text" className="formInput" placeholder="Mitarbeitername..." />
               </div>
             </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.btnSecondary} onClick={() => setShowRepairModal(false)}>Abbrechen</button>
-              <button className={styles.btnPrimary} onClick={() => setShowRepairModal(false)}>Reparatur erstellen</button>
+            <div className="modalFooter">
+              <button className="btnSecondary" onClick={() => setShowRepairModal(false)}>Abbrechen</button>
+              <button className="btnPrimary" onClick={() => setShowRepairModal(false)}>Reparatur erstellen</button>
             </div>
           </div>
         </div>
@@ -602,17 +602,17 @@ function WorkshopPage() {
 
       {/* Wartungsplan Modal */}
       {showPlanModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowPlanModal(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Wartungsplan erstellen</h2>
-              <button className={styles.modalClose} onClick={() => setShowPlanModal(false)}>&times;</button>
+        <div className="modalOverlay" onClick={() => setShowPlanModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modalHeader">
+              <h2 className="modalTitle">Wartungsplan erstellen</h2>
+              <button className="modalClose" onClick={() => setShowPlanModal(false)}>&times;</button>
             </div>
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Equipment *</label>
+            <div className="modalBody">
+              <div className="formGroup">
+                <label className="formLabel">Equipment *</label>
                 <select
-                  className={styles.formSelect}
+                  className="formSelect"
                   value={planForm.equipment_id}
                   onChange={e => setPlanForm(f => ({ ...f, equipment_id: e.target.value }))}
                 >
@@ -622,20 +622,20 @@ function WorkshopPage() {
                   ))}
                 </select>
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Name *</label>
+              <div className="formGroup">
+                <label className="formLabel">Name *</label>
                 <input
                   type="text"
-                  className={styles.formInput}
+                  className="formInput"
                   placeholder="z.B. Jährliche DGUV V3 Prüfung"
                   value={planForm.name}
                   onChange={e => setPlanForm(f => ({ ...f, name: e.target.value }))}
                 />
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Plantyp</label>
+              <div className="formGroup">
+                <label className="formLabel">Plantyp</label>
                 <select
-                  className={styles.formSelect}
+                  className="formSelect"
                   value={planForm.plan_type}
                   onChange={e => setPlanForm(f => ({ ...f, plan_type: e.target.value as any }))}
                 >
@@ -645,10 +645,10 @@ function WorkshopPage() {
                 </select>
               </div>
               {planForm.plan_type === 'interval' && (
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Intervall</label>
+                <div className="formGroup">
+                  <label className="formLabel">Intervall</label>
                   <select
-                    className={styles.formSelect}
+                    className="formSelect"
                     value={planForm.interval_days}
                     onChange={e => setPlanForm(f => ({ ...f, interval_days: e.target.value }))}
                   >
@@ -660,19 +660,19 @@ function WorkshopPage() {
                   </select>
                 </div>
               )}
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Nächste Fälligkeit</label>
+              <div className="formGroup">
+                <label className="formLabel">Nächste Fälligkeit</label>
                 <input
                   type="date"
-                  className={styles.formInput}
+                  className="formInput"
                   value={planForm.next_due_at}
                   onChange={e => setPlanForm(f => ({ ...f, next_due_at: e.target.value }))}
                 />
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Beschreibung / Checkliste</label>
+              <div className="formGroup">
+                <label className="formLabel">Beschreibung / Checkliste</label>
                 <textarea
-                  className={styles.formTextarea}
+                  className="formTextarea"
                   rows={4}
                   placeholder="Prüfschritte, Checkliste, Hinweise..."
                   value={planForm.description}
@@ -680,10 +680,10 @@ function WorkshopPage() {
                 />
               </div>
             </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.btnSecondary} onClick={() => setShowPlanModal(false)}>Abbrechen</button>
+            <div className="modalFooter">
+              <button className="btnSecondary" onClick={() => setShowPlanModal(false)}>Abbrechen</button>
               <button
-                className={styles.btnPrimary}
+                className="btnPrimary"
                 onClick={handleCreatePlan}
                 disabled={!planForm.equipment_id || !planForm.name || isCreatingPlan}
               >
@@ -696,18 +696,18 @@ function WorkshopPage() {
 
       {/* E-Check Modal */}
       {showECheckModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowECheckModal(false)}>
-          <div className={styles.modalWide} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>E-Check / DGUV V3 Prüfung</h2>
-              <button className={styles.modalClose} onClick={() => setShowECheckModal(false)}>&times;</button>
+        <div className="modalOverlay" onClick={() => setShowECheckModal(false)}>
+          <div className="modalWide" onClick={e => e.stopPropagation()}>
+            <div className="modalHeader">
+              <h2 className="modalTitle">E-Check / DGUV V3 Prüfung</h2>
+              <button className="modalClose" onClick={() => setShowECheckModal(false)}>&times;</button>
             </div>
-            <div className={styles.modalBody}>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Equipment *</label>
+            <div className="modalBody">
+              <div className="formRow">
+                <div className="formGroup">
+                  <label className="formLabel">Equipment *</label>
                   <select
-                    className={styles.formSelect}
+                    className="formSelect"
                     value={eCheckForm.equipment_id}
                     onChange={e => setECheckForm(f => ({ ...f, equipment_id: e.target.value }))}
                   >
@@ -717,11 +717,11 @@ function WorkshopPage() {
                     ))}
                   </select>
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Prüfer *</label>
+                <div className="formGroup">
+                  <label className="formLabel">Prüfer *</label>
                   <input
                     type="text"
-                    className={styles.formInput}
+                    className="formInput"
                     placeholder="Name des Prüfers"
                     value={eCheckForm.tester_id}
                     onChange={e => setECheckForm(f => ({ ...f, tester_id: e.target.value }))}
@@ -729,20 +729,20 @@ function WorkshopPage() {
                 </div>
               </div>
 
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Prüfdatum *</label>
+              <div className="formRow">
+                <div className="formGroup">
+                  <label className="formLabel">Prüfdatum *</label>
                   <input
                     type="date"
-                    className={styles.formInput}
+                    className="formInput"
                     value={eCheckForm.test_date}
                     onChange={e => setECheckForm(f => ({ ...f, test_date: e.target.value }))}
                   />
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Prüfnorm</label>
+                <div className="formGroup">
+                  <label className="formLabel">Prüfnorm</label>
                   <select
-                    className={styles.formSelect}
+                    className="formSelect"
                     value={eCheckForm.test_type}
                     onChange={e => setECheckForm(f => ({ ...f, test_type: e.target.value as any }))}
                   >
@@ -752,18 +752,18 @@ function WorkshopPage() {
                 </div>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Ergebnis *</label>
-                <div className={styles.radioGroup}>
+              <div className="formGroup">
+                <label className="formLabel">Ergebnis *</label>
+                <div className="radioGroup">
                   {([['passed', 'Bestanden'], ['conditional', 'Bedingt bestanden'], ['failed', 'Nicht bestanden']] as const).map(([val, label]) => (
-                    <label key={val} className={`${styles.radioLabel} ${eCheckForm.result === val ? styles.radioLabelActive : ''}`}>
+                    <label key={val} className={`radioLabel ${eCheckForm.result === val ? 'radioLabelActive' : ''}`}>
                       <input
                         type="radio"
                         name="echeck-result"
                         value={val}
                         checked={eCheckForm.result === val}
                         onChange={() => setECheckForm(f => ({ ...f, result: val }))}
-                        className={styles.radioInput}
+                        className="radioInput"
                       />
                       {label}
                     </label>
@@ -771,60 +771,60 @@ function WorkshopPage() {
                 </div>
               </div>
 
-              <div className={styles.formRow}>
-                <label className={styles.checkboxLabel}>
+              <div className="formRow">
+                <label className="checkboxLabel">
                   <input
                     type="checkbox"
                     checked={eCheckForm.visual_inspection_ok}
                     onChange={e => setECheckForm(f => ({ ...f, visual_inspection_ok: e.target.checked }))}
-                    className={styles.checkboxInput}
+                    className="checkboxInput"
                   />
                   Sichtprüfung bestanden
                 </label>
-                <label className={styles.checkboxLabel}>
+                <label className="checkboxLabel">
                   <input
                     type="checkbox"
                     checked={eCheckForm.functional_test_ok}
                     onChange={e => setECheckForm(f => ({ ...f, functional_test_ok: e.target.checked }))}
-                    className={styles.checkboxInput}
+                    className="checkboxInput"
                   />
                   Funktionsprüfung bestanden
                 </label>
               </div>
 
-              <div className={styles.formSectionLabel}>Messwerte (optional)</div>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Isolationswiderstand (MOhm)</label>
+              <div className="formSectionLabel">Messwerte (optional)</div>
+              <div className="formRow">
+                <div className="formGroup">
+                  <label className="formLabel">Isolationswiderstand (MOhm)</label>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
-                    className={styles.formInput}
+                    className="formInput"
                     placeholder="z.B. 2.5"
                     value={eCheckForm.insulation_resistance_mohm}
                     onChange={e => setECheckForm(f => ({ ...f, insulation_resistance_mohm: e.target.value }))}
                   />
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Schutzleiterwiderstand (Ohm)</label>
+                <div className="formGroup">
+                  <label className="formLabel">Schutzleiterwiderstand (Ohm)</label>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
-                    className={styles.formInput}
+                    className="formInput"
                     placeholder="z.B. 0.15"
                     value={eCheckForm.protective_conductor_resistance_ohm}
                     onChange={e => setECheckForm(f => ({ ...f, protective_conductor_resistance_ohm: e.target.value }))}
                   />
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Ableitstrom (mA)</label>
+                <div className="formGroup">
+                  <label className="formLabel">Ableitstrom (mA)</label>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
-                    className={styles.formInput}
+                    className="formInput"
                     placeholder="z.B. 1.2"
                     value={eCheckForm.leakage_current_ma}
                     onChange={e => setECheckForm(f => ({ ...f, leakage_current_ma: e.target.value }))}
@@ -832,10 +832,10 @@ function WorkshopPage() {
                 </div>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Bemerkungen</label>
+              <div className="formGroup">
+                <label className="formLabel">Bemerkungen</label>
                 <textarea
-                  className={styles.formTextarea}
+                  className="formTextarea"
                   rows={3}
                   placeholder="Auffälligkeiten, Mängel, Hinweise..."
                   value={eCheckForm.notes}
@@ -843,10 +843,10 @@ function WorkshopPage() {
                 />
               </div>
             </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.btnSecondary} onClick={() => setShowECheckModal(false)}>Abbrechen</button>
+            <div className="modalFooter">
+              <button className="btnSecondary" onClick={() => setShowECheckModal(false)}>Abbrechen</button>
               <button
-                className={styles.btnPrimary}
+                className="btnPrimary"
                 onClick={handleCreateECheck}
                 disabled={!eCheckForm.equipment_id || !eCheckForm.tester_id || !eCheckForm.test_date || isCreatingECheck}
               >

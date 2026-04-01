@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
 import { crewApi, bookingApi } from '../../../services/api'
 import { Modal } from '../../../components/Modal/Modal'
-import styles from '../ProjectDetail.module.scss'
+import '../ProjectDetail.scss'
 
 interface CrewTabProps {
   project: Project
@@ -231,8 +231,8 @@ export function CrewTab({ project }: CrewTabProps) {
 
   return (
     <div>
-      <div className={styles.sectionHeader}>
-        <h3 className={styles.sectionTitle}>
+      <div className="sectionHeader">
+        <h3 className="sectionTitle">
           Crew & Team
           {!isLoading && ` (${assignments.length})`}
         </h3>
@@ -242,22 +242,22 @@ export function CrewTab({ project }: CrewTabProps) {
       </div>
 
       {isLoading ? (
-        <div className={styles.emptyState}>
-          <p className={styles.emptyStateText}>Crew-Daten werden geladen...</p>
+        <div className="emptyState">
+          <p className="emptyStateText">Crew-Daten werden geladen...</p>
         </div>
       ) : error ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>{'\u26A0\uFE0F'}</div>
-          <h4 className={styles.emptyStateTitle}>Fehler beim Laden</h4>
-          <p className={styles.emptyStateText}>
+        <div className="emptyState">
+          <div className="emptyStateIcon">{'\u26A0\uFE0F'}</div>
+          <h4 className="emptyStateTitle">Fehler beim Laden</h4>
+          <p className="emptyStateText">
             Crew-Daten konnten nicht geladen werden.
           </p>
         </div>
       ) : assignments.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>{'\u{1F465}'}</div>
-          <h4 className={styles.emptyStateTitle}>Keine Crew-Positionen</h4>
-          <p className={styles.emptyStateText}>
+        <div className="emptyState">
+          <div className="emptyStateIcon">{'\u{1F465}'}</div>
+          <h4 className="emptyStateTitle">Keine Crew-Positionen</h4>
+          <p className="emptyStateText">
             Fuegen Sie Positionen wie Soundtechniker, Lichttechniker oder Stagehand hinzu
             und weisen Sie Crew-Mitglieder zu.
           </p>
@@ -265,7 +265,7 @@ export function CrewTab({ project }: CrewTabProps) {
       ) : (
         <>
           <div style={{ overflowX: 'auto' }}>
-            <table className={styles.dataTable}>
+            <table className="dataTable">
               <thead>
                 <tr>
                   <th>Rolle</th>

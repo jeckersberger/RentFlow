@@ -11,7 +11,7 @@ import { TransportTab } from './tabs/TransportTab'
 import { DocumentsTab } from './tabs/DocumentsTab'
 import { CommunicationTab } from './tabs/CommunicationTab'
 import { HistoryTab } from './tabs/HistoryTab'
-import styles from './ProjectDetail.module.scss'
+import './ProjectDetail.scss'
 
 type TabId = 'overview' | 'equipment' | 'crew' | 'finance' | 'transport' | 'documents' | 'communication' | 'history'
 
@@ -57,15 +57,15 @@ function ProjectDetailPage() {
   })
 
   if (isLoading) {
-    return <div className={styles.loading}>Wird geladen...</div>
+    return <div className="loading">Wird geladen...</div>
   }
 
   if (error) {
-    return <div className={styles.error}>Fehler beim Laden des Projekts</div>
+    return <div className="error">Fehler beim Laden des Projekts</div>
   }
 
   if (!project) {
-    return <div className={styles.error}>Projekt nicht gefunden</div>
+    return <div className="error">Projekt nicht gefunden</div>
   }
 
   const formatDateShort = (date: string) =>
@@ -86,33 +86,33 @@ function ProjectDetailPage() {
   }
 
   return (
-    <div className={styles.projectDetail}>
+    <div className="projectDetail">
       {/* Project Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
+      <div className="header">
+        <div className="headerLeft">
           <div
-            className={styles.colorIndicator}
+            className="colorIndicator"
             style={{ backgroundColor: getStatusColor(project.status) }}
           />
-          <div className={styles.headerInfo}>
-            <p className={styles.projectNumber}>
+          <div className="headerInfo">
+            <p className="projectNumber">
               Projekt #{project.id?.slice(0, 8).toUpperCase() || '---'}
             </p>
-            <h1 className={styles.projectName}>{project.name}</h1>
-            <div className={styles.headerMeta}>
+            <h1 className="projectName">{project.name}</h1>
+            <div className="headerMeta">
               <StatusBadge status={project.status} />
-              <span className={styles.headerDates}>
+              <span className="headerDates">
                 {formatDateShort(project.start_date)} &ndash; {formatDateShort(project.end_date)}
               </span>
               {project.client_name && (
-                <span className={styles.headerDates}>
+                <span className="headerDates">
                   | {project.client_name}
                 </span>
               )}
             </div>
           </div>
         </div>
-        <div className={styles.headerActions}>
+        <div className="headerActions">
           <button
             className="btn btn--secondary"
             onClick={() => navigate('/projects')}
@@ -129,21 +129,21 @@ function ProjectDetailPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className={styles.tabBar}>
+      <div className="tabBar">
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
+            className={`tab ${activeTab === tab.id ? 'tabActive' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
-            <span className={styles.tabIcon}>{tab.icon}</span>
+            <span className="tabIcon">{tab.icon}</span>
             {tab.label}
           </button>
         ))}
       </div>
 
       {/* Tab Content */}
-      <div className={styles.tabContent}>
+      <div className="tabContent">
         {renderActiveTab()}
       </div>
     </div>

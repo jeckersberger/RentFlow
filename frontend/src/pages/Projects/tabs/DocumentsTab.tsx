@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
 import { documentApi } from '../../../services/api'
 import { getStatusLabel } from '../../../utils/statusLabels'
-import styles from '../ProjectDetail.module.scss'
+import '../ProjectDetail.scss'
 
 interface DocumentsTabProps {
   project: Project
@@ -110,8 +110,8 @@ export function DocumentsTab({ project }: DocumentsTabProps) {
 
   return (
     <div>
-      <div className={styles.sectionHeader}>
-        <h3 className={styles.sectionTitle}>
+      <div className="sectionHeader">
+        <h3 className="sectionTitle">
           Dokumente
           {!isLoading && ` (${documents.length})`}
         </h3>
@@ -148,22 +148,22 @@ export function DocumentsTab({ project }: DocumentsTabProps) {
       )}
 
       {isLoading ? (
-        <div className={styles.emptyState}>
-          <p className={styles.emptyStateText}>Dokumente werden geladen...</p>
+        <div className="emptyState">
+          <p className="emptyStateText">Dokumente werden geladen...</p>
         </div>
       ) : error ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>{'\u26A0\uFE0F'}</div>
-          <h4 className={styles.emptyStateTitle}>Fehler beim Laden</h4>
-          <p className={styles.emptyStateText}>
+        <div className="emptyState">
+          <div className="emptyStateIcon">{'\u26A0\uFE0F'}</div>
+          <h4 className="emptyStateTitle">Fehler beim Laden</h4>
+          <p className="emptyStateText">
             Dokumente konnten nicht geladen werden.
           </p>
         </div>
       ) : documents.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>{'\u{1F4C4}'}</div>
-          <h4 className={styles.emptyStateTitle}>Noch keine Dokumente</h4>
-          <p className={styles.emptyStateText}>
+        <div className="emptyState">
+          <div className="emptyStateIcon">{'\u{1F4C4}'}</div>
+          <h4 className="emptyStateTitle">Noch keine Dokumente</h4>
+          <p className="emptyStateText">
             Laden Sie ein Dokument hoch oder erstellen Sie ein Angebot/Packliste fuer dieses Projekt.
           </p>
           <button
@@ -176,7 +176,7 @@ export function DocumentsTab({ project }: DocumentsTabProps) {
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table className={styles.dataTable}>
+          <table className="dataTable">
             <thead>
               <tr>
                 <th>Typ</th>
@@ -194,7 +194,7 @@ export function DocumentsTab({ project }: DocumentsTabProps) {
                   <tr key={doc.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-                        <span className={styles.docTypeIcon}>
+                        <span className="docTypeIcon">
                           {DOC_TYPE_ICONS[docType] || '\u{1F4C4}'}
                         </span>
                         {DOC_TYPE_LABELS[docType] || docType}

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { mailApi, projectApi } from '../../services/api'
-import styles from './Mail.module.scss'
+import './Mail.scss'
 
 type TabKey = 'general' | 'invoices' | 'personal'
 
@@ -157,41 +157,41 @@ function MailInboxPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <div className="page">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>
+          <h1 className="title">
             Posteingang
-            {unreadTotal > 0 && <span className={styles.unreadCount}>{unreadTotal}</span>}
+            {unreadTotal > 0 && <span className="unreadCount">{unreadTotal}</span>}
           </h1>
-          <p className={styles.subtitle}>Eingehende Nachrichten und E-Mails verwalten</p>
+          <p className="subtitle">Eingehende Nachrichten und E-Mails verwalten</p>
         </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnPrimary} onClick={() => navigate('/mail/compose')}>
+        <div className="headerActions">
+          <button className="btnPrimary" onClick={() => navigate('/mail/compose')}>
             + Verfassen
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className={styles.tabBar}>
+      <div className="tabBar">
         {tabs.map(tab => (
           <button
             key={tab.key}
-            className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+            className={`tab ${activeTab === tab.key ? 'tabActive' : ''}`}
             onClick={() => { setActiveTab(tab.key); setSelectedEmail(null); }}
           >
             {tab.label}
-            {tab.count > 0 && <span className={styles.tabBadge}>{tab.count}</span>}
+            {tab.count > 0 && <span className="tabBadge">{tab.count}</span>}
           </button>
         ))}
       </div>
 
       {/* Filter */}
-      <div className={styles.filterBar}>
+      <div className="filterBar">
         <input
           type="text"
-          className={styles.searchInput}
+          className="searchInput"
           placeholder="E-Mails durchsuchen..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
@@ -199,36 +199,36 @@ function MailInboxPage() {
       </div>
 
       {/* Content: List + Detail */}
-      <div className={styles.mailLayout}>
+      <div className="mailLayout">
         {/* Email List */}
-        <div className={styles.mailList}>
+        <div className="mailList">
           {filteredEmails.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📭</div>
-              <h3 className={styles.emptyTitle}>Keine E-Mails</h3>
-              <p className={styles.emptyDescription}>Kein Posteingang in dieser Kategorie.</p>
+            <div className="emptyState">
+              <div className="emptyIcon">📭</div>
+              <h3 className="emptyTitle">Keine E-Mails</h3>
+              <p className="emptyDescription">Kein Posteingang in dieser Kategorie.</p>
             </div>
           ) : (
             filteredEmails.map(email => (
               <div
                 key={email.id}
-                className={`${styles.mailItem} ${!email.isRead ? styles.mailItemUnread : ''} ${selectedEmail?.id === email.id ? styles.mailItemSelected : ''}`}
+                className={`mailItem ${!email.isRead ? 'mailItemUnread' : ''} ${selectedEmail?.id === email.id ? 'mailItemSelected' : ''}`}
                 onClick={() => handleSelectEmail(email)}
               >
-                <div className={styles.mailItemHeader}>
-                  {!email.isRead && <span className={styles.unreadDot} />}
-                  <span className={`${styles.mailFrom} ${!email.isRead ? styles.mailFromBold : ''}`}>
+                <div className="mailItemHeader">
+                  {!email.isRead && <span className="unreadDot" />}
+                  <span className={`mailFrom ${!email.isRead ? 'mailFromBold' : ''}`}>
                     {email.from}
                   </span>
-                  <span className={styles.mailDate}>{formatDate(email.date)}</span>
+                  <span className="mailDate">{formatDate(email.date)}</span>
                 </div>
-                <div className={`${styles.mailSubject} ${!email.isRead ? styles.mailSubjectBold : ''}`}>
+                <div className={`mailSubject ${!email.isRead ? 'mailSubjectBold' : ''}`}>
                   {email.subject}
                 </div>
-                <div className={styles.mailPreview}>{email.preview}</div>
+                <div className="mailPreview">{email.preview}</div>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                   {email.project && (
-                    <span className={styles.projectBadge}>{email.project}</span>
+                    <span className="projectBadge">{email.project}</span>
                   )}
                   {email.ai_confidence && (
                     <span
@@ -254,14 +254,14 @@ function MailInboxPage() {
         </div>
 
         {/* Email Detail */}
-        <div className={styles.mailDetail}>
+        <div className="mailDetail">
           {selectedEmail ? (
             <>
-              <div className={styles.detailHeader}>
-                <h2 className={styles.detailSubject}>{selectedEmail.subject}</h2>
-                <div className={styles.detailMeta}>
-                  <span className={styles.detailFrom}>Von: {selectedEmail.from}</span>
-                  <span className={styles.detailDate}>
+              <div className="detailHeader">
+                <h2 className="detailSubject">{selectedEmail.subject}</h2>
+                <div className="detailMeta">
+                  <span className="detailFrom">Von: {selectedEmail.from}</span>
+                  <span className="detailDate">
                     {new Date(selectedEmail.date).toLocaleDateString('de-DE', {
                       day: '2-digit',
                       month: 'long',
@@ -273,7 +273,7 @@ function MailInboxPage() {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px', flexWrap: 'wrap' }}>
                   {selectedEmail.project && (
-                    <span className={styles.projectBadgeLarge}>{selectedEmail.project}</span>
+                    <span className="projectBadgeLarge">{selectedEmail.project}</span>
                   )}
                   {selectedEmail.ai_confidence && (
                     <span
@@ -293,22 +293,22 @@ function MailInboxPage() {
                   )}
                 </div>
               </div>
-              <div className={styles.detailBody}>
+              <div className="detailBody">
                 {selectedEmail.body ? (
                   <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedEmail.body) }} />
                 ) : (
                   <>
                     <p>{selectedEmail.preview}</p>
-                    <p className={styles.detailPlaceholder}>
+                    <p className="detailPlaceholder">
                       [Vollständiger E-Mail-Inhalt wird hier angezeigt]
                     </p>
                   </>
                 )}
               </div>
-              <div className={styles.detailActions}>
-                <button className={styles.btnSecondary} onClick={() => navigate('/mail/compose')}>Antworten</button>
-                <button className={styles.btnSecondary}>Weiterleiten</button>
-                <button className={styles.btnSecondary}>Archivieren</button>
+              <div className="detailActions">
+                <button className="btnSecondary" onClick={() => navigate('/mail/compose')}>Antworten</button>
+                <button className="btnSecondary">Weiterleiten</button>
+                <button className="btnSecondary">Archivieren</button>
                 {/* Project assignment */}
                 {assigningProject ? (
                   <select
@@ -335,7 +335,7 @@ function MailInboxPage() {
                   </select>
                 ) : (
                   <button
-                    className={styles.btnSecondary}
+                    className="btnSecondary"
                     onClick={() => setAssigningProject(true)}
                   >
                     Projekt zuordnen
@@ -344,8 +344,8 @@ function MailInboxPage() {
               </div>
             </>
           ) : (
-            <div className={styles.detailEmpty}>
-              <div className={styles.emptyIcon}>📬</div>
+            <div className="detailEmpty">
+              <div className="emptyIcon">📬</div>
               <p>Wählen Sie eine E-Mail aus, um sie zu lesen</p>
             </div>
           )}

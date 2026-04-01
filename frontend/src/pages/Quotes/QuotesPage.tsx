@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { quoteApi } from '../../services/api'
 import { Input } from '../../components/Form/Input'
-import styles from './Quotes.module.scss'
+import './Quotes.scss'
 
 type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'confirmed' | 'rejected' | 'expired'
 
@@ -95,17 +95,17 @@ function QuotesPage() {
   }
 
   return (
-    <div className={styles['quotes-page']}>
+    <div className="quotes-page">
       {/* Header */}
-      <div className={styles['page-header']}>
+      <div className="page-header">
         <div>
-          <h1 className={styles['page-title']}>Angebote</h1>
-          <p className={styles['page-subtitle']}>
+          <h1 className="page-title">Angebote</h1>
+          <p className="page-subtitle">
             {filteredQuotes.length} Angebot{filteredQuotes.length !== 1 ? 'e' : ''} gesamt
           </p>
         </div>
         <button
-          className={styles.btn + ' ' + styles['btn--primary']}
+          className="btn btn--primary"
           onClick={() => navigate('/quotes/new')}
         >
           + Angebot erstellen
@@ -113,11 +113,11 @@ function QuotesPage() {
       </div>
 
       {/* Status Tabs */}
-      <div className={styles['status-tabs']}>
+      <div className="status-tabs">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
-            className={`${styles.btn} ${selectedStatus === tab.value ? styles['btn--primary'] : styles['btn--secondary']}`}
+            className={`btn ${selectedStatus === tab.value ? 'btn--primary' : 'btn--secondary'}`}
             onClick={() => setSelectedStatus(tab.value as QuoteStatus | '')}
           >
             {tab.label}
@@ -126,7 +126,7 @@ function QuotesPage() {
       </div>
 
       {/* Search */}
-      <div className={styles['filters-bar']}>
+      <div className="filters-bar">
         <div style={{ flex: 1 }}>
           <Input
             type="text"
@@ -138,29 +138,29 @@ function QuotesPage() {
       </div>
 
       {error && (
-        <div className={styles['error-message']} role="alert">
+        <div className="error-message" role="alert">
           Fehler beim Laden der Angebote: {(error as any)?.message || 'Unbekannter Fehler'}
         </div>
       )}
 
       {/* Quotes Table */}
-      <div className={styles['quotes-table-container']}>
+      <div className="quotes-table-container">
         {isLoading ? (
-          <div className={styles['empty-state']}>
-            <h3 className={styles['empty-state-title']}>Daten werden geladen...</h3>
+          <div className="empty-state">
+            <h3 className="empty-state-title">Daten werden geladen...</h3>
           </div>
         ) : filteredQuotes.length === 0 ? (
-          <div className={styles['empty-state']}>
-            <div className={styles['empty-state-icon']}>&#128221;</div>
-            <h3 className={styles['empty-state-title']}>Keine Angebote gefunden</h3>
-            <p className={styles['empty-state-text']}>
+          <div className="empty-state">
+            <div className="empty-state-icon">&#128221;</div>
+            <h3 className="empty-state-title">Keine Angebote gefunden</h3>
+            <p className="empty-state-text">
               {searchQuery || selectedStatus
                 ? 'Versuchen Sie andere Suchkriterien.'
                 : 'Erstellen Sie Ihr erstes Angebot, um loszulegen.'}
             </p>
             {!searchQuery && !selectedStatus && (
               <button
-                className={styles.btn + ' ' + styles['btn--primary']}
+                className="btn btn--primary"
                 onClick={() => navigate('/quotes/new')}
                 style={{ marginTop: 'var(--spacing-3)' }}
               >
@@ -169,7 +169,7 @@ function QuotesPage() {
             )}
           </div>
         ) : (
-          <table className={styles['quotes-table']}>
+          <table className="quotes-table">
             <thead>
               <tr>
                 <th>Nummer</th>
@@ -204,7 +204,7 @@ function QuotesPage() {
                   </td>
                   <td>{quote.client_name}</td>
                   <td>
-                    <span className={`${styles['status-badge']} ${styles[`status-badge--${isExpired(quote) ? 'expired' : quote.status}`]}`}>
+                    <span className={`status-badge ${`status-badge--${isExpired(quote) ? 'expired' : quote.status}`}`}>
                       {isExpired(quote) ? STATUS_LABELS.expired : STATUS_LABELS[quote.status]}
                     </span>
                   </td>
@@ -216,7 +216,7 @@ function QuotesPage() {
                   <td>
                     <div style={{ display: 'flex', gap: 'var(--spacing-1)', justifyContent: 'flex-end' }}>
                       <button
-                        className={styles.btn + ' ' + styles['btn--secondary'] + ' ' + styles['btn--sm']}
+                        className="btn btn--secondary btn--sm"
                         onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`) }}
                         title="Anzeigen"
                       >

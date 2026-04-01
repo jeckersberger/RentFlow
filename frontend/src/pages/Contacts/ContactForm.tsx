@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Modal } from '../../components/Modal/Modal'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import styles from './Contacts.module.scss'
+import './Contacts.scss'
 
 export interface ContactFormData {
   type: 'company' | 'person'
@@ -117,11 +117,11 @@ export default function ContactForm({
       size="md"
       footer={
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className={styles.btn + ' ' + styles['btn--secondary']} onClick={onClose}>
+          <button className="btn btn--secondary" onClick={onClose}>
             Abbrechen
           </button>
           <button
-            className={styles.btn + ' ' + styles['btn--primary']}
+            className="btn btn--primary"
             onClick={handleSubmit}
             disabled={isLoading || (!form.company_name && !form.last_name)}
           >

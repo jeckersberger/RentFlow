@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { equipmentApi, projectApi } from '../../services/api'
-import styles from './Shortages.module.scss'
+import './Shortages.scss'
 
 type TabKey = 'rental' | 'sales' | 'sublease'
 
@@ -125,47 +125,47 @@ function ShortagesPage() {
   const totalShortage = shortages.reduce((sum, s) => sum + s.shortage, 0)
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <div className="page">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Engpässe</h1>
-          <p className={styles.subtitle}>Equipment-Engpässe und Überbuchungen frühzeitig erkennen</p>
+          <h1 className="title">Engpässe</h1>
+          <p className="subtitle">Equipment-Engpässe und Überbuchungen frühzeitig erkennen</p>
         </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnPrimary} onClick={() => openSubleaseModal()}>
+        <div className="headerActions">
+          <button className="btnPrimary" onClick={() => openSubleaseModal()}>
             + Zumietung anfragen
           </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className={styles.statsGrid}>
-        <div className={`${styles.statCard} ${criticalCount > 0 ? styles.statCardDanger : ''}`}>
-          <div className={styles.statLabel}>Kritische Engpässe</div>
-          <div className={styles.statValue}>{criticalCount}</div>
+      <div className="statsGrid">
+        <div className={`statCard ${criticalCount > 0 ? 'statCardDanger' : ''}`}>
+          <div className="statLabel">Kritische Engpässe</div>
+          <div className="statValue">{criticalCount}</div>
         </div>
-        <div className={`${styles.statCard} ${warningCount > 0 ? styles.statCardWarning : ''}`}>
-          <div className={styles.statLabel}>Warnungen</div>
-          <div className={styles.statValue}>{warningCount}</div>
+        <div className={`statCard ${warningCount > 0 ? 'statCardWarning' : ''}`}>
+          <div className="statLabel">Warnungen</div>
+          <div className="statValue">{warningCount}</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Fehlmenge gesamt</div>
-          <div className={styles.statValue}>{totalShortage}</div>
+        <div className="statCard">
+          <div className="statLabel">Fehlmenge gesamt</div>
+          <div className="statValue">{totalShortage}</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Betroffene Projekte</div>
-          <div className={styles.statValue}>
+        <div className="statCard">
+          <div className="statLabel">Betroffene Projekte</div>
+          <div className="statValue">
             {[...new Set(shortages.flatMap(s => s.affectedProjects))].length}
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className={styles.tabBar}>
+      <div className="tabBar">
         {tabs.map(tab => (
           <button
             key={tab.key}
-            className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+            className={`tab ${activeTab === tab.key ? 'tabActive' : ''}`}
             onClick={() => setActiveTab(tab.key)}
           >
             {tab.label}
@@ -174,10 +174,10 @@ function ShortagesPage() {
       </div>
 
       {/* Filter */}
-      <div className={styles.filterBar}>
+      <div className="filterBar">
         <input
           type="text"
-          className={styles.searchInput}
+          className="searchInput"
           placeholder="Equipment suchen..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
@@ -185,31 +185,31 @@ function ShortagesPage() {
       </div>
 
       {/* Content */}
-      <div className={styles.tableCard}>
+      <div className="tableCard">
         {isLoading ? (
-          <div className={styles.loadingState}>
-            <div className={styles.spinner} />
+          <div className="loadingState">
+            <div className="spinner" />
             <p>Engpässe werden berechnet...</p>
           </div>
         ) : activeTab === 'sublease' ? (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📋</div>
-            <h3 className={styles.emptyTitle}>Keine Zumietungsjobs</h3>
-            <p className={styles.emptyDescription}>
+          <div className="emptyState">
+            <div className="emptyIcon">📋</div>
+            <h3 className="emptyTitle">Keine Zumietungsjobs</h3>
+            <p className="emptyDescription">
               Erstellen Sie eine Zumietungsanfrage, wenn Equipment nicht verfügbar ist.
             </p>
-            <button className={styles.btnPrimary} onClick={() => openSubleaseModal()}>Zumietung anfragen</button>
+            <button className="btnPrimary" onClick={() => openSubleaseModal()}>Zumietung anfragen</button>
           </div>
         ) : filteredShortages.length === 0 ? (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>✅</div>
-            <h3 className={styles.emptyTitle}>Keine Engpässe</h3>
-            <p className={styles.emptyDescription}>
+          <div className="emptyState">
+            <div className="emptyIcon">✅</div>
+            <h3 className="emptyTitle">Keine Engpässe</h3>
+            <p className="emptyDescription">
               Alle Geräte sind in ausreichender Menge verfügbar.
             </p>
           </div>
         ) : (
-          <table className={styles.table}>
+          <table className="table">
             <thead>
               <tr>
                 <th>Equipment</th>
@@ -223,27 +223,27 @@ function ShortagesPage() {
             </thead>
             <tbody>
               {filteredShortages.map(shortage => (
-                <tr key={shortage.id} className={styles[`row${shortage.severity.charAt(0).toUpperCase() + shortage.severity.slice(1)}`]}>
+                <tr key={shortage.id} className={`row${shortage.severity.charAt(0).toUpperCase() + shortage.severity.slice(1)}`}>
                   <td>
-                    <span className={styles.equipmentName}>{shortage.equipmentName}</span>
+                    <span className="equipmentName">{shortage.equipmentName}</span>
                   </td>
                   <td>{shortage.required}</td>
                   <td>{shortage.available}</td>
                   <td>
-                    <span className={`${styles.shortageBadge} ${styles[`shortageBadge${shortage.severity.charAt(0).toUpperCase() + shortage.severity.slice(1)}`]}`}>
+                    <span className={`shortageBadge ${`shortageBadge${shortage.severity.charAt(0).toUpperCase() + shortage.severity.slice(1)}`}`}>
                       -{shortage.shortage}
                     </span>
                   </td>
                   <td>
-                    <div className={styles.projectTags}>
+                    <div className="projectTags">
                       {shortage.affectedProjects.map((p, i) => (
-                        <span key={i} className={styles.projectTag}>{p}</span>
+                        <span key={i} className="projectTag">{p}</span>
                       ))}
                     </div>
                   </td>
-                  <td className={styles.periodCell}>{shortage.period}</td>
+                  <td className="periodCell">{shortage.period}</td>
                   <td>
-                    <button className={styles.actionBtn} onClick={() => openSubleaseModal(shortage)}>
+                    <button className="actionBtn" onClick={() => openSubleaseModal(shortage)}>
                       Zumietung anfragen
                     </button>
                   </td>
@@ -255,41 +255,41 @@ function ShortagesPage() {
       </div>
       {/* Toast */}
       {toastMsg && (
-        <div className={styles.toast}>
-          <span className={styles.toastIcon}>&#10003;</span>
+        <div className="toast">
+          <span className="toastIcon">&#10003;</span>
           {toastMsg}
         </div>
       )}
 
       {/* Sublease Request Modal */}
       {subleaseModal.open && (
-        <div className={styles.modalBackdrop} onClick={closeSubleaseModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Zumietung anfragen</h2>
-              <button className={styles.modalClose} onClick={closeSubleaseModal}>&times;</button>
+        <div className="modalBackdrop" onClick={closeSubleaseModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modalHeader">
+              <h2 className="modalTitle">Zumietung anfragen</h2>
+              <button className="modalClose" onClick={closeSubleaseModal}>&times;</button>
             </div>
-            <div className={styles.modalBody}>
+            <div className="modalBody">
               {subleaseModal.shortage && (
-                <div className={styles.modalInfo}>
-                  <div className={styles.modalInfoRow}>
-                    <span className={styles.modalInfoLabel}>Equipment:</span>
-                    <span className={styles.modalInfoValue}>{subleaseModal.shortage.equipmentName}</span>
+                <div className="modalInfo">
+                  <div className="modalInfoRow">
+                    <span className="modalInfoLabel">Equipment:</span>
+                    <span className="modalInfoValue">{subleaseModal.shortage.equipmentName}</span>
                   </div>
-                  <div className={styles.modalInfoRow}>
-                    <span className={styles.modalInfoLabel}>Fehlmenge:</span>
-                    <span className={styles.modalInfoValue}>{subleaseModal.shortage.shortage} Stueck</span>
+                  <div className="modalInfoRow">
+                    <span className="modalInfoLabel">Fehlmenge:</span>
+                    <span className="modalInfoValue">{subleaseModal.shortage.shortage} Stueck</span>
                   </div>
-                  <div className={styles.modalInfoRow}>
-                    <span className={styles.modalInfoLabel}>Zeitraum:</span>
-                    <span className={styles.modalInfoValue}>{subleaseModal.shortage.period}</span>
+                  <div className="modalInfoRow">
+                    <span className="modalInfoLabel">Zeitraum:</span>
+                    <span className="modalInfoValue">{subleaseModal.shortage.period}</span>
                   </div>
                 </div>
               )}
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>Partner auswaehlen</label>
+              <div className="modalField">
+                <label className="modalLabel">Partner auswaehlen</label>
                 <select
-                  className={styles.modalSelect}
+                  className="modalSelect"
                   value={selectedPartner}
                   onChange={(e) => setSelectedPartner(e.target.value)}
                 >
@@ -299,10 +299,10 @@ function ShortagesPage() {
                   ))}
                 </select>
               </div>
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>Anmerkungen</label>
+              <div className="modalField">
+                <label className="modalLabel">Anmerkungen</label>
                 <textarea
-                  className={styles.modalTextarea}
+                  className="modalTextarea"
                   rows={3}
                   placeholder="Optionale Hinweise zur Anfrage..."
                   value={subleaseNote}
@@ -310,10 +310,10 @@ function ShortagesPage() {
                 />
               </div>
             </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.btnSecondary} onClick={closeSubleaseModal}>Abbrechen</button>
+            <div className="modalFooter">
+              <button className="btnSecondary" onClick={closeSubleaseModal}>Abbrechen</button>
               <button
-                className={styles.btnPrimary}
+                className="btnPrimary"
                 onClick={handleSubmitSublease}
                 disabled={!selectedPartner}
               >

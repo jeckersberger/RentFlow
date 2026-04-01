@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Project } from '../../../types/project'
 import { auditApi } from '../../../services/api'
-import styles from '../ProjectDetail.module.scss'
+import '../ProjectDetail.scss'
 
 interface HistoryTabProps {
   project: Project
@@ -104,15 +104,15 @@ export function HistoryTab({ project }: HistoryTabProps) {
 
   return (
     <div>
-      <div className={styles.sectionHeader}>
-        <h3 className={styles.sectionTitle}>Verlauf ({filtered.length})</h3>
+      <div className="sectionHeader">
+        <h3 className="sectionTitle">Verlauf ({filtered.length})</h3>
       </div>
 
-      <div className={styles.filterBar}>
+      <div className="filterBar">
         {FILTER_OPTIONS.map((opt) => (
           <button
             key={opt.value}
-            className={`${styles.filterBtn} ${filter === opt.value ? styles.filterBtnActive : ''}`}
+            className={`filterBtn ${filter === opt.value ? 'filterBtnActive' : ''}`}
             onClick={() => setFilter(opt.value)}
           >
             {opt.label}
@@ -121,23 +121,23 @@ export function HistoryTab({ project }: HistoryTabProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>{'\u{1F4DC}'}</div>
-          <h4 className={styles.emptyStateTitle}>Kein Verlauf</h4>
-          <p className={styles.emptyStateText}>
+        <div className="emptyState">
+          <div className="emptyStateIcon">{'\u{1F4DC}'}</div>
+          <h4 className="emptyStateTitle">Kein Verlauf</h4>
+          <p className="emptyStateText">
             Es wurden noch keine Aktivitaeten fuer dieses Projekt erfasst.
           </p>
         </div>
       ) : (
-        <div className={styles.timeline}>
+        <div className="timeline">
           {filtered.map((entry) => (
-            <div key={entry.id} className={styles.timelineItem}>
-              <div className={styles.timelineIcon}>
+            <div key={entry.id} className="timelineItem">
+              <div className="timelineIcon">
                 {ACTION_ICONS[entry.action_type!] || ACTION_ICONS.other}
               </div>
-              <div className={styles.timelineContent}>
-                <div className={styles.timelineHeader}>
-                  <span className={styles.timelineUser}>
+              <div className="timelineContent">
+                <div className="timelineHeader">
+                  <span className="timelineUser">
                     {entry.user_name || entry.user_id || 'System'}
                   </span>
                   <span style={{
@@ -149,11 +149,11 @@ export function HistoryTab({ project }: HistoryTabProps) {
                   }}>
                     {ACTION_LABELS[entry.action_type!] || 'Sonstig'}
                   </span>
-                  <span className={styles.timelineTime}>
+                  <span className="timelineTime">
                     {new Date(entry.timestamp).toLocaleString('de-DE')}
                   </span>
                 </div>
-                <div className={styles.timelineDescription}>
+                <div className="timelineDescription">
                   {entry.description || entry.details || `${entry.action_type} auf ${entry.entity_type || 'Projekt'}`}
                 </div>
               </div>

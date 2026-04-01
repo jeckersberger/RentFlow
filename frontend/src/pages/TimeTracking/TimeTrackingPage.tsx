@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { timeTrackingApi } from '../../services/api'
 import { SkeletonTable } from '../../components/Skeleton/SkeletonLoader'
-import styles from './TimeTracking.module.scss'
+import './TimeTracking.scss'
 
 type TabKey = 'hours' | 'activities' | 'absence'
 
@@ -152,10 +152,10 @@ function TimeTrackingPage() {
 
   const getStatusClass = (status: string) => {
     switch (status) {
-      case 'Offen': return styles.statusOpen
-      case 'Genehmigt': return styles.statusApproved
-      case 'Ausstehend': return styles.statusPending
-      case 'Abgelehnt': return styles.statusRejected
+      case 'Offen': return 'statusOpen'
+      case 'Genehmigt': return 'statusApproved'
+      case 'Ausstehend': return 'statusPending'
+      case 'Abgelehnt': return 'statusRejected'
       default: return ''
     }
   }
@@ -164,53 +164,53 @@ function TimeTrackingPage() {
   const activities: string[] = Array.from(new Set(timeEntries.map((e: TimeEntry) => e.activity))) as string[]
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <div className="page">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Zeiterfassung</h1>
-          <p className={styles.subtitle}>Arbeitszeiten erfassen und auswerten</p>
+          <h1 className="title">Zeiterfassung</h1>
+          <p className="subtitle">Arbeitszeiten erfassen und auswerten</p>
         </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnPrimary} onClick={() => setShowModal(true)}>
+        <div className="headerActions">
+          <button className="btnPrimary" onClick={() => setShowModal(true)}>
             + Zeit erfassen
           </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Stunden diese Woche</div>
-          <div className={styles.statValue}>{Math.floor(totalWeekHours / 60)}:{String(totalWeekHours % 60).padStart(2, '0')}</div>
+      <div className="statsGrid">
+        <div className="statCard">
+          <div className="statLabel">Stunden diese Woche</div>
+          <div className="statValue">{Math.floor(totalWeekHours / 60)}:{String(totalWeekHours % 60).padStart(2, '0')}</div>
         </div>
-        <div className={`${styles.statCard} ${openCount > 0 ? styles.statCardWarning : ''}`}>
-          <div className={styles.statLabel}>Offene Eintraege</div>
-          <div className={styles.statValue}>{openCount}</div>
+        <div className={`statCard ${openCount > 0 ? 'statCardWarning' : ''}`}>
+          <div className="statLabel">Offene Eintraege</div>
+          <div className="statValue">{openCount}</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Mitarbeiter aktiv</div>
-          <div className={styles.statValue}>{[...new Set(timeEntries.map((e: TimeEntry) => e.employee))].length}</div>
+        <div className="statCard">
+          <div className="statLabel">Mitarbeiter aktiv</div>
+          <div className="statValue">{[...new Set(timeEntries.map((e: TimeEntry) => e.employee))].length}</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Projekte diese Woche</div>
-          <div className={styles.statValue}>{[...new Set(timeEntries.map((e: TimeEntry) => e.project))].length}</div>
+        <div className="statCard">
+          <div className="statLabel">Projekte diese Woche</div>
+          <div className="statValue">{[...new Set(timeEntries.map((e: TimeEntry) => e.project))].length}</div>
         </div>
       </div>
 
       {/* Weekly Summary Bar Chart */}
-      <div className={styles.weeklyCard}>
-        <h3 className={styles.weeklyTitle}>Wochenübersicht</h3>
-        <div className={styles.weeklyChart}>
+      <div className="weeklyCard">
+        <h3 className="weeklyTitle">Wochenübersicht</h3>
+        <div className="weeklyChart">
           {weeklySummary.map((day, idx) => (
-            <div key={idx} className={styles.weeklyBar}>
-              <div className={styles.barContainer}>
+            <div key={idx} className="weeklyBar">
+              <div className="barContainer">
                 <div
-                  className={styles.bar}
+                  className="bar"
                   style={{ height: `${day.totalMinutes > 0 ? (day.totalMinutes / maxMinutes) * 100 : 0}%` }}
                 />
               </div>
-              <div className={styles.barLabel}>{day.label}</div>
-              <div className={styles.barValue}>
+              <div className="barLabel">{day.label}</div>
+              <div className="barValue">
                 {day.hours > 0 ? `${day.hours}:${String(day.minutes).padStart(2, '0')}` : '-'}
               </div>
             </div>
@@ -219,11 +219,11 @@ function TimeTrackingPage() {
       </div>
 
       {/* Tabs */}
-      <div className={styles.tabBar}>
+      <div className="tabBar">
         {tabs.map(tab => (
           <button
             key={tab.key}
-            className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+            className={`tab ${activeTab === tab.key ? 'tabActive' : ''}`}
             onClick={() => setActiveTab(tab.key)}
           >
             {tab.label}
@@ -232,10 +232,10 @@ function TimeTrackingPage() {
       </div>
 
       {/* Filter */}
-      <div className={styles.filterBar}>
+      <div className="filterBar">
         <input
           type="text"
-          className={styles.searchInput}
+          className="searchInput"
           placeholder="Mitarbeiter oder Projekt suchen..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
@@ -243,21 +243,21 @@ function TimeTrackingPage() {
       </div>
 
       {/* Content */}
-      <div className={styles.tableCard}>
+      <div className="tableCard">
         {activeTab === 'hours' ? (
           isLoadingEntries ? (
             <SkeletonTable rows={5} columns={5} />
           ) : filteredEntries.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'⏰'}</div>
-              <h3 className={styles.emptyTitle}>Keine Zeiteintraege</h3>
-              <p className={styles.emptyDescription}>
+            <div className="emptyState">
+              <div className="emptyIcon">{'⏰'}</div>
+              <h3 className="emptyTitle">Keine Zeiteintraege</h3>
+              <p className="emptyDescription">
                 {searchQuery ? 'Keine Eintraege gefunden. Versuchen Sie eine andere Suche.' : 'Erfassen Sie Arbeitszeiten fuer Ihr Team.'}
               </p>
-              {!searchQuery && <button className={styles.btnPrimary} onClick={() => setShowModal(true)}>Zeit erfassen</button>}
+              {!searchQuery && <button className="btnPrimary" onClick={() => setShowModal(true)}>Zeit erfassen</button>}
             </div>
           ) : (
-            <table className={styles.table}>
+            <table className="table">
               <thead>
                 <tr>
                   <th>Datum</th>
@@ -273,14 +273,14 @@ function TimeTrackingPage() {
               <tbody>
                 {filteredEntries.map((entry: TimeEntry) => (
                   <tr key={entry.id}>
-                    <td className={styles.dateCell}>{formatDate(entry.date)}</td>
-                    <td className={styles.employeeName}>{entry.employee}</td>
-                    <td><span className={styles.projectTag}>{entry.project}</span></td>
+                    <td className="dateCell">{formatDate(entry.date)}</td>
+                    <td className="employeeName">{entry.employee}</td>
+                    <td><span className="projectTag">{entry.project}</span></td>
                     <td>{entry.activity}</td>
-                    <td className={styles.timeCell}>{entry.start}</td>
-                    <td className={styles.timeCell}>{entry.end}</td>
-                    <td className={styles.durationCell}>{entry.duration}</td>
-                    <td><span className={`${styles.badge} ${getStatusClass(entry.status)}`}>{entry.status}</span></td>
+                    <td className="timeCell">{entry.start}</td>
+                    <td className="timeCell">{entry.end}</td>
+                    <td className="durationCell">{entry.duration}</td>
+                    <td><span className={`badge ${getStatusClass(entry.status)}`}>{entry.status}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -290,13 +290,13 @@ function TimeTrackingPage() {
           isLoadingEntries ? (
             <SkeletonTable rows={5} columns={4} />
           ) : activities.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'📊'}</div>
-              <h3 className={styles.emptyTitle}>Keine Aktivitaeten</h3>
-              <p className={styles.emptyDescription}>Aktivitaeten werden angezeigt, sobald Zeiteintraege erfasst werden.</p>
+            <div className="emptyState">
+              <div className="emptyIcon">{'📊'}</div>
+              <h3 className="emptyTitle">Keine Aktivitaeten</h3>
+              <p className="emptyDescription">Aktivitaeten werden angezeigt, sobald Zeiteintraege erfasst werden.</p>
             </div>
           ) : (
-          <div className={styles.activitiesList}>
+          <div className="activitiesList">
             {activities.map((act, idx) => {
               const actEntries = timeEntries.filter((e: TimeEntry) => e.activity === act)
               const totalMins = actEntries.reduce((sum: number, e: TimeEntry) => {
@@ -305,14 +305,14 @@ function TimeTrackingPage() {
               }, 0)
               const maxMins = Math.max(...activities.map(a => timeEntries.filter((e: TimeEntry) => e.activity === a).reduce((s: number, e: TimeEntry) => { const [h, m] = e.duration.split(':').map(Number); return s + (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m); }, 0)), 1)
               return (
-                <div key={idx} className={styles.activityItem}>
-                  <div className={styles.activityName}>{act}</div>
-                  <div className={styles.activityMeta}>
+                <div key={idx} className="activityItem">
+                  <div className="activityName">{act}</div>
+                  <div className="activityMeta">
                     {actEntries.length} Eintraege &bull; {Math.floor(totalMins / 60)}:{String(totalMins % 60).padStart(2, '0')} Stunden
                   </div>
-                  <div className={styles.activityBar}>
+                  <div className="activityBar">
                     <div
-                      className={styles.activityBarFill}
+                      className="activityBarFill"
                       style={{ width: `${(totalMins / maxMins) * 100}%` }}
                     />
                   </div>
@@ -325,13 +325,13 @@ function TimeTrackingPage() {
           isLoadingAbsences ? (
             <SkeletonTable rows={5} columns={4} />
           ) : absences.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>{'📅'}</div>
-              <h3 className={styles.emptyTitle}>Keine Abwesenheiten</h3>
-              <p className={styles.emptyDescription}>Abwesenheiten werden hier angezeigt, sobald sie erfasst werden.</p>
+            <div className="emptyState">
+              <div className="emptyIcon">{'📅'}</div>
+              <h3 className="emptyTitle">Keine Abwesenheiten</h3>
+              <p className="emptyDescription">Abwesenheiten werden hier angezeigt, sobald sie erfasst werden.</p>
             </div>
           ) : (
-            <table className={styles.table}>
+            <table className="table">
               <thead>
                 <tr>
                   <th>Mitarbeiter</th>
@@ -345,12 +345,12 @@ function TimeTrackingPage() {
               <tbody>
                 {absences.map((abs: AbsenceEntry) => (
                   <tr key={abs.id}>
-                    <td className={styles.employeeName}>{abs.employee}</td>
+                    <td className="employeeName">{abs.employee}</td>
                     <td>{abs.type}</td>
-                    <td className={styles.dateCell}>{formatDate(abs.from)}</td>
-                    <td className={styles.dateCell}>{formatDate(abs.to)}</td>
+                    <td className="dateCell">{formatDate(abs.from)}</td>
+                    <td className="dateCell">{formatDate(abs.to)}</td>
                     <td>{abs.days}</td>
-                    <td><span className={`${styles.badge} ${getStatusClass(abs.status)}`}>{abs.status}</span></td>
+                    <td><span className={`badge ${getStatusClass(abs.status)}`}>{abs.status}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -361,39 +361,39 @@ function TimeTrackingPage() {
 
       {/* Time Entry Modal */}
       {showModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Zeit erfassen</h2>
-              <button className={styles.modalClose} onClick={() => setShowModal(false)}>&times;</button>
+        <div className="modalOverlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modalHeader">
+              <h2 className="modalTitle">Zeit erfassen</h2>
+              <button className="modalClose" onClick={() => setShowModal(false)}>&times;</button>
             </div>
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Datum</label>
-                <input type="date" className={styles.formInput} value={formDate} onChange={e => setFormDate(e.target.value)} />
+            <div className="modalBody">
+              <div className="formGroup">
+                <label className="formLabel">Datum</label>
+                <input type="date" className="formInput" value={formDate} onChange={e => setFormDate(e.target.value)} />
               </div>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Start</label>
-                  <input type="time" className={styles.formInput} value={formStart} onChange={e => setFormStart(e.target.value)} />
+              <div className="formRow">
+                <div className="formGroup">
+                  <label className="formLabel">Start</label>
+                  <input type="time" className="formInput" value={formStart} onChange={e => setFormStart(e.target.value)} />
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Ende</label>
-                  <input type="time" className={styles.formInput} value={formEnd} onChange={e => setFormEnd(e.target.value)} />
+                <div className="formGroup">
+                  <label className="formLabel">Ende</label>
+                  <input type="time" className="formInput" value={formEnd} onChange={e => setFormEnd(e.target.value)} />
                 </div>
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Projekt</label>
-                <select className={styles.formSelect}>
+              <div className="formGroup">
+                <label className="formLabel">Projekt</label>
+                <select className="formSelect">
                   <option value="">Projekt auswählen...</option>
                   <option>Stadtfest München 2026</option>
                   <option>Firmen-Gala TechCorp</option>
                   <option>Open Air Festival Bodensee</option>
                 </select>
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Aktivität</label>
-                <select className={styles.formSelect}>
+              <div className="formGroup">
+                <label className="formLabel">Aktivität</label>
+                <select className="formSelect">
                   <option value="">Aktivität auswählen...</option>
                   <option>Aufbau</option>
                   <option>Abbau</option>
@@ -404,14 +404,14 @@ function TimeTrackingPage() {
                   <option>Vorbereitung</option>
                 </select>
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Notizen</label>
-                <textarea className={styles.formTextarea} rows={2} placeholder="Optionale Notizen..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
+              <div className="formGroup">
+                <label className="formLabel">Notizen</label>
+                <textarea className="formTextarea" rows={2} placeholder="Optionale Notizen..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
               </div>
             </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.btnSecondary} onClick={() => setShowModal(false)}>Abbrechen</button>
-              <button className={styles.btnPrimary} disabled={isSaving} onClick={async () => {
+            <div className="modalFooter">
+              <button className="btnSecondary" onClick={() => setShowModal(false)}>Abbrechen</button>
+              <button className="btnPrimary" disabled={isSaving} onClick={async () => {
                 setIsSaving(true)
                 try {
                   await timeTrackingApi.createEntry({

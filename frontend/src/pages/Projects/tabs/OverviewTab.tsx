@@ -1,5 +1,5 @@
 import { Project } from '../../../types/project'
-import styles from '../ProjectDetail.module.scss'
+import '../ProjectDetail.scss'
 
 interface OverviewTabProps {
   project: Project
@@ -51,96 +51,96 @@ export function OverviewTab({ project }: OverviewTabProps) {
 
   return (
     <div>
-      <div className={styles.overviewGrid}>
+      <div className="overviewGrid">
         {/* Project Info Card */}
-        <div className={styles.glassCard}>
-          <div className={styles.glassCardTitle}>
-            <span className={styles.glassCardTitleIcon}>i</span>
+        <div className="glassCard">
+          <div className="glassCardTitle">
+            <span className="glassCardTitleIcon">i</span>
             Projektinformationen
           </div>
-          <div className={styles.infoRow}>
-            <span className={styles.infoLabel}>Name</span>
-            <span className={styles.infoValue}>{project.name}</span>
+          <div className="infoRow">
+            <span className="infoLabel">Name</span>
+            <span className="infoValue">{project.name}</span>
           </div>
-          <div className={styles.infoRow}>
-            <span className={styles.infoLabel}>Status</span>
-            <span className={styles.infoValue}>
+          <div className="infoRow">
+            <span className="infoLabel">Status</span>
+            <span className="infoValue">
               {STATUS_LABELS[project.status] || project.status}
             </span>
           </div>
           {project.project_manager && (
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Projektleiter</span>
-              <span className={styles.infoValue}>{project.project_manager}</span>
+            <div className="infoRow">
+              <span className="infoLabel">Projektleiter</span>
+              <span className="infoValue">{project.project_manager}</span>
             </div>
           )}
           {project.budget != null && project.budget > 0 && (
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Budget</span>
-              <span className={styles.infoValue}>
+            <div className="infoRow">
+              <span className="infoLabel">Budget</span>
+              <span className="infoValue">
                 {project.budget.toLocaleString('de-DE', { style: 'currency', currency: project.currency || 'EUR' })}
               </span>
             </div>
           )}
-          <div className={styles.infoRow}>
-            <span className={styles.infoLabel}>Planungszeitraum</span>
-            <span className={styles.infoValue}>
+          <div className="infoRow">
+            <span className="infoLabel">Planungszeitraum</span>
+            <span className="infoValue">
               {formatDate(project.start_date)} &ndash; {formatDate(project.end_date)}
             </span>
           </div>
           {project.setup_date && (
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Aufbau</span>
-              <span className={styles.infoValue}>{formatDate(project.setup_date)}</span>
+            <div className="infoRow">
+              <span className="infoLabel">Aufbau</span>
+              <span className="infoValue">{formatDate(project.setup_date)}</span>
             </div>
           )}
           {project.teardown_date && (
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Abbau</span>
-              <span className={styles.infoValue}>{formatDate(project.teardown_date)}</span>
+            <div className="infoRow">
+              <span className="infoLabel">Abbau</span>
+              <span className="infoValue">{formatDate(project.teardown_date)}</span>
             </div>
           )}
         </div>
 
         {/* Client Card */}
-        <div className={styles.glassCard}>
-          <div className={styles.glassCardTitle}>
-            <span className={styles.glassCardTitleIcon}>C</span>
+        <div className="glassCard">
+          <div className="glassCardTitle">
+            <span className="glassCardTitleIcon">C</span>
             Auftraggeber
           </div>
           {project.client_name ? (
             <>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Name</span>
-                <span className={styles.infoValue}>{project.client_name}</span>
+              <div className="infoRow">
+                <span className="infoLabel">Name</span>
+                <span className="infoValue">{project.client_name}</span>
               </div>
               {project.client_email && (
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>E-Mail</span>
-                  <a href={`mailto:${project.client_email}`} className={styles.infoLink}>
+                <div className="infoRow">
+                  <span className="infoLabel">E-Mail</span>
+                  <a href={`mailto:${project.client_email}`} className="infoLink">
                     {project.client_email}
                   </a>
                 </div>
               )}
               {project.client_phone && (
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Telefon</span>
-                  <a href={`tel:${project.client_phone}`} className={styles.infoLink}>
+                <div className="infoRow">
+                  <span className="infoLabel">Telefon</span>
+                  <a href={`tel:${project.client_phone}`} className="infoLink">
                     {project.client_phone}
                   </a>
                 </div>
               )}
               {clientString && (
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Adresse</span>
-                  <span className={styles.infoValue}>
+                <div className="infoRow">
+                  <span className="infoLabel">Adresse</span>
+                  <span className="infoValue">
                     {clientString}
                     <br />
                     <a
                       href={mapsUrl(clientString)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={styles.infoLink}
+                      className="infoLink"
                     >
                       Google Maps
                     </a>
@@ -156,23 +156,23 @@ export function OverviewTab({ project }: OverviewTabProps) {
         </div>
 
         {/* Location Card */}
-        <div className={styles.glassCard}>
-          <div className={styles.glassCardTitle}>
-            <span className={styles.glassCardTitleIcon}>L</span>
+        <div className="glassCard">
+          <div className="glassCardTitle">
+            <span className="glassCardTitleIcon">L</span>
             Standort / Venue
           </div>
           {venueString ? (
             <>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Adresse</span>
-                <span className={styles.infoValue}>
+              <div className="infoRow">
+                <span className="infoLabel">Adresse</span>
+                <span className="infoValue">
                   {venueString}
                   <br />
                   <a
                     href={mapsUrl(venueString)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={styles.infoLink}
+                    className="infoLink"
                   >
                     Google Maps
                   </a>
@@ -187,22 +187,22 @@ export function OverviewTab({ project }: OverviewTabProps) {
         </div>
 
         {/* Progress Card */}
-        <div className={styles.glassCard}>
-          <div className={styles.glassCardTitle}>
-            <span className={styles.glassCardTitleIcon}>P</span>
+        <div className="glassCard">
+          <div className="glassCardTitle">
+            <span className="glassCardTitleIcon">P</span>
             Projektfortschritt
           </div>
-          <div className={styles.progressIcons}>
+          <div className="progressIcons">
             {progressItems.map((item) => (
-              <div key={item.label} className={styles.progressItem}>
+              <div key={item.label} className="progressItem">
                 <div
-                  className={`${styles.progressIcon} ${
-                    item.done ? styles.progressIconDone : styles.progressIconPending
+                  className={`progressIcon ${
+                    item.done ? 'progressIconDone' : 'progressIconPending'
                   }`}
                 >
                   {item.icon}
                 </div>
-                <span className={styles.progressLabel}>{item.label}</span>
+                <span className="progressLabel">{item.label}</span>
               </div>
             ))}
           </div>
@@ -210,21 +210,21 @@ export function OverviewTab({ project }: OverviewTabProps) {
 
         {/* Tags */}
         {project.tags && project.tags.length > 0 && (
-          <div className={`${styles.glassCard} ${styles.overviewFullWidth}`}>
-            <div className={styles.glassCardTitle}>Tags</div>
-            <div className={styles.tags}>
+          <div className="glassCard overviewFullWidth">
+            <div className="glassCardTitle">Tags</div>
+            <div className="tags">
               {project.tags.map((tag) => (
-                <span key={tag} className={styles.tag}>{tag}</span>
+                <span key={tag} className="tag">{tag}</span>
               ))}
             </div>
           </div>
         )}
 
         {/* Notes */}
-        <div className={`${styles.glassCard} ${styles.overviewFullWidth}`}>
-          <div className={styles.glassCardTitle}>Notizen</div>
+        <div className="glassCard overviewFullWidth">
+          <div className="glassCardTitle">Notizen</div>
           {project.notes ? (
-            <p className={styles.notesText}>{project.notes}</p>
+            <p className="notesText">{project.notes}</p>
           ) : (
             <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', margin: 0 }}>
               Keine Notizen vorhanden.
@@ -233,20 +233,20 @@ export function OverviewTab({ project }: OverviewTabProps) {
         </div>
 
         {/* Quick Stats */}
-        <div className={`${styles.glassCard} ${styles.overviewFullWidth}`}>
-          <div className={styles.glassCardTitle}>Statistiken</div>
-          <div className={styles.quickStats}>
-            <div className={styles.statItem}>
-              <div className={styles.statValue}>&mdash;</div>
-              <div className={styles.statLabel}>Gewicht (kg)</div>
+        <div className="glassCard overviewFullWidth">
+          <div className="glassCardTitle">Statistiken</div>
+          <div className="quickStats">
+            <div className="statItem">
+              <div className="statValue">&mdash;</div>
+              <div className="statLabel">Gewicht (kg)</div>
             </div>
-            <div className={styles.statItem}>
-              <div className={styles.statValue}>&mdash;</div>
-              <div className={styles.statLabel}>Volumen (m&sup3;)</div>
+            <div className="statItem">
+              <div className="statValue">&mdash;</div>
+              <div className="statLabel">Volumen (m&sup3;)</div>
             </div>
-            <div className={styles.statItem}>
-              <div className={styles.statValue}>&mdash;</div>
-              <div className={styles.statLabel}>Leistung (kW)</div>
+            <div className="statItem">
+              <div className="statValue">&mdash;</div>
+              <div className="statLabel">Leistung (kW)</div>
             </div>
           </div>
         </div>
@@ -254,9 +254,9 @@ export function OverviewTab({ project }: OverviewTabProps) {
 
       {/* Description */}
       {project.description && (
-        <div className={styles.glassCard} style={{ marginTop: 'var(--spacing-5)' }}>
-          <div className={styles.glassCardTitle}>Beschreibung</div>
-          <p className={styles.notesText}>{project.description}</p>
+        <div className="glassCard" style={{ marginTop: 'var(--spacing-5)' }}>
+          <div className="glassCardTitle">Beschreibung</div>
+          <p className="notesText">{project.description}</p>
         </div>
       )}
     </div>

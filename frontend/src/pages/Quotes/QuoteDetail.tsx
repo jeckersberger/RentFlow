@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { quoteApi, projectApi } from '../../services/api'
 import { useNotificationStore } from '../../stores/notificationStore'
-import styles from './Quotes.module.scss'
+import './Quotes.scss'
 
 type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'confirmed' | 'rejected' | 'expired'
 
@@ -178,7 +178,7 @@ function QuoteDetail() {
 
   if (isLoading) {
     return (
-      <div className={styles['quote-detail-page']}>
+      <div className="quote-detail-page">
         <p style={{ color: 'var(--color-text-secondary)' }}>Wird geladen...</p>
       </div>
     )
@@ -186,16 +186,16 @@ function QuoteDetail() {
 
   if (error && !quote) {
     return (
-      <div className={styles['quote-detail-page']}>
-        <div className={styles['error-message']}>Fehler beim Laden des Angebots</div>
+      <div className="quote-detail-page">
+        <div className="error-message">Fehler beim Laden des Angebots</div>
       </div>
     )
   }
 
   if (!quote) {
     return (
-      <div className={styles['quote-detail-page']}>
-        <div className={styles['error-message']}>Angebot nicht gefunden</div>
+      <div className="quote-detail-page">
+        <div className="error-message">Angebot nicht gefunden</div>
       </div>
     )
   }
@@ -203,26 +203,26 @@ function QuoteDetail() {
   const effectiveStatus = isExpired ? 'expired' : quote.status
 
   return (
-    <div className={styles['quote-detail-page']}>
+    <div className="quote-detail-page">
       {/* Back button */}
-      <button className={styles['back-button']} onClick={() => navigate('/quotes')}>
+      <button className="back-button" onClick={() => navigate('/quotes')}>
         &larr; Zurück zu Angeboten
       </button>
 
       {/* Header */}
-      <div className={styles['page-header']}>
+      <div className="page-header">
         <div>
-          <h1 className={styles['page-title']}>Angebot {quote.quote_number}</h1>
-          <p className={styles['page-subtitle']}>
-            <span className={`${styles['status-badge']} ${styles[`status-badge--${effectiveStatus}`]}`}>
+          <h1 className="page-title">Angebot {quote.quote_number}</h1>
+          <p className="page-subtitle">
+            <span className={`status-badge ${`status-badge--${effectiveStatus}`}`}>
               {STATUS_LABELS[effectiveStatus]}
             </span>
             {' '}&middot; {quote.client_name}
           </p>
         </div>
-        <div className={styles['action-bar']}>
+        <div className="action-bar">
           <button
-            className={styles.btn + ' ' + styles['btn--secondary']}
+            className="btn btn--secondary"
             onClick={() => {
               quoteApi.getPdf(id!).then((blob: Blob) => {
                 const url = URL.createObjectURL(blob)
@@ -237,7 +237,7 @@ function QuoteDetail() {
 
           {quote.status === 'draft' && (
             <button
-              className={styles.btn + ' ' + styles['btn--primary']}
+              className="btn btn--primary"
               onClick={() => sendQuote()}
             >
               Per E-Mail senden
@@ -247,13 +247,13 @@ function QuoteDetail() {
           {(quote.status === 'accepted' || quote.status === 'confirmed') && (
             <>
               <button
-                className={styles.btn + ' ' + styles['btn--primary']}
+                className="btn btn--primary"
                 onClick={() => createProjectFromQuote()}
               >
                 Projekt erstellen
               </button>
               <button
-                className={styles.btn + ' ' + styles['btn--success']}
+                className="btn btn--success"
                 onClick={() => convertToInvoice()}
               >
                 In Rechnung umwandeln
@@ -264,24 +264,24 @@ function QuoteDetail() {
       </div>
 
       {/* Content Grid */}
-      <div className={styles['detail-grid']}>
+      <div className="detail-grid">
         {/* Quote Info */}
-        <div className={styles['detail-card']}>
-          <h2 className={styles['detail-card-title']}>Angebotsdetails</h2>
+        <div className="detail-card">
+          <h2 className="detail-card-title">Angebotsdetails</h2>
 
-          <div className={styles['detail-row']}>
-            <span className={styles['detail-label']}>Angebotsnummer</span>
-            <span className={styles['detail-value']}>{quote.quote_number}</span>
+          <div className="detail-row">
+            <span className="detail-label">Angebotsnummer</span>
+            <span className="detail-value">{quote.quote_number}</span>
           </div>
 
-          <div className={styles['detail-row']}>
-            <span className={styles['detail-label']}>Kunde</span>
-            <span className={styles['detail-value']}>{quote.client_name}</span>
+          <div className="detail-row">
+            <span className="detail-label">Kunde</span>
+            <span className="detail-value">{quote.client_name}</span>
           </div>
 
-          <div className={styles['detail-row']}>
-            <span className={styles['detail-label']}>E-Mail</span>
-            <span className={styles['detail-value']}>
+          <div className="detail-row">
+            <span className="detail-label">E-Mail</span>
+            <span className="detail-value">
               <a href={`mailto:${quote.client_email}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
                 {quote.client_email}
               </a>
@@ -289,9 +289,9 @@ function QuoteDetail() {
           </div>
 
           {quote.project_name && (
-            <div className={styles['detail-row']}>
-              <span className={styles['detail-label']}>Projekt</span>
-              <span className={styles['detail-value']}>
+            <div className="detail-row">
+              <span className="detail-label">Projekt</span>
+              <span className="detail-value">
                 <span
                   style={{ color: 'var(--color-primary)', cursor: 'pointer' }}
                   onClick={() => quote.project_id && navigate(`/projects/${quote.project_id}`)}
@@ -302,42 +302,42 @@ function QuoteDetail() {
             </div>
           )}
 
-          <div className={styles['detail-row']}>
-            <span className={styles['detail-label']}>Erstellt am</span>
-            <span className={styles['detail-value']}>{formatDate(quote.created_at)}</span>
+          <div className="detail-row">
+            <span className="detail-label">Erstellt am</span>
+            <span className="detail-value">{formatDate(quote.created_at)}</span>
           </div>
 
-          <div className={styles['detail-row']}>
-            <span className={styles['detail-label']}>Gültig bis</span>
-            <span className={styles['detail-value']} style={{ color: isExpired ? 'var(--color-danger)' : 'inherit' }}>
+          <div className="detail-row">
+            <span className="detail-label">Gültig bis</span>
+            <span className="detail-value" style={{ color: isExpired ? 'var(--color-danger)' : 'inherit' }}>
               {formatDate(quote.valid_until)}
               {isExpired && ' (abgelaufen)'}
             </span>
           </div>
 
           {quote.notes && (
-            <div className={styles['detail-row']}>
-              <span className={styles['detail-label']}>Notizen</span>
-              <span className={styles['detail-value']}>{quote.notes}</span>
+            <div className="detail-row">
+              <span className="detail-label">Notizen</span>
+              <span className="detail-value">{quote.notes}</span>
             </div>
           )}
         </div>
 
         {/* Summary Card */}
         <div>
-          <div className={styles['detail-card']}>
-            <h2 className={styles['detail-card-title']}>Zusammenfassung</h2>
+          <div className="detail-card">
+            <h2 className="detail-card-title">Zusammenfassung</h2>
 
-            <div className={styles['totals-section']} style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
-              <div className={styles['total-row']}>
-                <span className={styles['total-label']}>Zwischensumme (netto)</span>
-                <span className={styles['total-value']}>{formatCurrency(quote.sub_total)}</span>
+            <div className="totals-section" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
+              <div className="total-row">
+                <span className="total-label">Zwischensumme (netto)</span>
+                <span className="total-value">{formatCurrency(quote.sub_total)}</span>
               </div>
-              <div className={styles['total-row']}>
-                <span className={styles['total-label']}>MwSt. (19%)</span>
-                <span className={styles['total-value']}>{formatCurrency(quote.tax_amount)}</span>
+              <div className="total-row">
+                <span className="total-label">MwSt. (19%)</span>
+                <span className="total-value">{formatCurrency(quote.tax_amount)}</span>
               </div>
-              <div className={`${styles['total-row']} ${styles['total-row--grand']}`}>
+              <div className="total-row total-row--grand">
                 <span>Gesamtbetrag (brutto)</span>
                 <span>{formatCurrency(quote.total)}</span>
               </div>
@@ -345,12 +345,12 @@ function QuoteDetail() {
           </div>
 
           {/* Status Actions */}
-          <div className={styles['detail-card']} style={{ marginTop: 'var(--spacing-4)' }}>
-            <h2 className={styles['detail-card-title']}>Status ändern</h2>
+          <div className="detail-card" style={{ marginTop: 'var(--spacing-4)' }}>
+            <h2 className="detail-card-title">Status ändern</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
               {quote.status === 'draft' && (
                 <button
-                  className={styles.btn + ' ' + styles['btn--primary']}
+                  className="btn btn--primary"
                   onClick={() => sendQuote()}
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
@@ -359,7 +359,7 @@ function QuoteDetail() {
               )}
               {(quote.status === 'sent' || quote.status === 'draft') && (
                 <button
-                  className={styles.btn + ' ' + styles['btn--success']}
+                  className="btn btn--success"
                   onClick={() => acceptQuote()}
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
@@ -368,7 +368,7 @@ function QuoteDetail() {
               )}
               {quote.status === 'accepted' && (
                 <button
-                  className={styles.btn + ' ' + styles['btn--primary']}
+                  className="btn btn--primary"
                   onClick={() => confirmQuote()}
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
@@ -377,7 +377,7 @@ function QuoteDetail() {
               )}
               {quote.status !== 'rejected' && quote.status !== 'confirmed' && (
                 <button
-                  className={styles.btn + ' ' + styles['btn--danger']}
+                  className="btn btn--danger"
                   onClick={() => {
                     if (window.confirm('Angebot wirklich ablehnen?')) rejectQuote()
                   }}
@@ -392,43 +392,43 @@ function QuoteDetail() {
       </div>
 
       {/* Line Items */}
-      <div className={styles['detail-card']}>
-        <h2 className={styles['detail-card-title']}>Positionen</h2>
+      <div className="detail-card">
+        <h2 className="detail-card-title">Positionen</h2>
         {quote.items && quote.items.length > 0 ? (
           <>
-            <table className={styles['items-table']}>
+            <table className="items-table">
               <thead>
                 <tr>
                   <th>Beschreibung</th>
-                  <th className={styles['text-right']}>Menge</th>
-                  <th className={styles['text-right']}>Einzelpreis</th>
-                  <th className={styles['text-right']}>MwSt.</th>
-                  <th className={styles['text-right']}>Gesamt</th>
+                  <th className="text-right">Menge</th>
+                  <th className="text-right">Einzelpreis</th>
+                  <th className="text-right">MwSt.</th>
+                  <th className="text-right">Gesamt</th>
                 </tr>
               </thead>
               <tbody>
                 {quote.items.map((item) => (
                   <tr key={item.id}>
                     <td>{item.description}</td>
-                    <td className={styles['text-right']}>{item.quantity}</td>
-                    <td className={styles['text-right']}>{formatCurrency(item.unit_price)}</td>
-                    <td className={styles['text-right']}>{item.tax_rate}%</td>
-                    <td className={styles['text-right']}>{formatCurrency(item.total_price)}</td>
+                    <td className="text-right">{item.quantity}</td>
+                    <td className="text-right">{formatCurrency(item.unit_price)}</td>
+                    <td className="text-right">{item.tax_rate}%</td>
+                    <td className="text-right">{formatCurrency(item.total_price)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className={styles['totals-section']}>
-              <div className={styles['total-row']}>
-                <span className={styles['total-label']}>Netto</span>
-                <span className={styles['total-value']}>{formatCurrency(quote.sub_total)}</span>
+            <div className="totals-section">
+              <div className="total-row">
+                <span className="total-label">Netto</span>
+                <span className="total-value">{formatCurrency(quote.sub_total)}</span>
               </div>
-              <div className={styles['total-row']}>
-                <span className={styles['total-label']}>MwSt.</span>
-                <span className={styles['total-value']}>{formatCurrency(quote.tax_amount)}</span>
+              <div className="total-row">
+                <span className="total-label">MwSt.</span>
+                <span className="total-value">{formatCurrency(quote.tax_amount)}</span>
               </div>
-              <div className={`${styles['total-row']} ${styles['total-row--grand']}`}>
+              <div className="total-row total-row--grand">
                 <span>Brutto</span>
                 <span>{formatCurrency(quote.total)}</span>
               </div>

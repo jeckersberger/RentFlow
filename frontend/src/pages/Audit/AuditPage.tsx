@@ -2,7 +2,7 @@ import { useState, useMemo, Fragment } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { auditApi } from '../../services/api'
 import type { AuditEntry, ChainValidationResult } from '../../types/audit'
-import styles from './Audit.module.scss'
+import './Audit.scss'
 
 // No mock data - use real API only
 
@@ -198,15 +198,15 @@ function AuditPage() {
   }
 
   return (
-    <div className={styles.auditPage}>
-      <div className={styles.header}>
+    <div className="auditPage">
+      <div className="header">
         <div>
-          <h1 className={styles.title}>Audit-Log</h1>
-          <p className={styles.subtitle}>
+          <h1 className="title">Audit-Log</h1>
+          <p className="subtitle">
             GoBD-konformes Protokoll aller Systemaktionen -- {filteredEntries.length} Eintraege
           </p>
         </div>
-        <div className={styles.headerActions}>
+        <div className="headerActions">
           <button
             className="btn btn--primary"
             onClick={handleValidateChain}
@@ -233,10 +233,10 @@ function AuditPage() {
 
       {/* Validation Result */}
       {showValidation && validationResult && (
-        <div className={styles.validationResult} style={{
+        <div className="validationResult" style={{
           borderColor: validationResult.valid ? '#10b981' : '#ef4444',
         }}>
-          <div className={styles.validationHeader}>
+          <div className="validationHeader">
             <span style={{
               fontSize: '2rem',
               color: validationResult.valid ? '#10b981' : '#ef4444',
@@ -245,15 +245,15 @@ function AuditPage() {
               {validationResult.valid ? '\u2713' : '\u2717'}
             </span>
             <div>
-              <h3 className={styles.validationTitle}>
+              <h3 className="validationTitle">
                 {validationResult.valid ? 'Chain-Validierung erfolgreich' : 'Chain-Validierung fehlgeschlagen'}
               </h3>
-              <p className={styles.validationTime}>
+              <p className="validationTime">
                 Geprueft am {new Date(validationResult.timestamp).toLocaleString('de-DE')}
               </p>
             </div>
           </div>
-          <div className={styles.validationDetails}>
+          <div className="validationDetails">
             <span><strong>Eintraege geprueft:</strong> {validationResult.entries_checked}</span>
             <span><strong>Ungueltige Eintraege:</strong> {validationResult.invalid_entries}</span>
             <span><strong>Verifikations-Hash:</strong> <code style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}>{validationResult.verification_hash.substring(0, 40)}...</code></span>
@@ -269,23 +269,23 @@ function AuditPage() {
       )}
 
       {/* Filters */}
-      <section className={styles.filtersSection}>
-        <div className={styles.searchBox}>
+      <section className="filtersSection">
+        <div className="searchBox">
           <input
             type="text"
-            className={styles.searchInput}
+            className="searchInput"
             placeholder="Volltext-Suche (Entity ID, User, Service, Aenderungen)..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
           />
         </div>
 
-        <div className={styles.filtersGrid}>
-          <div className={styles.filterGroup}>
-            <label htmlFor="operation-filter" className={styles.filterLabel}>Operation:</label>
+        <div className="filtersGrid">
+          <div className="filterGroup">
+            <label htmlFor="operation-filter" className="filterLabel">Operation:</label>
             <select
               id="operation-filter"
-              className={styles.filterSelect}
+              className="filterSelect"
               value={filterOperation}
               onChange={(e) => { setFilterOperation(e.target.value); setCurrentPage(1) }}
             >
@@ -299,11 +299,11 @@ function AuditPage() {
             </select>
           </div>
 
-          <div className={styles.filterGroup}>
-            <label htmlFor="entity-filter" className={styles.filterLabel}>Entitaet:</label>
+          <div className="filterGroup">
+            <label htmlFor="entity-filter" className="filterLabel">Entitaet:</label>
             <select
               id="entity-filter"
-              className={styles.filterSelect}
+              className="filterSelect"
               value={filterEntityType}
               onChange={(e) => { setFilterEntityType(e.target.value); setCurrentPage(1) }}
             >
@@ -317,11 +317,11 @@ function AuditPage() {
             </select>
           </div>
 
-          <div className={styles.filterGroup}>
-            <label htmlFor="user-filter" className={styles.filterLabel}>Benutzer:</label>
+          <div className="filterGroup">
+            <label htmlFor="user-filter" className="filterLabel">Benutzer:</label>
             <select
               id="user-filter"
-              className={styles.filterSelect}
+              className="filterSelect"
               value={filterUser}
               onChange={(e) => { setFilterUser(e.target.value); setCurrentPage(1) }}
             >
@@ -332,23 +332,23 @@ function AuditPage() {
             </select>
           </div>
 
-          <div className={styles.filterGroup}>
-            <label htmlFor="start-date" className={styles.filterLabel}>Von:</label>
+          <div className="filterGroup">
+            <label htmlFor="start-date" className="filterLabel">Von:</label>
             <input
               id="start-date"
               type="date"
-              className={styles.filterInput}
+              className="filterInput"
               value={startDate}
               onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1) }}
             />
           </div>
 
-          <div className={styles.filterGroup}>
-            <label htmlFor="end-date" className={styles.filterLabel}>Bis:</label>
+          <div className="filterGroup">
+            <label htmlFor="end-date" className="filterLabel">Bis:</label>
             <input
               id="end-date"
               type="date"
-              className={styles.filterInput}
+              className="filterInput"
               value={endDate}
               onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1) }}
             />
@@ -357,8 +357,8 @@ function AuditPage() {
       </section>
 
       {/* Audit Entries Table */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>
+      <section className="section">
+        <h2 className="sectionTitle">
           Audit-Eintraege ({filteredEntries.length})
           {filteredEntries.length !== auditEntries.length && (
             <span style={{ fontWeight: 400, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginLeft: 'var(--spacing-2)' }}>
@@ -368,14 +368,14 @@ function AuditPage() {
         </h2>
 
         {isLoadingAudit ? (
-          <div className={styles.emptyState}>
+          <div className="emptyState">
             <div style={{ fontSize: 'var(--font-size-xl)', marginBottom: 'var(--spacing-3)' }}>Laden...</div>
-            <p className={styles.emptyText}>Audit-Eintraege werden abgerufen...</p>
+            <p className="emptyText">Audit-Eintraege werden abgerufen...</p>
           </div>
         ) : filteredEntries.length === 0 ? (
-          <div className={styles.emptyState}>
-            <h3 className={styles.emptyTitle}>Keine Eintraege gefunden</h3>
-            <p className={styles.emptyText}>
+          <div className="emptyState">
+            <h3 className="emptyTitle">Keine Eintraege gefunden</h3>
+            <p className="emptyText">
               {auditEntries.length === 0
                 ? 'Es sind noch keine Audit-Eintraege vorhanden. Eintraege werden automatisch bei Systemaktionen erstellt.'
                 : 'Versuchen Sie, Ihre Suchkriterien zu aendern.'}
@@ -383,8 +383,8 @@ function AuditPage() {
           </div>
         ) : (
           <>
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
+            <div className="tableWrapper">
+              <table className="table">
                 <thead>
                   <tr>
                     <th style={{ width: 30 }}></th>
@@ -400,36 +400,36 @@ function AuditPage() {
                   {paginatedEntries.map((entry: AuditEntry) => (
                     <Fragment key={entry.id}>
                       <tr
-                        className={styles.tableRow}
+                        className="tableRow"
                         onClick={() => toggleExpand(entry.id)}
                         style={{ cursor: 'pointer' }}
                       >
                         <td style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                           {expandedRow === entry.id ? '\u25BC' : '\u25B6'}
                         </td>
-                        <td className={styles.cellTime}>
+                        <td className="cellTime">
                           {new Date(entry.timestamp).toLocaleString('de-DE', {
                             day: '2-digit', month: '2-digit', year: '2-digit',
                             hour: '2-digit', minute: '2-digit', second: '2-digit',
                           })}
                         </td>
-                        <td className={styles.cellUser}>{entry.user_name}</td>
-                        <td className={styles.cellOperation}>
-                          <span className={`${styles.operationBadge} ${styles[`operation--${entry.operation.toLowerCase()}`]}`}>
+                        <td className="cellUser">{entry.user_name}</td>
+                        <td className="cellOperation">
+                          <span className={`operationBadge ${`operation--${entry.operation.toLowerCase()}`}`}>
                             {getOperationLabel(entry.operation)}
                           </span>
                         </td>
-                        <td className={styles.cellEntity}>
-                          <div className={styles.entityInfo}>
-                            <span className={styles.entityType}>{getEntityTypeLabel(entry.entity_type)}</span>
-                            <span className={styles.entityId}>{entry.entity_id}</span>
+                        <td className="cellEntity">
+                          <div className="entityInfo">
+                            <span className="entityType">{getEntityTypeLabel(entry.entity_type)}</span>
+                            <span className="entityId">{entry.entity_id}</span>
                           </div>
                         </td>
                         <td style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {Object.keys(entry.changes).length} Aenderung(en): {Object.keys(entry.changes).join(', ')}
                         </td>
-                        <td className={styles.cellStatus}>
-                          <span className={`${styles.statusBadge} ${styles[`status--${entry.status}`]}`}>
+                        <td className="cellStatus">
+                          <span className={`statusBadge ${`status--${entry.status}`}`}>
                             {entry.status === 'success' ? 'OK' : 'Fehler'}
                           </span>
                         </td>

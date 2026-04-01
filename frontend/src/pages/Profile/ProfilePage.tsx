@@ -24,7 +24,7 @@ import {
   Save,
   AlertTriangle,
 } from 'lucide-react'
-import styles from './Profile.module.scss'
+import './Profile.scss'
 
 // Password strength calculation
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -162,22 +162,22 @@ function ProfilePage() {
   }
 
   return (
-    <div className={styles.profile}>
+    <div className="profile">
       {/* Profile Header */}
-      <div className={styles.profile__header}>
-        <div className={styles.profile__avatarSection}>
-          <div className={styles.profile__avatarRing}>
-            <div className={styles.profile__avatar}>{userInitials}</div>
+      <div className="profile__header">
+        <div className="profile__avatarSection">
+          <div className="profile__avatarRing">
+            <div className="profile__avatar">{userInitials}</div>
           </div>
-          <div className={styles.profile__headerInfo}>
-            <h1 className={styles.profile__name}>{user?.name || 'Benutzer'}</h1>
-            <p className={styles.profile__email}>{user?.email}</p>
-            <div className={styles.profile__badges}>
-              <span className={styles.profile__roleBadge}>
+          <div className="profile__headerInfo">
+            <h1 className="profile__name">{user?.name || 'Benutzer'}</h1>
+            <p className="profile__email">{user?.email}</p>
+            <div className="profile__badges">
+              <span className="profile__roleBadge">
                 <Shield size={12} />
                 Administrator
               </span>
-              <span className={styles.profile__dateBadge}>
+              <span className="profile__dateBadge">
                 <Calendar size={12} />
                 Mitglied seit März 2025
               </span>
@@ -186,30 +186,30 @@ function ProfilePage() {
         </div>
       </div>
 
-      <div className={styles.profile__grid}>
+      <div className="profile__grid">
         {/* Persönliche Daten */}
-        <div className={styles.profile__card}>
-          <div className={styles.profile__cardHeader}>
+        <div className="profile__card">
+          <div className="profile__cardHeader">
             <User size={20} />
             <h2>Persönliche Daten</h2>
           </div>
-          <form onSubmit={handleSaveProfile} className={styles.profile__form}>
-            <div className={styles.profile__formRow}>
-              <div className={styles.profile__formGroup}>
-                <label className={styles.profile__label}>Vorname</label>
+          <form onSubmit={handleSaveProfile} className="profile__form">
+            <div className="profile__formRow">
+              <div className="profile__formGroup">
+                <label className="profile__label">Vorname</label>
                 <input
                   type="text"
-                  className={styles.profile__input}
+                  className="profile__input"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Vorname"
                 />
               </div>
-              <div className={styles.profile__formGroup}>
-                <label className={styles.profile__label}>Nachname</label>
+              <div className="profile__formGroup">
+                <label className="profile__label">Nachname</label>
                 <input
                   type="text"
-                  className={styles.profile__input}
+                  className="profile__input"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Nachname"
@@ -217,65 +217,65 @@ function ProfilePage() {
               </div>
             </div>
 
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>
+            <div className="profile__formGroup">
+              <label className="profile__label">
                 <Mail size={14} />
                 E-Mail
               </label>
               <input
                 type="email"
-                className={styles.profile__input}
+                className="profile__input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="E-Mail Adresse"
               />
-              <span className={styles.profile__hint}>Bei Änderung wird eine Bestätigungs-E-Mail gesendet.</span>
+              <span className="profile__hint">Bei Änderung wird eine Bestätigungs-E-Mail gesendet.</span>
             </div>
 
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>
+            <div className="profile__formGroup">
+              <label className="profile__label">
                 <Phone size={14} />
                 Telefon
               </label>
               <input
                 type="tel"
-                className={styles.profile__input}
+                className="profile__input"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+49 123 456789"
               />
             </div>
 
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>
+            <div className="profile__formGroup">
+              <label className="profile__label">
                 <Shield size={14} />
                 Position / Rolle
               </label>
               <input
                 type="text"
-                className={`${styles.profile__input} ${styles['profile__input--readonly']}`}
+                className="profile__input profile__input--readonly"
                 value="Administrator"
                 readOnly
                 disabled
               />
-              <span className={styles.profile__hint}>Wird vom Admin festgelegt.</span>
+              <span className="profile__hint">Wird vom Admin festgelegt.</span>
             </div>
 
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>
+            <div className="profile__formGroup">
+              <label className="profile__label">
                 <Camera size={14} />
                 Profilbild
               </label>
-              <div className={styles.profile__uploadArea}>
+              <div className="profile__uploadArea">
                 <Camera size={24} />
                 <span>Bild hochladen oder hierher ziehen</span>
-                <span className={styles.profile__uploadHint}>JPG, PNG, max. 5 MB</span>
+                <span className="profile__uploadHint">JPG, PNG, max. 5 MB</span>
               </div>
             </div>
 
             <button
               type="submit"
-              className={styles.profile__btn}
+              className="profile__btn"
               disabled={updateProfileMutation.isPending}
             >
               <Save size={16} />
@@ -285,25 +285,25 @@ function ProfilePage() {
         </div>
 
         {/* Passwort ändern */}
-        <div className={styles.profile__card}>
-          <div className={styles.profile__cardHeader}>
+        <div className="profile__card">
+          <div className="profile__cardHeader">
             <Lock size={20} />
             <h2>Passwort ändern</h2>
           </div>
-          <form onSubmit={handleChangePassword} className={styles.profile__form}>
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>Aktuelles Passwort</label>
-              <div className={styles.profile__inputWrapper}>
+          <form onSubmit={handleChangePassword} className="profile__form">
+            <div className="profile__formGroup">
+              <label className="profile__label">Aktuelles Passwort</label>
+              <div className="profile__inputWrapper">
                 <input
                   type={showCurrentPassword ? 'text' : 'password'}
-                  className={styles.profile__input}
+                  className="profile__input"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Aktuelles Passwort eingeben"
                 />
                 <button
                   type="button"
-                  className={styles.profile__inputToggle}
+                  className="profile__inputToggle"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 >
                   {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -311,60 +311,60 @@ function ProfilePage() {
               </div>
             </div>
 
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>Neues Passwort</label>
-              <div className={styles.profile__inputWrapper}>
+            <div className="profile__formGroup">
+              <label className="profile__label">Neues Passwort</label>
+              <div className="profile__inputWrapper">
                 <input
                   type={showNewPassword ? 'text' : 'password'}
-                  className={styles.profile__input}
+                  className="profile__input"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Neues Passwort eingeben"
                 />
                 <button
                   type="button"
-                  className={styles.profile__inputToggle}
+                  className="profile__inputToggle"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                 >
                   {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {newPassword.length > 0 && (
-                <div className={styles.profile__strengthBar}>
-                  <div className={styles.profile__strengthTrack}>
+                <div className="profile__strengthBar">
+                  <div className="profile__strengthTrack">
                     <div
-                      className={`${styles.profile__strengthFill} ${styles[`profile__strengthFill--${passwordStrength.color}`]}`}
+                      className={`profile__strengthFill ${`profile__strengthFill--${passwordStrength.color}`}`}
                       style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                     />
                   </div>
-                  <span className={`${styles.profile__strengthLabel} ${styles[`profile__strengthLabel--${passwordStrength.color}`]}`}>
+                  <span className={`profile__strengthLabel ${`profile__strengthLabel--${passwordStrength.color}`}`}>
                     {passwordStrength.label}
                   </span>
                 </div>
               )}
-              <span className={styles.profile__hint}>Mindestens 8 Zeichen, Gross-/Kleinbuchstaben, Zahlen und Sonderzeichen empfohlen.</span>
+              <span className="profile__hint">Mindestens 8 Zeichen, Gross-/Kleinbuchstaben, Zahlen und Sonderzeichen empfohlen.</span>
             </div>
 
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>Neues Passwort bestätigen</label>
-              <div className={styles.profile__inputWrapper}>
+            <div className="profile__formGroup">
+              <label className="profile__label">Neues Passwort bestätigen</label>
+              <div className="profile__inputWrapper">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  className={`${styles.profile__input} ${!passwordsMatch ? styles['profile__input--error'] : ''}`}
+                  className={`profile__input ${!passwordsMatch ? 'profile__input--error' : ''}`}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Neues Passwort wiederholen"
                 />
                 <button
                   type="button"
-                  className={styles.profile__inputToggle}
+                  className="profile__inputToggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {!passwordsMatch && (
-                <span className={styles.profile__error}>
+                <span className="profile__error">
                   <AlertTriangle size={12} />
                   Passwörter stimmen nicht überein.
                 </span>
@@ -373,7 +373,7 @@ function ProfilePage() {
 
             <button
               type="submit"
-              className={styles.profile__btn}
+              className="profile__btn"
               disabled={!canChangePassword || changePasswordMutation.isPending}
             >
               <Lock size={16} />
@@ -383,77 +383,77 @@ function ProfilePage() {
         </div>
 
         {/* Benachrichtigungs-Präferenzen */}
-        <div className={styles.profile__card}>
-          <div className={styles.profile__cardHeader}>
+        <div className="profile__card">
+          <div className="profile__cardHeader">
             <Bell size={20} />
             <h2>Benachrichtigungen</h2>
           </div>
-          <div className={styles.profile__toggleList}>
-            <div className={styles.profile__toggleItem}>
-              <div className={styles.profile__toggleInfo}>
-                <span className={styles.profile__toggleLabel}>E-Mail Benachrichtigungen</span>
-                <span className={styles.profile__toggleDesc}>Erhalte wichtige Updates per E-Mail</span>
+          <div className="profile__toggleList">
+            <div className="profile__toggleItem">
+              <div className="profile__toggleInfo">
+                <span className="profile__toggleLabel">E-Mail Benachrichtigungen</span>
+                <span className="profile__toggleDesc">Erhalte wichtige Updates per E-Mail</span>
               </div>
               <button
-                className={`${styles.profile__toggle} ${emailNotifications ? styles['profile__toggle--active'] : ''}`}
+                className={`profile__toggle ${emailNotifications ? 'profile__toggle--active' : ''}`}
                 onClick={() => setEmailNotifications(!emailNotifications)}
               >
-                <span className={styles.profile__toggleKnob} />
+                <span className="profile__toggleKnob" />
               </button>
             </div>
 
-            <div className={styles.profile__toggleItem}>
-              <div className={styles.profile__toggleInfo}>
-                <span className={styles.profile__toggleLabel}>Push Benachrichtigungen</span>
-                <span className={styles.profile__toggleDesc}>Browser-Benachrichtigungen für Echtzeit-Updates</span>
+            <div className="profile__toggleItem">
+              <div className="profile__toggleInfo">
+                <span className="profile__toggleLabel">Push Benachrichtigungen</span>
+                <span className="profile__toggleDesc">Browser-Benachrichtigungen für Echtzeit-Updates</span>
               </div>
               <button
-                className={`${styles.profile__toggle} ${pushNotifications ? styles['profile__toggle--active'] : ''}`}
+                className={`profile__toggle ${pushNotifications ? 'profile__toggle--active' : ''}`}
                 onClick={() => setPushNotifications(!pushNotifications)}
               >
-                <span className={styles.profile__toggleKnob} />
+                <span className="profile__toggleKnob" />
               </button>
             </div>
 
-            <div className={styles.profile__toggleItem}>
-              <div className={styles.profile__toggleInfo}>
-                <span className={styles.profile__toggleLabel}>Tägliche Zusammenfassung</span>
-                <span className={styles.profile__toggleDesc}>Täglicher Überblick über alle Aktivitäten</span>
+            <div className="profile__toggleItem">
+              <div className="profile__toggleInfo">
+                <span className="profile__toggleLabel">Tägliche Zusammenfassung</span>
+                <span className="profile__toggleDesc">Täglicher Überblick über alle Aktivitäten</span>
               </div>
               <button
-                className={`${styles.profile__toggle} ${dailySummary ? styles['profile__toggle--active'] : ''}`}
+                className={`profile__toggle ${dailySummary ? 'profile__toggle--active' : ''}`}
                 onClick={() => setDailySummary(!dailySummary)}
               >
-                <span className={styles.profile__toggleKnob} />
+                <span className="profile__toggleKnob" />
               </button>
             </div>
           </div>
-          <a href="/settings/email" className={styles.profile__link}>
+          <a href="/settings/email" className="profile__link">
             Alle Benachrichtigungs-Einstellungen &rarr;
           </a>
         </div>
 
         {/* Aktive Sitzungen */}
-        <div className={styles.profile__card}>
-          <div className={styles.profile__cardHeader}>
+        <div className="profile__card">
+          <div className="profile__cardHeader">
             <Monitor size={20} />
             <h2>Aktive Sitzungen</h2>
           </div>
-          <div className={styles.profile__sessionList}>
+          <div className="profile__sessionList">
             {(sessions as Array<{ id: string; browser: string; ip: string; last_active: string; current: boolean }>).map((session) => (
               <div
                 key={session.id}
-                className={`${styles.profile__sessionItem} ${session.current ? styles['profile__sessionItem--current'] : ''}`}
+                className={`profile__sessionItem ${session.current ? 'profile__sessionItem--current' : ''}`}
               >
-                <div className={styles.profile__sessionIcon}>
+                <div className="profile__sessionIcon">
                   <Laptop size={18} />
                 </div>
-                <div className={styles.profile__sessionInfo}>
-                  <span className={styles.profile__sessionBrowser}>
+                <div className="profile__sessionInfo">
+                  <span className="profile__sessionBrowser">
                     {session.browser}
-                    {session.current && <span className={styles.profile__sessionCurrent}>Aktuelle Sitzung</span>}
+                    {session.current && <span className="profile__sessionCurrent">Aktuelle Sitzung</span>}
                   </span>
-                  <span className={styles.profile__sessionMeta}>
+                  <span className="profile__sessionMeta">
                     IP: {session.ip} &middot; Zuletzt aktiv: {formatSessionDate(session.last_active)}
                   </span>
                 </div>
@@ -461,7 +461,7 @@ function ProfilePage() {
             ))}
           </div>
           <button
-            className={`${styles.profile__btn} ${styles['profile__btn--danger']}`}
+            className="profile__btn profile__btn--danger"
             onClick={() => revokeSessionsMutation.mutate()}
             disabled={revokeSessionsMutation.isPending}
           >
@@ -471,24 +471,24 @@ function ProfilePage() {
         </div>
 
         {/* Darstellung */}
-        <div className={styles.profile__card}>
-          <div className={styles.profile__cardHeader}>
+        <div className="profile__card">
+          <div className="profile__cardHeader">
             <Globe size={20} />
             <h2>Darstellung</h2>
           </div>
-          <div className={styles.profile__form}>
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>Design</label>
-              <div className={styles.profile__themeSwitch}>
+          <div className="profile__form">
+            <div className="profile__formGroup">
+              <label className="profile__label">Design</label>
+              <div className="profile__themeSwitch">
                 <button
-                  className={`${styles.profile__themeOption} ${isDarkMode ? styles['profile__themeOption--active'] : ''}`}
+                  className={`profile__themeOption ${isDarkMode ? 'profile__themeOption--active' : ''}`}
                   onClick={() => { if (!isDarkMode) toggleDarkMode() }}
                 >
                   <Moon size={16} />
                   Dunkel
                 </button>
                 <button
-                  className={`${styles.profile__themeOption} ${!isDarkMode ? styles['profile__themeOption--active'] : ''}`}
+                  className={`profile__themeOption ${!isDarkMode ? 'profile__themeOption--active' : ''}`}
                   onClick={() => { if (isDarkMode) toggleDarkMode() }}
                 >
                   <Sun size={16} />
@@ -497,10 +497,10 @@ function ProfilePage() {
               </div>
             </div>
 
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>Sprache</label>
+            <div className="profile__formGroup">
+              <label className="profile__label">Sprache</label>
               <select
-                className={styles.profile__select}
+                className="profile__select"
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
               >
@@ -509,10 +509,10 @@ function ProfilePage() {
               </select>
             </div>
 
-            <div className={styles.profile__formGroup}>
-              <label className={styles.profile__label}>Datumsformat</label>
+            <div className="profile__formGroup">
+              <label className="profile__label">Datumsformat</label>
               <select
-                className={styles.profile__select}
+                className="profile__select"
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value)}
               >
