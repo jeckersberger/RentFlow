@@ -57,6 +57,7 @@ type ChangePasswordRequest struct {
 type AuthService struct {
 	userRepo      domain.UserRepository
 	sessionRepo   domain.SessionRepository
+	qrLoginRepo   domain.QRLoginRepository
 	privateKey    *rsa.PrivateKey
 	publicKey     *rsa.PublicKey
 	accessExpiry  time.Duration
@@ -68,6 +69,7 @@ type AuthService struct {
 func NewAuthService(
 	userRepo domain.UserRepository,
 	sessionRepo domain.SessionRepository,
+	qrLoginRepo domain.QRLoginRepository,
 	privateKey *rsa.PrivateKey,
 	publicKey *rsa.PublicKey,
 	accessExpiry time.Duration,
@@ -83,6 +85,7 @@ func NewAuthService(
 	return &AuthService{
 		userRepo:      userRepo,
 		sessionRepo:   sessionRepo,
+		qrLoginRepo:   qrLoginRepo,
 		privateKey:    privateKey,
 		publicKey:     publicKey,
 		accessExpiry:  accessExpiry,
@@ -276,6 +279,136 @@ func (s *AuthService) ValidateToken(ctx context.Context, tokenString string) (*m
 		return nil, domain.ErrInvalidToken
 	}
 	return claims, nil
+}
+
+// GenerateQRToken creates a one-time QR login token for the given user.
+// The token is valid for 5 minutes and can be exchanged once for JWTs.
+func (s *AuthService) GenerateQRToken(ctx context.Context, tenantID, userID uuid.UUID) (*domain.QRLoginToken, error) {
+	// Verify the target user exists and is active.
+	user, err := s.userRepo.GetByIDAndTenant(ctx, userID, tenantID)
+	if err != nil {
+		s.logger.Error().Err(err).Str("user_id", userID.String()).Msg("user not found for QR token generation")
+		return nil, domain.ErrUserNotFound
+	}
+	if !user.IsActive {
+		return nil, domain.ErrAccountDisabled
+	}
+
+	// Generate a random 32-byte hex token (64 chars).
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		s.logger.Error().Err(err).Msg("failed to generate QR token")
+		return nil, fmt.Errorf("QR token generation failed: %w", err)
+	}
+	token := hex.EncodeToString(tokenBytes)
+
+	qrToken := &domain.QRLoginToken{
+		ID:        uuid.New(),
+		TenantID:  tenantID,
+		UserID:    userID,
+		Token:     token,
+		ExpiresAt: time.Now().Add(5 * time.Minute),
+		Used:      false,
+	}
+
+	if err := s.qrLoginRepo.Create(ctx, qrToken); err != nil {
+		s.logger.Error().Err(err).Msg("failed to store QR login token")
+		return nil, fmt.Errorf("QR token storage failed: %w", err)
+	}
+
+	s.logger.Info().
+		Str("user_id", userID.String()).
+		Str("token_id", qrToken.ID.String()).
+		Msg("QR login token generated")
+
+	return qrToken, nil
+}
+
+// ValidateQRToken validates a one-time QR token, marks it as used,
+// and returns a JWT token pair plus the associated user.
+func (s *AuthService) ValidateQRToken(
+	ctx context.Context,
+	token string,
+	ipAddress, userAgent string,
+) (*TokenPair, *domain.User, error) {
+	qrToken, err := s.qrLoginRepo.GetByToken(ctx, token)
+	if err != nil {
+		s.logger.Warn().Str("token", token[:min(8, len(token))]).Msg("QR token not found or expired")
+		return nil, nil, domain.ErrQRTokenInvalid
+	}
+
+	if qrToken.Used {
+		return nil, nil, domain.ErrQRTokenUsed
+	}
+
+	// Mark token as used immediately to prevent replay attacks.
+	if err := s.qrLoginRepo.MarkUsed(ctx, qrToken.ID); err != nil {
+		s.logger.Error().Err(err).Msg("failed to mark QR token as used")
+		return nil, nil, fmt.Errorf("QR token update failed: %w", err)
+	}
+
+	// Load the user.
+	user, err := s.userRepo.GetByIDAndTenant(ctx, qrToken.UserID, qrToken.TenantID)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("user not found for QR login")
+		return nil, nil, domain.ErrUserNotFound
+	}
+
+	if !user.IsActive {
+		return nil, nil, domain.ErrAccountDisabled
+	}
+
+	if user.IsLocked() {
+		return nil, nil, domain.ErrAccountLocked
+	}
+
+	// Update last login timestamp.
+	if err := s.userRepo.UpdateLastLogin(ctx, user.ID); err != nil {
+		s.logger.Error().Err(err).Msg("failed to update last login for QR login")
+	}
+
+	// Generate JWT access token.
+	accessToken, expiresAt, err := s.generateAccessToken(user)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to generate access token for QR login")
+		return nil, nil, fmt.Errorf("token generation failed: %w", err)
+	}
+
+	// Generate refresh token.
+	refreshToken, err := generateRefreshToken()
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to generate refresh token for QR login")
+		return nil, nil, fmt.Errorf("refresh token generation failed: %w", err)
+	}
+
+	// Create session.
+	tokenHash := hashToken(refreshToken)
+	session := &domain.Session{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		TenantID:  qrToken.TenantID,
+		TokenHash: tokenHash,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		IsActive:  true,
+		ExpiresAt: time.Now().Add(s.refreshExpiry),
+		CreatedAt: time.Now(),
+	}
+	if err := s.sessionRepo.Create(ctx, session); err != nil {
+		s.logger.Error().Err(err).Msg("failed to create session for QR login")
+		return nil, nil, fmt.Errorf("session creation failed: %w", err)
+	}
+
+	s.logger.Info().
+		Str("user_id", user.ID.String()).
+		Str("token_id", qrToken.ID.String()).
+		Msg("user logged in via QR token")
+
+	return &TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresAt:    expiresAt,
+	}, user, nil
 }
 
 // --- private helpers ---

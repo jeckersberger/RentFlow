@@ -172,5 +172,18 @@ func nilIfEmpty(s string) *string {
 	return &s
 }
 
+// Delete removes a vehicle by its ID within a tenant scope.
+func (r *VehicleRepo) Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error {
+	query := `DELETE FROM vehicles WHERE id = $1 AND tenant_id = $2`
+	tag, err := r.pool.Exec(ctx, query, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("vehicle_repo: delete: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
 // Ensure interface compliance at compile time.
 var _ domain.VehicleRepository = (*VehicleRepo)(nil)

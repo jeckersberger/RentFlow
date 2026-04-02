@@ -214,3 +214,25 @@ func (s *VehicleService) Update(
 
 	return vehicle, nil
 }
+
+// Delete removes a vehicle by its ID within a tenant scope.
+func (s *VehicleService) Delete(
+	ctx context.Context,
+	id uuid.UUID,
+	tenantID uuid.UUID,
+) error {
+	if err := s.vehicleRepo.Delete(ctx, id, tenantID); err != nil {
+		s.logger.Error().Err(err).
+			Str("vehicle_id", id.String()).
+			Str("tenant_id", tenantID.String()).
+			Msg("failed to delete vehicle")
+		return fmt.Errorf("delete vehicle: %w", err)
+	}
+
+	s.logger.Info().
+		Str("vehicle_id", id.String()).
+		Str("tenant_id", tenantID.String()).
+		Msg("vehicle deleted")
+
+	return nil
+}

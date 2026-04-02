@@ -28,6 +28,7 @@ type VehicleRepository interface {
 	List(ctx context.Context, tenantID uuid.UUID) ([]*Vehicle, error)
 	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*Vehicle, error)
 	Update(ctx context.Context, vehicle *Vehicle) error
+	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
 }
 
 // TransportOrderRepository defines persistence operations for TransportOrder aggregates.

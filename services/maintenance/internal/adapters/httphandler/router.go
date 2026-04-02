@@ -41,6 +41,7 @@ func NewRouter(
 			r.Post("/", taskHandler.Create)
 			r.Get("/{id}", taskHandler.Get)
 			r.Put("/{id}", taskHandler.Update)
+			r.Delete("/{id}", taskHandler.Delete)
 			r.Patch("/{id}/complete", taskHandler.Complete)
 			r.Get("/{id}/logs", taskHandler.ListLogs)
 		})

@@ -160,6 +160,27 @@ func (h *TaskHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	response.Success(w, task)
 }
 
+func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	id, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	if err := h.service.Delete(r.Context(), id, claims.TenantID, claims.UserID); err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, map[string]string{"message": "Wartungsaufgabe geloescht"})
+}
+
 func (h *TaskHandler) ListLogs(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {

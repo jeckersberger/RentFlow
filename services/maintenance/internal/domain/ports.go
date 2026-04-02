@@ -18,6 +18,7 @@ type TaskRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*MaintenanceTask, error)
 	List(ctx context.Context, tenantID uuid.UUID, filter TaskFilter) ([]*MaintenanceTask, int64, error)
 	Update(ctx context.Context, task *MaintenanceTask) error
+	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
 }
 
 type LogRepository interface {

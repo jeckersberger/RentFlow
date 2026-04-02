@@ -24,4 +24,6 @@ var (
 	ErrTenantNotFound     = apperrors.New("TENANT_NOT_FOUND", "Mandant nicht gefunden", http.StatusNotFound)
 	ErrInvalidEmail       = apperrors.New("INVALID_EMAIL", "Ungueltige E-Mail-Adresse", http.StatusBadRequest)
 	ErrSetupNotFound      = apperrors.New("SETUP_NOT_FOUND", "Setup-Status nicht gefunden", http.StatusNotFound)
+	ErrQRTokenInvalid     = apperrors.New("QR_TOKEN_INVALID", "QR-Token ungueltig oder abgelaufen", http.StatusUnauthorized)
+	ErrQRTokenUsed        = apperrors.New("QR_TOKEN_USED", "QR-Token wurde bereits verwendet", http.StatusConflict)
 )

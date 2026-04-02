@@ -195,6 +195,25 @@ func (s *TaskService) Complete(ctx context.Context, id, tenantID uuid.UUID, user
 	return existing, nil
 }
 
+func (s *TaskService) Delete(ctx context.Context, id, tenantID uuid.UUID, userID uuid.UUID) error {
+	if err := s.taskRepo.Delete(ctx, id, tenantID); err != nil {
+		return fmt.Errorf("delete task: %w", err)
+	}
+
+	// Log deletion.
+	_ = s.logRepo.Create(ctx, &domain.MaintenanceLog{
+		ID:          uuid.New(),
+		TaskID:      id,
+		TenantID:    tenantID,
+		Action:      "deleted",
+		PerformedBy: &userID,
+		Notes:       "Task deleted",
+	})
+
+	s.logger.Info().Str("task_id", id.String()).Msg("maintenance task deleted")
+	return nil
+}
+
 func (s *TaskService) ListLogs(ctx context.Context, taskID, tenantID uuid.UUID, filter domain.LogFilter) ([]*domain.MaintenanceLog, int64, error) {
 	return s.logRepo.ListByTask(ctx, taskID, tenantID, filter)
 }

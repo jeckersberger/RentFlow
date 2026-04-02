@@ -66,3 +66,10 @@ type InvitationRepository interface {
 	GetByToken(ctx context.Context, token string) (*Invitation, error)
 	MarkAccepted(ctx context.Context, id uuid.UUID) error
 }
+
+// QRLoginRepository defines persistence operations for QR login tokens.
+type QRLoginRepository interface {
+	Create(ctx context.Context, token *QRLoginToken) error
+	GetByToken(ctx context.Context, token string) (*QRLoginToken, error)
+	MarkUsed(ctx context.Context, id uuid.UUID) error
+}

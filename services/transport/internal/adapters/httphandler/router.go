@@ -38,6 +38,7 @@ func NewRouter(
 			r.Get("/", vehicleHandler.List)
 			r.Get("/{id}", vehicleHandler.GetByID)
 			r.Put("/{id}", vehicleHandler.Update)
+			r.Delete("/{id}", vehicleHandler.Delete)
 		})
 
 		// Transport order endpoints.

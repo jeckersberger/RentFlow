@@ -247,6 +247,84 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, _ *http.Request) {
 		"Passwort-Zuruecksetzung noch nicht verfuegbar")
 }
 
+// qrGenerateBody is the JSON request body for QR token generation.
+type qrGenerateBody struct {
+	UserID string `json:"user_id"`
+}
+
+// GenerateQRLogin creates a one-time QR login token. Requires JWT (admin action).
+func (h *AuthHandler) GenerateQRLogin(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	var body qrGenerateBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	// Default to the requesting user's own ID if none specified.
+	targetUserID := claims.UserID
+	if body.UserID != "" {
+		parsed, err := uuid.Parse(body.UserID)
+		if err != nil {
+			errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltige user_id"))
+			return
+		}
+		targetUserID = parsed
+	}
+
+	qrToken, err := h.authService.GenerateQRToken(r.Context(), claims.TenantID, targetUserID)
+	if err != nil {
+		h.logger.Warn().Err(err).Msg("QR token generation failed")
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, map[string]interface{}{
+		"token":      qrToken.Token,
+		"expires_at": qrToken.ExpiresAt,
+	})
+}
+
+// qrLoginBody is the JSON request body for QR-based login.
+type qrLoginBody struct {
+	QRToken    string `json:"qr_token"`
+	TenantSlug string `json:"tenant_slug,omitempty"`
+}
+
+// QRLogin exchanges a one-time QR token for JWT access and refresh tokens.
+// No authentication required — the scanner app calls this after scanning.
+func (h *AuthHandler) QRLogin(w http.ResponseWriter, r *http.Request) {
+	var body qrLoginBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	if body.QRToken == "" {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "qr_token ist erforderlich"))
+		return
+	}
+
+	tokens, user, err := h.authService.ValidateQRToken(
+		r.Context(), body.QRToken, r.RemoteAddr, r.UserAgent(),
+	)
+	if err != nil {
+		h.logger.Warn().Err(err).Msg("QR login failed")
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, map[string]interface{}{
+		"tokens": tokens,
+		"user":   toUserResponse(user),
+	})
+}
+
 // resolveTenant looks up the tenant by slug. If the slug is empty, falls back
 // to the X-Tenant-Slug header. Returns an error if no tenant can be resolved.
 func (h *AuthHandler) resolveTenant(r *http.Request, slug string) (uuid.UUID, error) {

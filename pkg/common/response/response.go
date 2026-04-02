@@ -3,6 +3,7 @@ package response
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
 )
 
 // Envelope is the standard API response wrapper.
@@ -28,7 +29,7 @@ type Meta struct {
 // Success sends a 200 JSON response with data.
 func Success(w http.ResponseWriter, data interface{}) {
 	writeJSON(w, http.StatusOK, Envelope{
-		Data:  data,
+		Data:  ensureNonNilSlice(data),
 		Error: nil,
 	})
 }
@@ -36,7 +37,7 @@ func Success(w http.ResponseWriter, data interface{}) {
 // SuccessWithMeta sends a 200 JSON response with data and metadata.
 func SuccessWithMeta(w http.ResponseWriter, data interface{}, meta Meta) {
 	writeJSON(w, http.StatusOK, Envelope{
-		Data:  data,
+		Data:  ensureNonNilSlice(data),
 		Meta:  &meta,
 		Error: nil,
 	})
@@ -45,7 +46,7 @@ func SuccessWithMeta(w http.ResponseWriter, data interface{}, meta Meta) {
 // Created sends a 201 JSON response with the created resource.
 func Created(w http.ResponseWriter, data interface{}) {
 	writeJSON(w, http.StatusCreated, Envelope{
-		Data:  data,
+		Data:  ensureNonNilSlice(data),
 		Error: nil,
 	})
 }
@@ -64,6 +65,19 @@ func Error(w http.ResponseWriter, statusCode int, code, message string) {
 			Message: message,
 		},
 	})
+}
+
+// ensureNonNilSlice returns an empty slice ([]interface{}{}) when data is a nil
+// slice so that JSON serialisation produces [] instead of null.
+func ensureNonNilSlice(data interface{}) interface{} {
+	if data == nil {
+		return []interface{}{}
+	}
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Slice && v.IsNil() {
+		return []interface{}{}
+	}
+	return data
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {

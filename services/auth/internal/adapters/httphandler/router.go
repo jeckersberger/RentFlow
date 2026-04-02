@@ -43,6 +43,7 @@ func NewRouter(
 		r.Use(rateLimitMiddleware)
 		r.Post("/login", authHandler.Login)
 		r.Post("/refresh", authHandler.Refresh)
+		r.Post("/qr-login", authHandler.QRLogin)
 		r.Post("/forgot-password", authHandler.ForgotPassword)
 		r.Post("/reset-password", authHandler.ResetPassword)
 	})
@@ -56,6 +57,7 @@ func NewRouter(
 		r.Get("/api/v1/auth/me", authHandler.Me)
 		r.Put("/api/v1/auth/profile", authHandler.UpdateProfile)
 		r.Put("/api/v1/auth/password", authHandler.ChangePassword)
+		r.Post("/api/v1/auth/qr-generate", authHandler.GenerateQRLogin)
 
 		// Users — admin management.
 		r.Route("/api/v1/users", func(r chi.Router) {

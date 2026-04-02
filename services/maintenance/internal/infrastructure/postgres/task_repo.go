@@ -180,3 +180,15 @@ func (r *TaskRepo) Update(ctx context.Context, task *domain.MaintenanceTask) err
 	}
 	return nil
 }
+
+func (r *TaskRepo) Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error {
+	query := `DELETE FROM maintenance_tasks WHERE id = $1 AND tenant_id = $2`
+	tag, err := r.pool.Exec(ctx, query, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("task_repo: delete: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
