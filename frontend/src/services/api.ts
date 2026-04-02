@@ -37,6 +37,17 @@ api.interceptors.request.use(
 )
 
 // Response interceptor - unwrap { data: ..., message: "..." } envelope from backend
+let isRefreshing = false
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = []
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (token) prom.resolve(token)
+    else prom.reject(error)
+  })
+  failedQueue = []
+}
+
 api.interceptors.response.use(
   (response) => {
     // Backend wraps responses as { data: <payload>, message: "..." }
@@ -46,10 +57,46 @@ api.interceptors.response.use(
     }
     return response
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().logout()
-      window.location.href = '/login'
+  async (error) => {
+    const originalRequest = error.config
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't retry refresh or login requests
+      if (originalRequest.url?.includes('/auth/refresh') || originalRequest.url?.includes('/auth/login')) {
+        useAuthStore.getState().logout()
+        window.location.href = '/login'
+        return Promise.reject(error)
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return api(originalRequest)
+        })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      try {
+        const res = await api.post('/api/v1/auth/refresh')
+        const newToken = res.data?.access_token || res.data?.token || res.data?.data?.access_token
+        if (newToken) {
+          useAuthStore.getState().setToken(newToken)
+          originalRequest.headers.Authorization = `Bearer ${newToken}`
+          processQueue(null, newToken)
+          return api(originalRequest)
+        }
+        throw new Error('No token in refresh response')
+      } catch (refreshError) {
+        processQueue(refreshError, null)
+        useAuthStore.getState().logout()
+        window.location.href = '/login'
+        return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
+      }
     }
     return Promise.reject(error)
   }
@@ -482,16 +529,27 @@ export const invoiceApi = {
     MOCK_MODE
       ? mockDelay({ data: mockInvoices.slice((page - 1) * limit, page * limit), total: mockInvoices.length, page, limit })
       : api.get('/api/v1/invoices', { params: { page, limit } }).then(res => {
-          const result = res.data
+          const result = res.data || { data: [], total: 0 }
+          // Ensure result.data is always an array
+          if (!Array.isArray(result.data)) result.data = []
           // Map backend DTO field names to frontend Invoice type
-          if (result && Array.isArray(result.data)) {
-            result.data = result.data.map((inv: any) => ({
+          result.data = result.data.map((inv: any) => {
+            const mapped = {
               ...inv,
               number: inv.number || inv.invoice_number || '',
               subtotal: inv.subtotal ?? inv.sub_total ?? 0,
               tax_total: inv.tax_total ?? inv.tax_amount ?? 0,
-            }))
-          }
+              total: inv.total ?? 0,
+              line_items: inv.line_items || inv.items || [],
+            }
+            // Recalculate totals from line_items if total is 0 but items exist
+            if (mapped.total === 0 && mapped.line_items.length > 0) {
+              mapped.subtotal = mapped.line_items.reduce((s: number, i: any) => s + ((i.quantity || 0) * (i.unit_price || 0)), 0)
+              mapped.tax_total = mapped.line_items.reduce((s: number, i: any) => s + ((i.tax_amount || 0) || ((i.quantity || 0) * (i.unit_price || 0) * ((i.tax_rate || 0) / 100))), 0)
+              mapped.total = mapped.subtotal + mapped.tax_total
+            }
+            return mapped
+          })
           return result
         }),
 
@@ -504,6 +562,14 @@ export const invoiceApi = {
             inv.number = inv.number || inv.invoice_number || ''
             inv.subtotal = inv.subtotal ?? inv.sub_total ?? 0
             inv.tax_total = inv.tax_total ?? inv.tax_amount ?? 0
+            inv.total = inv.total ?? 0
+            inv.line_items = inv.line_items || inv.items || []
+            // Recalculate totals from line_items if total is 0 but items exist
+            if (inv.total === 0 && inv.line_items.length > 0) {
+              inv.subtotal = inv.line_items.reduce((s: number, i: any) => s + ((i.quantity || 0) * (i.unit_price || 0)), 0)
+              inv.tax_total = inv.line_items.reduce((s: number, i: any) => s + ((i.tax_amount || 0) || ((i.quantity || 0) * (i.unit_price || 0) * ((i.tax_rate || 0) / 100))), 0)
+              inv.total = inv.subtotal + inv.tax_total
+            }
           }
           return inv
         }),
@@ -1523,12 +1589,12 @@ export const crewApi = {
   listMembers: (params: { page?: number; per_page?: number } = {}) =>
     MOCK_MODE
       ? mockDelay({ data: [], page: 1, per_page: 20, total: 0, total_pages: 0 })
-      : api.get('/api/v1/crew/members', { params }).then(res => res.data),
+      : api.get('/api/v1/crew', { params }).then(res => res.data),
 
   getMember: (id: string) =>
     MOCK_MODE
       ? mockDelay(null)
-      : api.get(`/api/v1/crew/members/${id}`).then(res => res.data),
+      : api.get(`/api/v1/crew/${id}`).then(res => res.data),
 
   createMember: (data: {
     first_name: string
@@ -1544,32 +1610,32 @@ export const crewApi = {
   }) =>
     MOCK_MODE
       ? mockDelay({ ...data, id: String(Date.now()) })
-      : api.post('/api/v1/crew/members', data).then(res => res.data),
+      : api.post('/api/v1/crew', data).then(res => res.data),
 
   updateMember: (id: string, data: any) =>
     MOCK_MODE
       ? mockDelay({ ...data, id })
-      : api.put(`/api/v1/crew/members/${id}`, data).then(res => res.data),
+      : api.put(`/api/v1/crew/${id}`, data).then(res => res.data),
 
   deleteMember: (id: string) =>
     MOCK_MODE
       ? mockDelay(undefined)
-      : api.delete(`/api/v1/crew/members/${id}`).then(() => undefined),
+      : api.delete(`/api/v1/crew/${id}`).then(() => undefined),
 
   getQualifications: (memberId: string) =>
     MOCK_MODE
       ? mockDelay([])
-      : api.get(`/api/v1/crew/members/${memberId}/qualifications`).then(res => res.data),
+      : api.get(`/api/v1/crew/${memberId}/qualifications`).then(res => res.data),
 
   createQualification: (memberId: string, data: any) =>
     MOCK_MODE
       ? mockDelay({ ...data, id: String(Date.now()) })
-      : api.post(`/api/v1/crew/members/${memberId}/qualifications`, data).then(res => res.data),
+      : api.post(`/api/v1/crew/${memberId}/qualifications`, data).then(res => res.data),
 
   checkAvailability: (memberId: string, start: string, end: string) =>
     MOCK_MODE
       ? mockDelay({ crew_member_id: memberId, is_available: true })
-      : api.get(`/api/v1/crew/members/${memberId}/availability`, { params: { start, end } }).then(res => res.data),
+      : api.get(`/api/v1/crew/${memberId}/availability`, { params: { start, end } }).then(res => res.data),
 
   listAssignments: (params: { page?: number; per_page?: number } = {}) =>
     MOCK_MODE

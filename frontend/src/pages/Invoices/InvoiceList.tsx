@@ -14,8 +14,8 @@ import { Invoice, InvoiceStatus } from '../../types/invoice'
 import { generateCSV, downloadCSV, formatDateForExport } from '../../utils/csvExport'
 import '../Equipment/Equipment.scss'
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value)
+const formatCurrency = (value: number | null | undefined) =>
+  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value ?? 0)
 
 const STATUS_TABS: Array<{ value: InvoiceStatus | ''; label: string }> = [
   { value: '', label: 'Alle' },
@@ -77,7 +77,8 @@ function InvoiceListPage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const filteredData = (invoiceData?.data || []).filter((invoice: Invoice) => {
+  const allInvoices: Invoice[] = Array.isArray(invoiceData?.data) ? invoiceData.data : Array.isArray(invoiceData) ? invoiceData : []
+  const filteredData = allInvoices.filter((invoice: Invoice) => {
     const matchesSearch =
       !searchQuery ||
       invoice.number?.toLowerCase().includes(searchQuery.toLowerCase()) ||

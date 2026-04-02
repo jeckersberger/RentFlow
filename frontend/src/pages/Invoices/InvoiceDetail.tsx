@@ -8,8 +8,8 @@ import { Modal } from '../../components/Modal/Modal'
 import { InvoiceStatus, DunningEntry } from '../../types/invoice'
 import '../Equipment/Equipment.scss'
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value)
+const formatCurrency = (value: number | null | undefined) =>
+  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value ?? 0)
 
 const DUNNING_LEVELS = [
   { level: 1, label: 'Zahlungserinnerung', description: 'Freundliche Erinnerung, keine Gebühr, 7 Tage Frist', fee: 0, days: 7 },

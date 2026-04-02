@@ -59,8 +59,8 @@ const mockQuote: Quote = {
   created_at: '2026-01-15T10:00:00Z', updated_at: '2026-02-20T14:00:00Z',
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount)
+function formatCurrency(amount: number | null | undefined): string {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount ?? 0)
 }
 
 function formatDate(dateStr: string): string {
@@ -81,7 +81,16 @@ function QuoteDetail() {
   })
 
   const quote: Quote | null = useMemo(() => {
-    if (quoteRaw && typeof quoteRaw === 'object' && quoteRaw.id) return quoteRaw as Quote
+    if (quoteRaw && typeof quoteRaw === 'object' && quoteRaw.id) {
+      const q = quoteRaw as any
+      return {
+        ...q,
+        sub_total: q.sub_total ?? q.subtotal ?? 0,
+        tax_amount: q.tax_amount ?? q.tax_total ?? 0,
+        total: q.total ?? 0,
+        items: q.items || q.line_items || [],
+      } as Quote
+    }
     // Fallback
     return mockQuote
   }, [quoteRaw])

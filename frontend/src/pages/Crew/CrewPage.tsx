@@ -194,7 +194,7 @@ function CrewPage() {
         <div className="empty-state">
           <div className="empty-state__icon">&#x26A0;</div>
           <h3 className="empty-state__title">Daten konnten nicht geladen werden</h3>
-          <p className="empty-state__description">{String(error)}</p>
+          <p className="empty-state__description">{error instanceof Error ? error.message : 'Unbekannter Fehler'}</p>
         </div>
       </div>
     )

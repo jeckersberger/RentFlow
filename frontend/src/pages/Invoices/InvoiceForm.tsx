@@ -9,8 +9,8 @@ import { useNotificationStore } from '../../stores/notificationStore'
 import { CreateInvoiceDTO } from '../../types/invoice'
 import '../Equipment/Equipment.scss'
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value)
+const formatCurrency = (value: number | null | undefined) =>
+  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value ?? 0)
 
 interface LineItem {
   name: string
@@ -207,10 +207,11 @@ function InvoiceFormPage() {
       }
     },
     onError: (error: unknown) => {
-      const errorMessage =
-        (error as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.error ||
-        (error as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.message ||
+      const raw =
+        (error as { response?: { data?: { error?: unknown; message?: unknown } } })?.response?.data?.error ||
+        (error as { response?: { data?: { error?: unknown; message?: unknown } } })?.response?.data?.message ||
         'Fehler beim Speichern der Rechnung'
+      const errorMessage = typeof raw === 'string' ? raw : (typeof raw === 'object' && raw !== null ? ((raw as { message?: string }).message || JSON.stringify(raw)) : String(raw))
       setErrors({ submit: errorMessage })
     },
   })
