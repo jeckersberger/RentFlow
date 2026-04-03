@@ -391,11 +391,11 @@ export const equipmentTypeApi = {
 
 // Tenant API endpoints
 export const tenantApi = {
-  getById: (id: string) =>
-    api.get(`/api/v1/tenants/${id}`).then(res => res.data),
+  getById: (_id?: string) =>
+    api.get('/api/v1/tenants/current').then(res => res.data),
 
-  update: (id: string, data: object) =>
-    api.put(`/api/v1/tenants/${id}`, data).then(res => res.data),
+  update: (_id: string, data: object) =>
+    api.put('/api/v1/tenants/current', data).then(res => res.data),
 }
 
 // User API endpoints (auth-service)
@@ -729,27 +729,27 @@ export const contactApi = {
   list: (params?: any) =>
     MOCK_MODE
       ? mockDelay({ data: [], total: 0 })
-      : api.get('/api/v1/contacts', { params }).then(res => res.data),
+      : api.get('/api/v1/customers', { params }).then(res => res.data),
 
   getById: (id: string) =>
     MOCK_MODE
       ? mockDelay(null)
-      : api.get(`/api/v1/contacts/${id}`).then(res => res.data),
+      : api.get(`/api/v1/customers/${id}`).then(res => res.data),
 
   create: (data: any) =>
     MOCK_MODE
       ? mockDelay({ ...data, id: String(Date.now()), created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      : api.post('/api/v1/contacts', data).then(res => res.data),
+      : api.post('/api/v1/customers', data).then(res => res.data),
 
   update: (id: string, data: any) =>
     MOCK_MODE
       ? mockDelay({ ...data, id, updated_at: new Date().toISOString() })
-      : api.put(`/api/v1/contacts/${id}`, data).then(res => res.data),
+      : api.put(`/api/v1/customers/${id}`, data).then(res => res.data),
 
   delete: (id: string) =>
     MOCK_MODE
       ? mockDelay({ success: true })
-      : api.delete(`/api/v1/contacts/${id}`).then(res => res.data),
+      : api.delete(`/api/v1/customers/${id}`).then(res => res.data),
 }
 
 // ============================================================================
@@ -1694,17 +1694,17 @@ export const crewApi = {
 // ============================================================================
 export const bookingApi = {
   create: (data: { assignment_id: string; message?: string }) =>
-    api.post('/api/v1/crew/bookings', data).then(r => r.data),
+    api.post('/api/v1/crew-assignments', data).then(r => r.data),
 
   list: () =>
-    api.get('/api/v1/crew/bookings').then(r => r.data),
+    api.get('/api/v1/crew-assignments').then(r => r.data).catch(() => []),
 
   // Public endpoints - use raw axios (no auth interceptor)
   getDetails: (token: string) =>
-    axios.get(`${API_BASE_URL}/api/v1/crew/bookings/${token}/details`).then(r => r.data),
+    axios.get(`${API_BASE_URL}/api/v1/crew-assignments/${token}/details`).then(r => r.data),
 
   respond: (token: string, data: { status: string; message?: string }) =>
-    axios.post(`${API_BASE_URL}/api/v1/crew/bookings/${token}/respond`, data).then(r => r.data),
+    axios.post(`${API_BASE_URL}/api/v1/crew-assignments/${token}/respond`, data).then(r => r.data),
 }
 
 // ============================================================================
