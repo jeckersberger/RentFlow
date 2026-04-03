@@ -44,18 +44,20 @@ function EquipmentTypesPage() {
   const [deleteTarget, setDeleteTarget] = useState<EquipmentType | null>(null)
   const limit = 30
 
-  const { data: categories } = useQuery({
+  const { data: categoriesRaw } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => categoryApi.list() as Promise<Category[]>,
+    queryFn: () => categoryApi.list(),
     staleTime: 1000 * 60 * 10,
   })
 
-  const categoryOptions = (categories || []).map((cat: Category) => ({
+  const categories: Category[] = Array.isArray(categoriesRaw) ? categoriesRaw : Array.isArray(categoriesRaw?.data) ? categoriesRaw.data : []
+
+  const categoryOptions = categories.map((cat: Category) => ({
     value: cat.id,
     label: cat.name,
   }))
 
-  const categoryMap = new Map((categories || []).map((c: Category) => [c.id, c.name]))
+  const categoryMap = new Map(categories.map((c: Category) => [c.id, c.name]))
 
   const offset = (page - 1) * limit
 
