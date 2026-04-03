@@ -83,11 +83,29 @@ function ContactsPage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  // Use real data or fallback to mock
+  // Use real data or fallback to mock — normalize customer→contact fields
   const contacts: Contact[] = useMemo(() => {
     const raw = contactsRaw?.data || contactsRaw
-    if (Array.isArray(raw) && raw.length > 0) return raw
-    // Fallback to mock data when backend returns empty or errors
+    if (Array.isArray(raw) && raw.length > 0) {
+      return raw.map((c: any) => ({
+        ...c,
+        type: c.type || (c.company_name ? 'company' : 'person'),
+        company_name: c.company_name || '',
+        first_name: c.first_name || '',
+        last_name: c.last_name || '',
+        email: c.email || '',
+        phone: c.phone || '',
+        mobile: c.mobile || '',
+        website: c.website || '',
+        street: c.street || c.billing_address_street || '',
+        city: c.city || c.billing_address_city || '',
+        zip: c.zip || c.billing_address_zip || '',
+        country: c.country || c.billing_address_country || '',
+        vat_id: c.vat_id || c.tax_id || '',
+        notes: c.notes || '',
+        tags: c.tags || [],
+      }))
+    }
     return mockContacts
   }, [contactsRaw])
 

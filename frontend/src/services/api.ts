@@ -339,13 +339,13 @@ export const equipmentApi = {
   checkOut: (equipmentId: string, projectId: string) =>
     MOCK_MODE
       ? mockDelay({ id: equipmentId, project_id: projectId, status: 'checked_out' })
-      : api.post(`/api/v1/equipment/${equipmentId}/check-out`, { project_id: projectId }).then(res => res.data),
+      : api.post('/api/v1/scanner/checkout', { equipment_id: equipmentId, project_id: projectId }).then(res => res.data),
 
   // Equipment vom Projekt zurückgeben (Check-In)
   checkIn: (equipmentId: string) =>
     MOCK_MODE
       ? mockDelay({ id: equipmentId, status: 'available' })
-      : api.post(`/api/v1/equipment/${equipmentId}/check-in`).then(res => res.data),
+      : api.post('/api/v1/scanner/checkin', { equipment_id: equipmentId }).then(res => res.data),
 
   // Zustandsbericht für Equipment aktualisieren
   updateCondition: (equipmentId: string, condition: string, notes?: string, reportedBy?: string) =>

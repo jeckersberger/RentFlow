@@ -50,11 +50,21 @@ function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [activeTab, setActiveTab] = useState<TabId>('overview')
 
-  const { data: project, isLoading, error } = useQuery({
+  const { data: projectRaw, isLoading, error } = useQuery({
     queryKey: ['project', id],
     queryFn: () => projectApi.getById(id!),
     enabled: !!id,
   })
+
+  // Normalize backend field names
+  const project = projectRaw ? {
+    ...projectRaw,
+    name: projectRaw.name || projectRaw.title || '---',
+    status: projectRaw.status || 'draft',
+    start_date: projectRaw.start_date || projectRaw.startDate || '',
+    end_date: projectRaw.end_date || projectRaw.endDate || '',
+    client_name: projectRaw.client_name || projectRaw.contact_name || '',
+  } : null
 
   if (isLoading) {
     return <div className="loading">Wird geladen...</div>
@@ -68,8 +78,11 @@ function ProjectDetailPage() {
     return <div className="error">Projekt nicht gefunden</div>
   }
 
-  const formatDateShort = (date: string) =>
-    new Date(date).toLocaleDateString('de-DE')
+  const formatDateShort = (date: string) => {
+    if (!date) return '---'
+    const d = new Date(date)
+    return isNaN(d.getTime()) ? '---' : d.toLocaleDateString('de-DE')
+  }
 
   const renderActiveTab = () => {
     switch (activeTab) {
