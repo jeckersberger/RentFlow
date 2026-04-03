@@ -54,8 +54,9 @@ export function StatusBadge({ status, label, size = 'md' }: StatusBadgeProps) {
     }
   }
 
-  const color = getStatusColor(status)
-  const displayLabel = label || getStatusLabel(status) || status.replace(/_/g, ' ')
+  const safeStatus = status || 'draft'
+  const color = getStatusColor(safeStatus)
+  const displayLabel = label || getStatusLabel(safeStatus) || safeStatus.replace(/_/g, ' ')
 
   return (
     <span className={`status-badge status-badge--${color} status-badge--${size}`}>

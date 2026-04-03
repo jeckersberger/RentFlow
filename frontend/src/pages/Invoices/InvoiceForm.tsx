@@ -138,7 +138,7 @@ function InvoiceFormPage() {
             name: item.name || item.description || '',
             description: item.description || '',
             quantity: item.quantity || 1,
-            unit_price: item.unit_price || 0,
+            unit_price: (item.unit_price || 0) / 100, // Cents → EUR for display
             tax_rate: item.tax_rate ?? 19,
           }))
         )
@@ -171,7 +171,7 @@ function InvoiceFormPage() {
           name: item.name,
           description: item.description || item.name,
           quantity: item.quantity,
-          unit_price: item.unit_price,
+          unit_price: Math.round(item.unit_price * 100), // EUR → Cents for backend
           tax_rate: isKleinunternehmer ? 0 : item.tax_rate,
         })),
       }

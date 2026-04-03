@@ -285,7 +285,14 @@ function ScannerPage() {
         equipment = await equipmentApi.getByBarcode(scannedBarcode)
       }
 
-      if (!equipment) throw new Error('Equipment nicht gefunden')
+      // Unwrap if response is wrapped in data/items array
+      if (equipment && !equipment.id) {
+        const inner = (equipment as any).data || (equipment as any).items
+        if (Array.isArray(inner) && inner.length > 0) equipment = inner[0]
+        else if (inner && typeof inner === 'object' && inner.id) equipment = inner
+      }
+
+      if (!equipment || !equipment.id) throw new Error('Equipment nicht gefunden')
 
       // Step 2: Execute action based on context
       if (scanContext === 'check-out') {

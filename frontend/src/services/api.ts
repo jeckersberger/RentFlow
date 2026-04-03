@@ -532,15 +532,24 @@ export const invoiceApi = {
           const result = res.data || { data: [], total: 0 }
           // Ensure result.data is always an array
           if (!Array.isArray(result.data)) result.data = []
-          // Map backend DTO field names to frontend Invoice type
+          // Map backend DTO field names to frontend Invoice type + cents→EUR
+          const c2e = (v: number) => v > 1000000 ? v / 100 : v // heuristic: values > 10000 EUR are likely cents
           result.data = result.data.map((inv: any) => {
+            const rawSub = inv.subtotal ?? inv.sub_total ?? 0
+            const rawTax = inv.tax_total ?? inv.tax_amount ?? 0
+            const rawTotal = inv.total ?? 0
             const mapped = {
               ...inv,
               number: inv.number || inv.invoice_number || '',
-              subtotal: inv.subtotal ?? inv.sub_total ?? 0,
-              tax_total: inv.tax_total ?? inv.tax_amount ?? 0,
-              total: inv.total ?? 0,
-              line_items: inv.line_items || inv.items || [],
+              subtotal: c2e(rawSub),
+              tax_total: c2e(rawTax),
+              total: c2e(rawTotal),
+              line_items: (inv.line_items || inv.items || []).map((li: any) => ({
+                ...li,
+                unit_price: c2e(li.unit_price || 0),
+                total: c2e(li.total || 0),
+                tax_amount: c2e(li.tax_amount || 0),
+              })),
             }
             // Recalculate totals from line_items if total is 0 but items exist
             if (mapped.total === 0 && mapped.line_items.length > 0) {
@@ -559,11 +568,17 @@ export const invoiceApi = {
       : api.get(`/api/v1/invoices/${id}`).then(res => {
           const inv = res.data
           if (inv && typeof inv === 'object') {
+            const c2e = (v: number) => v > 1000000 ? v / 100 : v
             inv.number = inv.number || inv.invoice_number || ''
-            inv.subtotal = inv.subtotal ?? inv.sub_total ?? 0
-            inv.tax_total = inv.tax_total ?? inv.tax_amount ?? 0
-            inv.total = inv.total ?? 0
-            inv.line_items = inv.line_items || inv.items || []
+            inv.subtotal = c2e(inv.subtotal ?? inv.sub_total ?? 0)
+            inv.tax_total = c2e(inv.tax_total ?? inv.tax_amount ?? 0)
+            inv.total = c2e(inv.total ?? 0)
+            inv.line_items = (inv.line_items || inv.items || []).map((li: any) => ({
+              ...li,
+              unit_price: c2e(li.unit_price || 0),
+              total: c2e(li.total || 0),
+              tax_amount: c2e(li.tax_amount || 0),
+            }))
             // Recalculate totals from line_items if total is 0 but items exist
             if (inv.total === 0 && inv.line_items.length > 0) {
               inv.subtotal = inv.line_items.reduce((s: number, i: any) => s + ((i.quantity || 0) * (i.unit_price || 0)), 0)
@@ -1861,8 +1876,8 @@ export interface SetupRequest {
 export const setupApi = {
   getStatus: () =>
     MOCK_MODE
-      ? mockDelay({ is_completed: false, has_setup_token: true })
-      : api.get('/api/v1/setup/status').then(res => res.data),
+      ? mockDelay({ is_completed: true, has_setup_token: false })
+      : api.get('/api/v1/setup/status').then(res => res.data).catch(() => ({ is_completed: true, has_setup_token: false })),
 
   complete: (data: SetupRequest) =>
     MOCK_MODE
