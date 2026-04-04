@@ -130,7 +130,7 @@ func (r *CustomerRepo) List(ctx context.Context, tenantID uuid.UUID, filter doma
 	}
 	if filter.Search != "" {
 		conditions = append(conditions, fmt.Sprintf(
-			"(company_name ILIKE $%d OR contact_first_name ILIKE $%d OR contact_last_name ILIKE $%d OR contact_email ILIKE $%d)",
+			"(COALESCE(company_name,'') ILIKE $%d OR COALESCE(contact_first_name,'') ILIKE $%d OR COALESCE(contact_last_name,'') ILIKE $%d OR COALESCE(contact_email,'') ILIKE $%d)",
 			argIdx, argIdx, argIdx, argIdx,
 		))
 		args = append(args, "%"+filter.Search+"%")

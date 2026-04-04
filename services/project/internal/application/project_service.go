@@ -37,6 +37,7 @@ type CreateProjectRequest struct {
 	Currency      string     `json:"currency,omitempty"`
 	ManagerID     *uuid.UUID `json:"manager_id,omitempty"`
 	Notes         string     `json:"notes,omitempty"`
+	Status        string     `json:"status,omitempty"`
 }
 
 type UpdateProjectRequest struct {
@@ -101,14 +102,23 @@ func (s *ProjectService) Create(ctx context.Context, tenantID uuid.UUID, req Cre
 	if req.Name == "" {
 		return nil, fmt.Errorf("project name is required")
 	}
-	if len(req.Name) > 500 {
-		return nil, fmt.Errorf("project name too long (max 500 characters)")
+	if len(req.Name) > 255 {
+		return nil, fmt.Errorf("project name too long (max 255 characters)")
 	}
 	if req.Budget < 0 {
 		return nil, fmt.Errorf("budget must not be negative")
 	}
 	if req.Budget > 99999999999 {
 		return nil, fmt.Errorf("budget value too large")
+	}
+
+	status := domain.ProjectStatusDraft
+	if req.Status != "" {
+		p := &domain.Project{}
+		if !p.ValidateStatus(req.Status) {
+			return nil, domain.ErrInvalidProjectStatus
+		}
+		status = req.Status
 	}
 
 	now := time.Now()
@@ -118,7 +128,7 @@ func (s *ProjectService) Create(ctx context.Context, tenantID uuid.UUID, req Cre
 		Name:          req.Name,
 		ProjectNumber: req.ProjectNumber,
 		Description:   req.Description,
-		Status:        domain.ProjectStatusDraft,
+		Status:        status,
 		CustomerID:    req.CustomerID,
 		ContactName:   req.ContactName,
 		ContactEmail:  req.ContactEmail,
