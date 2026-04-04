@@ -69,7 +69,11 @@ func main() {
 	bankingSvc := application.NewBankingService(bankRepo, invoiceRepo, paymentRepo, log)
 	datevSvc := application.NewDatevService(invoiceRepo, log)
 
-	invoiceH := httphandler.NewInvoiceHandler(invoiceSvc, log)
+	authBaseURL := os.Getenv("AUTH_BASE_URL")
+	if authBaseURL == "" {
+		authBaseURL = "http://auth:8001"
+	}
+	invoiceH := httphandler.NewInvoiceHandler(invoiceSvc, authBaseURL, log)
 	quoteH := httphandler.NewQuoteHandler(quoteSvc, log)
 	dunningH := httphandler.NewDunningHandler(dunningSvc, log)
 	bankingH := httphandler.NewBankingHandler(bankingSvc, log)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
@@ -18,12 +19,14 @@ import (
 
 type InvoiceHandler struct {
 	invoiceService *application.InvoiceService
+	authBaseURL    string
 	logger         zerolog.Logger
 }
 
-func NewInvoiceHandler(invoiceService *application.InvoiceService, logger zerolog.Logger) *InvoiceHandler {
+func NewInvoiceHandler(invoiceService *application.InvoiceService, authBaseURL string, logger zerolog.Logger) *InvoiceHandler {
 	return &InvoiceHandler{
 		invoiceService: invoiceService,
+		authBaseURL:    authBaseURL,
 		logger:         logger.With().Str("handler", "invoice").Logger(),
 	}
 }
@@ -337,7 +340,7 @@ func (h *InvoiceHandler) SendEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate PDF into buffer
-	company := h.getCompanyInfo()
+	company := h.fetchCompanyInfo(r.Header.Get("Authorization"))
 	data := application.InvoicePDFData{Invoice: invoice, Items: items, Company: company}
 
 	var pdfBuf bytes.Buffer
@@ -409,12 +412,70 @@ func (h *InvoiceHandler) CreatePartialInvoice(w http.ResponseWriter, r *http.Req
 	response.Created(w, partial)
 }
 
-func (h *InvoiceHandler) getCompanyInfo() application.CompanyInfo {
+// fetchCompanyInfo loads tenant data from the auth service and maps it to CompanyInfo.
+// Falls back to a minimal default if the auth service is unreachable.
+func (h *InvoiceHandler) fetchCompanyInfo(authToken string) application.CompanyInfo {
+	if h.authBaseURL == "" {
+		h.logger.Warn().Msg("AUTH_BASE_URL not configured, using fallback company info")
+		return application.CompanyInfo{Name: "Unbekannt"}
+	}
+
+	url := h.authBaseURL + "/api/v1/tenants/current"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		h.logger.Error().Err(err).Msg("failed to create tenant request")
+		return application.CompanyInfo{Name: "Unbekannt"}
+	}
+	req.Header.Set("Authorization", authToken)
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		h.logger.Error().Err(err).Msg("failed to fetch tenant info from auth service")
+		return application.CompanyInfo{Name: "Unbekannt"}
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		h.logger.Warn().Int("status", resp.StatusCode).Msg("auth service returned non-200 for tenant info")
+		return application.CompanyInfo{Name: "Unbekannt"}
+	}
+
+	var envelope struct {
+		Data struct {
+			Name      string `json:"name"`
+			Email     string `json:"email"`
+			Phone     string `json:"phone"`
+			Street    string `json:"address_street"`
+			City      string `json:"address_city"`
+			Zip       string `json:"address_zip"`
+			TaxNumber string `json:"tax_number"`
+			VatID     string `json:"vat_id"`
+			IBAN      string `json:"iban"`
+			BIC       string `json:"bic"`
+			BankName  string `json:"bank_name"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
+		h.logger.Error().Err(err).Msg("failed to decode tenant info")
+		return application.CompanyInfo{Name: "Unbekannt"}
+	}
+
+	city := envelope.Data.City
+	if envelope.Data.Zip != "" {
+		city = envelope.Data.Zip + " " + city
+	}
+
 	return application.CompanyInfo{
-		Name:   "JE-Sound&Light",
-		Street: "Feucht",
-		City:   "90537 Feucht",
-		Email:  "j.eckersberger@je-soundulight.de",
+		Name:      envelope.Data.Name,
+		Street:    envelope.Data.Street,
+		City:      city,
+		Phone:     envelope.Data.Phone,
+		Email:     envelope.Data.Email,
+		TaxNumber: envelope.Data.TaxNumber,
+		IBAN:      envelope.Data.IBAN,
+		BIC:       envelope.Data.BIC,
+		BankName:  envelope.Data.BankName,
 	}
 }
 
@@ -443,18 +504,7 @@ func (h *InvoiceHandler) GeneratePDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Load company info from tenant config
-	company := application.CompanyInfo{
-		Name:       "JE-Sound&Light",
-		Street:     "Feucht",
-		City:       "90537 Feucht",
-		Phone:      "",
-		Email:      "j.eckersberger@je-soundulight.de",
-		TaxNumber:  "",
-		IBAN:       "",
-		BIC:        "",
-		BankName:   "",
-	}
+	company := h.fetchCompanyInfo(r.Header.Get("Authorization"))
 
 	data := application.InvoicePDFData{
 		Invoice: invoice,
