@@ -12,6 +12,7 @@ interface UserData {
   last_name: string
   email: string
   roles: string[]
+  role: string
   status: string
   last_login_at: string | null
   created_at: string
@@ -143,8 +144,8 @@ function UsersPage() {
   }
 
   const isAdmin = (user: UserData) => {
-    const roles = Array.isArray(user.roles) ? user.roles : [user.roles]
-    return roles.some(r => ['admin', 'superadmin', 'owner'].includes(r?.toLowerCase()))
+    const role = user.role || (Array.isArray(user.roles) ? user.roles[0] : user.roles) || ''
+    return ['admin', 'superadmin', 'owner'].includes(role?.toLowerCase())
   }
 
   const canModifyUser = (user: UserData) => {
@@ -253,7 +254,7 @@ function UsersPage() {
                       {user.first_name} {user.last_name}
                     </td>
                     <td>{user.email}</td>
-                    <td><span className={roleBadge(Array.isArray(user.roles) ? user.roles[0] : '')}>{roleLabel(user.roles)}</span></td>
+                    <td><span className={roleBadge(user.role || (Array.isArray(user.roles) ? user.roles[0] : ''))}>{roleLabel(user.role || user.roles)}</span></td>
                     <td><span className={status.badge}>{status.label}</span></td>
                     <td style={{ textAlign: 'right' }}>
                       {canModifyUser(user) && (

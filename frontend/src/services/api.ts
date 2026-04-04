@@ -1975,7 +1975,17 @@ export const systemApi = {
           release_notes: 'Bug fixes and new features',
           checked_at: new Date().toISOString(),
         })
-      : api.get('/api/v1/system/version').then(r => r.data),
+      : api.get('/api/v1/setup/status').then(r => ({
+          current_version: r.data?.version || '1.0.0',
+          latest_version: r.data?.version || '1.0.0',
+          update_available: false,
+          checked_at: new Date().toISOString(),
+        })).catch(() => ({
+          current_version: '1.0.0',
+          latest_version: '1.0.0',
+          update_available: false,
+          checked_at: new Date().toISOString(),
+        })),
 
   triggerUpdate: () =>
     MOCK_MODE
