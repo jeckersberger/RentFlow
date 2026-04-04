@@ -101,6 +101,15 @@ func (s *ProjectService) Create(ctx context.Context, tenantID uuid.UUID, req Cre
 	if req.Name == "" {
 		return nil, fmt.Errorf("project name is required")
 	}
+	if len(req.Name) > 500 {
+		return nil, fmt.Errorf("project name too long (max 500 characters)")
+	}
+	if req.Budget < 0 {
+		return nil, fmt.Errorf("budget must not be negative")
+	}
+	if req.Budget > 99999999999 {
+		return nil, fmt.Errorf("budget value too large")
+	}
 
 	now := time.Now()
 	project := &domain.Project{

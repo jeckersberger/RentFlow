@@ -330,7 +330,10 @@ func (s *InvoiceService) AddItem(ctx context.Context, invoiceID, tenantID uuid.U
 		return nil, fmt.Errorf("description is required")
 	}
 	if req.Quantity <= 0 {
-		req.Quantity = 1
+		return nil, fmt.Errorf("quantity must be positive")
+	}
+	if req.UnitPrice < 0 {
+		return nil, fmt.Errorf("unit_price must not be negative")
 	}
 	if req.Unit == "" {
 		req.Unit = "Stueck"
