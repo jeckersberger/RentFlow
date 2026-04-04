@@ -16,7 +16,7 @@ import (
 // invoiceItemColumns lists all columns of the invoice_items table.
 const invoiceItemColumns = `
 	id, tenant_id, invoice_id, description, quantity,
-	unit, unit_price, position, created_at, updated_at`
+	unit, unit_price, COALESCE(vat_rate, 0) AS vat_rate, position, created_at, updated_at`
 
 // ItemRepo implements domain.InvoiceItemRepository using PostgreSQL.
 type ItemRepo struct {
@@ -34,7 +34,7 @@ func scanInvoiceItem(row pgx.Row) (*domain.InvoiceItem, error) {
 
 	err := row.Scan(
 		&item.ID, &item.TenantID, &item.InvoiceID, &item.Description, &item.Quantity,
-		&item.Unit, &item.UnitPrice, &item.Position, &item.CreatedAt, &item.UpdatedAt,
+		&item.Unit, &item.UnitPrice, &item.VatRate, &item.Position, &item.CreatedAt, &item.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -48,15 +48,15 @@ func (r *ItemRepo) Create(ctx context.Context, item *domain.InvoiceItem) error {
 	query := `
 		INSERT INTO invoice_items (
 			id, tenant_id, invoice_id, description, quantity,
-			unit, unit_price, position
+			unit, unit_price, vat_rate, position
 		) VALUES (
 			$1, $2, $3, $4, $5,
-			$6, $7, $8
+			$6, $7, $8, $9
 		) RETURNING created_at, updated_at`
 
 	err := r.pool.QueryRow(ctx, query,
 		item.ID, item.TenantID, item.InvoiceID, item.Description, item.Quantity,
-		item.Unit, item.UnitPrice, item.Position,
+		item.Unit, item.UnitPrice, item.VatRate, item.Position,
 	).Scan(&item.CreatedAt, &item.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("item_repo: create: %w", err)

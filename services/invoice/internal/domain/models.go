@@ -58,6 +58,7 @@ type InvoiceItem struct {
 	Quantity    int64     `json:"quantity"`
 	Unit        string    `json:"unit"`
 	UnitPrice   int64     `json:"unit_price"`
+	VatRate     int64     `json:"vat_rate"`
 	Position    int       `json:"position"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`

@@ -46,6 +46,7 @@ type AddItemRequest struct {
 	Quantity    int64  `json:"quantity"`
 	Unit        string `json:"unit"`
 	UnitPrice   int64  `json:"unit_price"`
+	VatRate     int64  `json:"vat_rate"`
 	Position    int    `json:"position"`
 }
 
@@ -335,6 +336,11 @@ func (s *InvoiceService) AddItem(ctx context.Context, invoiceID, tenantID uuid.U
 		req.Unit = "Stueck"
 	}
 
+	vatRate := req.VatRate
+	if vatRate == 0 {
+		vatRate = inv.VatRate
+	}
+
 	item := &domain.InvoiceItem{
 		ID:          uuid.New(),
 		TenantID:    tenantID,
@@ -343,6 +349,7 @@ func (s *InvoiceService) AddItem(ctx context.Context, invoiceID, tenantID uuid.U
 		Quantity:    req.Quantity,
 		Unit:        req.Unit,
 		UnitPrice:   req.UnitPrice,
+		VatRate:     vatRate,
 		Position:    req.Position,
 	}
 
