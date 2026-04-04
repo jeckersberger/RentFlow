@@ -3,6 +3,7 @@ package httphandler
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
@@ -61,6 +62,14 @@ func (h *ConfigHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	entry, err := h.configService.Get(r.Context(), claims.TenantID, key)
 	if err != nil {
+		// Return empty default for unconfigured keys instead of 404
+		if strings.Contains(err.Error(), "not found") {
+			response.Success(w, map[string]interface{}{
+				"key":   key,
+				"value": json.RawMessage(`{}`),
+			})
+			return
+		}
 		errors.HandleError(w, err)
 		return
 	}

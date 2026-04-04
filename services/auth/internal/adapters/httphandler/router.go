@@ -36,6 +36,7 @@ func NewRouter(
 	r.Route("/api/v1/setup", func(r chi.Router) {
 		r.Post("/init", setupHandler.Init)
 		r.Post("/complete", setupHandler.Complete)
+		r.Get("/status", setupHandler.Status)
 	})
 
 	// Auth endpoints (no JWT required, but rate-limited).

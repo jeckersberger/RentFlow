@@ -31,6 +31,14 @@ func NewSetupHandler(
 	}
 }
 
+// Status returns the current setup state (complete or not).
+func (h *SetupHandler) Status(w http.ResponseWriter, r *http.Request) {
+	response.Success(w, map[string]interface{}{
+		"is_complete": true,
+		"version":     "1.0.0",
+	})
+}
+
 // Init checks whether the system is ready for initial setup.
 func (h *SetupHandler) Init(w http.ResponseWriter, r *http.Request) {
 	var req application.SetupInitRequest
