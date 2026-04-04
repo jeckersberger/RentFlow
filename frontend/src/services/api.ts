@@ -554,7 +554,7 @@ export const invoiceApi = {
             total: (inv.total ?? inv.total_gross ?? 0) / 100,
             amount_paid: (inv.amount_paid ?? 0) / 100,
           }))
-          return { data, total, page, limit }
+          return { data, items: data, total, page, limit }
         }),
 
   getById: (id: string) =>
@@ -764,7 +764,7 @@ export const quoteApi = {
             tax_amount: (q.tax_amount ?? q.total_vat ?? 0) / 100,
             total: (q.total ?? q.total_gross ?? 0) / 100,
           }))
-          return { data, total }
+          return { data, items: data, total }
         }),
 
   getById: (id: string) =>
