@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,6 +11,10 @@ import (
 
 	"github.com/jeckersberger/EquipFlow/services/reporting/internal/domain"
 )
+
+func isNotFound(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "not found")
+}
 
 // ---------------------------------------------------------------------------
 // Request DTOs
@@ -46,9 +51,17 @@ func NewKPIService(repo domain.KPISnapshotRepository, logger zerolog.Logger) *KP
 }
 
 // GetLatest returns the most recent KPI snapshot for the given tenant.
+// Returns a zeroed snapshot with today's date if none exists yet.
 func (s *KPIService) GetLatest(ctx context.Context, tenantID uuid.UUID) (*domain.KPISnapshot, error) {
 	snap, err := s.repo.GetLatest(ctx, tenantID)
 	if err != nil {
+		// Return empty default snapshot instead of 404 when no data exists yet.
+		if isNotFound(err) {
+			return &domain.KPISnapshot{
+				TenantID:     tenantID,
+				SnapshotDate: time.Now().Format("2006-01-02"),
+			}, nil
+		}
 		return nil, fmt.Errorf("get latest KPI: %w", err)
 	}
 	return snap, nil
