@@ -39,6 +39,7 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 	filter := domain.CustomerFilter{
 		Page:    p.Page,
 		PerPage: p.PerPage,
+		Search:  r.URL.Query().Get("search"),
 	}
 
 	items, total, err := h.customerService.List(r.Context(), claims.TenantID, filter)

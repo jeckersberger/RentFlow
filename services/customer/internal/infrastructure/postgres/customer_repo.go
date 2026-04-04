@@ -128,6 +128,14 @@ func (r *CustomerRepo) List(ctx context.Context, tenantID uuid.UUID, filter doma
 		args = append(args, *filter.Active)
 		argIdx++
 	}
+	if filter.Search != "" {
+		conditions = append(conditions, fmt.Sprintf(
+			"(company_name ILIKE $%d OR contact_first_name ILIKE $%d OR contact_last_name ILIKE $%d OR contact_email ILIKE $%d)",
+			argIdx, argIdx, argIdx, argIdx,
+		))
+		args = append(args, "%"+filter.Search+"%")
+		argIdx++
+	}
 
 	where := strings.Join(conditions, " AND ")
 

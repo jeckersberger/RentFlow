@@ -60,7 +60,8 @@ type ContactNote struct {
 
 // CustomerFilter holds filter/pagination parameters for listing customers.
 type CustomerFilter struct {
-	Page    int   `json:"page"`
-	PerPage int   `json:"per_page"`
-	Active  *bool `json:"active,omitempty"`
+	Page    int    `json:"page"`
+	PerPage int    `json:"per_page"`
+	Active  *bool  `json:"active,omitempty"`
+	Search  string `json:"search,omitempty"`
 }

@@ -60,6 +60,7 @@ type UpdateProjectRequest struct {
 	Currency      *string    `json:"currency,omitempty"`
 	ManagerID     *uuid.UUID `json:"manager_id,omitempty"`
 	Notes         *string    `json:"notes,omitempty"`
+	Status        *string    `json:"status,omitempty"`
 }
 
 type UpdateProjectStatusRequest struct {
@@ -275,6 +276,13 @@ func (s *ProjectService) Update(ctx context.Context, id, tenantID uuid.UUID, req
 			return nil, fmt.Errorf("invalid teardown_date format: %w", err)
 		}
 		existing.TeardownDate = &t
+	}
+
+	if req.Status != nil {
+		if !existing.ValidateStatus(*req.Status) {
+			return nil, domain.ErrInvalidProjectStatus
+		}
+		existing.Status = *req.Status
 	}
 
 	existing.UpdatedAt = time.Now()
