@@ -104,6 +104,27 @@ func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.Created(w, created)
 }
 
+func (h *InvoiceHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	id, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	if err := h.invoiceService.Delete(r.Context(), id, claims.TenantID); err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, map[string]string{"message": "Rechnung geloescht"})
+}
+
 func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {

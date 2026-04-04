@@ -11,6 +11,7 @@ type InvoiceRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*Invoice, error)
 	List(ctx context.Context, tenantID uuid.UUID, filter InvoiceFilter) ([]*Invoice, int64, error)
 	Update(ctx context.Context, invoice *Invoice) error
+	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, status string) error
 	UpdateAmountPaid(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, amount int64) error
 	UpdateTotals(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, totalNet, totalVat, totalGross int64) error

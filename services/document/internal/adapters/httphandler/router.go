@@ -46,6 +46,8 @@ func NewRouter(
 		r.Route("/api/v1/documents", func(r chi.Router) {
 			r.Post("/", documentHandler.Create)
 			r.Get("/", documentHandler.List)
+			r.Get("/templates", templateHandler.List)
+
 			r.Get("/{id}", documentHandler.GetByID)
 
 			// Template rendering endpoints.

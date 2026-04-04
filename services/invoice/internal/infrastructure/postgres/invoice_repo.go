@@ -214,6 +214,20 @@ func (r *InvoiceRepo) UpdateStatus(ctx context.Context, id uuid.UUID, tenantID u
 	return nil
 }
 
+func (r *InvoiceRepo) Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error {
+	tag, err := r.pool.Exec(ctx,
+		`DELETE FROM invoices WHERE id = $1 AND tenant_id = $2 AND status = 'draft'`,
+		id, tenantID,
+	)
+	if err != nil {
+		return fmt.Errorf("invoice_repo: delete: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
 func (r *InvoiceRepo) UpdateAmountPaid(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, amount int64) error {
 	tag, err := r.pool.Exec(ctx,
 		`UPDATE invoices SET amount_paid = $3, updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,

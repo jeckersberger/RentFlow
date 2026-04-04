@@ -256,6 +256,10 @@ func (s *InvoiceService) Update(ctx context.Context, id, tenantID uuid.UUID, req
 	return existing, nil
 }
 
+func (s *InvoiceService) Delete(ctx context.Context, id, tenantID uuid.UUID) error {
+	return s.invoiceRepo.Delete(ctx, id, tenantID)
+}
+
 func (s *InvoiceService) Finalize(ctx context.Context, id, tenantID uuid.UUID) (*domain.Invoice, error) {
 	inv, err := s.invoiceRepo.GetByID(ctx, id, tenantID)
 	if err != nil {

@@ -39,6 +39,7 @@ func NewRouter(
 		r.Route("/api/v1/crew", func(r chi.Router) {
 			r.Post("/", crewHandler.Create)
 			r.Get("/", crewHandler.List)
+			r.Get("/members", crewHandler.List)
 
 			// Time-tracking endpoints (must be before /{id} to avoid route conflict).
 			r.Route("/time-tracking", func(r chi.Router) {
