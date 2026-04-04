@@ -36,8 +36,7 @@ function ProjectListPage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  // Handle both response formats: { items: [...] } (mock) and { data: [...] } (real API)
-  const _filteredData = (projectData?.items || projectData?.data || []).filter((project: Project) => {
+  const _filteredData = (projectData?.data || projectData?.items || []).filter((project: Project) => {
     const matchesSearch =
       !searchQuery ||
       project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -439,7 +439,16 @@ export const projectApi = {
   list: (page = 1, limit = 50) =>
     MOCK_MODE
       ? mockDelay({ items: mockProjects.slice((page - 1) * limit, page * limit), total: mockProjects.length, page, limit })
-      : api.get('/api/v1/projects', { params: { offset: (page - 1) * limit, limit } }).then(res => res.data),
+      : api.get('/api/v1/projects', { params: { offset: (page - 1) * limit, limit } }).then(res => {
+          const raw = res.data || { data: [], meta: {} }
+          const items = Array.isArray(raw.data) ? raw.data : Array.isArray(raw) ? raw : []
+          const total = raw.meta?.total ?? raw.total ?? items.length
+          const data = items.map((p: any) => ({
+            ...p,
+            budget: p.budget != null ? p.budget / 100 : null,
+          }))
+          return { data, items: data, total, page, limit }
+        }),
 
   getById: (id: string) =>
     MOCK_MODE
@@ -529,37 +538,23 @@ export const invoiceApi = {
     MOCK_MODE
       ? mockDelay({ data: mockInvoices.slice((page - 1) * limit, page * limit), total: mockInvoices.length, page, limit })
       : api.get('/api/v1/invoices', { params: { page, limit } }).then(res => {
-          const result = res.data || { data: [], total: 0 }
-          // Ensure result.data is always an array
-          if (!Array.isArray(result.data)) result.data = []
-          // Map backend DTO field names to frontend Invoice type + cents→EUR
-          const c2e = (v: number) => v > 1000000 ? v / 100 : v // heuristic: values > 10000 EUR are likely cents
-          result.data = result.data.map((inv: any) => {
-            const rawSub = inv.subtotal ?? inv.sub_total ?? 0
-            const rawTax = inv.tax_total ?? inv.tax_amount ?? 0
-            const rawTotal = inv.total ?? 0
-            const mapped = {
-              ...inv,
-              number: inv.number || inv.invoice_number || '',
-              subtotal: c2e(rawSub),
-              tax_total: c2e(rawTax),
-              total: c2e(rawTotal),
-              line_items: (inv.line_items || inv.items || []).map((li: any) => ({
-                ...li,
-                unit_price: c2e(li.unit_price || 0),
-                total: c2e(li.total || 0),
-                tax_amount: c2e(li.tax_amount || 0),
-              })),
-            }
-            // Recalculate totals from line_items if total is 0 but items exist
-            if (mapped.total === 0 && mapped.line_items.length > 0) {
-              mapped.subtotal = mapped.line_items.reduce((s: number, i: any) => s + ((i.quantity || 0) * (i.unit_price || 0)), 0)
-              mapped.tax_total = mapped.line_items.reduce((s: number, i: any) => s + ((i.tax_amount || 0) || ((i.quantity || 0) * (i.unit_price || 0) * ((i.tax_rate || 0) / 100))), 0)
-              mapped.total = mapped.subtotal + mapped.tax_total
-            }
-            return mapped
-          })
-          return result
+          const raw = res.data || { data: [], meta: {} }
+          const items = Array.isArray(raw.data) ? raw.data : Array.isArray(raw) ? raw : []
+          const total = raw.meta?.total ?? raw.total ?? items.length
+          // Map backend field names to frontend Invoice type; amounts are in cents → /100
+          const data = items.map((inv: any) => ({
+            ...inv,
+            number: inv.number || inv.invoice_number || '',
+            client_name: inv.client_name || inv.customer_name || '',
+            client_email: inv.client_email || inv.customer_email || '',
+            client_address: inv.client_address || inv.customer_address || '',
+            issue_date: inv.issue_date || inv.invoice_date || '',
+            subtotal: (inv.subtotal ?? inv.total_net ?? 0) / 100,
+            tax_total: (inv.tax_total ?? inv.total_vat ?? 0) / 100,
+            total: (inv.total ?? inv.total_gross ?? 0) / 100,
+            amount_paid: (inv.amount_paid ?? 0) / 100,
+          }))
+          return { data, total, page, limit }
         }),
 
   getById: (id: string) =>
@@ -759,7 +754,18 @@ export const quoteApi = {
   list: (params?: any) =>
     MOCK_MODE
       ? mockDelay({ data: [], total: 0 })
-      : api.get('/api/v1/quotes', { params }).then(res => res.data),
+      : api.get('/api/v1/quotes', { params }).then(res => {
+          const raw = res.data || { data: [], meta: {} }
+          const items = Array.isArray(raw.data) ? raw.data : Array.isArray(raw) ? raw : []
+          const total = raw.meta?.total ?? raw.total ?? items.length
+          const data = items.map((q: any) => ({
+            ...q,
+            sub_total: (q.sub_total ?? q.total_net ?? 0) / 100,
+            tax_amount: (q.tax_amount ?? q.total_vat ?? 0) / 100,
+            total: (q.total ?? q.total_gross ?? 0) / 100,
+          }))
+          return { data, total }
+        }),
 
   getById: (id: string) =>
     MOCK_MODE
