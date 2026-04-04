@@ -107,7 +107,8 @@ api.interceptors.response.use(
 // ============================================================================
 const MOCK_MODE = import.meta.env.VITE_MOCK === 'true'
 
-const mockDelay = <T>(data: T, ms = 300): Promise<T> =>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockDelay = (data: any, ms = 300): Promise<any> =>
   new Promise((resolve) => setTimeout(() => resolve(data), ms))
 
 // Auth API endpoints
