@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 func NewRouter(
@@ -21,6 +22,7 @@ func NewRouter(
 	r := chi.NewRouter()
 
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -30,12 +32,10 @@ func NewRouter(
 	r.Group(func(r chi.Router) {
 		r.Use(jwtMiddleware)
 
+		// Reporting: read-only for all authenticated users (no creates/deletes from API)
 		r.Route("/api/v1/report-definitions", func(r chi.Router) {
 			r.Get("/", definitionHandler.List)
-			r.Post("/", definitionHandler.Create)
 			r.Get("/{id}", definitionHandler.Get)
-			r.Put("/{id}", definitionHandler.Update)
-			r.Post("/{id}/generate", snapshotHandler.Generate)
 		})
 
 		r.Route("/api/v1/report-snapshots", func(r chi.Router) {
@@ -45,15 +45,11 @@ func NewRouter(
 
 		r.Route("/api/v1/dashboard-widgets", func(r chi.Router) {
 			r.Get("/", widgetHandler.List)
-			r.Post("/", widgetHandler.Create)
-			r.Put("/{id}", widgetHandler.Update)
-			r.Delete("/{id}", widgetHandler.Delete)
 		})
 
 		r.Route("/api/v1/reporting/kpis", func(r chi.Router) {
 			r.Get("/", kpiHandler.GetLatest)
 			r.Get("/history", kpiHandler.GetHistory)
-			r.Post("/snapshot", kpiHandler.CreateSnapshot)
 		})
 	})
 

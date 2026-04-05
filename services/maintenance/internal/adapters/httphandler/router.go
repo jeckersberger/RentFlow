@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 func NewRouter(
@@ -20,6 +21,7 @@ func NewRouter(
 	r := chi.NewRouter()
 
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -30,27 +32,44 @@ func NewRouter(
 		r.Use(jwtMiddleware)
 
 		r.Route("/api/v1/maintenance-schedules", func(r chi.Router) {
+			// Read: all authenticated users
 			r.Get("/", scheduleHandler.List)
-			r.Post("/", scheduleHandler.Create)
 			r.Get("/{id}", scheduleHandler.Get)
-			r.Put("/{id}", scheduleHandler.Update)
+
+			// Write: manager or admin only
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager"))
+				r.Post("/", scheduleHandler.Create)
+				r.Put("/{id}", scheduleHandler.Update)
+			})
 		})
 
 		r.Route("/api/v1/maintenance-tasks", func(r chi.Router) {
+			// Read: all authenticated users
 			r.Get("/", taskHandler.List)
-			r.Post("/", taskHandler.Create)
 			r.Get("/{id}", taskHandler.Get)
-			r.Put("/{id}", taskHandler.Update)
-			r.Delete("/{id}", taskHandler.Delete)
-			r.Patch("/{id}/complete", taskHandler.Complete)
 			r.Get("/{id}/logs", taskHandler.ListLogs)
+
+			// Write: manager or admin only
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager"))
+				r.Post("/", taskHandler.Create)
+				r.Put("/{id}", taskHandler.Update)
+				r.Patch("/{id}/complete", taskHandler.Complete)
+			})
+
+			// Delete: admin only
+			r.With(middleware.RequireRole("admin")).Delete("/{id}", taskHandler.Delete)
 		})
 
 		r.Route("/api/v1/maintenance/echeck", func(r chi.Router) {
-			r.Post("/", echeckHandler.Create)
+			// Read: all authenticated users
 			r.Get("/", echeckHandler.List)
 			r.Get("/overdue", echeckHandler.ListOverdue)
 			r.Get("/{equipmentId}", echeckHandler.ListByEquipment)
+
+			// Write: manager or admin only
+			r.With(middleware.RequireRole("admin", "manager")).Post("/", echeckHandler.Create)
 		})
 	})
 

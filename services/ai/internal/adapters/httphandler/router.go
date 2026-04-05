@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 func NewRouter(
@@ -21,6 +22,7 @@ func NewRouter(
 	r := chi.NewRouter()
 
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -31,27 +33,45 @@ func NewRouter(
 		r.Use(jwtMiddleware)
 
 		r.Route("/api/v1/ai-predictions", func(r chi.Router) {
+			// Read: all authenticated users
 			r.Get("/", predictionHandler.List)
-			r.Post("/", predictionHandler.Create)
 			r.Get("/{id}", predictionHandler.Get)
+
+			// Write: admin, manager, or user (no deletes in AI)
+			r.With(middleware.RequireRole("admin", "manager", "user")).Post("/", predictionHandler.Create)
 		})
 
 		r.Route("/api/v1/ai-suggestions", func(r chi.Router) {
+			// Read: all authenticated users
 			r.Get("/", suggestionHandler.List)
-			r.Post("/", suggestionHandler.Create)
-			r.Patch("/{id}/accept", suggestionHandler.Accept)
-			r.Patch("/{id}/dismiss", suggestionHandler.Dismiss)
+
+			// Write: admin, manager, or user (no deletes in AI)
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager", "user"))
+				r.Post("/", suggestionHandler.Create)
+				r.Patch("/{id}/accept", suggestionHandler.Accept)
+				r.Patch("/{id}/dismiss", suggestionHandler.Dismiss)
+			})
 		})
 
 		r.Route("/api/v1/ai-training-data", func(r chi.Router) {
+			// Read: all authenticated users
 			r.Get("/", trainingDataHandler.List)
-			r.Post("/", trainingDataHandler.Create)
+
+			// Write: admin, manager, or user (no deletes in AI)
+			r.With(middleware.RequireRole("admin", "manager", "user")).Post("/", trainingDataHandler.Create)
 		})
 
 		r.Route("/api/v1/ai", func(r chi.Router) {
-			r.Post("/complete", aiProviderHandler.Complete)
-			r.Post("/smart-asset", aiProviderHandler.SmartAsset)
+			// Read: all authenticated users
 			r.Get("/status", aiProviderHandler.Status)
+
+			// Write: admin, manager, or user (no deletes in AI)
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager", "user"))
+				r.Post("/complete", aiProviderHandler.Complete)
+				r.Post("/smart-asset", aiProviderHandler.SmartAsset)
+			})
 		})
 	})
 

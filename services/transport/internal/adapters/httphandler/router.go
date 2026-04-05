@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 // NewRouter creates and configures the chi router with all transport-service routes.
@@ -21,6 +22,7 @@ func NewRouter(
 
 	// Global middleware (order matters: outermost first).
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -34,25 +36,39 @@ func NewRouter(
 
 		// Vehicle endpoints.
 		r.Route("/api/v1/vehicles", func(r chi.Router) {
-			r.Post("/", vehicleHandler.Create)
+			// Read: all authenticated users
 			r.Get("/", vehicleHandler.List)
 			r.Get("/{id}", vehicleHandler.GetByID)
-			r.Put("/{id}", vehicleHandler.Update)
-			r.Delete("/{id}", vehicleHandler.Delete)
+
+			// Write: manager or admin only
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager"))
+				r.Post("/", vehicleHandler.Create)
+				r.Put("/{id}", vehicleHandler.Update)
+			})
+
+			// Delete: admin only
+			r.With(middleware.RequireRole("admin")).Delete("/{id}", vehicleHandler.Delete)
 		})
 
 		// Transport order endpoints.
 		r.Route("/api/v1/transport-orders", func(r chi.Router) {
-			r.Post("/", orderHandler.Create)
+			// Read: all authenticated users
 			r.Get("/", orderHandler.List)
 			r.Get("/{id}", orderHandler.GetByID)
-			r.Put("/{id}", orderHandler.Update)
-			r.Patch("/{id}/complete", orderHandler.Complete)
-			r.Post("/{id}/items", orderHandler.AddItem)
 			r.Get("/{id}/items", orderHandler.ListItems)
-			r.Post("/{id}/capacity-check", orderHandler.CapacityCheck)
-			r.Post("/{id}/costs", orderHandler.AddCost)
 			r.Get("/{id}/costs", orderHandler.ListCosts)
+
+			// Write: manager or admin only
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager"))
+				r.Post("/", orderHandler.Create)
+				r.Put("/{id}", orderHandler.Update)
+				r.Patch("/{id}/complete", orderHandler.Complete)
+				r.Post("/{id}/items", orderHandler.AddItem)
+				r.Post("/{id}/capacity-check", orderHandler.CapacityCheck)
+				r.Post("/{id}/costs", orderHandler.AddCost)
+			})
 		})
 	})
 

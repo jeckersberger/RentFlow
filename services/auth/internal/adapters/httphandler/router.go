@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 // NewRouter creates and configures the chi router with all auth-service routes.
@@ -25,6 +26,7 @@ func NewRouter(
 
 	// Global middleware (order matters: outermost first).
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 

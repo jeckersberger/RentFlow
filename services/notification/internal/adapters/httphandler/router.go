@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 func NewRouter(
@@ -21,6 +22,7 @@ func NewRouter(
 	r := chi.NewRouter()
 
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -31,22 +33,34 @@ func NewRouter(
 		r.Use(jwtMiddleware)
 
 		r.Route("/api/v1/notifications", func(r chi.Router) {
+			// Read: all authenticated users
 			r.Get("/", notificationHandler.List)
-			r.Post("/", notificationHandler.Create)
 			r.Get("/unread-count", notificationHandler.UnreadCount)
 			r.Get("/ws", wsHandler.ServeWS)
-			r.Patch("/{id}/read", notificationHandler.MarkAsRead)
-			r.Post("/mark-all-read", notificationHandler.MarkAllRead)
+
+			// Write: admin, manager, or user
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager", "user"))
+				r.Post("/", notificationHandler.Create)
+				r.Patch("/{id}/read", notificationHandler.MarkAsRead)
+				r.Post("/mark-all-read", notificationHandler.MarkAllRead)
+			})
 		})
 
 		r.Route("/api/v1/notification-preferences", func(r chi.Router) {
+			// Read: all authenticated users
 			r.Get("/", preferenceHandler.List)
-			r.Put("/", preferenceHandler.Update)
+
+			// Write: admin, manager, or user
+			r.With(middleware.RequireRole("admin", "manager", "user")).Put("/", preferenceHandler.Update)
 		})
 
 		r.Route("/api/v1/email", func(r chi.Router) {
-			r.Post("/send", emailHandler.Send)
+			// Read: all authenticated users
 			r.Get("/status", emailHandler.Status)
+
+			// Write: admin, manager, or user
+			r.With(middleware.RequireRole("admin", "manager", "user")).Post("/send", emailHandler.Send)
 		})
 	})
 

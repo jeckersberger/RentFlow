@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 func NewRouter(
@@ -19,6 +20,7 @@ func NewRouter(
 	r := chi.NewRouter()
 
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -28,19 +30,16 @@ func NewRouter(
 	r.Group(func(r chi.Router) {
 		r.Use(jwtMiddleware)
 
+		// Audit: read-only for all authenticated users (no creates from API)
 		r.Route("/api/v1/audit-logs", func(r chi.Router) {
-			r.Post("/", auditLogHandler.Create)
 			r.Get("/", auditLogHandler.List)
-			r.Post("/append", auditLogHandler.Append)
 			r.Get("/verify", auditLogHandler.Verify)
 			r.Get("/export", auditLogHandler.Export)
 			r.Get("/{id}", auditLogHandler.Get)
 		})
 
 		r.Route("/api/v1/audit-policies", func(r chi.Router) {
-			r.Post("/", auditPolicyHandler.Create)
 			r.Get("/", auditPolicyHandler.List)
-			r.Put("/{id}", auditPolicyHandler.Update)
 		})
 	})
 

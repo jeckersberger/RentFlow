@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 func NewRouter(
@@ -19,6 +20,7 @@ func NewRouter(
 	r := chi.NewRouter()
 
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -30,27 +32,39 @@ func NewRouter(
 
 		// Customer endpoints
 		r.Route("/api/v1/customers", func(r chi.Router) {
+			// Read: all authenticated users
 			r.Get("/", customerHandler.List)
-			r.Post("/", customerHandler.Create)
 			r.Get("/search", customerHandler.Search)
 			r.Get("/{id}", customerHandler.Get)
-			r.Put("/{id}", customerHandler.Update)
-			r.Delete("/{id}", customerHandler.Delete)
-
-			// Customer contacts (sub-resource)
 			r.Get("/{id}/contacts", contactHandler.ListByCustomer)
+
+			// Write: admin, manager, or user
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager", "user"))
+				r.Post("/", customerHandler.Create)
+				r.Put("/{id}", customerHandler.Update)
+			})
+
+			// Delete: admin or manager only
+			r.With(middleware.RequireRole("admin", "manager")).Delete("/{id}", customerHandler.Delete)
 		})
 
 		// Contact endpoints
 		r.Route("/api/v1/contacts", func(r chi.Router) {
-			r.Post("/", contactHandler.Create)
+			// Read: all authenticated users
 			r.Get("/{id}", contactHandler.Get)
-			r.Put("/{id}", contactHandler.Update)
-			r.Delete("/{id}", contactHandler.Delete)
-
-			// Contact notes (sub-resource)
-			r.Post("/{id}/notes", contactHandler.AddNote)
 			r.Get("/{id}/notes", contactHandler.ListNotes)
+
+			// Write: admin, manager, or user
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager", "user"))
+				r.Post("/", contactHandler.Create)
+				r.Put("/{id}", contactHandler.Update)
+				r.Post("/{id}/notes", contactHandler.AddNote)
+			})
+
+			// Delete: admin or manager only
+			r.With(middleware.RequireRole("admin", "manager")).Delete("/{id}", contactHandler.Delete)
 		})
 	})
 

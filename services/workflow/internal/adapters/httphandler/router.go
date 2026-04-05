@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 // NewRouter creates and configures the chi router with all workflow-service routes.
@@ -22,6 +23,7 @@ func NewRouter(
 
 	// Global middleware (order matters: outermost first).
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB body limit
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -38,19 +40,31 @@ func NewRouter(
 
 		// Workflow definition endpoints.
 		r.Route("/api/v1/workflow-definitions", func(r chi.Router) {
-			r.Post("/", definitionHandler.Create)
+			// Read: all authenticated users
 			r.Get("/", definitionHandler.List)
-			r.Post("/from-template", templateHandler.CreateFromTemplate)
 			r.Get("/{id}", definitionHandler.GetByID)
-			r.Put("/{id}", definitionHandler.Update)
+
+			// Write: manager or admin only
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager"))
+				r.Post("/", definitionHandler.Create)
+				r.Post("/from-template", templateHandler.CreateFromTemplate)
+				r.Put("/{id}", definitionHandler.Update)
+			})
 		})
 
 		// Workflow instance endpoints.
 		r.Route("/api/v1/workflow-instances", func(r chi.Router) {
-			r.Post("/", instanceHandler.Create)
+			// Read: all authenticated users
 			r.Get("/", instanceHandler.List)
 			r.Get("/{id}", instanceHandler.GetByID)
-			r.Post("/{id}/action", instanceHandler.PerformAction)
+
+			// Write: manager or admin only
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager"))
+				r.Post("/", instanceHandler.Create)
+				r.Post("/{id}/action", instanceHandler.PerformAction)
+			})
 		})
 	})
 

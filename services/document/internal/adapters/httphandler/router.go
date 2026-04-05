@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jeckersberger/EquipFlow/pkg/common/middleware"
 )
 
 // NewRouter creates and configures the chi router with all document-service routes.
@@ -23,6 +24,7 @@ func NewRouter(
 
 	// Global middleware (order matters: outermost first).
 	r.Use(recoveryMiddleware)
+	r.Use(middleware.MaxBodySize(10 << 20)) // 10 MB body limit (file uploads)
 	r.Use(requestIDMiddleware)
 	r.Use(corsMiddleware)
 
@@ -36,34 +38,48 @@ func NewRouter(
 
 		// Document template endpoints (CRUD).
 		r.Route("/api/v1/document-templates", func(r chi.Router) {
-			r.Post("/", templateHandler.Create)
+			// Read: all authenticated users
 			r.Get("/", templateHandler.List)
 			r.Get("/{id}", templateHandler.GetByID)
-			r.Put("/{id}", templateHandler.Update)
+
+			// Write: admin, manager, or user
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager", "user"))
+				r.Post("/", templateHandler.Create)
+				r.Put("/{id}", templateHandler.Update)
+			})
 		})
 
 		// Document endpoints.
 		r.Route("/api/v1/documents", func(r chi.Router) {
-			r.Post("/", documentHandler.Create)
+			// Read: all authenticated users
 			r.Get("/", documentHandler.List)
 			r.Get("/templates", templateHandler.List)
-
 			r.Get("/{id}", documentHandler.GetByID)
-
-			// Template rendering endpoints.
-			r.Post("/render", renderHandler.Render)
 			r.Route("/templates/defaults", func(r chi.Router) {
 				r.Get("/", renderHandler.ListDefaults)
 				r.Get("/{type}/preview", renderHandler.PreviewDefault)
+			})
+
+			// Write: admin, manager, or user
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin", "manager", "user"))
+				r.Post("/", documentHandler.Create)
+				r.Post("/render", renderHandler.Render)
 			})
 		})
 
 		// Attachment endpoints.
 		r.Route("/api/v1/attachments", func(r chi.Router) {
-			r.Post("/", attachmentHandler.Create)
+			// Read: all authenticated users
 			r.Get("/", attachmentHandler.List)
 			r.Get("/{id}", attachmentHandler.GetByID)
-			r.Delete("/{id}", attachmentHandler.Delete)
+
+			// Write: admin, manager, or user
+			r.With(middleware.RequireRole("admin", "manager", "user")).Post("/", attachmentHandler.Create)
+
+			// Delete: admin or manager only
+			r.With(middleware.RequireRole("admin", "manager")).Delete("/{id}", attachmentHandler.Delete)
 		})
 	})
 
