@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -281,13 +282,24 @@ func (s *InvoiceService) Finalize(ctx context.Context, id, tenantID uuid.UUID) (
 		return nil, fmt.Errorf("finalize - items: %w", err)
 	}
 
+	// Calculate totals per item (respecting per-item VAT rates and discounts)
 	var totalNet int64
+	var itemHashParts []string
 	for _, item := range items {
-		totalNet += item.Quantity * item.UnitPrice
+		lineNet := item.Quantity * item.UnitPrice
+		// Apply item-level discount if present
+		if item.DiscountPct > 0 {
+			lineNet = lineNet * (10000 - item.DiscountPct) / 10000
+		}
+		totalNet += lineNet
+		itemHashParts = append(itemHashParts, fmt.Sprintf("%s:%d:%d", item.ID.String(), item.Quantity, item.UnitPrice))
 	}
 
+	// Determine VAT: Reverse Charge (§13b UStG) takes precedence, then Kleinunternehmer
 	var totalVat int64
-	if !inv.Kleinunternehmer && inv.VatRate > 0 {
+	if inv.IsReverseCharge {
+		totalVat = 0
+	} else if !inv.Kleinunternehmer && inv.VatRate > 0 {
 		totalVat = totalNet * inv.VatRate / 10000
 	}
 	totalGross := totalNet + totalVat
@@ -297,7 +309,9 @@ func (s *InvoiceService) Finalize(ctx context.Context, id, tenantID uuid.UUID) (
 		return nil, fmt.Errorf("finalize - prev hash: %w", err)
 	}
 
-	hashInput := fmt.Sprintf("%s|%d|%d|%d|%s", inv.InvoiceNumber, totalNet, totalVat, totalGross, prevHash)
+	// Hash includes all items for full GoBD compliance
+	itemsHash := strings.Join(itemHashParts, "|")
+	hashInput := fmt.Sprintf("%s|%d|%d|%d|%s|%s", inv.InvoiceNumber, totalNet, totalVat, totalGross, prevHash, itemsHash)
 	h := sha256.Sum256([]byte(hashInput))
 
 	now := time.Now()

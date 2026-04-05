@@ -69,7 +69,7 @@ func main() {
 	if inventoryBaseURL == "" {
 		inventoryBaseURL = "http://cratedesk-inventory:8002"
 	}
-	scanSvc := application.NewScanService(eventRepo, deviceRepo, log)
+	scanSvc := application.NewScanService(eventRepo, deviceRepo, inventoryBaseURL, log)
 	deviceSvc := application.NewDeviceService(deviceRepo, log)
 	sessionSvc := application.NewSessionService(sessionRepo, log, inventoryBaseURL)
 

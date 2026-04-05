@@ -3,6 +3,8 @@ package application
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -102,21 +104,24 @@ type AdhocBookingRequest struct {
 
 // ScanService implements the application-level use cases for scanning.
 type ScanService struct {
-	eventRepo  domain.ScanEventRepository
-	deviceRepo domain.ScannerDeviceRepository
-	logger     zerolog.Logger
+	eventRepo        domain.ScanEventRepository
+	deviceRepo       domain.ScannerDeviceRepository
+	inventoryBaseURL string // Base URL for inventory service (e.g., "http://inventory:8004")
+	logger           zerolog.Logger
 }
 
 // NewScanService constructs a new ScanService.
 func NewScanService(
 	eventRepo domain.ScanEventRepository,
 	deviceRepo domain.ScannerDeviceRepository,
+	inventoryBaseURL string,
 	logger zerolog.Logger,
 ) *ScanService {
 	return &ScanService{
-		eventRepo:  eventRepo,
-		deviceRepo: deviceRepo,
-		logger:     logger.With().Str("service", "scan").Logger(),
+		eventRepo:        eventRepo,
+		deviceRepo:       deviceRepo,
+		inventoryBaseURL: inventoryBaseURL,
+		logger:           logger.With().Str("service", "scan").Logger(),
 	}
 }
 
@@ -250,6 +255,11 @@ func (s *ScanService) Checkin(
 				Str("equipment_id", item.EquipmentID.String()).
 				Msg("failed to create checkin event")
 			return nil, fmt.Errorf("checkin: %w", err)
+		}
+
+		// Update equipment location in inventory service (best-effort, non-blocking)
+		if item.LocationID != nil && s.inventoryBaseURL != "" {
+			go s.updateEquipmentLocation(tenantID, item.EquipmentID, *item.LocationID)
 		}
 
 		events = append(events, event)
@@ -444,4 +454,31 @@ func (s *ScanService) ListEvents(
 		return nil, 0, fmt.Errorf("list scan events: %w", err)
 	}
 	return items, total, nil
+}
+
+// updateEquipmentLocation notifies the inventory service about a location change (best-effort).
+func (s *ScanService) updateEquipmentLocation(tenantID, equipmentID, locationID uuid.UUID) {
+	url := fmt.Sprintf("%s/api/v1/equipment/%s/location", s.inventoryBaseURL, equipmentID.String())
+	body := fmt.Sprintf(`{"location_id":"%s"}`, locationID.String())
+
+	req, err := http.NewRequest("PATCH", url, strings.NewReader(body))
+	if err != nil {
+		s.logger.Warn().Err(err).Msg("failed to build location update request")
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Tenant-ID", tenantID.String())
+	req.Header.Set("X-Internal-Service", "scanner")
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		s.logger.Warn().Err(err).Str("equipment_id", equipmentID.String()).Msg("failed to update equipment location")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		s.logger.Warn().Int("status", resp.StatusCode).Str("equipment_id", equipmentID.String()).Msg("inventory location update failed")
+	}
 }

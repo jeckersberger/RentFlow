@@ -66,6 +66,7 @@ type InvoiceItem struct {
 	Unit        string    `json:"unit"`
 	UnitPrice   int64     `json:"unit_price"`
 	VatRate     int64     `json:"vat_rate"`
+	DiscountPct int64     `json:"discount_pct"` // basis points (e.g. 1000 = 10%)
 	Position    int       `json:"position"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
