@@ -51,7 +51,7 @@ services:
   # Traefik v3.1 — Reverse Proxy (Production-Routing)
   # =============================================================================
   traefik:
-    image: traefik:latest
+    image: traefik:v3.1
     container_name: cratedesk-traefik
     restart: unless-stopped
     environment:
