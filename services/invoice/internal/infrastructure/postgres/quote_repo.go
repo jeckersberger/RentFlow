@@ -142,6 +142,19 @@ func (r *QuoteRepo) GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUI
 	return q, nil
 }
 
+// GetByPublicToken returns a quote by its public token (no tenant scope — customer portal).
+func (r *QuoteRepo) GetByPublicToken(ctx context.Context, token string) (*domain.Quote, error) {
+	query := fmt.Sprintf(`SELECT %s FROM quotes WHERE public_token = $1`, quoteColumns)
+	q, err := scanQuote(r.pool.QueryRow(ctx, query, token))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("quote_repo: get_by_public_token: %w", err)
+	}
+	return q, nil
+}
+
 // List returns a paginated list of quotes for a tenant, optionally filtered by status.
 func (r *QuoteRepo) List(ctx context.Context, tenantID uuid.UUID, filter domain.QuoteFilter) ([]*domain.Quote, int64, error) {
 	conditions := []string{"tenant_id = $1"}

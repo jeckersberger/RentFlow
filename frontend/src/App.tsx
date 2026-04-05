@@ -21,6 +21,7 @@ import LoginPage from './pages/Login'
 import ForgotPasswordPage from './pages/ForgotPassword'
 import ResetPasswordPage from './pages/ResetPassword'
 import BookingResponsePage from './pages/BookingResponse'
+import PublicQuoteView from './pages/Portal/PublicQuoteView'
 import SetupWizard from './pages/Setup/SetupWizard'
 import ImpressumPage from './pages/Legal/ImpressumPage'
 import DatenschutzPage from './pages/Legal/DatenschutzPage'
@@ -230,6 +231,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="/booking/:token" element={<BookingResponsePage />} />
+          <Route path="/portal/quote/:token" element={<PublicQuoteView />} />
           <Route path="/impressum" element={<ImpressumPage />} />
           <Route path="/datenschutz" element={<DatenschutzPage />} />
 

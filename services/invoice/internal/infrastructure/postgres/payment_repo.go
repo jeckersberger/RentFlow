@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jeckersberger/EquipFlow/pkg/common/database"
 	"github.com/jeckersberger/EquipFlow/services/invoice/internal/domain"
 )
 
@@ -20,11 +21,24 @@ const paymentColumns = `
 // PaymentRepo implements domain.PaymentRepository using PostgreSQL.
 type PaymentRepo struct {
 	pool *pgxpool.Pool
+	db   database.DBTX
 }
 
 // NewPaymentRepo creates a new PaymentRepo.
 func NewPaymentRepo(pool *pgxpool.Pool) *PaymentRepo {
 	return &PaymentRepo{pool: pool}
+}
+
+// WithTx returns a new PaymentRepo that runs queries against the given transaction.
+func (r *PaymentRepo) WithTx(tx database.DBTX) domain.PaymentRepository {
+	return &PaymentRepo{pool: r.pool, db: tx}
+}
+
+func (r *PaymentRepo) conn() database.DBTX {
+	if r.db != nil {
+		return r.db
+	}
+	return r.pool
 }
 
 // scanPayment scans a single payment row into a domain.Payment.
@@ -60,7 +74,7 @@ func (r *PaymentRepo) Create(ctx context.Context, payment *domain.Payment) error
 			$6, $7
 		) RETURNING created_at`
 
-	err := r.pool.QueryRow(ctx, query,
+	err := r.conn().QueryRow(ctx, query,
 		payment.ID, payment.TenantID, payment.InvoiceID,
 		payment.Amount, payment.PaymentDate,
 		payment.PaymentMethod, nilIfEmpty(payment.Reference),
@@ -78,7 +92,7 @@ func (r *PaymentRepo) ListByInvoice(ctx context.Context, invoiceID uuid.UUID, te
 		paymentColumns,
 	)
 
-	rows, err := r.pool.Query(ctx, query, invoiceID, tenantID)
+	rows, err := r.conn().Query(ctx, query, invoiceID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("payment_repo: list_by_invoice query: %w", err)
 	}

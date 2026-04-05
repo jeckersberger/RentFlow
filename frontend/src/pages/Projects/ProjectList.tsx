@@ -50,7 +50,7 @@ function ProjectListPage() {
   const exportProjectsCSV = () => {
     const PROJECT_HEADERS = [
       { key: 'name', label: 'Projektname' },
-      { key: 'client_name', label: 'Kunde' },
+      { key: 'contact_name', label: 'Kunde' },
       { key: 'status', label: 'Status' },
       { key: 'start_date', label: 'Startdatum' },
       { key: 'end_date', label: 'Enddatum' },
@@ -65,7 +65,7 @@ function ProjectListPage() {
     }
     const rows = _filteredData.map((p: Project) => ({
       name: p.name || '',
-      client_name: p.client_name || '',
+      contact_name: (p as any).contact_name || (p as any).client_name || '',
       status: STATUS_LABELS[p.status] || p.status || '',
       start_date: p.start_date ? new Date(p.start_date).toLocaleDateString('de-DE') : '',
       end_date: p.end_date ? new Date(p.end_date).toLocaleDateString('de-DE') : '',
@@ -84,8 +84,9 @@ function ProjectListPage() {
       sortable: true,
     },
     {
-      key: 'client_name',
+      key: 'contact_name',
       label: 'Kunde',
+      render: (val: unknown, row: Project) => (row as any).contact_name || (row as any).client_name || '—',
     },
     {
       key: 'status',

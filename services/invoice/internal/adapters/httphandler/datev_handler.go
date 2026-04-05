@@ -58,7 +58,7 @@ func (h *DatevHandler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filename := "DATEV_Export_" + fromDate + "_" + toDate + ".csv"
-	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Type", "text/csv; charset=iso-8859-1")
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
 	w.WriteHeader(http.StatusOK)
 	w.Write(csvData)

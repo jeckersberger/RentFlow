@@ -12,9 +12,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jeckersberger/EquipFlow/services/invoice/internal/domain"
-
+	"github.com/jeckersberger/EquipFlow/pkg/common/database"
 	apperrors "github.com/jeckersberger/EquipFlow/pkg/common/errors"
+	"github.com/jeckersberger/EquipFlow/services/invoice/internal/domain"
 )
 
 const invoiceColumns = `
@@ -27,10 +27,37 @@ const invoiceColumns = `
 
 type InvoiceRepo struct {
 	pool *pgxpool.Pool
+	db   database.DBTX // nil = use pool
 }
 
 func NewInvoiceRepo(pool *pgxpool.Pool) *InvoiceRepo {
 	return &InvoiceRepo{pool: pool}
+}
+
+// WithTx returns a new InvoiceRepo that runs queries against the given transaction.
+func (r *InvoiceRepo) WithTx(tx database.DBTX) domain.InvoiceRepository {
+	return &InvoiceRepo{pool: r.pool, db: tx}
+}
+
+// conn returns the active database handle (tx if set, pool otherwise).
+func (r *InvoiceRepo) conn() database.DBTX {
+	if r.db != nil {
+		return r.db
+	}
+	return r.pool
+}
+
+// GetByIDForUpdate retrieves an invoice with a row-level lock for transactional updates.
+func (r *InvoiceRepo) GetByIDForUpdate(ctx context.Context, id, tenantID uuid.UUID) (*domain.Invoice, error) {
+	query := fmt.Sprintf(`SELECT %s FROM invoices WHERE id = $1 AND tenant_id = $2 FOR UPDATE`, invoiceColumns)
+	inv, err := scanInvoice(r.conn().QueryRow(ctx, query, id, tenantID))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("invoice_repo: get_by_id_for_update: %w", err)
+	}
+	return inv, nil
 }
 
 func scanInvoice(row pgx.Row) (*domain.Invoice, error) {
@@ -86,7 +113,7 @@ func (r *InvoiceRepo) Create(ctx context.Context, invoice *domain.Invoice) error
 			$17, $18, $19, $20
 		) RETURNING created_at, updated_at`
 
-	err := r.pool.QueryRow(ctx, query,
+	err := r.conn().QueryRow(ctx, query,
 		invoice.ID, invoice.TenantID, invoice.InvoiceNumber, invoice.InvoiceType, invoice.Status,
 		invoice.CustomerName, nilIfEmpty(invoice.CustomerEmail), nilIfEmpty(invoice.CustomerAddress),
 		invoice.InvoiceDate, nilIfEmpty(invoice.DueDate), invoice.VatRate, invoice.Kleinunternehmer,
@@ -105,7 +132,7 @@ func (r *InvoiceRepo) Create(ctx context.Context, invoice *domain.Invoice) error
 
 func (r *InvoiceRepo) GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*domain.Invoice, error) {
 	query := fmt.Sprintf(`SELECT %s FROM invoices WHERE id = $1 AND tenant_id = $2`, invoiceColumns)
-	inv, err := scanInvoice(r.pool.QueryRow(ctx, query, id, tenantID))
+	inv, err := scanInvoice(r.conn().QueryRow(ctx, query, id, tenantID))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.ErrNotFound
@@ -130,7 +157,7 @@ func (r *InvoiceRepo) List(ctx context.Context, tenantID uuid.UUID, filter domai
 
 	var total int64
 	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM invoices WHERE %s`, where)
-	err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total)
+	err := r.conn().QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
 		return nil, 0, fmt.Errorf("invoice_repo: list count: %w", err)
 	}
@@ -151,7 +178,7 @@ func (r *InvoiceRepo) List(ctx context.Context, tenantID uuid.UUID, filter domai
 	)
 	args = append(args, perPage, offset)
 
-	rows, err := r.pool.Query(ctx, dataQuery, args...)
+	rows, err := r.conn().Query(ctx, dataQuery, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("invoice_repo: list query: %w", err)
 	}
@@ -183,7 +210,7 @@ func (r *InvoiceRepo) Update(ctx context.Context, invoice *domain.Invoice) error
 		WHERE id = $1 AND tenant_id = $2
 		RETURNING updated_at`
 
-	err := r.pool.QueryRow(ctx, query,
+	err := r.conn().QueryRow(ctx, query,
 		invoice.ID, invoice.TenantID,
 		invoice.CustomerName, nilIfEmpty(invoice.CustomerEmail), nilIfEmpty(invoice.CustomerAddress),
 		invoice.InvoiceDate, nilIfEmpty(invoice.DueDate), invoice.VatRate, invoice.Kleinunternehmer,
@@ -201,7 +228,7 @@ func (r *InvoiceRepo) Update(ctx context.Context, invoice *domain.Invoice) error
 }
 
 func (r *InvoiceRepo) UpdateStatus(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, status string) error {
-	tag, err := r.pool.Exec(ctx,
+	tag, err := r.conn().Exec(ctx,
 		`UPDATE invoices SET status = $3, updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,
 		id, tenantID, status,
 	)
@@ -215,7 +242,7 @@ func (r *InvoiceRepo) UpdateStatus(ctx context.Context, id uuid.UUID, tenantID u
 }
 
 func (r *InvoiceRepo) Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error {
-	tag, err := r.pool.Exec(ctx,
+	tag, err := r.conn().Exec(ctx,
 		`DELETE FROM invoices WHERE id = $1 AND tenant_id = $2 AND status = 'draft'`,
 		id, tenantID,
 	)
@@ -229,7 +256,7 @@ func (r *InvoiceRepo) Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UU
 }
 
 func (r *InvoiceRepo) UpdateAmountPaid(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, amount int64) error {
-	tag, err := r.pool.Exec(ctx,
+	tag, err := r.conn().Exec(ctx,
 		`UPDATE invoices SET amount_paid = $3, updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,
 		id, tenantID, amount,
 	)
@@ -243,7 +270,7 @@ func (r *InvoiceRepo) UpdateAmountPaid(ctx context.Context, id uuid.UUID, tenant
 }
 
 func (r *InvoiceRepo) UpdateTotals(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, totalNet, totalVat, totalGross int64) error {
-	tag, err := r.pool.Exec(ctx,
+	tag, err := r.conn().Exec(ctx,
 		`UPDATE invoices SET total_net = $3, total_vat = $4, total_gross = $5, updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,
 		id, tenantID, totalNet, totalVat, totalGross,
 	)
@@ -258,7 +285,7 @@ func (r *InvoiceRepo) UpdateTotals(ctx context.Context, id uuid.UUID, tenantID u
 
 func (r *InvoiceRepo) GetLastHash(ctx context.Context, tenantID uuid.UUID) (string, error) {
 	var hash *string
-	err := r.pool.QueryRow(ctx,
+	err := r.conn().QueryRow(ctx,
 		`SELECT hash FROM invoices WHERE tenant_id = $1 AND hash IS NOT NULL ORDER BY finalized_at DESC LIMIT 1`,
 		tenantID,
 	).Scan(&hash)
@@ -285,7 +312,7 @@ func (r *InvoiceRepo) Search(ctx context.Context, tenantID uuid.UUID, query stri
 
 	var total int64
 	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM invoices WHERE %s`, searchCondition)
-	err := r.pool.QueryRow(ctx, countQuery, tenantID, pattern).Scan(&total)
+	err := r.conn().QueryRow(ctx, countQuery, tenantID, pattern).Scan(&total)
 	if err != nil {
 		return nil, 0, fmt.Errorf("invoice_repo: search count: %w", err)
 	}
@@ -295,7 +322,7 @@ func (r *InvoiceRepo) Search(ctx context.Context, tenantID uuid.UUID, query stri
 		invoiceColumns, searchCondition,
 	)
 
-	rows, err := r.pool.Query(ctx, dataQuery, tenantID, pattern, perPage, offset)
+	rows, err := r.conn().Query(ctx, dataQuery, tenantID, pattern, perPage, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("invoice_repo: search query: %w", err)
 	}

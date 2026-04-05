@@ -8,8 +8,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 
+	"github.com/jeckersberger/EquipFlow/pkg/common/database"
 	apperrors "github.com/jeckersberger/EquipFlow/pkg/common/errors"
 	"github.com/jeckersberger/EquipFlow/services/invoice/internal/domain"
 )
@@ -66,6 +69,7 @@ type InvoiceService struct {
 	itemRepo    domain.InvoiceItemRepository
 	seqRepo     domain.NumberSequenceRepository
 	paymentRepo domain.PaymentRepository
+	pool        *pgxpool.Pool
 	logger      zerolog.Logger
 }
 
@@ -74,6 +78,7 @@ func NewInvoiceService(
 	itemRepo domain.InvoiceItemRepository,
 	seqRepo domain.NumberSequenceRepository,
 	paymentRepo domain.PaymentRepository,
+	pool *pgxpool.Pool,
 	logger zerolog.Logger,
 ) *InvoiceService {
 	return &InvoiceService{
@@ -81,6 +86,7 @@ func NewInvoiceService(
 		itemRepo:    itemRepo,
 		seqRepo:     seqRepo,
 		paymentRepo: paymentRepo,
+		pool:        pool,
 		logger:      logger.With().Str("service", "invoice").Logger(),
 	}
 }
@@ -374,25 +380,8 @@ func (s *InvoiceService) RemoveItem(ctx context.Context, itemID, tenantID uuid.U
 // --- Payments ---
 
 func (s *InvoiceService) AddPayment(ctx context.Context, invoiceID, tenantID uuid.UUID, req AddPaymentRequest) (*domain.Payment, error) {
-	inv, err := s.invoiceRepo.GetByID(ctx, invoiceID, tenantID)
-	if err != nil {
-		return nil, err
-	}
-
-	switch inv.Status {
-	case domain.StatusFinalized, domain.StatusSent, domain.StatusPartialPaid:
-		// OK
-	default:
-		return nil, fmt.Errorf("invoice cannot accept payments")
-	}
-
 	if req.Amount <= 0 {
 		return nil, fmt.Errorf("amount must be positive")
-	}
-
-	remaining := inv.TotalGross - inv.AmountPaid
-	if req.Amount > remaining {
-		return nil, fmt.Errorf("payment exceeds remaining balance")
 	}
 
 	paymentMethod := "bank_transfer"
@@ -404,31 +393,57 @@ func (s *InvoiceService) AddPayment(ctx context.Context, invoiceID, tenantID uui
 		paymentDate = req.PaymentDate
 	}
 
-	payment := &domain.Payment{
-		ID:            uuid.New(),
-		TenantID:      tenantID,
-		InvoiceID:     invoiceID,
-		Amount:        req.Amount,
-		PaymentDate:   paymentDate,
-		PaymentMethod: paymentMethod,
-		Reference:     req.Reference,
-	}
+	var payment *domain.Payment
+	err := database.WithTx(ctx, s.pool, func(tx pgx.Tx) error {
+		// Get TX-scoped repos
+		txInvRepo := s.invoiceRepo.WithTx(tx)
+		txPayRepo := s.paymentRepo.WithTx(tx)
 
-	if err := s.paymentRepo.Create(ctx, payment); err != nil {
-		return nil, fmt.Errorf("add payment: %w", err)
-	}
+		// Lock the invoice row for update (prevents concurrent payment races)
+		inv, err := txInvRepo.GetByIDForUpdate(ctx, invoiceID, tenantID)
+		if err != nil {
+			return err
+		}
 
-	newAmountPaid := inv.AmountPaid + req.Amount
-	if err := s.invoiceRepo.UpdateAmountPaid(ctx, invoiceID, tenantID, newAmountPaid); err != nil {
-		return nil, fmt.Errorf("update amount_paid: %w", err)
-	}
+		switch inv.Status {
+		case domain.StatusFinalized, domain.StatusSent, domain.StatusPartialPaid:
+			// OK
+		default:
+			return fmt.Errorf("invoice cannot accept payments")
+		}
 
-	newStatus := domain.StatusPartialPaid
-	if newAmountPaid >= inv.TotalGross {
-		newStatus = domain.StatusPaid
-	}
-	if err := s.invoiceRepo.UpdateStatus(ctx, invoiceID, tenantID, newStatus); err != nil {
-		return nil, fmt.Errorf("update status: %w", err)
+		remaining := inv.TotalGross - inv.AmountPaid
+		if req.Amount > remaining {
+			return fmt.Errorf("payment exceeds remaining balance")
+		}
+
+		payment = &domain.Payment{
+			ID:            uuid.New(),
+			TenantID:      tenantID,
+			InvoiceID:     invoiceID,
+			Amount:        req.Amount,
+			PaymentDate:   paymentDate,
+			PaymentMethod: paymentMethod,
+			Reference:     req.Reference,
+		}
+
+		if err := txPayRepo.Create(ctx, payment); err != nil {
+			return fmt.Errorf("add payment: %w", err)
+		}
+
+		newAmountPaid := inv.AmountPaid + req.Amount
+		if err := txInvRepo.UpdateAmountPaid(ctx, invoiceID, tenantID, newAmountPaid); err != nil {
+			return fmt.Errorf("update amount_paid: %w", err)
+		}
+
+		newStatus := domain.StatusPartialPaid
+		if newAmountPaid >= inv.TotalGross {
+			newStatus = domain.StatusPaid
+		}
+		return txInvRepo.UpdateStatus(ctx, invoiceID, tenantID, newStatus)
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	s.logger.Info().Str("invoice_id", invoiceID.String()).Int64("amount", req.Amount).Msg("payment recorded")

@@ -450,3 +450,56 @@ func (s *QuoteService) recalculateTotals(ctx context.Context, quote *domain.Quot
 
 	return s.quoteRepo.Update(ctx, quote)
 }
+
+// ---------------------------------------------------------------------------
+// Customer Portal (public, token-based)
+// ---------------------------------------------------------------------------
+
+// GetByPublicToken retrieves a quote and its items using the public token (no auth).
+func (s *QuoteService) GetByPublicToken(ctx context.Context, token string) (*domain.Quote, []*domain.QuoteItem, error) {
+	quote, err := s.quoteRepo.GetByPublicToken(ctx, token)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	items, err := s.quoteItemRepo.ListByQuote(ctx, quote.ID, quote.TenantID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("portal: list quote items: %w", err)
+	}
+
+	return quote, items, nil
+}
+
+// RespondViaPortal records a customer's accept/decline response on a quote.
+func (s *QuoteService) RespondViaPortal(ctx context.Context, token, customerResponse, message string) error {
+	quote, err := s.quoteRepo.GetByPublicToken(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	if quote.CustomerResponse != "" {
+		return fmt.Errorf("angebot wurde bereits beantwortet")
+	}
+
+	quote.CustomerResponse = customerResponse
+	quote.CustomerResponseMessage = message
+	now := time.Now()
+	quote.CustomerResponseAt = &now
+
+	if customerResponse == "accepted" {
+		quote.Status = "accepted"
+	} else {
+		quote.Status = "declined"
+	}
+
+	if err := s.quoteRepo.Update(ctx, quote); err != nil {
+		return fmt.Errorf("portal: update quote response: %w", err)
+	}
+
+	s.logger.Info().
+		Str("quote_id", quote.ID.String()).
+		Str("response", customerResponse).
+		Msg("customer responded to quote via portal")
+
+	return nil
+}

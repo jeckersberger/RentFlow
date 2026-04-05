@@ -85,6 +85,12 @@ func (s *KPIService) GetHistory(ctx context.Context, tenantID uuid.UUID, from, t
 
 // CreateSnapshot creates or updates today's KPI snapshot (for CRON jobs).
 func (s *KPIService) CreateSnapshot(ctx context.Context, tenantID uuid.UUID, req CreateKPISnapshotRequest) (*domain.KPISnapshot, error) {
+	// Auto-calculate utilization if not explicitly provided
+	utilization := req.UtilizationPct
+	if utilization == 0 && req.TotalEquipment > 0 {
+		utilization = req.EquipmentOutCount * 100 / req.TotalEquipment
+	}
+
 	snap := &domain.KPISnapshot{
 		ID:                    uuid.New(),
 		TenantID:              tenantID,
@@ -96,7 +102,7 @@ func (s *KPIService) CreateSnapshot(ctx context.Context, tenantID uuid.UUID, req
 		OverdueInvoicesAmount: req.OverdueInvoicesAmount,
 		MonthlyRevenue:        req.MonthlyRevenue,
 		CustomerCount:         req.CustomerCount,
-		UtilizationPct:        req.UtilizationPct,
+		UtilizationPct:        utilization,
 	}
 
 	if err := s.repo.Upsert(ctx, snap); err != nil {

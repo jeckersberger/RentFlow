@@ -4,11 +4,14 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
+	"github.com/jeckersberger/EquipFlow/pkg/common/database"
 )
 
 type InvoiceRepository interface {
 	Create(ctx context.Context, invoice *Invoice) error
 	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*Invoice, error)
+	GetByIDForUpdate(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*Invoice, error)
 	List(ctx context.Context, tenantID uuid.UUID, filter InvoiceFilter) ([]*Invoice, int64, error)
 	Update(ctx context.Context, invoice *Invoice) error
 	Delete(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
@@ -17,6 +20,7 @@ type InvoiceRepository interface {
 	UpdateTotals(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, totalNet, totalVat, totalGross int64) error
 	GetLastHash(ctx context.Context, tenantID uuid.UUID) (string, error)
 	Search(ctx context.Context, tenantID uuid.UUID, query string, page int, perPage int) ([]*Invoice, int64, error)
+	WithTx(tx database.DBTX) InvoiceRepository
 }
 
 type InvoiceItemRepository interface {
@@ -34,11 +38,13 @@ type NumberSequenceRepository interface {
 type PaymentRepository interface {
 	Create(ctx context.Context, payment *Payment) error
 	ListByInvoice(ctx context.Context, invoiceID uuid.UUID, tenantID uuid.UUID) ([]*Payment, error)
+	WithTx(tx database.DBTX) PaymentRepository
 }
 
 type QuoteRepository interface {
 	Create(ctx context.Context, q *Quote) error
 	GetByID(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) (*Quote, error)
+	GetByPublicToken(ctx context.Context, token string) (*Quote, error)
 	List(ctx context.Context, tenantID uuid.UUID, filter QuoteFilter) ([]*Quote, int64, error)
 	Update(ctx context.Context, q *Quote) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, tenantID uuid.UUID, status string) error

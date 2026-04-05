@@ -42,12 +42,19 @@ type Invoice struct {
 	TotalVat         int64      `json:"total_vat"`
 	TotalGross       int64      `json:"total_gross"`
 	AmountPaid       int64      `json:"amount_paid"`
-	Notes            string     `json:"notes"`
-	Hash             string     `json:"hash"`
-	PreviousHash     string     `json:"previous_hash"`
-	FinalizedAt      *time.Time `json:"finalized_at,omitempty"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
+	Notes              string     `json:"notes"`
+	Hash               string     `json:"hash"`
+	PreviousHash       string     `json:"previous_hash"`
+	FinalizedAt        *time.Time `json:"finalized_at,omitempty"`
+	IssuerTaxNumber    string     `json:"issuer_tax_number,omitempty"`
+	IssuerVatID        string     `json:"issuer_vat_id,omitempty"`
+	PerformanceDate    string     `json:"performance_date,omitempty"`
+	CustomerVatID      string     `json:"customer_vat_id,omitempty"`
+	IsReverseCharge    bool       `json:"is_reverse_charge"`
+	OriginalInvoiceID  *uuid.UUID `json:"original_invoice_id,omitempty"`
+	CancellationReason string     `json:"cancellation_reason,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 }
 
 type InvoiceItem struct {
@@ -126,9 +133,13 @@ type Quote struct {
 	PaymentTermsDays   int        `json:"payment_terms_days"`
 	DiscountPct        int64      `json:"discount_pct"`
 	Notes              string     `json:"notes"`
-	ConvertedInvoiceID *uuid.UUID `json:"converted_invoice_id,omitempty"`
-	CreatedAt          time.Time  `json:"created_at"`
-	UpdatedAt          time.Time  `json:"updated_at"`
+	ConvertedInvoiceID      *uuid.UUID `json:"converted_invoice_id,omitempty"`
+	PublicToken             string     `json:"public_token,omitempty"`
+	CustomerResponse        string     `json:"customer_response,omitempty"`
+	CustomerResponseMessage string     `json:"customer_response_message,omitempty"`
+	CustomerResponseAt      *time.Time `json:"customer_response_at,omitempty"`
+	CreatedAt               time.Time  `json:"created_at"`
+	UpdatedAt               time.Time  `json:"updated_at"`
 }
 
 type QuoteItem struct {

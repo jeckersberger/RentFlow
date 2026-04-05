@@ -63,7 +63,7 @@ func main() {
 	dunningRepo := postgres.NewDunningRepo(pool)
 	bankRepo := postgres.NewBankRepo(pool)
 
-	invoiceSvc := application.NewInvoiceService(invoiceRepo, itemRepo, seqRepo, paymentRepo, log)
+	invoiceSvc := application.NewInvoiceService(invoiceRepo, itemRepo, seqRepo, paymentRepo, pool, log)
 	quoteSvc := application.NewQuoteService(quoteRepo, quoteItemRepo, seqRepo, invoiceRepo, itemRepo, log)
 	dunningSvc := application.NewDunningService(dunningRepo, invoiceRepo, log)
 	bankingSvc := application.NewBankingService(bankRepo, invoiceRepo, paymentRepo, log)
@@ -78,6 +78,7 @@ func main() {
 	dunningH := httphandler.NewDunningHandler(dunningSvc, log)
 	bankingH := httphandler.NewBankingHandler(bankingSvc, log)
 	datevH := httphandler.NewDatevHandler(datevSvc, log)
+	portalH := httphandler.NewPortalHandler(quoteSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -97,6 +98,7 @@ func main() {
 		dunningH,
 		bankingH,
 		datevH,
+		portalH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

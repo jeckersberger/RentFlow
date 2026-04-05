@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+	"golang.org/x/text/encoding/charmap"
 
 	"github.com/jeckersberger/EquipFlow/services/invoice/internal/domain"
 )
@@ -87,7 +88,14 @@ func (s *DatevService) ExportCSV(ctx context.Context, tenantID uuid.UUID, req Da
 		Int("invoices", len(invoices)).
 		Msg("DATEV export generated")
 
-	return buf.Bytes(), nil
+	// Encode as ISO-8859-1 (required by DATEV import)
+	encoded, err := charmap.ISO8859_1.NewEncoder().Bytes(buf.Bytes())
+	if err != nil {
+		s.logger.Warn().Err(err).Msg("ISO-8859-1 encoding failed, falling back to UTF-8")
+		return buf.Bytes(), nil
+	}
+
+	return encoded, nil
 }
 
 // ---------------------------------------------------------------------------
