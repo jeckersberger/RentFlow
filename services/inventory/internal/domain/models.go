@@ -225,6 +225,22 @@ type TypeAvailabilitySummary struct {
 	AvailabilityPct int       `json:"availability_pct"`
 }
 
+// WarehouseAvailability shows equipment counts per warehouse.
+type WarehouseAvailability struct {
+	WarehouseID   uuid.UUID `json:"warehouse_id"`
+	WarehouseName string    `json:"warehouse_name"`
+	Available     int       `json:"available"`
+	Reserved      int       `json:"reserved"`
+	InMaintenance int       `json:"in_maintenance"`
+	Total         int       `json:"total"`
+}
+
+// TypeAvailabilityByWarehouse extends TypeAvailabilitySummary with per-warehouse breakdown.
+type TypeAvailabilityByWarehouse struct {
+	TypeAvailabilitySummary
+	ByWarehouse []WarehouseAvailability `json:"by_warehouse,omitempty"`
+}
+
 // EquipmentBooking represents a period during which a specific equipment item
 // is reserved or checked out.
 type EquipmentBooking struct {

@@ -230,3 +230,69 @@ func (r *FlightcaseRepo) GetItems(ctx context.Context, flightcaseID uuid.UUID, t
 	}
 	return items, nil
 }
+
+// FlightcaseContentItem represents a single equipment entry in the recursive flightcase tree.
+type FlightcaseContentItem struct {
+	EquipmentID   uuid.UUID `json:"equipment_id"`
+	EquipmentName string    `json:"equipment_name"`
+	Quantity      int       `json:"quantity"`
+	WeightGrams   *int      `json:"weight_grams,omitempty"`
+	Depth         int       `json:"depth"`
+	ParentCaseID  *uuid.UUID `json:"parent_case_id,omitempty"`
+}
+
+// GetFullContents returns all equipment in a flightcase including nested sub-cases (recursive CTE).
+func (r *FlightcaseRepo) GetFullContents(ctx context.Context, flightcaseID, tenantID uuid.UUID) ([]FlightcaseContentItem, error) {
+	query := `
+		WITH RECURSIVE case_contents AS (
+			-- Base: direct items in this flightcase
+			SELECT
+				fi.equipment_id,
+				e.name AS equipment_name,
+				fi.quantity,
+				e.weight_grams,
+				1 AS depth,
+				NULL::UUID AS parent_case_id
+			FROM flightcase_items fi
+			JOIN equipment e ON fi.equipment_id = e.id
+			WHERE fi.flightcase_id = $1
+
+			UNION ALL
+
+			-- Recursive: items inside nested flightcases
+			SELECT
+				fi2.equipment_id,
+				e2.name AS equipment_name,
+				fi2.quantity,
+				e2.weight_grams,
+				cc.depth + 1,
+				fc.id AS parent_case_id
+			FROM case_contents cc
+			JOIN flightcases fc ON cc.equipment_id = fc.id AND fc.tenant_id = $2
+			JOIN flightcase_items fi2 ON fc.id = fi2.flightcase_id
+			JOIN equipment e2 ON fi2.equipment_id = e2.id
+			WHERE cc.depth < 5
+		)
+		SELECT equipment_id, equipment_name, quantity, weight_grams, depth, parent_case_id
+		FROM case_contents
+		ORDER BY depth, equipment_name`
+
+	rows, err := r.pool.Query(ctx, query, flightcaseID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("flightcase_repo: get_full_contents: %w", err)
+	}
+	defer rows.Close()
+
+	var results []FlightcaseContentItem
+	for rows.Next() {
+		var item FlightcaseContentItem
+		if err := rows.Scan(
+			&item.EquipmentID, &item.EquipmentName, &item.Quantity,
+			&item.WeightGrams, &item.Depth, &item.ParentCaseID,
+		); err != nil {
+			return nil, fmt.Errorf("flightcase_repo: get_full_contents scan: %w", err)
+		}
+		results = append(results, item)
+	}
+	return results, nil
+}

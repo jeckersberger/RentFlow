@@ -206,3 +206,50 @@ func (r *AvailabilityRepo) GetEquipmentBookings(
 
 	return bookings, nil
 }
+
+// GetTypeAvailabilityByWarehouse returns equipment availability grouped by warehouse.
+// This allows multi-warehouse operations to see "5 in Warehouse A, 3 in Warehouse B".
+func (r *AvailabilityRepo) GetTypeAvailabilityByWarehouse(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	equipmentTypeID uuid.UUID,
+) ([]domain.WarehouseAvailability, error) {
+	query := `
+		SELECT
+			COALESCE(w.id, '00000000-0000-0000-0000-000000000000') AS warehouse_id,
+			COALESCE(w.name, 'Kein Lager') AS warehouse_name,
+			COUNT(*) FILTER (WHERE e.status NOT IN ('reserved', 'checked_out', 'in_maintenance', 'retired')) AS available,
+			COUNT(*) FILTER (WHERE e.status IN ('reserved', 'checked_out')) AS reserved,
+			COUNT(*) FILTER (WHERE e.status = 'in_maintenance') AS in_maintenance,
+			COUNT(*) FILTER (WHERE e.status != 'retired') AS total
+		FROM equipment e
+		LEFT JOIN stock_locations sl ON e.location_id = sl.id
+		LEFT JOIN racks rk ON sl.rack_id = rk.id
+		LEFT JOIN zones z ON rk.zone_id = z.id
+		LEFT JOIN warehouses w ON z.warehouse_id = w.id
+		WHERE e.tenant_id = $1
+		  AND e.equipment_type_id = $2
+		  AND e.is_active = true
+		  AND e.status != 'retired'
+		GROUP BY w.id, w.name
+		ORDER BY w.name`
+
+	rows, err := r.pool.Query(ctx, query, tenantID, equipmentTypeID)
+	if err != nil {
+		return nil, fmt.Errorf("availability_repo: by_warehouse: %w", err)
+	}
+	defer rows.Close()
+
+	var results []domain.WarehouseAvailability
+	for rows.Next() {
+		var wa domain.WarehouseAvailability
+		if err := rows.Scan(
+			&wa.WarehouseID, &wa.WarehouseName,
+			&wa.Available, &wa.Reserved, &wa.InMaintenance, &wa.Total,
+		); err != nil {
+			return nil, fmt.Errorf("availability_repo: by_warehouse scan: %w", err)
+		}
+		results = append(results, wa)
+	}
+	return results, nil
+}
