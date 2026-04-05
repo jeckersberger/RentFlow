@@ -12,6 +12,7 @@ func NewRouter(
 	suggestionHandler *SuggestionHandler,
 	trainingDataHandler *TrainingDataHandler,
 	aiProviderHandler *AIProviderHandler,
+	packlistHandler *PacklistHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -65,12 +66,15 @@ func NewRouter(
 		r.Route("/api/v1/ai", func(r chi.Router) {
 			// Read: all authenticated users
 			r.Get("/status", aiProviderHandler.Status)
+			r.Get("/readyz", packlistHandler.Readyz)
+			r.Get("/meta", packlistHandler.Meta)
 
 			// Write: admin, manager, or user (no deletes in AI)
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.RequireRole("admin", "manager", "user"))
 				r.Post("/complete", aiProviderHandler.Complete)
 				r.Post("/smart-asset", aiProviderHandler.SmartAsset)
+				r.Post("/packlist/suggest", packlistHandler.Suggest)
 			})
 		})
 	})

@@ -84,11 +84,32 @@ func main() {
 		log.Warn().Msg("Claude AI provider NOT configured — set AI_API_KEY or ANTHROPIC_API_KEY")
 	}
 
+	// 7c. Create Ollama-based packlist service.
+	ollamaBaseURL := os.Getenv("OLLAMA_BASE_URL")
+	aiModelName := os.Getenv("AI_MODEL_NAME")
+	aiEnabled := os.Getenv("AI_ENABLED") == "true"
+	packlistCfg := application.PacklistConfig{
+		OllamaBaseURL: ollamaBaseURL,
+		ModelName:     aiModelName,
+		AIEnabled:     aiEnabled,
+	}
+	packlistSvc := application.NewPacklistService(packlistCfg, log)
+
+	if aiEnabled {
+		log.Info().
+			Str("model", packlistSvc.ModelName()).
+			Str("ollama_url", ollamaBaseURL).
+			Msg("Ollama packlist service enabled")
+	} else {
+		log.Warn().Msg("Ollama packlist service DISABLED — set AI_ENABLED=true to activate")
+	}
+
 	// 8. Create HTTP handlers.
 	predH := httphandler.NewPredictionHandler(predSvc, log)
 	sugH := httphandler.NewSuggestionHandler(sugSvc, log)
 	tdH := httphandler.NewTrainingDataHandler(tdSvc, log)
 	aiProvH := httphandler.NewAIProviderHandler(claudeProvider, smartAssetSvc, log)
+	packlistH := httphandler.NewPacklistHandler(packlistSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -105,7 +126,7 @@ func main() {
 
 	// 10. Create router.
 	router := httphandler.NewRouter(
-		predH, sugH, tdH, aiProvH,
+		predH, sugH, tdH, aiProvH, packlistH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)
