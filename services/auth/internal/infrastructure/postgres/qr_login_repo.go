@@ -74,3 +74,26 @@ func (r *QRLoginRepo) MarkUsed(ctx context.Context, id uuid.UUID) error {
 	}
 	return nil
 }
+
+// ClaimToken atomically marks a QR token as used and returns it.
+// Returns ErrNotFound if token doesn't exist, is expired, or already used.
+func (r *QRLoginRepo) ClaimToken(ctx context.Context, token string) (*domain.QRLoginToken, error) {
+	query := `
+		UPDATE qr_login_tokens
+		SET used = true
+		WHERE token = $1 AND used = false AND expires_at > NOW()
+		RETURNING id, tenant_id, user_id, token, expires_at, used, created_at`
+
+	t := &domain.QRLoginToken{}
+	err := r.pool.QueryRow(ctx, query, token).Scan(
+		&t.ID, &t.TenantID, &t.UserID, &t.Token,
+		&t.ExpiresAt, &t.Used, &t.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("qr_login_repo: claim_token: %w", err)
+	}
+	return t, nil
+}

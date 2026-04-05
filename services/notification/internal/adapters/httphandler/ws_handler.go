@@ -28,13 +28,26 @@ const (
 	maxMessageSize = 512
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		// In production, restrict origins via CORS configuration.
-		return true
-	},
+// newUpgrader creates a WebSocket upgrader that validates Origin against allowed origins.
+func newUpgrader(allowedOrigins []string) websocket.Upgrader {
+	allowed := make(map[string]bool, len(allowedOrigins))
+	for _, o := range allowedOrigins {
+		allowed[o] = true
+	}
+	return websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				return true // Non-browser clients (Scanner-App, curl)
+			}
+			if allowed["*"] {
+				return true // Dev mode
+			}
+			return allowed[origin]
+		},
+	}
 }
 
 // wsClient represents a single WebSocket connection.
@@ -120,15 +133,18 @@ func (h *WSHub) BroadcastToUser(tenantID, userID uuid.UUID, notification *domain
 
 // WSHandler handles WebSocket upgrade requests.
 type WSHandler struct {
-	hub    *WSHub
-	logger zerolog.Logger
+	hub      *WSHub
+	upgrader websocket.Upgrader
+	logger   zerolog.Logger
 }
 
 // NewWSHandler creates a new WebSocket handler.
-func NewWSHandler(hub *WSHub, logger zerolog.Logger) *WSHandler {
+// allowedOrigins controls which browser origins may connect (e.g. ["https://dash.je-soundulight.de"]).
+func NewWSHandler(hub *WSHub, logger zerolog.Logger, allowedOrigins []string) *WSHandler {
 	return &WSHandler{
-		hub:    hub,
-		logger: logger.With().Str("handler", "websocket").Logger(),
+		hub:      hub,
+		upgrader: newUpgrader(allowedOrigins),
+		logger:   logger.With().Str("handler", "websocket").Logger(),
 	}
 }
 
@@ -140,7 +156,7 @@ func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("WebSocket upgrade failed")
 		return

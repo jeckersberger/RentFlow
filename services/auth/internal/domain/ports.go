@@ -72,4 +72,5 @@ type QRLoginRepository interface {
 	Create(ctx context.Context, token *QRLoginToken) error
 	GetByToken(ctx context.Context, token string) (*QRLoginToken, error)
 	MarkUsed(ctx context.Context, id uuid.UUID) error
+	ClaimToken(ctx context.Context, token string) (*QRLoginToken, error)
 }

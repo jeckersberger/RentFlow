@@ -61,7 +61,7 @@ func main() {
 	reservationRepo := postgres.NewReservationRepo(pool)
 
 	// Application services
-	projectSvc := application.NewProjectService(projectRepo, peRepo, log)
+	projectSvc := application.NewProjectService(projectRepo, peRepo, packlistRepo, log)
 	packlistSvc := application.NewPacklistService(packlistRepo, projectRepo, log)
 	reservationSvc := application.NewReservationService(reservationRepo, projectRepo, log)
 

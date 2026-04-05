@@ -30,6 +30,8 @@ type ScanEventRepository interface {
 	Create(ctx context.Context, event *ScanEvent) error
 	List(ctx context.Context, tenantID uuid.UUID, filter ScanEventFilter) ([]*ScanEvent, int64, error)
 	ExistsByDedup(ctx context.Context, tenantID uuid.UUID, deviceID string, timestamp time.Time) (bool, error)
+	IsEventProcessed(ctx context.Context, eventID uuid.UUID, tenantID uuid.UUID) (bool, error)
+	MarkEventProcessed(ctx context.Context, eventID uuid.UUID, tenantID uuid.UUID, action string, barcode string) error
 }
 
 // ScanSessionRepository defines persistence operations for ScanSession aggregates.

@@ -98,7 +98,7 @@ services:
       JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
-      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://dash.je-soundulight.de}
     volumes:
       - ./keys:/app/keys:ro
     ports:
@@ -610,7 +610,7 @@ services:
       PORT: "8015"
       LOG_LEVEL: ${LOG_LEVEL:-info}
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
-      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://dash.je-soundulight.de}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}

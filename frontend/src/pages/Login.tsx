@@ -56,7 +56,7 @@ function LoginPage() {
     try {
       // Backend accepts username or email in the "email" field
       const response = await authApi.login(loginId, password)
-      login(response.token, response.user)
+      login(response.token, response.refreshToken || '', response.user)
 
       // Try to fetch full user profile (non-blocking)
       try {

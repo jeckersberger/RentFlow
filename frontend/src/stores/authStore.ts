@@ -9,13 +9,15 @@ interface User {
 
 interface AuthStore {
   token: string | null
+  refreshToken: string | null
   user: User | null
   tenantId: string | null
   isAuthenticated: boolean
-  login: (token: string, user: User) => void
+  login: (token: string, refreshToken: string, user: User) => void
   logout: () => void
   setUser: (user: User) => void
   setToken: (token: string) => void
+  setRefreshToken: (refreshToken: string) => void
   setTenantId: (tenantId: string) => void
 }
 
@@ -31,15 +33,17 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
       token: null,
+      refreshToken: null,
       user: null,
       tenantId: null,
       isAuthenticated: false,
 
-      login: (token: string, user: User) => {
+      login: (token: string, refreshToken: string, user: User) => {
         const payload = decodeJWT(token)
         const tenantId = (payload.tenant_id as string) || null
         set({
           token,
+          refreshToken,
           user,
           tenantId,
           isAuthenticated: true,
@@ -49,6 +53,7 @@ export const useAuthStore = create<AuthStore>()(
       logout: () =>
         set({
           token: null,
+          refreshToken: null,
           user: null,
           tenantId: null,
           isAuthenticated: false,
@@ -60,6 +65,9 @@ export const useAuthStore = create<AuthStore>()(
       setToken: (token: string) =>
         set({ token }),
 
+      setRefreshToken: (refreshToken: string) =>
+        set({ refreshToken }),
+
       setTenantId: (tenantId: string) =>
         set({ tenantId }),
     }),
@@ -67,6 +75,7 @@ export const useAuthStore = create<AuthStore>()(
       name: 'auth-storage',
       partialize: (state) => ({
         token: state.token,
+        refreshToken: state.refreshToken,
         user: state.user,
         tenantId: state.tenantId,
         isAuthenticated: state.isAuthenticated,

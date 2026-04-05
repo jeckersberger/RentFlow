@@ -6,6 +6,7 @@ import com.rentflow.scanner.data.preferences.SettingsDataStore
 import com.rentflow.scanner.data.repository.AuthRepository
 import com.rentflow.scanner.data.service.SessionTimeoutManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -20,6 +21,8 @@ data class LoginUiState(
     val error: String? = null,
     val loginSuccess: Boolean = false,
     val showQrScanner: Boolean = false,
+    val devMode: Boolean = false,
+    val devTapCount: Int = 0,
 )
 
 @HiltViewModel
@@ -43,6 +46,21 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(serverUrl = url, error = null) }
     }
 
+    fun onLogoTap() {
+        val current = _uiState.value
+        val newCount = current.devTapCount + 1
+        if (newCount >= 5) {
+            _uiState.update { it.copy(devMode = true, devTapCount = 0) }
+        } else {
+            _uiState.update { it.copy(devTapCount = newCount) }
+            // Reset counter after 2 seconds of inactivity
+            viewModelScope.launch {
+                delay(2000)
+                _uiState.update { it.copy(devTapCount = 0) }
+            }
+        }
+    }
+
     fun onEmailChange(email: String) {
         _uiState.update { it.copy(email = email, error = null) }
     }
@@ -53,6 +71,7 @@ class LoginViewModel @Inject constructor(
 
     fun onLoginClick() {
         val state = _uiState.value
+        // In normal mode, server URL comes from settings (default or QR); never blank
         if (state.serverUrl.isBlank()) {
             _uiState.update { it.copy(error = "Server-URL erforderlich") }
             return

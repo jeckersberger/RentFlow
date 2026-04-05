@@ -80,10 +80,20 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const res = await api.post('/api/v1/auth/refresh')
+        const currentRefreshToken = useAuthStore.getState().refreshToken
+        if (!currentRefreshToken) {
+          throw new Error('No refresh token available')
+        }
+        const res = await api.post('/api/v1/auth/refresh', {
+          refresh_token: currentRefreshToken,
+        })
         const newToken = res.data?.access_token || res.data?.token || res.data?.data?.access_token
+        const newRefreshToken = res.data?.refresh_token || res.data?.data?.refresh_token
         if (newToken) {
           useAuthStore.getState().setToken(newToken)
+          if (newRefreshToken) {
+            useAuthStore.getState().setRefreshToken(newRefreshToken)
+          }
           originalRequest.headers.Authorization = `Bearer ${newToken}`
           processQueue(null, newToken)
           return api(originalRequest)
@@ -118,16 +128,21 @@ export const authApi = {
       if (email === 'admin@example.com' && password === 'password') {
         return mockDelay({
           token: 'mock-jwt-token-rentflow-2026',
+          refreshToken: 'mock-refresh-token',
           user: { id: '1', email: 'admin@example.com', name: 'Marco Berger' },
         })
       }
       return Promise.reject({ response: { status: 401 } })
     }
     const res = await api.post('/api/v1/auth/login', { email, password, tenant_slug: localStorage.getItem('cd_tenant') || 'je-soundulight' })
-    const accessToken = res.data?.data?.tokens?.access_token || res.data?.data?.access_token || res.data?.token || res.data?.access_token
+    const tokens = res.data?.data?.tokens || res.data?.data || res.data
+    const accessToken = tokens?.access_token || tokens?.token || res.data?.token
+    const refreshToken = tokens?.refresh_token || null
+    const user = res.data?.data?.user || res.data?.user || { email, name: email.split('@')[0] }
     return {
       token: accessToken,
-      user: { email, name: email.split('@')[0] }
+      refreshToken,
+      user: { id: user.id, email: user.email || email, name: user.name || email.split('@')[0] },
     }
   },
 

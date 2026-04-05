@@ -172,6 +172,27 @@ func (r *ScanEventRepo) ExistsByDedup(ctx context.Context, tenantID uuid.UUID, d
 	return exists, nil
 }
 
+// IsEventProcessed checks the processed_events inbox table for a given event_id.
+func (r *ScanEventRepo) IsEventProcessed(ctx context.Context, eventID uuid.UUID, tenantID uuid.UUID) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM processed_events WHERE event_id = $1 AND tenant_id = $2)`
+	var exists bool
+	err := r.pool.QueryRow(ctx, query, eventID, tenantID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("scan_event_repo: is_event_processed: %w", err)
+	}
+	return exists, nil
+}
+
+// MarkEventProcessed inserts a record into the processed_events inbox table.
+func (r *ScanEventRepo) MarkEventProcessed(ctx context.Context, eventID uuid.UUID, tenantID uuid.UUID, action string, barcode string) error {
+	query := `INSERT INTO processed_events (event_id, tenant_id, action, barcode) VALUES ($1, $2, $3, $4) ON CONFLICT (event_id) DO NOTHING`
+	_, err := r.pool.Exec(ctx, query, eventID, tenantID, action, barcode)
+	if err != nil {
+		return fmt.Errorf("scan_event_repo: mark_event_processed: %w", err)
+	}
+	return nil
+}
+
 // nilIfEmpty returns nil if the string is empty, otherwise a pointer to it.
 func nilIfEmpty(s string) *string {
 	if s == "" {

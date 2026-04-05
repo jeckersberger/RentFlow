@@ -84,7 +84,7 @@ func main() {
 	notifH := httphandler.NewNotificationHandler(notifSvc, log)
 	prefH := httphandler.NewPreferenceHandler(prefSvc, log)
 	emailH := httphandler.NewEmailHandler(emailSvc, log)
-	wsH := httphandler.NewWSHandler(wsHub, log)
+	wsH := httphandler.NewWSHandler(wsHub, log, cfg.CORSOrigins)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 

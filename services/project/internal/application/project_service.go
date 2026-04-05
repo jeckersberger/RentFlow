@@ -83,17 +83,20 @@ type AddProjectEquipmentRequest struct {
 type ProjectService struct {
 	projectRepo   domain.ProjectRepository
 	equipmentRepo domain.ProjectEquipmentRepository
+	packlistRepo  domain.PacklistRepository
 	logger        zerolog.Logger
 }
 
 func NewProjectService(
 	projectRepo domain.ProjectRepository,
 	equipmentRepo domain.ProjectEquipmentRepository,
+	packlistRepo domain.PacklistRepository,
 	logger zerolog.Logger,
 ) *ProjectService {
 	return &ProjectService{
 		projectRepo:   projectRepo,
 		equipmentRepo: equipmentRepo,
+		packlistRepo:  packlistRepo,
 		logger:        logger.With().Str("service", "project").Logger(),
 	}
 }
@@ -335,6 +338,25 @@ func (s *ProjectService) UpdateStatus(ctx context.Context, id, tenantID uuid.UUI
 		return domain.ErrInvalidStatusTransition
 	}
 
+	// Cross-service invariant: project cannot be completed/archived if packlist items are still out
+	if req.Status == "completed" || req.Status == "archived" || req.Status == "cancelled" {
+		packlists, packErr := s.packlistRepo.ListByProject(ctx, id, tenantID)
+		if packErr != nil {
+			s.logger.Error().Err(packErr).Msg("failed to check packlist status for project transition")
+			return fmt.Errorf("packlist status check failed: %w", packErr)
+		}
+		for _, pl := range packlists {
+			if pl.Status != "returned" && pl.Status != "" {
+				s.logger.Warn().
+					Str("project_id", id.String()).
+					Str("packlist_id", pl.ID.String()).
+					Str("packlist_status", pl.Status).
+					Msg("project transition blocked by active packlist")
+				return fmt.Errorf("projekt kann nicht auf '%s' gesetzt werden: Packliste '%s' hat Status '%s' (muss 'returned' sein)", req.Status, pl.ID.String(), pl.Status)
+			}
+		}
+	}
+
 	if err := s.projectRepo.UpdateStatus(ctx, id, tenantID, req.Status); err != nil {
 		return fmt.Errorf("update project status: %w", err)
 	}
@@ -413,6 +435,10 @@ func (s *ProjectService) AddEquipment(ctx context.Context, tenantID, projectID u
 	}
 
 	if err := s.equipmentRepo.Add(ctx, pe); err != nil {
+		// DB exclusion constraint catches overlapping equipment allocations
+		if strings.Contains(err.Error(), "no_overlapping_equipment_allocation") {
+			return nil, fmt.Errorf("equipment ist im gewaehlten Zeitraum bereits einem anderen Projekt zugewiesen")
+		}
 		return nil, fmt.Errorf("add project equipment: %w", err)
 	}
 

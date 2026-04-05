@@ -60,6 +60,7 @@ type BulkSyncRequest struct {
 
 // BulkScanEvent represents a single event from the offline queue.
 type BulkScanEvent struct {
+	EventID         string     `json:"event_id,omitempty"` // Client-generated UUID for idempotency
 	DeviceID        string     `json:"device_id"`
 	Barcode         string     `json:"barcode,omitempty"`
 	RFIDTag         string     `json:"rfid_tag,omitempty"`
@@ -288,7 +289,24 @@ func (s *ScanService) BulkSync(
 			continue
 		}
 
-		// Timestamp-based deduplication: check if event already exists.
+		// Idempotency: if event_id is provided, check processed_events table first.
+		// This ensures replayed offline events are deduplicated correctly.
+		if ev.EventID != "" {
+			eventUUID, parseErr := uuid.Parse(ev.EventID)
+			if parseErr == nil {
+				exists, err := s.eventRepo.IsEventProcessed(ctx, eventUUID, tenantID)
+				if err != nil {
+					s.logger.Error().Err(err).Msg("failed processed event check during bulk sync")
+					return nil, fmt.Errorf("bulk sync processed check: %w", err)
+				}
+				if exists {
+					skipped++
+					continue
+				}
+			}
+		}
+
+		// Fallback: timestamp-based deduplication for older clients without event_id.
 		exists, err := s.eventRepo.ExistsByDedup(ctx, tenantID, ev.DeviceID, ev.Timestamp)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed dedup check during bulk sync")
@@ -324,6 +342,14 @@ func (s *ScanService) BulkSync(
 				Str("device_id", ev.DeviceID).
 				Msg("failed to insert event during bulk sync")
 			return nil, fmt.Errorf("bulk sync insert: %w", err)
+		}
+
+		// Mark event as processed for idempotency (best-effort, non-fatal)
+		if ev.EventID != "" {
+			eventUUID, parseErr := uuid.Parse(ev.EventID)
+			if parseErr == nil {
+				_ = s.eventRepo.MarkEventProcessed(ctx, eventUUID, tenantID, ev.Action, ev.Barcode)
+			}
 		}
 
 		inserted++

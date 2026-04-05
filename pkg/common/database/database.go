@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -71,4 +73,26 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool, migrationsDir string
 // Ping checks whether the pool can reach the database.
 func Ping(ctx context.Context, pool *pgxpool.Pool) error {
 	return pool.Ping(ctx)
+}
+
+// DBTX abstracts pgxpool.Pool and pgx.Tx so repositories can work inside or outside transactions.
+type DBTX interface {
+	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+}
+
+// WithTx executes fn inside a database transaction.
+// If fn returns an error the transaction is rolled back, otherwise committed.
+func WithTx(ctx context.Context, pool *pgxpool.Pool, fn func(tx pgx.Tx) error) error {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("database: begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx) // no-op after commit
+
+	if err := fn(tx); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }

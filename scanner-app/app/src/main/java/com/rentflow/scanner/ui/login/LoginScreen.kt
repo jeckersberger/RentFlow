@@ -1,5 +1,7 @@
 package com.rentflow.scanner.ui.login
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -81,10 +83,15 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Logo: 5x tap to enable developer mode (shows server URL field)
             Text(
                 text = "CrateDesk",
                 style = MaterialTheme.typography.headlineLarge,
                 color = Cyan,
+                modifier = Modifier.clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                ) { viewModel.onLogoTap() },
             )
             Text(
                 text = stringResource(R.string.login_title),
@@ -92,16 +99,25 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 32.dp),
             )
 
-            OutlinedTextField(
-                value = state.serverUrl,
-                onValueChange = viewModel::onServerUrlChange,
-                label = { Text(stringResource(R.string.settings_server_url)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("https://your-server.com") },
-            )
-            Spacer(Modifier.height(12.dp))
+            // Server URL field: only visible in developer mode
+            if (state.devMode) {
+                Text(
+                    "Developer-Modus",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+                OutlinedTextField(
+                    value = state.serverUrl,
+                    onValueChange = viewModel::onServerUrlChange,
+                    label = { Text(stringResource(R.string.settings_server_url)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("https://your-server.com") },
+                )
+                Spacer(Modifier.height(12.dp))
+            }
 
             OutlinedTextField(
                 value = state.email,

@@ -269,6 +269,12 @@ func (h *AuthHandler) GenerateQRLogin(w http.ResponseWriter, r *http.Request) {
 	// Default to the requesting user's own ID if none specified.
 	targetUserID := claims.UserID
 	if body.UserID != "" {
+		// Only admins may generate QR tokens for other users.
+		if claims.Role != "admin" {
+			errors.HandleError(w, errors.Wrap(errors.ErrForbidden,
+				"Nur Administratoren duerfen QR-Tokens fuer andere Benutzer erstellen"))
+			return
+		}
 		parsed, err := uuid.Parse(body.UserID)
 		if err != nil {
 			errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltige user_id"))

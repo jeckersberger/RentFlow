@@ -331,20 +331,11 @@ func (s *AuthService) ValidateQRToken(
 	token string,
 	ipAddress, userAgent string,
 ) (*TokenPair, *domain.User, error) {
-	qrToken, err := s.qrLoginRepo.GetByToken(ctx, token)
+	// Atomic: mark used + return in single UPDATE ... RETURNING (prevents TOCTOU race)
+	qrToken, err := s.qrLoginRepo.ClaimToken(ctx, token)
 	if err != nil {
-		s.logger.Warn().Str("token", token[:min(8, len(token))]).Msg("QR token not found or expired")
+		s.logger.Warn().Str("token", token[:min(8, len(token))]).Msg("QR token invalid, expired, or already used")
 		return nil, nil, domain.ErrQRTokenInvalid
-	}
-
-	if qrToken.Used {
-		return nil, nil, domain.ErrQRTokenUsed
-	}
-
-	// Mark token as used immediately to prevent replay attacks.
-	if err := s.qrLoginRepo.MarkUsed(ctx, qrToken.ID); err != nil {
-		s.logger.Error().Err(err).Msg("failed to mark QR token as used")
-		return nil, nil, fmt.Errorf("QR token update failed: %w", err)
 	}
 
 	// Load the user.
