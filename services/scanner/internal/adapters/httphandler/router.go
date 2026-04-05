@@ -52,6 +52,7 @@ func NewRouter(
 				r.Post("/checkin", scanHandler.Checkin)
 				r.Post("/bulk", scanHandler.BulkSync)
 				r.Post("/adhoc-booking", scanHandler.AdhocBooking)
+				r.Post("/rfid-gate", scanHandler.RFIDGate)
 				r.Post("/sessions", sessionHandler.CreateSession)
 				r.Put("/sessions/{id}/end", sessionHandler.EndSession)
 				r.Post("/sessions/{id}/signature", sessionHandler.SaveSignature)

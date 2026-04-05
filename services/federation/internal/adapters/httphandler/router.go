@@ -63,6 +63,9 @@ func NewRouter(
 			})
 		})
 
+		// Partner equipment search (sub-rental).
+		r.Post("/api/v1/federation/search", listingHandler.SearchPartnerEquipment)
+
 		// Federation requests.
 		r.Route("/api/v1/federation-requests", func(r chi.Router) {
 			// Read: all authenticated users

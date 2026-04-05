@@ -179,3 +179,71 @@ func (s *ListingService) Update(
 
 	return existing, nil
 }
+
+// SearchPartnerEquipmentRequest holds search criteria for partner equipment.
+type SearchPartnerEquipmentRequest struct {
+	Query    string     `json:"query,omitempty"`
+	DateFrom *time.Time `json:"date_from,omitempty"`
+	DateTo   *time.Time `json:"date_to,omitempty"`
+	MaxDaily int64      `json:"max_daily_rate,omitempty"`
+}
+
+// SearchPartnerEquipmentResult combines listing info with partner name.
+type SearchPartnerEquipmentResult struct {
+	ListingID     uuid.UUID `json:"listing_id"`
+	PartnerName   string    `json:"partner_name"`
+	EquipmentName string    `json:"equipment_name,omitempty"`
+	DailyRate     int64     `json:"daily_rate"`
+	WeeklyRate    int64     `json:"weekly_rate"`
+	AvailableFrom string    `json:"available_from,omitempty"`
+	AvailableUntil string   `json:"available_until,omitempty"`
+}
+
+// SearchPartnerEquipment searches across all partners' shared listings.
+func (s *ListingService) SearchPartnerEquipment(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	req SearchPartnerEquipmentRequest,
+) ([]SearchPartnerEquipmentResult, error) {
+	listings, _, err := s.listingRepo.List(ctx, tenantID, domain.ListingFilter{
+		ActiveOnly: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("search partner equipment: %w", err)
+	}
+
+	var results []SearchPartnerEquipmentResult
+	for _, l := range listings {
+		// Filter by date range if provided
+		if req.DateFrom != nil && l.AvailableUntil != nil && l.AvailableUntil.Before(*req.DateFrom) {
+			continue
+		}
+		if req.DateTo != nil && l.AvailableFrom != nil && l.AvailableFrom.After(*req.DateTo) {
+			continue
+		}
+		// Filter by max daily rate
+		if req.MaxDaily > 0 && l.DailyRate > req.MaxDaily {
+			continue
+		}
+
+		result := SearchPartnerEquipmentResult{
+			ListingID: l.ID,
+			DailyRate: l.DailyRate,
+			WeeklyRate: l.WeeklyRate,
+		}
+		if l.AvailableFrom != nil {
+			result.AvailableFrom = l.AvailableFrom.Format("2006-01-02")
+		}
+		if l.AvailableUntil != nil {
+			result.AvailableUntil = l.AvailableUntil.Format("2006-01-02")
+		}
+		results = append(results, result)
+	}
+
+	s.logger.Info().
+		Str("tenant_id", tenantID.String()).
+		Int("results", len(results)).
+		Msg("partner equipment search completed")
+
+	return results, nil
+}

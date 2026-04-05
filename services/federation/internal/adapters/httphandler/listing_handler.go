@@ -153,3 +153,26 @@ func (h *ListingHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	response.Success(w, listing)
 }
+
+// SearchPartnerEquipment handles POST /api/v1/federation/search — search partner equipment.
+func (h *ListingHandler) SearchPartnerEquipment(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	var req application.SearchPartnerEquipmentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	results, err := h.listingService.SearchPartnerEquipment(r.Context(), claims.TenantID, req)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, results)
+}

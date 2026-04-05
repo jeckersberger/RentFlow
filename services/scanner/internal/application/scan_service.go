@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -481,4 +482,130 @@ func (s *ScanService) updateEquipmentLocation(tenantID, equipmentID, locationID 
 	if resp.StatusCode >= 300 {
 		s.logger.Warn().Int("status", resp.StatusCode).Str("equipment_id", equipmentID.String()).Msg("inventory location update failed")
 	}
+}
+
+// ProcessRFIDGate handles a bulk RFID gate event (walk-through scanner).
+// Deduplicates tags by EPC, looks up equipment, and creates scan events.
+func (s *ScanService) ProcessRFIDGate(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	userID uuid.UUID,
+	gate domain.RFIDGateEvent,
+) (*domain.RFIDGateResult, error) {
+	if len(gate.DetectedTags) == 0 {
+		return &domain.RFIDGateResult{}, nil
+	}
+
+	// Deduplicate by EPC (same tag read multiple times in one pass)
+	seen := make(map[string]bool)
+	var uniqueTags []domain.RFIDRead
+	for _, tag := range gate.DetectedTags {
+		if tag.EPC != "" && !seen[tag.EPC] {
+			seen[tag.EPC] = true
+			uniqueTags = append(uniqueTags, tag)
+		}
+	}
+
+	action := domain.ActionCheckin
+	if gate.Direction == "out" {
+		action = domain.ActionCheckout
+	}
+
+	now := time.Now()
+	var matched []domain.RFIDMatchedItem
+	var unknown []string
+
+	for _, tag := range uniqueTags {
+		// Look up equipment by RFID tag via inventory service
+		equipID, equipName, err := s.lookupEquipmentByRFID(tenantID, tag.EPC)
+		if err != nil || equipID == uuid.Nil {
+			unknown = append(unknown, tag.EPC)
+			continue
+		}
+
+		// Create scan event
+		event := &domain.ScanEvent{
+			ID:        uuid.New(),
+			TenantID:  tenantID,
+			UserID:    userID,
+			DeviceID:  gate.DeviceID,
+			RFIDTag:   tag.EPC,
+			EquipmentID: &equipID,
+			Action:    action,
+			Timestamp: now,
+			SyncedAt:  now,
+		}
+
+		if err := s.eventRepo.Create(ctx, event); err != nil {
+			s.logger.Warn().Err(err).Str("epc", tag.EPC).Msg("failed to create gate event")
+			continue
+		}
+
+		matched = append(matched, domain.RFIDMatchedItem{
+			EPC:           tag.EPC,
+			EquipmentID:   equipID,
+			EquipmentName: equipName,
+			Direction:     gate.Direction,
+		})
+	}
+
+	s.logger.Info().
+		Str("gate_id", gate.GateID).
+		Str("direction", gate.Direction).
+		Int("detected", len(gate.DetectedTags)).
+		Int("unique", len(uniqueTags)).
+		Int("matched", len(matched)).
+		Int("unknown", len(unknown)).
+		Msg("RFID gate event processed")
+
+	return &domain.RFIDGateResult{
+		ProcessedCount: len(matched),
+		MatchedItems:   matched,
+		UnknownTags:    unknown,
+	}, nil
+}
+
+// lookupEquipmentByRFID queries inventory service for equipment with this RFID tag.
+func (s *ScanService) lookupEquipmentByRFID(tenantID uuid.UUID, epc string) (uuid.UUID, string, error) {
+	if s.inventoryBaseURL == "" {
+		return uuid.Nil, "", fmt.Errorf("inventory service URL not configured")
+	}
+
+	url := fmt.Sprintf("%s/api/v1/equipment/search?rfid_tag=%s", s.inventoryBaseURL, epc)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return uuid.Nil, "", err
+	}
+	req.Header.Set("X-Tenant-ID", tenantID.String())
+	req.Header.Set("X-Internal-Service", "scanner")
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return uuid.Nil, "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return uuid.Nil, "", fmt.Errorf("equipment lookup failed: status %d", resp.StatusCode)
+	}
+
+	var result struct {
+		Data []struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return uuid.Nil, "", err
+	}
+	if len(result.Data) == 0 {
+		return uuid.Nil, "", fmt.Errorf("no equipment found for EPC %s", epc)
+	}
+
+	id, err := uuid.Parse(result.Data[0].ID)
+	if err != nil {
+		return uuid.Nil, "", err
+	}
+	return id, result.Data[0].Name, nil
 }

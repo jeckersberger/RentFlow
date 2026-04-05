@@ -202,3 +202,26 @@ func (h *ScanHandler) ListEvents(w http.ResponseWriter, r *http.Request) {
 		Total:   total,
 	})
 }
+
+// RFIDGate handles POST /api/v1/scanner/rfid-gate — Bulk RFID gate processing.
+func (h *ScanHandler) RFIDGate(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	var req domain.RFIDGateEvent
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	result, err := h.scanService.ProcessRFIDGate(r.Context(), claims.TenantID, claims.UserID, req)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, result)
+}

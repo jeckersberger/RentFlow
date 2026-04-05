@@ -116,3 +116,34 @@ type ScannerDevice struct {
 	LastSeen      *time.Time `json:"last_seen,omitempty"`
 	CreatedAt     time.Time  `json:"created_at"`
 }
+
+// RFIDGateEvent represents a bulk RFID read from a walk-through gate.
+type RFIDGateEvent struct {
+	GateID       string     `json:"gate_id"`
+	Direction    string     `json:"direction"` // "in" or "out"
+	DetectedTags []RFIDRead `json:"detected_tags"`
+	DeviceID     string     `json:"device_id,omitempty"`
+}
+
+// RFIDRead represents a single RFID tag detection.
+type RFIDRead struct {
+	EPC     string `json:"epc"`      // Electronic Product Code
+	TID     string `json:"tid"`      // Transponder ID (unique per tag)
+	RSSI    int    `json:"rssi"`     // Signal strength
+	Antenna int    `json:"antenna"`  // Which antenna detected it
+}
+
+// RFIDGateResult reports the outcome of processing a gate event.
+type RFIDGateResult struct {
+	ProcessedCount int              `json:"processed_count"`
+	MatchedItems   []RFIDMatchedItem `json:"matched_items"`
+	UnknownTags    []string         `json:"unknown_tags"`
+}
+
+// RFIDMatchedItem is an equipment item matched from an RFID tag.
+type RFIDMatchedItem struct {
+	EPC           string    `json:"epc"`
+	EquipmentID   uuid.UUID `json:"equipment_id"`
+	EquipmentName string    `json:"equipment_name"`
+	Direction     string    `json:"direction"`
+}
