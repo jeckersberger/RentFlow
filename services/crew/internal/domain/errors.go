@@ -26,4 +26,10 @@ var (
 	ErrInvalidBlockType          = errors.New("invalid block_type, expected: vacation, sick, training, blocked, or other")
 	ErrEndBeforeStart            = errors.New("end_date must not be before start_date")
 	ErrBlockConflict             = errors.New("crew member already has an overlapping availability block in this period")
+
+	// Skill-matching errors.
+	ErrNoSkillsRequested = errors.New("required_skills must not be empty")
+	ErrInvalidSkillCount = errors.New("each required skill must have count >= 1")
+	ErrDateFromRequired  = errors.New("date_from is required (YYYY-MM-DD)")
+	ErrDateToRequired    = errors.New("date_to is required (YYYY-MM-DD)")
 )

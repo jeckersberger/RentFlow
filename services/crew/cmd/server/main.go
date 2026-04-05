@@ -66,6 +66,7 @@ func main() {
 	timeEntryRepo := postgres.NewTimeEntryRepo(pool)
 	availabilityRepo := postgres.NewAvailabilityRepo(pool)
 	availabilityBlockRepo := postgres.NewAvailabilityBlockRepo(pool)
+	skillMatchRepo := postgres.NewSkillMatchRepo(pool)
 
 	// 7. Create application services.
 	crewSvc := application.NewCrewService(memberRepo, log)
@@ -74,6 +75,7 @@ func main() {
 	timeTrackingSvc := application.NewTimeTrackingService(timeEntryRepo, memberRepo, log)
 	availabilitySvc := application.NewAvailabilityService(availabilityRepo, memberRepo, log)
 	availabilityBlockSvc := application.NewAvailabilityBlockService(availabilityBlockRepo, memberRepo, log)
+	skillMatchSvc := application.NewSkillMatchService(skillMatchRepo, log)
 
 	// 8. Create HTTP handlers.
 	crewH := httphandler.NewCrewHandler(crewSvc, log)
@@ -82,6 +84,7 @@ func main() {
 	timeTrackingH := httphandler.NewTimeTrackingHandler(timeTrackingSvc, log)
 	availabilityH := httphandler.NewAvailabilityHandler(availabilitySvc, log)
 	availabilityBlockH := httphandler.NewAvailabilityBlockHandler(availabilityBlockSvc, log)
+	skillMatchH := httphandler.NewSkillMatchHandler(skillMatchSvc, log)
 	healthH := health.Handler(pool, nil)
 	livenessH := health.LivenessHandler()
 
@@ -99,6 +102,7 @@ func main() {
 	// 10. Create router.
 	router := httphandler.NewRouter(
 		crewH, assignmentH, qualificationH, timeTrackingH, availabilityH, availabilityBlockH,
+		skillMatchH,
 		healthH, livenessH,
 		jwtMW, corsMW, recoveryMW, requestIDMW,
 	)

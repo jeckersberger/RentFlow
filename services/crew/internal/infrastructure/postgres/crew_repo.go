@@ -17,7 +17,7 @@ import (
 // crewMemberColumns lists all columns of the crew_members table for consistent scanning.
 const crewMemberColumns = `
 	id, tenant_id, first_name, last_name, email, phone,
-	role, hourly_rate, is_active, notes, created_at, updated_at`
+	role, skills, hourly_rate, is_active, notes, created_at, updated_at`
 
 // CrewMemberRepo implements domain.CrewMemberRepository using PostgreSQL.
 type CrewMemberRepo struct {
@@ -33,14 +33,15 @@ func NewCrewMemberRepo(pool *pgxpool.Pool) *CrewMemberRepo {
 func scanCrewMember(row pgx.Row) (*domain.CrewMember, error) {
 	m := &domain.CrewMember{}
 	var (
-		email *string
-		phone *string
-		notes *string
+		email  *string
+		phone  *string
+		notes  *string
+		skills []string
 	)
 
 	err := row.Scan(
 		&m.ID, &m.TenantID, &m.FirstName, &m.LastName, &email, &phone,
-		&m.Role, &m.HourlyRate, &m.IsActive, &notes, &m.CreatedAt, &m.UpdatedAt,
+		&m.Role, &skills, &m.HourlyRate, &m.IsActive, &notes, &m.CreatedAt, &m.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -55,6 +56,11 @@ func scanCrewMember(row pgx.Row) (*domain.CrewMember, error) {
 	if notes != nil {
 		m.Notes = *notes
 	}
+	if skills != nil {
+		m.Skills = skills
+	} else {
+		m.Skills = []string{}
+	}
 
 	return m, nil
 }
@@ -64,14 +70,14 @@ func (r *CrewMemberRepo) Create(ctx context.Context, member *domain.CrewMember) 
 	query := `
 		INSERT INTO crew_members (
 			id, tenant_id, first_name, last_name, email, phone,
-			role, hourly_rate, is_active, notes
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			role, skills, hourly_rate, is_active, notes
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING created_at, updated_at`
 
 	err := r.pool.QueryRow(ctx, query,
 		member.ID, member.TenantID, member.FirstName, member.LastName,
 		nilIfEmpty(member.Email), nilIfEmpty(member.Phone),
-		member.Role, member.HourlyRate, member.IsActive, nilIfEmpty(member.Notes),
+		member.Role, member.Skills, member.HourlyRate, member.IsActive, nilIfEmpty(member.Notes),
 	).Scan(&member.CreatedAt, &member.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("crew_member_repo: create: %w", err)
@@ -121,7 +127,7 @@ func (r *CrewMemberRepo) Update(ctx context.Context, member *domain.CrewMember) 
 	query := `
 		UPDATE crew_members SET
 			first_name = $3, last_name = $4, email = $5, phone = $6,
-			role = $7, hourly_rate = $8, is_active = $9, notes = $10,
+			role = $7, skills = $8, hourly_rate = $9, is_active = $10, notes = $11,
 			updated_at = NOW()
 		WHERE id = $1 AND tenant_id = $2
 		RETURNING updated_at`
@@ -130,7 +136,7 @@ func (r *CrewMemberRepo) Update(ctx context.Context, member *domain.CrewMember) 
 		member.ID, member.TenantID,
 		member.FirstName, member.LastName,
 		nilIfEmpty(member.Email), nilIfEmpty(member.Phone),
-		member.Role, member.HourlyRate, member.IsActive, nilIfEmpty(member.Notes),
+		member.Role, member.Skills, member.HourlyRate, member.IsActive, nilIfEmpty(member.Notes),
 	).Scan(&member.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

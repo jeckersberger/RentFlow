@@ -17,25 +17,27 @@ import (
 
 // CreateCrewMemberRequest holds the data needed to create a new crew member.
 type CreateCrewMemberRequest struct {
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Email      string `json:"email,omitempty"`
-	Phone      string `json:"phone,omitempty"`
-	Role       string `json:"role,omitempty"`
-	HourlyRate int64  `json:"hourly_rate,omitempty"`
-	Notes      string `json:"notes,omitempty"`
+	FirstName  string   `json:"first_name"`
+	LastName   string   `json:"last_name"`
+	Email      string   `json:"email,omitempty"`
+	Phone      string   `json:"phone,omitempty"`
+	Role       string   `json:"role,omitempty"`
+	Skills     []string `json:"skills,omitempty"`
+	HourlyRate int64    `json:"hourly_rate,omitempty"`
+	Notes      string   `json:"notes,omitempty"`
 }
 
 // UpdateCrewMemberRequest holds optional fields for patching a crew member.
 type UpdateCrewMemberRequest struct {
-	FirstName  *string `json:"first_name,omitempty"`
-	LastName   *string `json:"last_name,omitempty"`
-	Email      *string `json:"email,omitempty"`
-	Phone      *string `json:"phone,omitempty"`
-	Role       *string `json:"role,omitempty"`
-	HourlyRate *int64  `json:"hourly_rate,omitempty"`
-	IsActive   *bool   `json:"is_active,omitempty"`
-	Notes      *string `json:"notes,omitempty"`
+	FirstName  *string  `json:"first_name,omitempty"`
+	LastName   *string  `json:"last_name,omitempty"`
+	Email      *string  `json:"email,omitempty"`
+	Phone      *string  `json:"phone,omitempty"`
+	Role       *string  `json:"role,omitempty"`
+	Skills     []string `json:"skills,omitempty"`
+	HourlyRate *int64   `json:"hourly_rate,omitempty"`
+	IsActive   *bool    `json:"is_active,omitempty"`
+	Notes      *string  `json:"notes,omitempty"`
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +76,11 @@ func (s *CrewService) Create(
 		role = "technician"
 	}
 
+	skills := req.Skills
+	if skills == nil {
+		skills = []string{}
+	}
+
 	now := time.Now()
 	member := &domain.CrewMember{
 		ID:         uuid.New(),
@@ -83,6 +90,7 @@ func (s *CrewService) Create(
 		Email:      req.Email,
 		Phone:      req.Phone,
 		Role:       role,
+		Skills:     skills,
 		HourlyRate: req.HourlyRate,
 		IsActive:   true,
 		Notes:      req.Notes,
@@ -167,6 +175,9 @@ func (s *CrewService) Update(
 	}
 	if req.Role != nil {
 		existing.Role = *req.Role
+	}
+	if req.Skills != nil {
+		existing.Skills = req.Skills
 	}
 	if req.HourlyRate != nil {
 		existing.HourlyRate = *req.HourlyRate

@@ -31,11 +31,43 @@ type CrewMember struct {
 	Email      string    `json:"email,omitempty"`
 	Phone      string    `json:"phone,omitempty"`
 	Role       string    `json:"role"`
+	Skills     []string  `json:"skills"`
 	HourlyRate int64     `json:"hourly_rate"`
 	IsActive   bool      `json:"is_active"`
 	Notes      string    `json:"notes,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+// ---------------------------------------------------------------------------
+// Skill-matching types
+// ---------------------------------------------------------------------------
+
+// SkillRequirement describes one required skill and how many crew members are needed.
+type SkillRequirement struct {
+	Skill string `json:"skill"`
+	Count int    `json:"count"`
+}
+
+// SkillMatchCandidate represents a single crew member matched against a skill.
+type SkillMatchCandidate struct {
+	CrewMemberID uuid.UUID `json:"crew_member_id"`
+	Name         string    `json:"name"`
+	Score        float64   `json:"score"`
+	Available    bool      `json:"available"`
+}
+
+// SkillMatchResult groups all matched candidates for one required skill.
+type SkillMatchResult struct {
+	Skill    string                `json:"skill"`
+	Required int                   `json:"required"`
+	Matched  []SkillMatchCandidate `json:"matched"`
+}
+
+// SkillMatchResponse is the top-level response for the match-skills endpoint.
+type SkillMatchResponse struct {
+	Matches          []SkillMatchResult `json:"matches"`
+	UnmatchedSkills  []string           `json:"unmatched_skills"`
 }
 
 // CrewAssignment represents a crew member's assignment to a project.

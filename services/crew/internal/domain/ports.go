@@ -58,3 +58,28 @@ type AvailabilityBlockRepository interface {
 	ListByDateRange(ctx context.Context, tenantID uuid.UUID, from, to string) ([]*AvailabilityBlock, error)
 	Delete(ctx context.Context, id, tenantID uuid.UUID) error
 }
+
+// SkillMatchRepository defines queries for the skill-matching use case.
+type SkillMatchRepository interface {
+	// FindBySkill returns active crew members whose skills array contains the
+	// given skill (case-insensitive). Returns the member ID, full name, and
+	// whether the match is exact (true) or partial/ILIKE (false).
+	FindBySkill(ctx context.Context, tenantID uuid.UUID, skill string) ([]SkillMatchRow, error)
+
+	// BlockedMemberIDs returns the set of crew member IDs that have an
+	// overlapping availability block within the given date range.
+	BlockedMemberIDs(ctx context.Context, tenantID uuid.UUID, from, to string) (map[uuid.UUID]bool, error)
+
+	// AssignedMemberIDs returns the set of crew member IDs that already have
+	// a non-cancelled assignment overlapping the given date range, optionally
+	// excluding a specific project.
+	AssignedMemberIDs(ctx context.Context, tenantID uuid.UUID, from, to string, excludeProjectID *uuid.UUID) (map[uuid.UUID]bool, error)
+}
+
+// SkillMatchRow is a lightweight projection returned by SkillMatchRepository.FindBySkill.
+type SkillMatchRow struct {
+	CrewMemberID uuid.UUID
+	FirstName    string
+	LastName     string
+	ExactMatch   bool
+}

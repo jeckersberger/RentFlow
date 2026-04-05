@@ -15,6 +15,7 @@ func NewRouter(
 	timeTrackingHandler *TimeTrackingHandler,
 	availabilityHandler *AvailabilityHandler,
 	availabilityBlockHandler *AvailabilityBlockHandler,
+	skillMatchHandler *SkillMatchHandler,
 	healthHandler http.HandlerFunc,
 	livenessHandler http.HandlerFunc,
 	jwtMiddleware func(http.Handler) http.Handler,
@@ -45,6 +46,7 @@ func NewRouter(
 			r.Get("/members", crewHandler.List)
 			r.Get("/availability", availabilityHandler.ListAll)
 			r.Get("/availability-blocks", availabilityBlockHandler.ListAll)
+			r.Post("/match-skills", skillMatchHandler.MatchSkills)
 			r.Get("/{id}", crewHandler.Get)
 			r.Get("/{id}/assignments", assignmentHandler.ListForMember)
 			r.Get("/{id}/qualifications", qualificationHandler.ListForMember)
