@@ -92,6 +92,17 @@ type PasswordReset struct {
 	CreatedAt time.Time  `json:"created_at"`
 }
 
+// PasswordResetToken represents a hashed password reset token.
+type PasswordResetToken struct {
+	ID        uuid.UUID `json:"id"`
+	TenantID  uuid.UUID `json:"tenant_id"`
+	UserID    uuid.UUID `json:"user_id"`
+	TokenHash string    `json:"-"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Used      bool      `json:"used"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // QRLoginToken represents a one-time token for scanner-app QR-based login.
 type QRLoginToken struct {
 	ID        uuid.UUID `json:"id"`

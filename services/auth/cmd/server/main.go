@@ -69,12 +69,13 @@ func main() {
 	userRepo := postgres.NewUserRepo(pool)
 	sessionRepo := postgres.NewSessionRepo(pool)
 	qrLoginRepo := postgres.NewQRLoginRepo(pool)
+	resetRepo := postgres.NewPasswordResetRepo(pool)
 	configRepo := postgres.NewConfigRepo(pool)
 	setupRepo := postgres.NewSetupRepo(pool)
 
 	// 8. Create application services.
 	authSvc := application.NewAuthService(
-		userRepo, sessionRepo, qrLoginRepo,
+		userRepo, sessionRepo, qrLoginRepo, resetRepo,
 		privateKey, publicKey,
 		cfg.JWTAccessExpiry, cfg.JWTRefreshExpiry,
 		log,

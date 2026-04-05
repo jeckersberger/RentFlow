@@ -235,16 +235,73 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	response.NoContent(w)
 }
 
-// ForgotPassword initiates a password reset (not yet implemented).
-func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, _ *http.Request) {
-	response.Error(w, http.StatusNotImplemented, "NOT_IMPLEMENTED",
-		"Passwort-Zuruecksetzung per E-Mail noch nicht verfuegbar")
+// forgotPasswordBody is the JSON request body for the forgot-password endpoint.
+type forgotPasswordBody struct {
+	Email      string `json:"email"`
+	TenantSlug string `json:"tenant_slug,omitempty"`
 }
 
-// ResetPassword completes a password reset (not yet implemented).
-func (h *AuthHandler) ResetPassword(w http.ResponseWriter, _ *http.Request) {
-	response.Error(w, http.StatusNotImplemented, "NOT_IMPLEMENTED",
-		"Passwort-Zuruecksetzung noch nicht verfuegbar")
+// ForgotPassword initiates a password reset by generating a token.
+// Always returns 200 OK to prevent email enumeration.
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var body forgotPasswordBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	if body.Email == "" {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Email ist erforderlich"))
+		return
+	}
+
+	tenantID, err := h.resolveTenant(r, body.TenantSlug)
+	if err != nil {
+		// Don't leak tenant existence — return success anyway.
+		response.Success(w, map[string]string{
+			"message": "Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link gesendet.",
+		})
+		return
+	}
+
+	if err := h.authService.ForgotPassword(r.Context(), body.Email, tenantID); err != nil {
+		h.logger.Error().Err(err).Msg("forgot-password handler error")
+	}
+
+	// Always return success to prevent email enumeration.
+	response.Success(w, map[string]string{
+		"message": "Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link gesendet.",
+	})
+}
+
+// resetPasswordBody is the JSON request body for the reset-password endpoint.
+type resetPasswordBody struct {
+	Token       string `json:"token"`
+	NewPassword string `json:"new_password"`
+}
+
+// ResetPassword validates the reset token and sets a new password.
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var body resetPasswordBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	if body.Token == "" || body.NewPassword == "" {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Token und neues Passwort sind erforderlich"))
+		return
+	}
+
+	if err := h.authService.ResetPassword(r.Context(), body.Token, body.NewPassword); err != nil {
+		h.logger.Warn().Err(err).Msg("reset-password failed")
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Success(w, map[string]string{
+		"message": "Passwort wurde erfolgreich zurueckgesetzt.",
+	})
 }
 
 // qrGenerateBody is the JSON request body for QR token generation.

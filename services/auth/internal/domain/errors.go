@@ -26,4 +26,5 @@ var (
 	ErrSetupNotFound      = apperrors.New("SETUP_NOT_FOUND", "Setup-Status nicht gefunden", http.StatusNotFound)
 	ErrQRTokenInvalid     = apperrors.New("QR_TOKEN_INVALID", "QR-Token ungueltig oder abgelaufen", http.StatusUnauthorized)
 	ErrQRTokenUsed        = apperrors.New("QR_TOKEN_USED", "QR-Token wurde bereits verwendet", http.StatusConflict)
+	ErrResetTokenInvalid  = apperrors.New("RESET_TOKEN_INVALID", "Reset-Token ungueltig, abgelaufen oder bereits verwendet", http.StatusBadRequest)
 )

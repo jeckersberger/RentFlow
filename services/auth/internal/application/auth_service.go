@@ -58,6 +58,7 @@ type AuthService struct {
 	userRepo      domain.UserRepository
 	sessionRepo   domain.SessionRepository
 	qrLoginRepo   domain.QRLoginRepository
+	resetRepo     domain.PasswordResetRepository
 	privateKey    *rsa.PrivateKey
 	publicKey     *rsa.PublicKey
 	accessExpiry  time.Duration
@@ -70,6 +71,7 @@ func NewAuthService(
 	userRepo domain.UserRepository,
 	sessionRepo domain.SessionRepository,
 	qrLoginRepo domain.QRLoginRepository,
+	resetRepo domain.PasswordResetRepository,
 	privateKey *rsa.PrivateKey,
 	publicKey *rsa.PublicKey,
 	accessExpiry time.Duration,
@@ -86,6 +88,7 @@ func NewAuthService(
 		userRepo:      userRepo,
 		sessionRepo:   sessionRepo,
 		qrLoginRepo:   qrLoginRepo,
+		resetRepo:     resetRepo,
 		privateKey:    privateKey,
 		publicKey:     publicKey,
 		accessExpiry:  accessExpiry,
@@ -118,11 +121,13 @@ func (s *AuthService) Login(
 	}
 
 	if !VerifyPassword(user.PasswordHash, req.Password) {
-		if _, err := s.userRepo.IncrementFailedLogins(ctx, user.ID); err != nil {
+		// Use the DB-returned count (atomic) instead of stale in-memory value
+		dbCount, err := s.userRepo.IncrementFailedLogins(ctx, user.ID)
+		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to increment failed logins")
+			dbCount = user.FailedLogins + 1 // fallback to in-memory estimate
 		}
-		count := user.FailedLogins + 1
-		s.applyBruteForceLock(ctx, user.ID, count)
+		s.applyBruteForceLock(ctx, user.ID, dbCount)
 		return nil, nil, domain.ErrInvalidCredentials
 	}
 
@@ -400,6 +405,107 @@ func (s *AuthService) ValidateQRToken(
 		RefreshToken: refreshToken,
 		ExpiresAt:    expiresAt,
 	}, user, nil
+}
+
+// ForgotPassword generates a reset token, stores the hash, and logs the plain token.
+// Always returns nil to prevent email enumeration.
+func (s *AuthService) ForgotPassword(ctx context.Context, email string, tenantID uuid.UUID) error {
+	user, err := s.userRepo.GetByEmail(ctx, tenantID, email)
+	if err != nil {
+		// User not found — return nil to prevent email enumeration.
+		s.logger.Debug().Str("email", email).Msg("forgot-password: user not found, returning success anyway")
+		return nil
+	}
+
+	if !user.IsActive {
+		s.logger.Debug().Str("user_id", user.ID.String()).Msg("forgot-password: account disabled, returning success anyway")
+		return nil
+	}
+
+	// Generate a random 32-byte token.
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		s.logger.Error().Err(err).Msg("forgot-password: failed to generate token")
+		return nil
+	}
+	plainToken := hex.EncodeToString(tokenBytes)
+
+	// Hash token with SHA256 for storage.
+	tokenHash := hashToken(plainToken)
+
+	resetToken := &domain.PasswordResetToken{
+		ID:        uuid.New(),
+		TenantID:  tenantID,
+		UserID:    user.ID,
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().Add(1 * time.Hour),
+		Used:      false,
+	}
+
+	if err := s.resetRepo.Create(ctx, resetToken); err != nil {
+		s.logger.Error().Err(err).Msg("forgot-password: failed to store reset token")
+		return nil
+	}
+
+	// In production this would be sent via the email/notification service.
+	s.logger.Info().
+		Str("user_id", user.ID.String()).
+		Str("email", user.Email).
+		Str("reset_token", plainToken).
+		Msg("password reset token generated (send via email in production)")
+
+	return nil
+}
+
+// ResetPassword validates the plain token and updates the user's password.
+func (s *AuthService) ResetPassword(ctx context.Context, plainToken, newPassword string) error {
+	// Hash the provided token to look up in the database.
+	tokenHash := hashToken(plainToken)
+
+	resetToken, err := s.resetRepo.GetByTokenHash(ctx, tokenHash)
+	if err != nil {
+		s.logger.Warn().Msg("reset-password: invalid or expired token")
+		return domain.ErrResetTokenInvalid
+	}
+
+	// Defensive checks (repo already filters, but be explicit).
+	if resetToken.Used || time.Now().After(resetToken.ExpiresAt) {
+		return domain.ErrResetTokenInvalid
+	}
+
+	// Validate password strength.
+	if err := validatePassword(newPassword); err != nil {
+		return err
+	}
+
+	// Hash the new password with Argon2id.
+	newHash, err := HashPassword(newPassword)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("reset-password: failed to hash new password")
+		return fmt.Errorf("password hashing failed: %w", err)
+	}
+
+	// Update the user's password.
+	if err := s.userRepo.UpdatePassword(ctx, resetToken.UserID, newHash); err != nil {
+		s.logger.Error().Err(err).Msg("reset-password: failed to update password")
+		return fmt.Errorf("password update failed: %w", err)
+	}
+
+	// Mark the reset token as used.
+	if err := s.resetRepo.MarkUsed(ctx, resetToken.ID); err != nil {
+		s.logger.Error().Err(err).Msg("reset-password: failed to mark token as used")
+	}
+
+	// Invalidate all active sessions for this user.
+	if err := s.sessionRepo.DeactivateAllForUser(ctx, resetToken.UserID); err != nil {
+		s.logger.Error().Err(err).Msg("reset-password: failed to invalidate sessions")
+	}
+
+	s.logger.Info().
+		Str("user_id", resetToken.UserID.String()).
+		Msg("password reset completed, all sessions invalidated")
+
+	return nil
 }
 
 // --- private helpers ---

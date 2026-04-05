@@ -67,6 +67,13 @@ type InvitationRepository interface {
 	MarkAccepted(ctx context.Context, id uuid.UUID) error
 }
 
+// PasswordResetRepository defines persistence operations for password reset tokens.
+type PasswordResetRepository interface {
+	Create(ctx context.Context, token *PasswordResetToken) error
+	GetByTokenHash(ctx context.Context, tokenHash string) (*PasswordResetToken, error)
+	MarkUsed(ctx context.Context, id uuid.UUID) error
+}
+
 // QRLoginRepository defines persistence operations for QR login tokens.
 type QRLoginRepository interface {
 	Create(ctx context.Context, token *QRLoginToken) error
