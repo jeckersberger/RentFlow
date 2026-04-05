@@ -49,3 +49,12 @@ type AvailabilityRepository interface {
 	ListByMember(ctx context.Context, crewMemberID uuid.UUID, tenantID uuid.UUID, from string, to string) ([]*CrewAvailability, error)
 	ListAll(ctx context.Context, tenantID uuid.UUID, from string, to string) ([]*CrewAvailability, error)
 }
+
+// AvailabilityBlockRepository defines persistence operations for AvailabilityBlock aggregates.
+type AvailabilityBlockRepository interface {
+	Create(ctx context.Context, block *AvailabilityBlock) error
+	GetByID(ctx context.Context, id, tenantID uuid.UUID) (*AvailabilityBlock, error)
+	ListByCrewMember(ctx context.Context, crewMemberID, tenantID uuid.UUID, from, to string) ([]*AvailabilityBlock, error)
+	ListByDateRange(ctx context.Context, tenantID uuid.UUID, from, to string) ([]*AvailabilityBlock, error)
+	Delete(ctx context.Context, id, tenantID uuid.UUID) error
+}

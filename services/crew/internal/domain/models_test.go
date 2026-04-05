@@ -71,6 +71,55 @@ func TestAvailabilityStatusConstants(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Availability block type constants
+// ---------------------------------------------------------------------------
+
+func TestBlockTypeConstants(t *testing.T) {
+	tests := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{"Vacation", BlockTypeVacation, "vacation"},
+		{"Sick", BlockTypeSick, "sick"},
+		{"Training", BlockTypeTraining, "training"},
+		{"Blocked", BlockTypeBlocked, "blocked"},
+		{"Other", BlockTypeOther, "other"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Errorf("%s = %q, want %q", tt.name, tt.got, tt.want)
+			}
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// AvailabilityBlock — date range
+// ---------------------------------------------------------------------------
+
+func TestAvailabilityBlockDateRange(t *testing.T) {
+	block := &AvailabilityBlock{
+		ID:           uuid.New(),
+		TenantID:     uuid.New(),
+		CrewMemberID: uuid.New(),
+		BlockType:    BlockTypeVacation,
+		StartDate:    "2026-04-10",
+		EndDate:      "2026-04-17",
+		Notes:        "Easter vacation",
+	}
+
+	if block.BlockType != "vacation" {
+		t.Errorf("BlockType = %q, want %q", block.BlockType, "vacation")
+	}
+	if block.StartDate >= block.EndDate {
+		t.Error("start_date should be before end_date")
+	}
+}
+
+// ---------------------------------------------------------------------------
 // CrewMember — hourly rate in cents
 // ---------------------------------------------------------------------------
 

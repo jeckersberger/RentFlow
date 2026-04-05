@@ -112,3 +112,29 @@ type CrewAvailability struct {
 	Note         string    `json:"note,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 }
+
+// ---------------------------------------------------------------------------
+// Availability Block types
+// ---------------------------------------------------------------------------
+
+const (
+	BlockTypeVacation = "vacation"
+	BlockTypeSick     = "sick"
+	BlockTypeTraining = "training"
+	BlockTypeBlocked  = "blocked"
+	BlockTypeOther    = "other"
+)
+
+// AvailabilityBlock represents a date-range block during which a crew member
+// is unavailable (vacation, sick leave, training, etc.).
+type AvailabilityBlock struct {
+	ID           uuid.UUID `json:"id"`
+	TenantID     uuid.UUID `json:"tenant_id"`
+	CrewMemberID uuid.UUID `json:"crew_member_id"`
+	BlockType    string    `json:"block_type"`
+	StartDate    string    `json:"start_date"`
+	EndDate      string    `json:"end_date"`
+	Notes        string    `json:"notes,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}

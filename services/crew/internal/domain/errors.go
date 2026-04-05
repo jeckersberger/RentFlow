@@ -20,4 +20,10 @@ var (
 	ErrAvailabilityNotFound = errors.New("availability entry not found")
 	ErrInvalidDateFormat    = errors.New("invalid date format, expected YYYY-MM-DD")
 	ErrInvalidAvailStatus   = errors.New("invalid status, expected: available, unavailable, or on_request")
+
+	// Availability block errors.
+	ErrAvailabilityBlockNotFound = errors.New("availability block not found")
+	ErrInvalidBlockType          = errors.New("invalid block_type, expected: vacation, sick, training, blocked, or other")
+	ErrEndBeforeStart            = errors.New("end_date must not be before start_date")
+	ErrBlockConflict             = errors.New("crew member already has an overlapping availability block in this period")
 )
