@@ -115,6 +115,9 @@ const QuotesPage = lazy(() => import('./pages/Quotes/QuotesPage'))
 const QuoteNewPage = lazy(() => import('./pages/Quotes/QuoteNew'))
 const QuoteDetailPage = lazy(() => import('./pages/Quotes/QuoteDetail'))
 
+// Disposition Page
+const DispositionPage = lazy(() => import('./pages/Disposition/DispositionPage'))
+
 // Real Pages (formerly placeholders)
 const CalendarPage = lazy(() => import('./pages/Calendar/CalendarPage'))
 const ShortagesPage = lazy(() => import('./pages/Shortages/ShortagesPage'))
@@ -247,8 +250,9 @@ function App() {
             <Route index element={<DashboardPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
 
-            {/* Calendar */}
+            {/* Calendar & Disposition */}
             <Route path="calendar" element={<CalendarPage />} />
+            <Route path="disposition" element={<DispositionPage />} />
 
             {/* Equipment: Katalog ist die Startseite */}
             <Route path="equipment" element={<EquipmentTypesPage />} />

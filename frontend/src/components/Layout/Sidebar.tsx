@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   Calendar,
+  GanttChart,
   FolderKanban,
   Package,
   Warehouse,
@@ -67,6 +68,7 @@ const navGroups: NavGroup[] = [
     labelKey: 'nav.projects_group',
     items: [
       { labelKey: 'nav.projects', href: '/projects', icon: FolderKanban },
+      { labelKey: 'nav.disposition', href: '/disposition', icon: GanttChart },
       { labelKey: 'nav.calendar', href: '/calendar', icon: Calendar },
     ],
   },
@@ -121,7 +123,7 @@ const settingsNavItem: NavItem = { labelKey: 'nav.settings', href: '/settings', 
 // Mapping of module IDs to their nav item paths
 const MODULE_NAV_PATHS: Record<string, string[]> = {
   warehouse: ['/', '/equipment', '/equipment/items', '/scanner', '/warehouse'],
-  projects: ['/projects', '/calendar'],
+  projects: ['/projects', '/disposition', '/calendar'],
   finance: ['/invoices', '/quotes', '/contacts', '/expenses', '/banking'],
   team: ['/crew', '/time-tracking', '/transport'],
   communication: ['/mail/compose', '/mail/inbox', '/mail/sent'],
