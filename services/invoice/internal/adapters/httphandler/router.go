@@ -60,6 +60,7 @@ func NewRouter(
 				r.Post("/{id}/items", invoiceHandler.AddItem)
 				r.Delete("/{id}/items/{itemId}", invoiceHandler.RemoveItem)
 				r.Post("/{id}/payments", invoiceHandler.AddPayment)
+				r.Post("/{id}/reversal", invoiceHandler.CreateReversal)
 				r.Post("/{id}/send", invoiceHandler.SendEmail)
 				r.Post("/{id}/partial", invoiceHandler.CreatePartialInvoice)
 			})

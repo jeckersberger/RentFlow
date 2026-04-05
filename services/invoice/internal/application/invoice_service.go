@@ -335,6 +335,98 @@ func (s *InvoiceService) Search(ctx context.Context, tenantID uuid.UUID, query s
 	return s.invoiceRepo.Search(ctx, tenantID, query, page, perPage)
 }
 
+// CreateReversal creates a cancellation/reversal invoice (Stornierung) that references the original.
+// The reversal has negated amounts and links back via original_invoice_id.
+func (s *InvoiceService) CreateReversal(ctx context.Context, originalID, tenantID uuid.UUID, reason string) (*domain.Invoice, error) {
+	original, err := s.invoiceRepo.GetByID(ctx, originalID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("reversal - fetch original: %w", err)
+	}
+
+	// Only finalized/sent/paid invoices can be reversed
+	switch original.Status {
+	case domain.StatusFinalized, domain.StatusSent, domain.StatusPaid, domain.StatusPartialPaid:
+		// OK
+	default:
+		return nil, fmt.Errorf("nur finalisierte Rechnungen koennen storniert werden (aktueller Status: %s)", original.Status)
+	}
+
+	// Generate reversal number
+	year := time.Now().Year()
+	if err := s.seqRepo.EnsureSequence(ctx, tenantID, "ST", year); err != nil {
+		return nil, fmt.Errorf("reversal - ensure seq: %w", err)
+	}
+	seqNum, err := s.seqRepo.NextNumber(ctx, tenantID, "ST", year)
+	if err != nil {
+		return nil, fmt.Errorf("reversal - next number: %w", err)
+	}
+
+	reversal := &domain.Invoice{
+		ID:                 uuid.New(),
+		TenantID:           tenantID,
+		InvoiceNumber:      fmt.Sprintf("ST-%d-%05d", year, seqNum),
+		InvoiceType:        domain.InvoiceTypeReversal,
+		Status:             domain.StatusDraft,
+		CustomerName:       original.CustomerName,
+		CustomerEmail:      original.CustomerEmail,
+		CustomerAddress:    original.CustomerAddress,
+		InvoiceDate:        time.Now().Format("2006-01-02"),
+		DueDate:            original.DueDate,
+		VatRate:            original.VatRate,
+		Kleinunternehmer:   original.Kleinunternehmer,
+		TotalNet:           -original.TotalNet,
+		TotalVat:           -original.TotalVat,
+		TotalGross:         -original.TotalGross,
+		Notes:              fmt.Sprintf("Stornierung zu Rechnung %s", original.InvoiceNumber),
+		IsReverseCharge:    original.IsReverseCharge,
+		IssuerTaxNumber:    original.IssuerTaxNumber,
+		IssuerVatID:        original.IssuerVatID,
+		CustomerVatID:      original.CustomerVatID,
+		OriginalInvoiceID:  &originalID,
+		CancellationReason: reason,
+	}
+
+	if err := s.invoiceRepo.Create(ctx, reversal); err != nil {
+		return nil, fmt.Errorf("reversal - create: %w", err)
+	}
+
+	// Copy items with negated amounts
+	items, err := s.itemRepo.ListByInvoice(ctx, originalID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("reversal - fetch items: %w", err)
+	}
+	for _, item := range items {
+		reversalItem := &domain.InvoiceItem{
+			ID:          uuid.New(),
+			TenantID:    tenantID,
+			InvoiceID:   reversal.ID,
+			Description: item.Description,
+			Quantity:    -item.Quantity,
+			Unit:        item.Unit,
+			UnitPrice:   item.UnitPrice,
+			VatRate:     item.VatRate,
+			DiscountPct: item.DiscountPct,
+			Position:    item.Position,
+		}
+		if err := s.itemRepo.Create(ctx, reversalItem); err != nil {
+			s.logger.Warn().Err(err).Msg("reversal - failed to copy item")
+		}
+	}
+
+	// Mark original as cancelled
+	if err := s.invoiceRepo.UpdateStatus(ctx, originalID, tenantID, domain.StatusCancelled); err != nil {
+		s.logger.Warn().Err(err).Msg("reversal - failed to cancel original")
+	}
+
+	s.logger.Info().
+		Str("original_id", originalID.String()).
+		Str("reversal_id", reversal.ID.String()).
+		Str("reason", reason).
+		Msg("reversal invoice created")
+
+	return reversal, nil
+}
+
 // --- Items ---
 
 func (s *InvoiceService) AddItem(ctx context.Context, invoiceID, tenantID uuid.UUID, req AddItemRequest) (*domain.InvoiceItem, error) {

@@ -125,6 +125,37 @@ func (h *InvoiceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	response.Success(w, map[string]string{"message": "Rechnung geloescht"})
 }
 
+// CreateReversal handles POST /api/v1/invoices/{id}/reversal — Stornierung erstellen.
+func (h *InvoiceHandler) CreateReversal(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil {
+		errors.HandleError(w, errors.ErrUnauthorized)
+		return
+	}
+
+	id, err := parseUUID(chi.URLParam(r, "id"))
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.HandleError(w, errors.Wrap(errors.ErrBadRequest, "Ungueltiger Request-Body"))
+		return
+	}
+
+	reversal, err := h.invoiceService.CreateReversal(r.Context(), id, claims.TenantID, req.Reason)
+	if err != nil {
+		errors.HandleError(w, err)
+		return
+	}
+
+	response.Created(w, reversal)
+}
+
 func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
