@@ -1,0 +1,8 @@
+# Historical migration version collisions that existed before the versioned
+# runner was introduced. Format: <service>:<normalized-numeric-version>
+#
+# These entries only permit multiple distinct historical filenames sharing the
+# same numeric prefix. They do not permit checksum drift of an applied file.
+auth-service:5
+expense-service:3
+project-service:2
