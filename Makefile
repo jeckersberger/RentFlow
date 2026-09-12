@@ -1,12 +1,14 @@
-.PHONY: help dev build test test-integration test-e2e lint docker-build docker-up docker-down migrate-up migrate-down proto clean
+.PHONY: help dev build test test-common test-integration test-e2e lint docker-build docker-up docker-down migrate-up migrate-down proto clean workspace-sync verify
 
 # Get all services dynamically
 SERVICES := $(notdir $(wildcard services/*/))
 SERVICE_TARGETS := $(addprefix build-,$(SERVICES))
 TEST_TARGETS := $(addprefix test-,$(SERVICES))
 
-# Go paths
-GO := ~/.local/go/bin/go
+# Tooling. Override from the environment when needed (for example GO=/opt/go/bin/go).
+GO ?= go
+NPM ?= npm
+COMPOSE ?= docker compose
 GOBIN := $(shell pwd)/bin
 
 # Database configuration (from .env or defaults)
@@ -17,37 +19,33 @@ POSTGRES_PORT ?= 5432
 POSTGRES_DB ?= rentflow
 
 help:
-	@echo "RentFlow Microservices - Available Targets"
+	@echo "CrateDesk / EquipFlow - Available Targets"
 	@echo ""
 	@echo "Development:"
 	@echo "  make dev              - Start all services in dev mode"
-	@echo "  make build            - Build all services"
+	@echo "  make build            - Build all Go services"
 	@echo "  make clean            - Clean build artifacts"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test             - Run unit tests for all services"
-	@echo "  make test-integration - Run integration tests"
-	@echo "  make test-e2e         - Run end-to-end tests"
+	@echo "  make test             - Run pkg/common and all service unit tests"
+	@echo "  make test-integration - Run integration-tagged Go tests"
+	@echo "  make test-e2e         - Run Playwright smoke tests (requires backend and E2E credentials)"
+	@echo "  make verify           - Run unit tests, builds and frontend checks"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make lint             - Run golangci-lint"
 	@echo ""
 	@echo "Docker:"
-	@echo "  make docker-build     - Build all Docker images"
-	@echo "  make docker-up        - Start all services with docker-compose"
-	@echo "  make docker-down      - Stop all services"
+	@echo "  make docker-build     - Build compose images"
+	@echo "  make docker-up        - Start compose stack"
+	@echo "  make docker-down      - Stop compose stack"
 	@echo ""
 	@echo "Database:"
 	@echo "  make migrate-up SERVICE=<service>    - Run migrations for a service"
 	@echo "  make migrate-down SERVICE=<service>  - Rollback migrations for a service"
 	@echo ""
-	@echo "Examples:"
-	@echo "  make migrate-up SERVICE=auth-service"
-	@echo "  make migrate-down SERVICE=inventory-service"
-	@echo ""
-	@echo "Other:"
-	@echo "  make proto            - Generate protobuf code (placeholder)"
-	@echo "  make help             - Show this help message"
+	@echo "E2E environment:"
+	@echo "  E2E_LOGIN_USER=<user> E2E_LOGIN_PASS=<pass> [E2E_BASE_URL=http://localhost:3000] make test-e2e"
 	@echo ""
 
 dev: build
@@ -64,60 +62,61 @@ build: $(SERVICE_TARGETS)
 build-%:
 	@echo "Building $*..."
 	@mkdir -p $(GOBIN)
-	@cd services/$* && $(GO) build -o $(GOBIN)/$* ./cmd/server
+	@cd services/$* && GOWORK=off $(GO) build -o $(GOBIN)/$* ./cmd/server
 
-test: $(TEST_TARGETS)
+test: test-common $(TEST_TARGETS)
 	@echo "All unit tests completed"
+
+test-common:
+	@echo "Running tests for pkg/common..."
+	@cd pkg/common && GOWORK=off $(GO) test -v -race ./...
 
 test-%:
 	@echo "Running tests for $*..."
-	@cd services/$* && $(GO) test -v -coverprofile=coverage.out ./...
+	@cd services/$* && GOWORK=off $(GO) test -v -race ./...
 
 test-integration:
 	@echo "Running integration tests..."
+	@cd pkg/common && GOWORK=off $(GO) test -v -tags=integration ./...
 	@for service in $(SERVICES); do \
 		echo "Integration tests for $$service..."; \
-		cd services/$$service && $(GO) test -v -tags=integration ./... || exit 1; \
+		(cd services/$$service && GOWORK=off $(GO) test -v -tags=integration ./...) || exit 1; \
 	done
 	@echo "Integration tests passed"
 
 test-e2e:
-	@echo "Running end-to-end tests..."
-	@echo "E2E tests require all services running - start with 'make docker-up' first"
-	@echo "Placeholder for E2E test suite"
+	@test -n "$(E2E_LOGIN_USER)" || (echo "E2E_LOGIN_USER is required"; exit 1)
+	@test -n "$(E2E_LOGIN_PASS)" || (echo "E2E_LOGIN_PASS is required"; exit 1)
+	@echo "Running Playwright smoke tests against $${E2E_BASE_URL:-http://localhost:3000}..."
+	@cd frontend && $(NPM) ci && npx playwright install --with-deps chromium && $(NPM) run test:e2e
+
+verify: test build
+	@echo "Running frontend verification..."
+	@cd frontend && $(NPM) ci && $(NPM) run lint && $(NPM) run type-check && $(NPM) run build && $(NPM) run test:run
+	@echo "Verification completed successfully"
 
 lint:
 	@echo "Running golangci-lint..."
 	@command -v golangci-lint >/dev/null 2>&1 || (echo "golangci-lint not installed"; exit 1)
+	@echo "Linting pkg/common..."
+	@cd pkg/common && GOWORK=off golangci-lint run ./...
 	@for service in $(SERVICES); do \
 		echo "Linting $$service..."; \
-		golangci-lint run services/$$service/... || exit 1; \
+		(cd services/$$service && GOWORK=off golangci-lint run ./...) || exit 1; \
 	done
 	@echo "Lint checks passed"
 
 docker-build:
 	@echo "Building Docker images..."
-	@if [ -f infra/docker/docker-compose.yml ]; then \
-		docker-compose -f infra/docker/docker-compose.yml build; \
-	else \
-		echo "docker-compose.yml not found at infra/docker/"; \
-	fi
+	@$(COMPOSE) build
 
 docker-up:
-	@echo "Starting services with docker-compose..."
-	@if [ -f infra/docker/docker-compose.yml ]; then \
-		docker-compose -f infra/docker/docker-compose.yml up -d; \
-	else \
-		echo "docker-compose.yml not found at infra/docker/"; \
-	fi
+	@echo "Starting services with docker compose..."
+	@$(COMPOSE) up -d
 
 docker-down:
 	@echo "Stopping services..."
-	@if [ -f infra/docker/docker-compose.yml ]; then \
-		docker-compose -f infra/docker/docker-compose.yml down; \
-	else \
-		echo "docker-compose.yml not found at infra/docker/"; \
-	fi
+	@$(COMPOSE) down
 
 migrate-up:
 	@if [ -z "$(SERVICE)" ]; then \
@@ -176,7 +175,7 @@ clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(GOBIN)
 	@for service in $(SERVICES); do \
-		cd services/$$service && $(GO) clean || true; \
+		(cd services/$$service && $(GO) clean) || true; \
 	done
 	@$(GO) clean -cache
 	@echo "Clean complete"
