@@ -18,15 +18,8 @@ func NewScanEventPostgres(db *database.PostgresPool) *ScanEventPostgres {
 	return &ScanEventPostgres{db: db}
 }
 
-func (r *ScanEventPostgres) Create(ctx context.Context, event *domain.ScanEvent) error {
-	query := `
-		INSERT INTO scanner.scan_events
-		(id, tenant_id, barcode, scan_type, equipment_id, project_id, location_id,
-		 session_id, user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-	`
-
-	_, err := r.db.Exec(ctx, query,
+func scanEventArgs(event *domain.ScanEvent) []interface{} {
+	return []interface{}{
 		event.ID,
 		event.TenantID,
 		event.Barcode,
@@ -44,9 +37,39 @@ func (r *ScanEventPostgres) Create(ctx context.Context, event *domain.ScanEvent)
 		event.Notes,
 		string(event.Status),
 		event.CreatedAt,
-	)
+	}
+}
 
+func (r *ScanEventPostgres) Create(ctx context.Context, event *domain.ScanEvent) error {
+	query := `
+		INSERT INTO scanner.scan_events
+		(id, tenant_id, barcode, scan_type, equipment_id, project_id, location_id,
+		 session_id, user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+	`
+
+	_, err := r.db.Exec(ctx, query, scanEventArgs(event)...)
 	return err
+}
+
+func (r *ScanEventPostgres) CreateIfAbsent(ctx context.Context, event *domain.ScanEvent) (bool, error) {
+	query := `
+		INSERT INTO scanner.scan_events
+		(id, tenant_id, barcode, scan_type, equipment_id, project_id, location_id,
+		 session_id, user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		ON CONFLICT (id) DO NOTHING
+	`
+
+	result, err := r.db.Exec(ctx, query, scanEventArgs(event)...)
+	if err != nil {
+		return false, err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rows == 1, nil
 }
 
 func (r *ScanEventPostgres) GetByID(ctx context.Context, tenantID, id string) (*domain.ScanEvent, error) {
@@ -111,14 +134,12 @@ func (r *ScanEventPostgres) List(ctx context.Context, tenantID string, query *po
 		argIndex++
 	}
 
-	// Count query
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM scanner.scan_events %s", where)
 	var total int
 	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, err
 	}
 
-	// List query
 	listQuery := fmt.Sprintf(`
 		SELECT id, tenant_id, barcode, scan_type, equipment_id, project_id, location_id,
 		       session_id, user_id, device_id, device_type, timestamp, latitude, longitude, notes, status, created_at
@@ -145,12 +166,7 @@ func (r *ScanEventPostgres) List(ctx context.Context, tenantID string, query *po
 		items = append(items, event)
 	}
 
-	return &ports.ScanListResult{
-		Items:  items,
-		Total:  total,
-		Limit:  query.Limit,
-		Offset: query.Offset,
-	}, rows.Err()
+	return &ports.ScanListResult{Items: items, Total: total, Limit: query.Limit, Offset: query.Offset}, rows.Err()
 }
 
 func (r *ScanEventPostgres) Update(ctx context.Context, event *domain.ScanEvent) error {
@@ -170,7 +186,6 @@ func (r *ScanEventPostgres) Update(ctx context.Context, event *domain.ScanEvent)
 		event.ID,
 		event.TenantID,
 	)
-
 	return err
 }
 
