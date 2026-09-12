@@ -10,6 +10,7 @@ export PGPORT="${PGPORT:-5432}"
 export PGUSER="${PGUSER:-rentflow}"
 export PGPASSWORD="${PGPASSWORD:-rentflow_dev}"
 MIGRATIONS_ROOT="${MIGRATIONS_ROOT:-/services}"
+LEGACY_FILE="${MIGRATION_LEGACY_DUPLICATES:-/scripts/migration-legacy-duplicates.txt}"
 
 ALL_SERVICES="auth-service inventory-service project-service scanner-service warehouse-service invoice-service document-service crew-service federation-service maintenance-service transport-service insurance-service workflow-service ai-service notification-service reporting-service audit-service expense-service"
 
@@ -35,6 +36,12 @@ service_database() {
     expense-service) echo expense_service ;;
     *) return 1 ;;
   esac
+}
+
+legacy_duplicate_allowed() {
+  local svc="$1"
+  local version="$2"
+  [[ -f "$LEGACY_FILE" ]] && grep -Fxq "$svc:$version" "$LEGACY_FILE"
 }
 
 checksum_file() {
@@ -84,10 +91,15 @@ migrate_service() {
     version="${base%%_*}"
     normalized_version="$((10#$version))"
     if [[ -n "${seen_versions[$normalized_version]:-}" ]]; then
-      echo "ERROR: duplicate migration version $version in $svc: ${seen_versions[$normalized_version]} and $base" >&2
-      return 1
+      if legacy_duplicate_allowed "$svc" "$normalized_version"; then
+        echo "LEGACY: allowing duplicate $svc version $version: ${seen_versions[$normalized_version]} and $base"
+      else
+        echo "ERROR: duplicate migration version $version in $svc: ${seen_versions[$normalized_version]} and $base" >&2
+        return 1
+      fi
+    else
+      seen_versions[$normalized_version]="$base"
     fi
-    seen_versions[$normalized_version]="$base"
   done
 
   echo "MIGRATE $svc -> $db"
