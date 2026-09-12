@@ -170,7 +170,9 @@ func TestCORSMiddleware_ExposeHeaders(t *testing.T) {
 	}
 }
 
-func TestSimpleCORSMiddleware_AllowsAllOrigins(t *testing.T) {
+func TestSimpleCORSMiddleware_DefaultIsRestrictive(t *testing.T) {
+	t.Setenv("ALLOWED_ORIGINS", "")
+
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -184,8 +186,8 @@ func TestSimpleCORSMiddleware_AllowsAllOrigins(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
-	if w.Header().Get("Access-Control-Allow-Origin") != "*" {
-		t.Errorf("expected Access-Control-Allow-Origin '*', got '%s'", w.Header().Get("Access-Control-Allow-Origin"))
+	if got := w.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("expected no Access-Control-Allow-Origin by default, got '%s'", got)
 	}
 }
 
