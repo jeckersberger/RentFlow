@@ -1,7 +1,7 @@
 -- Stop storing the one-time setup bootstrap token in plaintext.
 -- Pending legacy setups are rotated by auth-service on its next startup.
 ALTER TABLE auth.setup_state
-    ADD COLUMN IF NOT EXISTS setup_token_hash CHAR(64);
+    ADD COLUMN IF NOT EXISTS setup_token_hash VARCHAR(64);
 
 ALTER TABLE auth.setup_state
     ALTER COLUMN setup_token DROP NOT NULL;
