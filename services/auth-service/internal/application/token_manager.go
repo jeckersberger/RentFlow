@@ -229,14 +229,17 @@ func (tm *TokenManager) VerifyAccessToken(token string) (*AccessTokenClaims, err
 	if err := json.Unmarshal(payloadJSON, &claims); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal claims: %w", err)
 	}
+	// Reject the wrong token purpose before evaluating claims that only exist on
+	// access tokens (such as nbf/session_id). This prevents token-type confusion
+	// and yields deterministic fail-closed behavior.
+	if claims.TokenUse != accessTokenUse {
+		return nil, fmt.Errorf("invalid token use")
+	}
 	if err := tm.validateRegisteredClaims(claims.Issuer, claims.Audience, claims.ExpiresAt, claims.IssuedAt); err != nil {
 		return nil, err
 	}
 	if claims.NotBefore == 0 || time.Now().Add(jwtClockSkew).Unix() < claims.NotBefore {
 		return nil, fmt.Errorf("token not yet valid")
-	}
-	if claims.TokenUse != accessTokenUse {
-		return nil, fmt.Errorf("invalid token use")
 	}
 	if claims.Subject == "" || claims.JWTID == "" || claims.TenantID == "" || claims.SessionID == "" {
 		return nil, fmt.Errorf("missing required access token claims")
@@ -255,11 +258,11 @@ func (tm *TokenManager) VerifyRefreshToken(token string) (*RefreshTokenClaims, e
 	if err := json.Unmarshal(payloadJSON, &claims); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal claims: %w", err)
 	}
-	if err := tm.validateRegisteredClaims(claims.Issuer, claims.Audience, claims.ExpiresAt, claims.IssuedAt); err != nil {
-		return nil, err
-	}
 	if claims.TokenUse != refreshTokenUse {
 		return nil, fmt.Errorf("invalid token use")
+	}
+	if err := tm.validateRegisteredClaims(claims.Issuer, claims.Audience, claims.ExpiresAt, claims.IssuedAt); err != nil {
+		return nil, err
 	}
 	if claims.Subject == "" || claims.JWTID == "" || claims.TenantID == "" {
 		return nil, fmt.Errorf("missing required refresh token claims")
