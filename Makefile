@@ -1,4 +1,4 @@
-.PHONY: help dev build test test-common test-integration test-e2e lint docker-build docker-up docker-down migrate-up migrate-down proto clean workspace-sync verify
+.PHONY: help dev build test test-common test-integration test-e2e lint docker-build docker-up docker-down migration-audit migrate-up migrate-all migrate-down proto clean workspace-sync verify
 
 # Get all services dynamically
 SERVICES := $(notdir $(wildcard services/*/))
@@ -31,6 +31,7 @@ help:
 	@echo "  make test-integration - Run integration-tagged Go tests"
 	@echo "  make test-e2e         - Run Playwright smoke tests (requires backend and E2E credentials)"
 	@echo "  make verify           - Run unit tests, builds and frontend checks"
+	@echo "  make migration-audit  - Validate migration filenames/version uniqueness"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make lint             - Run golangci-lint"
@@ -41,8 +42,9 @@ help:
 	@echo "  make docker-down      - Stop compose stack"
 	@echo ""
 	@echo "Database:"
-	@echo "  make migrate-up SERVICE=<service>    - Run migrations for a service"
-	@echo "  make migrate-down SERVICE=<service>  - Rollback migrations for a service"
+	@echo "  make migrate-up SERVICE=<service> - Run pending versioned migrations for one service"
+	@echo "  make migrate-all                  - Run pending versioned migrations for all services"
+	@echo "  make migrate-down                 - Deliberately unsupported until rollback semantics are defined"
 	@echo ""
 	@echo "E2E environment:"
 	@echo "  E2E_LOGIN_USER=<user> E2E_LOGIN_PASS=<pass> [E2E_BASE_URL=http://localhost:3000] make test-e2e"
@@ -95,6 +97,9 @@ verify: test build
 	@cd frontend && $(NPM) ci && $(NPM) run lint && $(NPM) run type-check && $(NPM) run build && $(NPM) run test:run
 	@echo "Verification completed successfully"
 
+migration-audit:
+	@bash scripts/audit-migrations.sh services
+
 lint:
 	@echo "Running golangci-lint..."
 	@command -v golangci-lint >/dev/null 2>&1 || (echo "golangci-lint not installed"; exit 1)
@@ -118,7 +123,7 @@ docker-down:
 	@echo "Stopping services..."
 	@$(COMPOSE) down
 
-migrate-up:
+migrate-up: migration-audit
 	@if [ -z "$(SERVICE)" ]; then \
 		echo "Error: SERVICE variable not set"; \
 		echo "Usage: make migrate-up SERVICE=auth-service"; \
@@ -128,43 +133,17 @@ migrate-up:
 		echo "Error: services/$(SERVICE)/migrations directory not found"; \
 		exit 1; \
 	fi
-	@echo "Running migrations for $(SERVICE)..."
-	@docker run --rm \
-		-v $(PWD)/services/$(SERVICE)/migrations:/migrations \
-		-e POSTGRES_USER="$(POSTGRES_USER)" \
-		-e POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
-		-e POSTGRES_HOST="$(POSTGRES_HOST)" \
-		-e POSTGRES_PORT="$(POSTGRES_PORT)" \
-		-e POSTGRES_DB="$(POSTGRES_DB)" \
-		migrate/migrate:latest \
-		-path=/migrations \
-		-database="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" \
-		up
-	@echo "Migrations for $(SERVICE) completed successfully"
+	@echo "Running versioned migrations for $(SERVICE)..."
+	@$(COMPOSE) run --rm migrations "$(SERVICE)"
+
+migrate-all: migration-audit
+	@echo "Running versioned migrations for all services..."
+	@$(COMPOSE) run --rm migrations
 
 migrate-down:
-	@if [ -z "$(SERVICE)" ]; then \
-		echo "Error: SERVICE variable not set"; \
-		echo "Usage: make migrate-down SERVICE=auth-service"; \
-		exit 1; \
-	fi
-	@if [ ! -d "services/$(SERVICE)/migrations" ]; then \
-		echo "Error: services/$(SERVICE)/migrations directory not found"; \
-		exit 1; \
-	fi
-	@echo "Rolling back migrations for $(SERVICE)..."
-	@docker run --rm \
-		-v $(PWD)/services/$(SERVICE)/migrations:/migrations \
-		-e POSTGRES_USER="$(POSTGRES_USER)" \
-		-e POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
-		-e POSTGRES_HOST="$(POSTGRES_HOST)" \
-		-e POSTGRES_PORT="$(POSTGRES_PORT)" \
-		-e POSTGRES_DB="$(POSTGRES_DB)" \
-		migrate/migrate:latest \
-		-path=/migrations \
-		-database="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" \
-		down
-	@echo "Rollback for $(SERVICE) completed successfully"
+	@echo "ERROR: automatic down migrations are intentionally disabled." >&2
+	@echo "Rollback requires an explicit, reviewed data migration/restore plan." >&2
+	@exit 2
 
 proto:
 	@echo "Generating protobuf code..."
