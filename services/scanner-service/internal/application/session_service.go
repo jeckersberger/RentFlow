@@ -13,12 +13,12 @@ import (
 )
 
 type SessionService struct {
-	sessionRepo   ports.ScanSessionRepository
-	scanRepo      ports.ScanEventRepository
-	queueRepo     ports.OfflineQueueRepository
-	deviceRepo    ports.DeviceRepository
-	inventorySvc  ports.InventoryServiceClient
-	logger        logger.Logger
+	sessionRepo  ports.ScanSessionRepository
+	scanRepo     ports.ScanEventRepository
+	queueRepo    ports.OfflineQueueRepository
+	deviceRepo   ports.DeviceRepository
+	inventorySvc ports.InventoryServiceClient
+	logger       logger.Logger
 }
 
 func NewSessionService(
@@ -30,12 +30,12 @@ func NewSessionService(
 	logger logger.Logger,
 ) *SessionService {
 	return &SessionService{
-		sessionRepo:   sessionRepo,
-		scanRepo:      scanRepo,
-		queueRepo:     queueRepo,
-		deviceRepo:    deviceRepo,
-		inventorySvc:  inventorySvc,
-		logger:        logger,
+		sessionRepo:  sessionRepo,
+		scanRepo:     scanRepo,
+		queueRepo:    queueRepo,
+		deviceRepo:   deviceRepo,
+		inventorySvc: inventorySvc,
+		logger:       logger,
 	}
 }
 
@@ -51,7 +51,6 @@ func (s *SessionService) StartSession(ctx context.Context, cmd StartScanSessionC
 	}
 
 	scanContext := domain.ScanContext(cmd.Context)
-
 	sessionID := fmt.Sprintf("sess_%s", uuid.New().String()[:12])
 
 	session := domain.NewScanSession(
@@ -86,7 +85,6 @@ func (s *SessionService) EndSession(ctx context.Context, cmd EndScanSessionComma
 	}
 
 	session.End()
-
 	if err := s.sessionRepo.Update(ctx, session); err != nil {
 		return nil, domain.NewDomainError("UPDATE_ERROR", "failed to end scan session", err)
 	}
@@ -110,7 +108,6 @@ func (s *SessionService) ProcessSessionScan(ctx context.Context, cmd ProcessSess
 	if err != nil {
 		return nil, domain.NewDomainError("NOT_FOUND", "scan session not found", err)
 	}
-
 	if session.EndedAt != nil {
 		return nil, domain.NewDomainError("SESSION_ENDED", "scan session has already ended", nil)
 	}
@@ -176,7 +173,6 @@ func (s *SessionService) ProcessSessionScan(ctx context.Context, cmd ProcessSess
 	}
 
 	s.logger.Info("Session scan processed", "id", event.ID, "barcode", cmd.Barcode)
-
 	return &ScanResultDTO{
 		ID:          event.ID,
 		SessionID:   cmd.SessionID,
@@ -196,17 +192,12 @@ func (s *SessionService) GetSessionProtocol(ctx context.Context, tenantID, sessi
 		return nil, domain.NewDomainError("SESSION_ID_REQUIRED", "session ID is required", nil)
 	}
 
-	// Verify session exists
 	_, err := s.sessionRepo.GetByID(ctx, tenantID, sessionID)
 	if err != nil {
 		return nil, domain.NewDomainError("NOT_FOUND", "scan session not found", err)
 	}
 
-	query := &ports.ScanListQuery{
-		SessionID: &sessionID,
-		Limit:     1000,
-		Offset:    0,
-	}
+	query := &ports.ScanListQuery{SessionID: &sessionID, Limit: 1000, Offset: 0}
 	result, err := s.scanRepo.List(ctx, tenantID, query)
 	if err != nil {
 		return nil, domain.NewDomainError("QUERY_ERROR", "failed to get session protocol", err)
@@ -216,7 +207,6 @@ func (s *SessionService) GetSessionProtocol(ctx context.Context, tenantID, sessi
 	for i, event := range result.Items {
 		dtos[i] = *ScanEventToDTO(event)
 	}
-
 	return dtos, nil
 }
 
@@ -251,7 +241,6 @@ func (s *SessionService) QueueOfflineScan(ctx context.Context, tenantID, deviceI
 		return nil, domain.NewDomainError("DEVICE_ID_REQUIRED", "device ID is required", nil)
 	}
 
-	// Check queue size
 	count, err := s.queueRepo.GetCount(ctx, tenantID, "pending")
 	if err != nil {
 		s.logger.Error("Failed to check queue size", err)
@@ -265,13 +254,7 @@ func (s *SessionService) QueueOfflineScan(ctx context.Context, tenantID, deviceI
 	}
 
 	queueItemID := fmt.Sprintf("queue_%s", uuid.New().String()[:12])
-	item := domain.NewOfflineQueueItem(
-		queueItemID,
-		tenantID,
-		deviceID,
-		string(payload),
-	)
-
+	item := domain.NewOfflineQueueItem(queueItemID, tenantID, deviceID, string(payload))
 	if err := s.queueRepo.Create(ctx, item); err != nil {
 		return nil, domain.NewDomainError("CREATE_ERROR", "failed to queue offline scan", err)
 	}
@@ -284,7 +267,6 @@ func (s *SessionService) SyncOfflineQueue(ctx context.Context, tenantID string, 
 	if tenantID == "" {
 		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
 	}
-
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
@@ -294,33 +276,42 @@ func (s *SessionService) SyncOfflineQueue(ctx context.Context, tenantID string, 
 		return nil, domain.NewDomainError("QUERY_ERROR", "failed to get pending offline scans", err)
 	}
 
-	result := &SyncResultDTO{
-		TotalItems: len(items),
-		Conflicts:  []string{},
-	}
-
+	result := &SyncResultDTO{TotalItems: len(items), Conflicts: []string{}}
 	for _, item := range items {
 		var scanCmd ProcessScanCommand
 		if err := json.Unmarshal([]byte(item.Payload), &scanCmd); err != nil {
 			item.MarkFailed()
-			s.queueRepo.Update(ctx, item)
+			if updateErr := s.queueRepo.Update(ctx, item); updateErr != nil {
+				s.logger.Error("Failed to mark malformed offline item failed", updateErr)
+			}
 			result.FailedItems++
 			result.Conflicts = append(result.Conflicts, fmt.Sprintf("%s: unmarshal error", item.ID))
 			continue
 		}
 
 		scanCmd.TenantID = tenantID
-		_, err := s.processScanDirect(ctx, scanCmd)
+		_, err := s.processScanDirect(ctx, scanCmd, offlineScanID(item.ID))
 		if err != nil {
 			item.MarkFailed()
-			s.queueRepo.Update(ctx, item)
+			if updateErr := s.queueRepo.Update(ctx, item); updateErr != nil {
+				s.logger.Error("Failed to mark offline item failed", updateErr)
+			}
 			result.FailedItems++
 			result.Conflicts = append(result.Conflicts, fmt.Sprintf("%s: %v", item.ID, err))
-		} else {
-			item.MarkSynced()
-			s.queueRepo.Update(ctx, item)
-			result.SyncedItems++
+			continue
 		}
+
+		item.MarkSynced()
+		if err := s.queueRepo.Update(ctx, item); err != nil {
+			// The scan itself is already persisted. Keep this item retryable and report
+			// the acknowledgement failure; retrying is safe because the scan ID is
+			// derived from the immutable queue item ID and CreateIfAbsent is atomic.
+			result.FailedItems++
+			result.Conflicts = append(result.Conflicts, fmt.Sprintf("%s: failed to persist sync acknowledgement", item.ID))
+			s.logger.Error("Failed to mark offline item synced", err)
+			continue
+		}
+		result.SyncedItems++
 	}
 
 	if result.SyncedItems > 0 {
@@ -333,15 +324,20 @@ func (s *SessionService) SyncOfflineQueue(ctx context.Context, tenantID string, 
 	return result, nil
 }
 
-func (s *SessionService) processScanDirect(ctx context.Context, cmd ProcessScanCommand) (*ScanEventDTO, error) {
+func offlineScanID(queueItemID string) string {
+	return "scan_" + queueItemID
+}
+
+func (s *SessionService) processScanDirect(ctx context.Context, cmd ProcessScanCommand, scanID string) (*ScanEventDTO, error) {
 	if cmd.TenantID == "" {
 		return nil, domain.NewDomainError("TENANT_REQUIRED", "tenant ID is required", nil)
 	}
 	if cmd.Barcode == "" {
 		return nil, domain.NewDomainError("BARCODE_REQUIRED", "barcode is required", nil)
 	}
-
-	scanID := fmt.Sprintf("scan_%s", uuid.New().String()[:12])
+	if scanID == "" {
+		scanID = fmt.Sprintf("scan_%s", uuid.New().String()[:12])
+	}
 
 	event := domain.NewScanEvent(
 		scanID,
@@ -352,7 +348,6 @@ func (s *SessionService) processScanDirect(ctx context.Context, cmd ProcessScanC
 		cmd.DeviceID,
 		cmd.DeviceType,
 	)
-
 	event.ProjectID = cmd.ProjectID
 	event.LocationID = cmd.LocationID
 	event.Latitude = cmd.Latitude
@@ -372,8 +367,16 @@ func (s *SessionService) processScanDirect(ctx context.Context, cmd ProcessScanC
 		}
 	}
 
-	if err := s.scanRepo.Create(ctx, event); err != nil {
+	created, err := s.scanRepo.CreateIfAbsent(ctx, event)
+	if err != nil {
 		return nil, domain.NewDomainError("CREATE_ERROR", "failed to create scan event", err)
+	}
+	if !created {
+		existing, err := s.scanRepo.GetByID(ctx, cmd.TenantID, scanID)
+		if err != nil {
+			return nil, domain.NewDomainError("QUERY_ERROR", "failed to load existing scan event", err)
+		}
+		return ScanEventToDTO(existing), nil
 	}
 
 	return ScanEventToDTO(event), nil

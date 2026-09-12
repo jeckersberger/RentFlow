@@ -8,6 +8,9 @@ import (
 
 type ScanEventRepository interface {
 	Create(ctx context.Context, event *domain.ScanEvent) error
+	// CreateIfAbsent atomically persists event unless the same event ID already
+	// exists. It returns true only when this call created the row.
+	CreateIfAbsent(ctx context.Context, event *domain.ScanEvent) (bool, error)
 	GetByID(ctx context.Context, tenantID, id string) (*domain.ScanEvent, error)
 	List(ctx context.Context, tenantID string, query *ScanListQuery) (*ScanListResult, error)
 	Update(ctx context.Context, event *domain.ScanEvent) error
@@ -95,15 +98,15 @@ type InventoryServiceClient interface {
 
 // EquipmentDetail is the full equipment object returned by /scanner/scan
 type EquipmentDetail struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Category    string       `json:"category"`
-	Barcode     string       `json:"barcode"`
-	RfidTag     string       `json:"rfid_tag"`
-	Status      string       `json:"status"`
-	Location    string       `json:"location"`
-	ImageURL    string       `json:"image_url"`
-	LastProject *ProjectRef  `json:"last_project"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Category    string      `json:"category"`
+	Barcode     string      `json:"barcode"`
+	RfidTag     string      `json:"rfid_tag"`
+	Status      string      `json:"status"`
+	Location    string      `json:"location"`
+	ImageURL    string      `json:"image_url"`
+	LastProject *ProjectRef `json:"last_project"`
 }
 
 type ProjectRef struct {
