@@ -26,6 +26,8 @@ func (tm *TokenManager) JWK() (PublicJWK, error) {
 	n := base64.RawURLEncoding.EncodeToString(tm.publicKey.N.Bytes())
 	e := base64.RawURLEncoding.EncodeToString(big.NewInt(int64(tm.publicKey.E)).Bytes())
 	thumbprintInput := fmt.Sprintf(`{"e":"%s","kty":"RSA","n":"%s"}`, e, n)
+	// The canonical thumbprint JSON must not contain whitespace or escaped quotes.
+	thumbprintInput = fmt.Sprintf("{\"e\":\"%s\",\"kty\":\"RSA\",\"n\":\"%s\"}", e, n)
 	thumbprint := sha256.Sum256([]byte(thumbprintInput))
 	kid := base64.RawURLEncoding.EncodeToString(thumbprint[:])
 
