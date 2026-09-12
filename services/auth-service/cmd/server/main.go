@@ -111,12 +111,19 @@ func main() {
 	configService := application.NewConfigService(configRepo, log)
 	setupService := application.NewSetupService(db, userService, tenantService, log)
 
-	// Initialize setup state and log setup token
+	// Initialize setup state. The bootstrap secret is written to a local
+	// owner-readable file rather than emitted into application logs.
 	setupToken, err := setupService.InitializeSetupState(context.Background())
 	if err != nil {
 		log.Error("failed to initialize setup state", err)
-	} else if setupToken != "" {
-		log.Info("Setup wizard token (use this to complete initial setup)", "token", setupToken)
+	} else {
+		setupTokenPath, fileErr := persistSetupToken(setupToken)
+		if fileErr != nil {
+			log.Fatal("failed to persist setup token securely", fileErr)
+		}
+		if setupToken != "" {
+			log.Info("Initial setup required; setup token written to local file", "path", setupTokenPath)
+		}
 	}
 
 	// Seed superadmin if configured
@@ -231,18 +238,21 @@ func connectPostgres(connectionString string, log logger.Logger) (*sql.DB, error
 
 func jwksHandler(tokenMgr *application.TokenManager, log logger.Logger) nethttp.HandlerFunc {
 	return func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		jwk, err := tokenMgr.JWK()
+		if err != nil {
+			log.Error("failed to build JWKS response", err)
+			nethttp.Error(w, "JWKS unavailable", nethttp.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "public, max-age=300")
 		w.WriteHeader(nethttp.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"keys": []map[string]interface{}{
-				{
-					"kty": "RSA",
-					"use": "sig",
-					"alg": "RS256",
-					"key": tokenMgr.PublicKeyPEM(),
-				},
-			},
-		})
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"keys": []application.PublicJWK{jwk},
+		}); err != nil {
+			log.Error("failed to encode JWKS response", err)
+		}
 	}
 }
 
