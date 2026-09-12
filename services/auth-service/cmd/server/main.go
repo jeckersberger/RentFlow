@@ -49,18 +49,16 @@ func main() {
 
 	log.Info("Connected to database")
 
-	// Generate or load RSA key pair
-	privKey, err := application.GenerateKeyPair()
+	// Load or create the persistent RSA key pair. Concurrent service instances
+	// converge on the same database row instead of generating different keys.
+	signingKeyRepo := repositories.NewPostgresSigningKeyRepository(db)
+	signingKeyPair, err := application.LoadOrCreateSigningKeyPair(context.Background(), signingKeyRepo)
 	if err != nil {
-		log.Fatal("failed to generate RSA key pair", err)
+		log.Fatal("failed to load persistent RSA signing key", err)
 	}
 
-	// Serialize RSA keys to PEM
-	privKeyPEM := application.MarshalPrivateKeyPEM(privKey)
-	pubKeyPEM := application.MarshalPublicKeyPEM(&privKey.PublicKey)
-
-	// Create token manager with RSA keys
-	tokenMgr, err := application.NewTokenManager(privKeyPEM, pubKeyPEM)
+	// Create token manager with persisted RSA keys
+	tokenMgr, err := application.NewTokenManager(signingKeyPair.PrivateKeyPEM, signingKeyPair.PublicKeyPEM)
 	if err != nil {
 		log.Fatal("failed to create token manager", err)
 	}
