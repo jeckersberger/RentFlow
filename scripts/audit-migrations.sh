@@ -4,6 +4,7 @@
 set -euo pipefail
 
 ROOT="${1:-services}"
+LEGACY_FILE="${MIGRATION_LEGACY_DUPLICATES:-scripts/migration-legacy-duplicates.txt}"
 errors=0
 services=0
 migrations=0
@@ -12,6 +13,12 @@ if [[ ! -d "$ROOT" ]]; then
   echo "ERROR: services root not found: $ROOT" >&2
   exit 2
 fi
+
+legacy_duplicate_allowed() {
+  local svc="$1"
+  local version="$2"
+  [[ -f "$LEGACY_FILE" ]] && grep -Fxq "$svc:$version" "$LEGACY_FILE"
+}
 
 while IFS= read -r -d '' dir; do
   svc="$(basename "$(dirname "$dir")")"
@@ -29,10 +36,14 @@ while IFS= read -r -d '' dir; do
     fi
 
     version="${BASH_REMATCH[1]}"
-    normalized="$(printf '%d' "$((10#$version))")"
+    normalized="$((10#$version))"
     if [[ -n "${seen[$normalized]:-}" ]]; then
-      echo "ERROR: $svc has duplicate migration version $version: ${seen[$normalized]} and $base" >&2
-      ((errors += 1))
+      if legacy_duplicate_allowed "$svc" "$normalized"; then
+        echo "LEGACY: $svc version $version is intentionally duplicated: ${seen[$normalized]} and $base"
+      else
+        echo "ERROR: $svc has duplicate migration version $version: ${seen[$normalized]} and $base" >&2
+        ((errors += 1))
+      fi
     else
       seen[$normalized]="$base"
     fi
