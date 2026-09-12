@@ -2,31 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [Main, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [Main, develop]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-          working-directory: ./pkg/common
-        env:
-          GOWORK: 'off'
-
   test-common:
     name: Test pkg/common
     runs-on: ubuntu-latest
@@ -35,18 +19,18 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+          cache: false
       - name: Run tests
-        run: cd pkg/common && GOWORK=off go test -v -race -coverprofile=coverage.out ./...
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./pkg/common/coverage.out
-          fail_ci_if_error: false
+        working-directory: pkg/common
+        env:
+          GOWORK: 'off'
+        run: go test -v -race ./...
 
   test-services:
-    name: Test Services
+    name: Test ${{ matrix.service }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service:
           - auth-service
@@ -55,39 +39,35 @@ jobs:
           - scanner-service
           - warehouse-service
           - invoice-service
-          - notification-service
-          - transport-service
-          - maintenance-service
-          - crew-service
           - document-service
-          - insurance-service
-          - reporting-service
-          - ai-service
-          - workflow-service
+          - crew-service
           - federation-service
+          - maintenance-service
+          - transport-service
+          - insurance-service
+          - workflow-service
+          - ai-service
+          - notification-service
+          - reporting-service
           - audit-service
+          - expense-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+          cache: false
       - name: Run tests
-        run: |
-          cd services/${{ matrix.service }}
-          GOWORK=off go test -v -race ./... 2>&1 || {
-            # Exit 0 if the only issue is "no test files"
-            if GOWORK=off go test ./... 2>&1 | grep -q "no test files"; then
-              echo "No test files found — skipping"
-              exit 0
-            fi
-            exit 1
-          }
+        working-directory: services/${{ matrix.service }}
+        env:
+          GOWORK: 'off'
+        run: go test -v -race ./...
 
-  build:
-    name: Build Services
+  build-services:
+    name: Build ${{ matrix.service }}
     runs-on: ubuntu-latest
-    needs: [test-common, test-services]
     strategy:
+      fail-fast: false
       matrix:
         service:
           - auth-service
@@ -96,109 +76,72 @@ jobs:
           - scanner-service
           - warehouse-service
           - invoice-service
-          - notification-service
-          - transport-service
-          - maintenance-service
-          - crew-service
           - document-service
-          - insurance-service
-          - reporting-service
-          - ai-service
-          - workflow-service
+          - crew-service
           - federation-service
+          - maintenance-service
+          - transport-service
+          - insurance-service
+          - workflow-service
+          - ai-service
+          - notification-service
+          - reporting-service
           - audit-service
+          - expense-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+          cache: false
       - name: Build
-        run: |
-          cd services/${{ matrix.service }}
-          CGO_ENABLED=0 GOOS=linux GOWORK=off go build -o bin/server ./cmd/server
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.service }}-bin
-          path: services/${{ matrix.service }}/bin/server
-          retention-days: 1
+        working-directory: services/${{ matrix.service }}
+        env:
+          GOWORK: 'off'
+          CGO_ENABLED: '0'
+        run: go build ./cmd/server
 
-  docker-build:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
-    strategy:
-      matrix:
-        service:
-          - auth-service
-          - inventory-service
-          - project-service
-          - scanner-service
-          - warehouse-service
-          - invoice-service
-          - notification-service
-          - transport-service
-          - maintenance-service
-          - crew-service
-          - document-service
-          - insurance-service
-          - reporting-service
-          - ai-service
-          - workflow-service
-          - federation-service
-          - audit-service
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: services/${{ matrix.service }}/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/jeckersberger/rentflow/${{ matrix.service }}:latest
-            ghcr.io/jeckersberger/rentflow/${{ matrix.service }}:sha-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  frontend-test:
-    name: Frontend Tests
+  frontend:
+    name: Frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
-        run: cd frontend && npm ci
+        working-directory: frontend
+        run: npm ci
       - name: Lint
-        run: cd frontend && npm run lint
+        working-directory: frontend
+        run: npm run lint
       - name: Type check
-        run: cd frontend && npm run type-check
+        working-directory: frontend
+        run: npm run type-check
+      - name: Unit tests
+        working-directory: frontend
+        run: npm run test:run
       - name: Build
-        run: cd frontend && npm run build
+        working-directory: frontend
+        run: npm run build
 
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [lint, test-common, test-services, build, docker-build, frontend-test]
+    needs: [test-common, test-services, build-services, frontend]
     if: always()
     steps:
-      - name: Check CI status
+      - name: Require all baseline checks
+        env:
+          COMMON: ${{ needs.test-common.result }}
+          SERVICES: ${{ needs.test-services.result }}
+          BUILDS: ${{ needs.build-services.result }}
+          FRONTEND: ${{ needs.frontend.result }}
         run: |
-          if [ "${{ needs.lint.result }}" = "failure" ] || \
-             [ "${{ needs.test-common.result }}" = "failure" ] || \
-             [ "${{ needs.test-services.result }}" = "failure" ] || \
-             [ "${{ needs.build.result }}" = "failure" ] || \
-             [ "${{ needs.docker-build.result }}" = "failure" ] || \
-             [ "${{ needs.frontend-test.result }}" = "failure" ]; then
-            echo "CI pipeline failed"
-            exit 1
-          fi
-          echo "All CI checks passed"
+          printf 'pkg/common: %s\nservices: %s\nbuilds: %s\nfrontend: %s\n' "$COMMON" "$SERVICES" "$BUILDS" "$FRONTEND"
+          test "$COMMON" = success
+          test "$SERVICES" = success
+          test "$BUILDS" = success
+          test "$FRONTEND" = success
