@@ -1,0 +1,12 @@
+services:
+  federation-service:
+    environment:
+      FEATURE_FEDERATION_ENABLED: ${FEATURE_FEDERATION_ENABLED:-false}
+
+  workflow-service:
+    environment:
+      FEATURE_WORKFLOW_ENABLED: ${FEATURE_WORKFLOW_ENABLED:-false}
+
+  ai-service:
+    environment:
+      FEATURE_AI_ENABLED: ${FEATURE_AI_ENABLED:-false}
