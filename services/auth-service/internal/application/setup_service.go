@@ -14,10 +14,10 @@ import (
 
 // SetupService handles the one-time setup wizard
 type SetupService struct {
-	db         *sql.DB
-	userSvc    *UserService
-	tenantSvc  *TenantService
-	logger     logger.Logger
+	db        *sql.DB
+	userSvc   *UserService
+	tenantSvc *TenantService
+	logger    logger.Logger
 }
 
 // SetupStatus represents the current setup status
@@ -84,11 +84,10 @@ func (s *SetupService) GetStatus(ctx context.Context) (*SetupStatus, error) {
 	}, nil
 }
 
-// InitializeSetupState initializes setup state on server startup
-// Creates the setup_state row with a random token if it doesn't exist
-// Returns the setup token that should be logged to console
+// InitializeSetupState initializes setup state on server startup.
+// It returns the setup token to the caller for secure local delivery; the
+// service itself never logs the token value.
 func (s *SetupService) InitializeSetupState(ctx context.Context) (string, error) {
-	// Check if setup_state table exists
 	var tableExists bool
 	err := s.db.QueryRowContext(
 		ctx,
@@ -105,7 +104,6 @@ func (s *SetupService) InitializeSetupState(ctx context.Context) (string, error)
 		return "", errors.New("setup_state table not found")
 	}
 
-	// Check if setup_state row exists
 	var count int
 	err = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM auth.setup_state").Scan(&count)
 	if err != nil {
@@ -113,7 +111,6 @@ func (s *SetupService) InitializeSetupState(ctx context.Context) (string, error)
 		return "", err
 	}
 
-	// If row doesn't exist, create it with a random token
 	if count == 0 {
 		token := generateSetupToken()
 		_, err := s.db.ExecContext(
@@ -129,7 +126,6 @@ func (s *SetupService) InitializeSetupState(ctx context.Context) (string, error)
 		return token, nil
 	}
 
-	// Row exists, retrieve the token
 	var token string
 	var isCompleted bool
 	err = s.db.QueryRowContext(
@@ -154,7 +150,6 @@ func (s *SetupService) InitializeSetupState(ctx context.Context) (string, error)
 // Validates the setup token, creates the tenant and admin user, and marks setup as completed
 // Returns 403 Forbidden equivalent if already completed
 func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) error {
-	// Check if setup is already completed
 	status, err := s.GetStatus(ctx)
 	if err != nil {
 		return err
@@ -164,7 +159,6 @@ func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) erro
 		return ErrSetupAlreadyCompleted
 	}
 
-	// Verify setup token
 	var storedToken string
 	err = s.db.QueryRowContext(
 		ctx,
@@ -177,11 +171,12 @@ func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) erro
 	}
 
 	if req.SetupToken != storedToken {
-		s.logger.Warn("invalid setup token provided", "provided", req.SetupToken[:8]+"...")
+		// Never log caller-supplied secret material, even partially. The previous
+		// prefix logging also panicked when a malformed token was shorter than 8 bytes.
+		s.logger.Warn("invalid setup token provided")
 		return ErrInvalidSetupToken
 	}
 
-	// Start a transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		s.logger.Error("failed to begin transaction", err)
@@ -189,7 +184,6 @@ func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) erro
 	}
 	defer tx.Rollback()
 
-	// Create tenant
 	tenantID := generateID()
 	createTenantCmd := CreateTenantCommand{
 		Name:            req.CompanyName,
@@ -200,7 +194,6 @@ func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) erro
 		InvoicePrefix:   req.InvoicePrefix,
 	}
 
-	// Create the tenant directly
 	tenant := domain.NewTenant(tenantID, createTenantCmd.Name, createTenantCmd.Slug)
 	tenant.Settings = domain.TenantSettings{
 		DefaultLanguage: createTenantCmd.DefaultLanguage,
@@ -209,7 +202,6 @@ func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) erro
 		InvoicePrefix:   createTenantCmd.InvoicePrefix,
 	}
 
-	// Save tenant using raw SQL within transaction
 	_, err = tx.ExecContext(
 		ctx,
 		`INSERT INTO auth.tenants (id, name, slug, default_language, currency, tax_rate, invoice_prefix)
@@ -223,26 +215,22 @@ func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) erro
 		return err
 	}
 
-	// Validate admin password
 	passwordMgr := NewPasswordManager()
 	if err := passwordMgr.ValidatePassword(req.AdminPassword); err != nil {
 		s.logger.Warn("weak admin password provided", "error", err.Error())
 		return err
 	}
 
-	// Hash admin password
 	passwordHash, err := passwordMgr.HashPassword(req.AdminPassword)
 	if err != nil {
 		s.logger.Error("failed to hash admin password", err)
 		return err
 	}
 
-	// Create admin user
 	userID := generateID()
 	user := domain.NewUser(userID, req.AdminEmail, passwordHash, req.AdminName, "Administrator", tenantID)
 	user.AssignRole("admin")
 
-	// Save admin user using raw SQL within transaction
 	rolesStr := domain.RolesToString(user.Roles)
 	_, err = tx.ExecContext(
 		ctx,
@@ -256,7 +244,6 @@ func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) erro
 		return err
 	}
 
-	// Mark setup as completed
 	_, err = tx.ExecContext(
 		ctx,
 		`UPDATE auth.setup_state SET is_completed = TRUE, completed_at = NOW(), completed_by = $1
@@ -268,7 +255,6 @@ func (s *SetupService) CompleteSetup(ctx context.Context, req SetupRequest) erro
 		return err
 	}
 
-	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		s.logger.Error("failed to commit transaction", err)
 		return err
@@ -292,7 +278,6 @@ func (s *SetupService) IsSetupRequired(ctx context.Context) (bool, error) {
 	return !status.IsCompleted, nil
 }
 
-// Helper function to generate a random setup token
 func generateSetupToken() string {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -301,7 +286,6 @@ func generateSetupToken() string {
 	return hex.EncodeToString(b)
 }
 
-// Setup-specific errors
 var (
 	ErrSetupAlreadyCompleted = errors.New("setup is already completed")
 	ErrInvalidSetupToken     = errors.New("invalid setup token")
