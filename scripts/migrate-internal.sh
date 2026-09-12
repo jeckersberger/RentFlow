@@ -1,7 +1,7 @@
 #!/bin/bash
 # Versioned CrateDesk database migration runner.
-# Runs inside the Docker network and records every applied migration with a
-# checksum. Historical migration files must never be edited after application.
+# Records each applied migration with a SHA-256 checksum and never suppresses
+# SQL errors. Existing migration files are treated as immutable.
 
 set -euo pipefail
 
@@ -48,25 +48,15 @@ checksum_file() {
   fi
 }
 
-validate_filename() {
-  local base="$1"
-  [[ "$base" =~ ^[0-9]+_[A-Za-z0-9._-]+\.sql$ ]] || {
-    echo "ERROR: invalid migration filename: $base" >&2
-    echo "Expected: <numeric-version>_<description>.sql" >&2
-    return 1
-  }
-  [[ "$base" != *.down.sql ]] || return 1
-}
-
 collect_migrations() {
-  local dir="$1"
-  find "$dir" -maxdepth 1 -type f -name '*.sql' ! -name '*.down.sql' -print | LC_ALL=C sort
+  find "$1" -maxdepth 1 -type f -name '*.sql' ! -name '*.down.sql' -print | LC_ALL=C sort
 }
 
 migrate_service() {
   local svc="$1"
-  local db migration_dir file base checksum version normalized_version
+  local db migration_dir file base checksum existing version normalized_version script
   local -A seen_versions=()
+  local -a files=()
 
   db="$(service_database "$svc")" || {
     echo "ERROR: unknown service: $svc" >&2
@@ -85,12 +75,14 @@ migrate_service() {
     return 0
   fi
 
-  # Validate the complete service sequence before touching the database.
   for file in "${files[@]}"; do
     base="$(basename "$file")"
-    validate_filename "$base"
+    if [[ ! "$base" =~ ^[0-9]+_[A-Za-z0-9._-]+\.sql$ ]]; then
+      echo "ERROR: invalid migration filename in $svc: $base" >&2
+      return 1
+    fi
     version="${base%%_*}"
-    normalized_version="$(printf '%d' "$((10#$version))")"
+    normalized_version="$((10#$version))"
     if [[ -n "${seen_versions[$normalized_version]:-}" ]]; then
       echo "ERROR: duplicate migration version $version in $svc: ${seen_versions[$normalized_version]} and $base" >&2
       return 1
@@ -100,13 +92,7 @@ migrate_service() {
 
   echo "MIGRATE $svc -> $db"
 
-  local script
-  script="$(mktemp)"
-  trap 'rm -f "$script"' RETURN
-
-  cat >"$script" <<SQL
-\\set ON_ERROR_STOP on
-SELECT pg_advisory_lock(hashtext('cratedesk:migrations:$svc'));
+  psql -X -v ON_ERROR_STOP=1 -d "$db" <<SQL
 CREATE TABLE IF NOT EXISTS public.cratedesk_schema_migrations (
   service TEXT NOT NULL,
   filename TEXT NOT NULL,
@@ -119,40 +105,44 @@ SQL
   for file in "${files[@]}"; do
     base="$(basename "$file")"
     checksum="$(checksum_file "$file")"
+    existing="$(psql -X -v ON_ERROR_STOP=1 -At -d "$db" -c "SELECT checksum FROM public.cratedesk_schema_migrations WHERE service = '$svc' AND filename = '$base'")"
 
-    cat >>"$script" <<SQL
-\\unset existing_checksum
-\\unset checksum_matches
-SELECT checksum AS existing_checksum
-FROM public.cratedesk_schema_migrations
-WHERE service = '$svc' AND filename = '$base'
-\\gset
-\\if :{?existing_checksum}
-  SELECT :'existing_checksum' = '$checksum' AS checksum_matches \\gset
-  \\if :checksum_matches
-    \\echo 'SKIP $svc/$base (already applied)'
-  \\else
-    \\echo 'ERROR: checksum mismatch for already-applied migration $svc/$base'
-    \\quit 3
-  \\endif
+    if [[ -n "$existing" ]]; then
+      if [[ "$existing" != "$checksum" ]]; then
+        echo "ERROR: checksum mismatch for already-applied migration $svc/$base" >&2
+        return 1
+      fi
+      echo "SKIP $svc/$base (already applied)"
+      continue
+    fi
+
+    script="$(mktemp)"
+    cat >"$script" <<SQL
+\\set ON_ERROR_STOP on
+BEGIN;
+SELECT pg_advisory_xact_lock(hashtext('cratedesk:migrations:$svc'));
+SELECT EXISTS (
+  SELECT 1 FROM public.cratedesk_schema_migrations
+  WHERE service = '$svc' AND filename = '$base'
+) AS migration_exists \\gset
+\\if :migration_exists
+  \\echo 'SKIP $svc/$base (applied by another runner)'
 \\else
   \\echo 'APPLY $svc/$base'
-  BEGIN;
   \\i '$file'
   INSERT INTO public.cratedesk_schema_migrations(service, filename, checksum)
   VALUES ('$svc', '$base', '$checksum');
-  COMMIT;
 \\endif
+COMMIT;
 SQL
+
+    if ! psql -X -d "$db" -f "$script"; then
+      rm -f "$script"
+      return 1
+    fi
+    rm -f "$script"
   done
 
-  cat >>"$script" <<SQL
-SELECT pg_advisory_unlock(hashtext('cratedesk:migrations:$svc'));
-SQL
-
-  psql -X -d "$db" -f "$script"
-  rm -f "$script"
-  trap - RETURN
   echo "DONE $svc"
 }
 
